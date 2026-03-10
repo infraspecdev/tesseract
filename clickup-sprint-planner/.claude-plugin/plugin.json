@@ -1,6 +1,6 @@
 {
   "name": "clickup-sprint-planner",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Sprint planning tools for ClickUp — bulk operations, relationship fields, plan doc sync, and action logging.",
   "author": {
     "name": "Ashwini Manoj"
