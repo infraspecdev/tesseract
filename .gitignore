@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Config files with sensitive data
+clickup-sprint-planner/examples/sprint-planner.json
+clickup-sprint-planner/phases/
+
+# Environment files
+.env*
+
+# Local dev settings
+**/.claude/settings.local.json
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

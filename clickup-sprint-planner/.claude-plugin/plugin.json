@@ -1,0 +1,11 @@
+{
+  "name": "clickup-sprint-planner",
+  "version": "0.3.0",
+  "description": "Sprint planning tools for ClickUp — bulk operations, relationship fields, plan doc sync, and action logging.",
+  "author": {
+    "name": "Ashwini Manoj"
+  },
+  "repository": "https://github.com/infraspecdev/tesseract",
+  "license": "MIT",
+  "keywords": ["clickup", "sprint", "planning", "bulk-ops", "mcp"]
+}

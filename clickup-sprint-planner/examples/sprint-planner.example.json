@@ -1,0 +1,49 @@
+{
+  "version": "1",
+  "clickup": {
+    "api_token_env": "CLICKUP_API_TOKEN",
+    "workspace_id": "auto",
+    "space": { "name": "Your Space Name", "id": "YOUR_SPACE_ID" },
+    "folder": { "name": "Your Folder", "id": "YOUR_FOLDER_ID" },
+    "lists": {
+      "epics": { "name": "EPICs", "id": "YOUR_EPICS_LIST_ID" },
+      "backlog": { "name": "Backlog", "id": "YOUR_BACKLOG_LIST_ID" }
+    },
+    "relationship_field": {
+      "id": "YOUR_RELATIONSHIP_FIELD_UUID",
+      "type": "list_relationship"
+    },
+    "custom_fields": {
+      "epics": {
+        "features": { "name": "Features", "id": "YOUR_FIELD_ID", "type": "drop_down" },
+        "pod": { "name": "POD", "id": "YOUR_FIELD_ID", "type": "labels" }
+      },
+      "backlog": {
+        "categorize": { "name": "Categorize", "id": "YOUR_FIELD_ID", "type": "drop_down" },
+        "type_sprint": { "name": "Type (Sprint)", "id": "YOUR_FIELD_ID", "type": "drop_down" }
+      }
+    }
+  },
+  "team": [
+    { "name": "Team Member 1", "id": "CLICKUP_USER_ID" },
+    { "name": "Team Member 2", "id": "CLICKUP_USER_ID" }
+  ],
+  "plan_docs": {
+    "format": "html",
+    "base_path": "./epics",
+    "epics": [
+      { "id": "P1", "name": "Epic 1 Name", "plan_doc": "01-epic-name/detailed-plan.html", "epic_id": "EPIC_TASK_ID" }
+    ]
+  },
+  "story_extraction": {
+    "html": {
+      "story_selector": "div.story[id^='story-']",
+      "name_pattern": "Story \\d+: (.+)",
+      "clickup_id_selector": "a.badge-clickup",
+      "status_selector": ".badge:not(.badge-clickup):not(.badge-to-create)"
+    }
+  },
+  "action_log": {
+    "path": "./epics/clickup_actions.json"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "tesseract",
+  "description": "Claude Code plugins for infrastructure review, sprint planning, and development workflows",
+  "owner": {
+    "name": "Ashwini Manoj"
+  },
+  "plugins": [
+    {
+      "name": "infra-review",
+      "description": "Infrastructure review agents for Terraform/Atmos repositories — security, architecture, operations, cost optimization, AWS Well-Architected Framework reviews, and terraform plan analysis",
+      "version": "1.1.0",
+      "source": "./infra-review",
+      "category": "development"
+    },
+    {
+      "name": "clickup-sprint-planner",
+      "description": "Sprint planning tools for ClickUp — bulk task operations, relationship field management, plan-doc-to-ClickUp sync, and action logging",
+      "version": "0.3.0",
+      "source": "./clickup-sprint-planner",
+      "category": "productivity"
+    },
+    {
+      "name": "dev-workflow",
+      "description": "General-purpose development workflow skills — structured research with citations and TDD-based feature implementation with progress tracking",
+      "version": "1.0.0",
+      "source": "./dev-workflow",
+      "category": "development"
+    }
+  ]
+}
