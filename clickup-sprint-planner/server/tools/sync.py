@@ -12,11 +12,17 @@ from server.config import SprintPlannerConfig
 from server.parsers.base import Story, get_parser
 
 
-FUZZY_THRESHOLD = 0.6
+FUZZY_THRESHOLD = 0.8
+FUZZY_LINK_THRESHOLD = 0.6
 
 
-def _fuzzy_match(name: str, candidates: list[dict]) -> dict | None:
-    """Find the best fuzzy match for a story name among ClickUp tasks."""
+def _fuzzy_match(name: str, candidates: list[dict]) -> tuple[dict | None, float]:
+    """Find the best fuzzy match for a story name among ClickUp tasks.
+
+    Returns a tuple of (best_match, best_ratio) so callers can distinguish
+    between strong matches (>= FUZZY_THRESHOLD) and ambiguous ones
+    (>= FUZZY_LINK_THRESHOLD).
+    """
     best_match = None
     best_ratio = 0.0
     name_lower = name.lower().strip()
@@ -30,7 +36,9 @@ def _fuzzy_match(name: str, candidates: list[dict]) -> dict | None:
         if ratio > best_ratio:
             best_ratio = ratio
             best_match = task
-    return best_match if best_ratio >= FUZZY_THRESHOLD else None
+    if best_ratio >= FUZZY_LINK_THRESHOLD:
+        return best_match, best_ratio
+    return None, best_ratio
 
 
 def _determine_diff(story: Story, clickup_task: dict | None) -> str:
@@ -139,8 +147,9 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
 
                 # 2. Try fuzzy name match against epic-scoped tasks
                 unmatched = [t for t in clickup_tasks if t["id"] not in matched_task_ids]
-                match = _fuzzy_match(story.name, unmatched)
-                if match:
+                match, ratio = _fuzzy_match(story.name, unmatched)
+                if match and ratio >= FUZZY_THRESHOLD:
+                    # Strong match — auto-link
                     matched_task_ids.add(match["id"])
                     diff = _determine_diff(story, match)
                     story_results.append({
@@ -150,6 +159,21 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                         "clickup_id": match["id"],
                         "clickup_status": match.get("status", {}).get("status"),
                         "diff": diff,
+                    })
+                elif match and ratio >= FUZZY_LINK_THRESHOLD:
+                    # Ambiguous match — needs manual confirmation
+                    story_results.append({
+                        "index": story.index,
+                        "name": story.name,
+                        "plan_status": story.status,
+                        "clickup_id": None,
+                        "diff": "to_link",
+                        "candidate": {
+                            "clickup_id": match["id"],
+                            "clickup_name": match.get("name"),
+                            "clickup_status": match.get("status", {}).get("status"),
+                            "fuzzy_ratio": round(ratio, 3),
+                        },
                     })
                 else:
                     # 3. No match — to_create
@@ -170,7 +194,7 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                 "match": sum(1 for s in story_results if s["diff"] == "match"),
                 "to_create": sum(1 for s in story_results if s["diff"] == "to_create"),
                 "to_update": sum(1 for s in story_results if s["diff"] == "to_update"),
-                "to_link": 0,
+                "to_link": sum(1 for s in story_results if s["diff"] == "to_link"),
                 "orphaned": orphaned_count,
             }
 
