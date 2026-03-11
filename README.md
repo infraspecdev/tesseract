@@ -8,7 +8,7 @@ Claude Code plugins for infrastructure review, sprint planning, and development 
 |--------|-------------|
 | **[infra-review](./infra-review/)** | Terraform/Atmos infrastructure review agents — security, architecture, operations, cost, and AWS Well-Architected Framework analysis |
 | **[clickup-sprint-planner](./clickup-sprint-planner/)** | ClickUp sprint planning with bulk operations, relationship field management, plan-doc sync, and action logging via MCP server |
-| **[dev-workflow](./dev-workflow/)** | General-purpose skills for structured research with citations and TDD-based feature implementation |
+| **[dev-workflow](./dev-workflow/)** | General-purpose skills for structured research, TDD-based feature implementation, and infrastructure planning document generation (ADR + detailed plans) |
 
 ## Installation
 

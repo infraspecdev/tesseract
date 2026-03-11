@@ -1,11 +1,11 @@
 {
   "name": "dev-workflow",
-  "description": "General-purpose development workflow skills: structured research with citations and TDD-based feature implementation with progress tracking",
+  "description": "General-purpose development workflow skills: structured research with citations, TDD-based feature implementation with progress tracking, and infrastructure planning document generation (ADR + detailed execution plans)",
   "version": "1.0.0",
   "author": {
     "name": "Ashwini Manoj"
   },
   "repository": "https://github.com/infraspecdev/tesseract",
   "license": "MIT",
-  "keywords": ["research", "feature", "tdd", "workflow", "implementation", "planning"]
+  "keywords": ["research", "feature", "tdd", "workflow", "implementation", "planning", "adr", "plan-docs", "architecture"]
 }
