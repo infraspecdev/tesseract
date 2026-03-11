@@ -22,8 +22,8 @@
     },
     {
       "name": "dev-workflow",
-      "description": "General-purpose development workflow skills — structured research with citations and TDD-based feature implementation with progress tracking",
-      "version": "1.0.0",
+      "description": "General-purpose development workflow skills — structured research with citations, TDD-based feature implementation, and infrastructure planning document generation (ADR + detailed plans)",
+      "version": "1.1.0",
       "source": "./dev-workflow",
       "category": "development"
     }
