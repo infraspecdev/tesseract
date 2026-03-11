@@ -31,10 +31,9 @@ tesseract/
 ## Key Conventions
 
 - **Plugin isolation**: Each plugin is self-contained. Changes to one plugin must not break others.
-- **Versioning**: Every plugin has a version in three places that must stay in sync:
-  1. `<plugin>/.claude-plugin/plugin.json`
-  2. `.claude-plugin/marketplace.json`
-  3. `pyproject.toml` (if the plugin has a Python server)
+- **Versioning**: For relative-path plugins (all plugins in this repo), the version lives **only in `.claude-plugin/marketplace.json`** — NOT in `plugin.json`. The `plugin.json` manifest wins silently and can cause the marketplace version to be ignored. Additionally, bump `pyproject.toml` if the plugin has a Python server.
+  - Reference: https://code.claude.com/docs/en/plugin-marketplaces#version-resolution-and-release-channels
+  - Reference: https://code.claude.com/docs/en/plugins
 - **Commands** are markdown files in `commands/` — they define slash commands users can invoke.
 - **Skills** are markdown files at `skills/<name>/SKILL.md` — they are auto-invoked by Claude when relevant.
 - **Agents** are markdown files in `agents/` — they define specialized subagents.
@@ -51,4 +50,4 @@ tesseract/
 ## Git Conventions
 
 - Keep commits small and focused.
-- When bumping a plugin version, update all three version locations in the same commit.
+- When bumping a plugin version, update `marketplace.json` (and `pyproject.toml` if applicable) in the same commit. Do NOT put version in `plugin.json` for relative-path plugins.
