@@ -9,7 +9,7 @@
     {
       "name": "infra-review",
       "description": "Infrastructure review agents for Terraform/Atmos repositories — security, architecture, operations, cost optimization, AWS Well-Architected Framework reviews, and terraform plan analysis",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./infra-review",
       "category": "development"
     },
