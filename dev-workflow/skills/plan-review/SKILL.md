@@ -217,4 +217,21 @@ After writing both files, summarize:
 > - `review/<date>-<slug>/analysis.md` — full scored analysis
 > - `review/<date>-<slug>/plan.md` — enhanced plan with recommendations applied
 >
-> Review the analysis and enhanced plan. Want me to apply the P0 fixes to the original plan document?
+> Review the analysis and enhanced plan. You can edit either file before proceeding.
+>
+> When you're ready, let me know:
+> 1. **Apply as-is** — replace the original plan with the enhanced `plan.md`
+> 2. **Apply with your edits** — I'll use your modified `plan.md` as the source
+> 3. **Skip** — keep the original plan unchanged
+
+### Step 5: Wait for user review
+
+**Do NOT proceed until the user explicitly confirms.**
+
+The user may:
+- Read and approve the analysis and enhanced plan
+- Edit `analysis.md` or `plan.md` directly before confirming
+- Ask for changes to specific recommendations or scores
+- Reject recommendations and ask to remove them from `plan.md`
+
+Only after the user chooses an option (apply as-is, apply with edits, or skip) should you proceed to overwrite the original plan document. If the user edited `plan.md`, re-read it before applying.
