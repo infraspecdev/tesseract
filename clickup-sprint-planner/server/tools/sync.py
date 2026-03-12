@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
+import re
 from difflib import SequenceMatcher
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
 from server.parsers.base import Story, get_parser
+from server.tools._helpers import _get_linked_epic_ids
 
 
 FUZZY_THRESHOLD = 0.8
 FUZZY_LINK_THRESHOLD = 0.6
+
+# Matches names like "P3 - Install Istio" or "[Project] P1a-S1: ..."
+_EPIC_PREFIX_RE = re.compile(r"^[A-Z]\d+[a-z]?\s*-\s*")
 
 
 def _fuzzy_match(name: str, candidates: list[dict]) -> tuple[dict | None, float]:
@@ -28,10 +34,12 @@ def _fuzzy_match(name: str, candidates: list[dict]) -> tuple[dict | None, float]
     name_lower = name.lower().strip()
     for task in candidates:
         task_name = task.get("name", "")
-        # Strip common prefixes like "[Project] P1a-S1: "
+        # Strip common prefixes like "[Project] P1a-S1: " or "P3 - "
         clean_name = task_name
         if ": " in clean_name:
             clean_name = clean_name.split(": ", 1)[-1]
+        elif _EPIC_PREFIX_RE.match(clean_name):
+            clean_name = _EPIC_PREFIX_RE.sub("", clean_name)
         ratio = SequenceMatcher(None, name_lower, clean_name.lower().strip()).ratio()
         if ratio > best_ratio:
             best_ratio = ratio
@@ -49,35 +57,61 @@ def _determine_diff(story: Story, clickup_task: dict | None) -> str:
     clean_name = task_name
     if ": " in clean_name:
         clean_name = clean_name.split(": ", 1)[-1]
+    elif _EPIC_PREFIX_RE.match(clean_name):
+        clean_name = _EPIC_PREFIX_RE.sub("", clean_name)
     ratio = SequenceMatcher(None, story.name.lower(), clean_name.lower()).ratio()
     if ratio >= 0.8:
         return "match"
     return "to_update"
 
 
-def _filter_tasks_by_epic(tasks: list[dict], epic_id: str) -> list[dict]:
-    """Filter tasks that belong to a specific epic by name prefix convention.
-
-    Tasks follow the pattern: [Project] P1a-S1: ...
-    We match on "{epic_id}-" to avoid P1 matching P1a tasks.
-    """
-    prefix = f"{epic_id}-"
-    return [t for t in tasks if prefix in t.get("name", "")]
+def _check_naming_compliance(task_name: str) -> bool:
+    """Check if a task name follows the epic prefix convention (e.g. 'P3 - ...')."""
+    return bool(_EPIC_PREFIX_RE.match(task_name))
 
 
-def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, base_path: Path):
+def _filter_tasks_by_relationship(
+    tasks: list[dict], epic_task_id: str, relationship_field_id: str
+) -> list[dict]:
+    """Filter tasks linked to a specific epic via the relationship custom field."""
+    return [
+        t for t in tasks
+        if epic_task_id in _get_linked_epic_ids(t, relationship_field_id)
+    ]
+
+
+def _get_unlinked_tasks(tasks: list[dict], relationship_field_id: str) -> list[dict]:
+    """Get tasks that have no epic relationship set."""
+    return [
+        t for t in tasks
+        if not _get_linked_epic_ids(t, relationship_field_id)
+    ]
+
+
+def register(
+    mcp: FastMCP,
+    client: ClickUpClient,
+    config: SprintPlannerConfig,
+    base_path: Path,
+    action_log: ActionLog | None = None,
+):
     @mcp.tool()
     async def sprint_sync(
         epic: str | None = None,
+        apply_links: bool = False,
     ) -> dict:
-        """Diff plan documents against ClickUp state. Read-only — makes no changes.
+        """Diff plan documents against ClickUp state.
 
-        Parses stories from plan docs and compares against tasks linked to each
-        epic's EPIC in ClickUp. Reports which stories match, need creation,
-        need updates, or are orphaned.
+        Matches tasks to epics via the relationship custom field. Tasks without
+        a relationship field set are detected via fuzzy name matching and flagged
+        as "to_link".
+
+        When apply_links=True, auto-sets the relationship field on flagged tasks
+        and logs the action.
 
         Args:
             epic: Epic ID to sync (e.g. "P1a"). If omitted, syncs all epics.
+            apply_links: If true, auto-link "to_link" tasks by setting their relationship field.
         """
         epics_to_sync = config.plan_docs.epics
         if epic:
@@ -88,6 +122,7 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
 
         parser = get_parser(config.plan_docs.format)
         extraction_config = config.story_extraction.html.model_dump()
+        relationship_field_id = config.clickup.relationship_field.id
 
         # Fetch all backlog tasks including closed (needed to match done stories)
         try:
@@ -97,7 +132,12 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
         except ClickUpAPIError as e:
             return {"error": f"Failed to fetch ClickUp tasks: {e}"}
 
+        # Pre-compute unlinked tasks (no relationship field set)
+        unlinked_tasks = _get_unlinked_tasks(all_clickup_tasks, relationship_field_id)
+
         results = []
+        link_operations = []  # Collect link ops for apply_links mode
+
         for epic_cfg in epics_to_sync:
             plan_doc_path = base_path / epic_cfg.plan_doc
             if not plan_doc_path.exists():
@@ -119,8 +159,10 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                 })
                 continue
 
-            # Filter ClickUp tasks to this epic only
-            clickup_tasks = _filter_tasks_by_epic(all_clickup_tasks, epic_cfg.id)
+            # Filter ClickUp tasks linked to this epic via relationship field
+            clickup_tasks = _filter_tasks_by_relationship(
+                all_clickup_tasks, epic_cfg.epic_id, relationship_field_id
+            )
 
             # Match stories to ClickUp tasks
             matched_task_ids = set()
@@ -141,11 +183,12 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                             "plan_status": story.status,
                             "clickup_id": story.clickup_id,
                             "clickup_status": task.get("status", {}).get("status"),
+                            "naming_compliant": _check_naming_compliance(task.get("name", "")),
                             "diff": diff,
                         })
                         continue
 
-                # 2. Try fuzzy name match against epic-scoped tasks
+                # 2. Try fuzzy name match against relationship-linked tasks
                 unmatched = [t for t in clickup_tasks if t["id"] not in matched_task_ids]
                 match, ratio = _fuzzy_match(story.name, unmatched)
                 if match and ratio >= FUZZY_THRESHOLD:
@@ -158,16 +201,24 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                         "plan_status": story.status,
                         "clickup_id": match["id"],
                         "clickup_status": match.get("status", {}).get("status"),
+                        "naming_compliant": _check_naming_compliance(match.get("name", "")),
                         "diff": diff,
                     })
-                elif match and ratio >= FUZZY_LINK_THRESHOLD:
-                    # Ambiguous match — needs manual confirmation
+                    continue
+
+                # 3. Try fuzzy match against ALL unlinked tasks (no relationship set)
+                unmatched_unlinked = [t for t in unlinked_tasks if t["id"] not in matched_task_ids]
+                match, ratio = _fuzzy_match(story.name, unmatched_unlinked)
+                if match and ratio >= FUZZY_LINK_THRESHOLD:
+                    # Found unlinked task — flag as to_link
+                    matched_task_ids.add(match["id"])
                     story_results.append({
                         "index": story.index,
                         "name": story.name,
                         "plan_status": story.status,
                         "clickup_id": None,
                         "diff": "to_link",
+                        "naming_compliant": _check_naming_compliance(match.get("name", "")),
                         "candidate": {
                             "clickup_id": match["id"],
                             "clickup_name": match.get("name"),
@@ -175,8 +226,16 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                             "fuzzy_ratio": round(ratio, 3),
                         },
                     })
+                    # Collect for apply_links
+                    link_operations.append({
+                        "task_id": match["id"],
+                        "epic_id": epic_cfg.epic_id,
+                        "epic_label": epic_cfg.id,
+                        "story_name": story.name,
+                        "clickup_name": match.get("name"),
+                    })
                 else:
-                    # 3. No match — to_create
+                    # 4. No match — to_create
                     story_results.append({
                         "index": story.index,
                         "name": story.name,
@@ -205,6 +264,49 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig, b
                 "stories": story_results,
             })
 
-        if len(results) == 1:
-            return results[0]
-        return {"epics": results}
+        # Apply links if requested
+        linked = []
+        link_failed = []
+        if apply_links and link_operations:
+            for op in link_operations:
+                try:
+                    await client.set_relationship_field(
+                        op["task_id"], relationship_field_id, [op["epic_id"]]
+                    )
+                    linked.append({
+                        "task_id": op["task_id"],
+                        "epic_id": op["epic_id"],
+                        "epic_label": op["epic_label"],
+                        "story_name": op["story_name"],
+                        "status": "success",
+                    })
+                except ClickUpAPIError as e:
+                    link_failed.append({
+                        "task_id": op["task_id"],
+                        "epic_id": op["epic_id"],
+                        "story_name": op["story_name"],
+                        "status": "failed",
+                        "error": str(e),
+                    })
+
+            # Log to action log
+            if action_log and (linked or link_failed):
+                try:
+                    action_log.log_action(
+                        action="sync_auto_link",
+                        status="success" if not link_failed else "partial",
+                        summary=f"Auto-linked {len(linked)}/{len(link_operations)} tasks to epics",
+                        results=linked + link_failed,
+                    )
+                except Exception:
+                    pass  # Don't fail sync due to logging errors
+
+        output = results[0] if len(results) == 1 else {"epics": results}
+
+        if apply_links and link_operations:
+            output["link_results"] = {
+                "linked": linked,
+                "failed": link_failed,
+            }
+
+        return output
