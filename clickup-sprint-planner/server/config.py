@@ -39,11 +39,17 @@ class TeamMember(BaseModel):
     id: str
 
 
+class NamingConfig(BaseModel):
+    story_format: str = "[{epic_id}] {name}"
+    epic_format: str = "[EPIC] {name} | [{epic_id}]"
+
+
 class EpicConfig(BaseModel):
     id: str
     name: str
     plan_doc: str
     epic_id: str
+    naming: NamingConfig | None = None
 
 
 class PlanDocsConfig(BaseModel):
@@ -73,6 +79,7 @@ class SprintPlannerConfig(BaseModel):
     team: list[TeamMember] = Field(default_factory=list)
     plan_docs: PlanDocsConfig
     story_extraction: StoryExtractionConfig = Field(default_factory=StoryExtractionConfig)
+    naming: NamingConfig = Field(default_factory=NamingConfig)
     action_log: ActionLogConfig = Field(default_factory=ActionLogConfig)
 
 

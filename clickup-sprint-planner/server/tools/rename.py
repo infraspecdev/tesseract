@@ -23,8 +23,8 @@ def register(
         epic: str | None = None,
         apply: bool = False,
         strip_prefix: str | None = None,
-        story_format: str = "[{epic_id}] {name}",
-        epic_format: str = "[EPIC] {name} | [{epic_id}]",
+        story_format: str | None = None,
+        epic_format: str | None = None,
     ) -> dict:
         """Preview or apply prefix renames on non-compliant task names.
 
@@ -39,11 +39,14 @@ def register(
                 reformatting. E.g. r"\\[K8S Migration\\] Phase \\d+ \\|\\s*"
                 to remove "[K8S Migration] Phase 2 | " from names.
             story_format: Format string for story task names. Placeholders:
-                {epic_id}, {name}. Default: "[{epic_id}] {name}".
+                {epic_id}, {name}. Falls back to config naming.story_format.
             epic_format: Format string for epic card names. Placeholders:
-                {epic_id}, {name}, {epic_name} (from config). Default:
-                "[EPIC] {name} | [{epic_id}]".
+                {epic_id}, {name}, {epic_name} (from config). Falls back to
+                config naming.epic_format.
         """
+        default_story_fmt = story_format or config.naming.story_format
+        default_epic_fmt = epic_format or config.naming.epic_format
+
         epics_to_check = config.plan_docs.epics
         if epic:
             epics_to_check = [e for e in epics_to_check if e.id == epic]
@@ -74,12 +77,16 @@ def register(
 
         renames = []
         for epic_cfg in epics_to_check:
+            # Resolve per-epic naming override, fall back to defaults
+            epic_story_fmt = (epic_cfg.naming.story_format if epic_cfg.naming else None) or default_story_fmt
+            epic_epic_fmt = (epic_cfg.naming.epic_format if epic_cfg.naming else None) or default_epic_fmt
+
             # 1. Check the epic card itself
             epic_task = epic_tasks_by_id.get(epic_cfg.epic_id)
             if epic_task:
                 name = epic_task.get("name", "")
                 clean_name = strip_re.sub("", name).strip() if strip_re else name
-                new_name = epic_format.format(
+                new_name = epic_epic_fmt.format(
                     epic_id=epic_cfg.id,
                     name=clean_name,
                     epic_name=epic_cfg.name,
@@ -101,7 +108,7 @@ def register(
             for task in linked_tasks:
                 name = task.get("name", "")
                 clean_name = strip_re.sub("", name).strip() if strip_re else name
-                new_name = story_format.format(
+                new_name = epic_story_fmt.format(
                     epic_id=epic_cfg.id,
                     name=clean_name,
                 )
