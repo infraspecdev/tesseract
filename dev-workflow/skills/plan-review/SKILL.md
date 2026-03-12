@@ -105,3 +105,5 @@ The user may also edit `analysis.md`, ask for changes to specific recommendation
 | Applying enhanced plan without user review | Always wait for Step 5 confirmation — never auto-apply |
 | Repeating scoring logic instead of referencing scoring.md | All grade math lives in `scoring.md` — reference it, don't inline it |
 | Generating plan.md in different format than original | HTML in → HTML out, markdown in → markdown out |
+| Softening grades because the user is under time pressure | Grade what the plan SAYS — missing info is F regardless of deadline |
+| Giving partial credit for implied or assumed information | Grade only what is explicitly documented — "they probably meant X" is not in the plan |
