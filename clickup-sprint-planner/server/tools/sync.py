@@ -18,8 +18,23 @@ from server.tools._helpers import _get_linked_epic_ids
 FUZZY_THRESHOLD = 0.8
 FUZZY_LINK_THRESHOLD = 0.6
 
-# Matches names like "P3 - Install Istio" or "[Project] P1a-S1: ..."
+# Fallback: matches names like "P3 - Install Istio" or "[Project] P1a-S1: ..."
 _EPIC_PREFIX_RE = re.compile(r"^[A-Z]\d+[a-z]?\s*-\s*")
+
+
+def _build_naming_regex(story_format: str) -> re.Pattern:
+    """Build a compliance regex from a story_format string.
+
+    Converts a format like "[{epic_id}] K8S Migration | {name}" into a regex
+    that matches task names following that pattern. {epic_id} becomes a capture
+    group for the epic ID, {name} becomes a wildcard match.
+    """
+    # Escape everything except our placeholders
+    escaped = re.escape(story_format)
+    # Replace escaped placeholders with regex groups
+    escaped = escaped.replace(re.escape("{epic_id}"), r"[A-Z]\d+[a-z]?")
+    escaped = escaped.replace(re.escape("{name}"), r".+")
+    return re.compile(f"^{escaped}$")
 
 
 def _fuzzy_match(name: str, candidates: list[dict]) -> tuple[dict | None, float]:
@@ -65,9 +80,10 @@ def _determine_diff(story: Story, clickup_task: dict | None) -> str:
     return "to_update"
 
 
-def _check_naming_compliance(task_name: str) -> bool:
-    """Check if a task name follows the epic prefix convention (e.g. 'P3 - ...')."""
-    return bool(_EPIC_PREFIX_RE.match(task_name))
+def _check_naming_compliance(task_name: str, naming_re: re.Pattern | None = None) -> bool:
+    """Check if a task name follows the configured naming convention."""
+    pattern = naming_re or _EPIC_PREFIX_RE
+    return bool(pattern.match(task_name))
 
 
 def _filter_tasks_by_relationship(
@@ -123,6 +139,7 @@ def register(
         parser = get_parser(config.plan_docs.format)
         extraction_config = config.story_extraction.html.model_dump()
         relationship_field_id = config.clickup.relationship_field.id
+        default_naming_re = _build_naming_regex(config.naming.story_format)
 
         # Fetch all backlog tasks including closed (needed to match done stories)
         try:
@@ -139,6 +156,12 @@ def register(
         link_operations = []  # Collect link ops for apply_links mode
 
         for epic_cfg in epics_to_sync:
+            # Resolve per-epic naming override, fall back to default
+            if epic_cfg.naming and epic_cfg.naming.story_format:
+                naming_re = _build_naming_regex(epic_cfg.naming.story_format)
+            else:
+                naming_re = default_naming_re
+
             plan_doc_path = base_path / epic_cfg.plan_doc
             if not plan_doc_path.exists():
                 results.append({
@@ -183,7 +206,7 @@ def register(
                             "plan_status": story.status,
                             "clickup_id": story.clickup_id,
                             "clickup_status": task.get("status", {}).get("status"),
-                            "naming_compliant": _check_naming_compliance(task.get("name", "")),
+                            "naming_compliant": _check_naming_compliance(task.get("name", ""), naming_re),
                             "diff": diff,
                         })
                         continue
@@ -201,7 +224,7 @@ def register(
                         "plan_status": story.status,
                         "clickup_id": match["id"],
                         "clickup_status": match.get("status", {}).get("status"),
-                        "naming_compliant": _check_naming_compliance(match.get("name", "")),
+                        "naming_compliant": _check_naming_compliance(match.get("name", ""), naming_re),
                         "diff": diff,
                     })
                     continue
@@ -218,7 +241,7 @@ def register(
                         "plan_status": story.status,
                         "clickup_id": None,
                         "diff": "to_link",
-                        "naming_compliant": _check_naming_compliance(match.get("name", "")),
+                        "naming_compliant": _check_naming_compliance(match.get("name", ""), naming_re),
                         "candidate": {
                             "clickup_id": match["id"],
                             "clickup_name": match.get("name"),

@@ -50,4 +50,4 @@ tesseract/
 ## Git Conventions
 
 - Keep commits small and focused.
-- When bumping a plugin version, update `marketplace.json` (and `pyproject.toml` if applicable) in the same commit. Do NOT put version in `plugin.json` for relative-path plugins.
+- When updating any plugin, bump its version in both `.claude-plugin/marketplace.json` and `pyproject.toml` (if the plugin has one) in the same commit. Do NOT put version in `plugin.json` for relative-path plugins.
