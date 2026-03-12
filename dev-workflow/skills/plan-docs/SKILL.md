@@ -174,6 +174,9 @@ Then run `/sprint-sync P7` to create ClickUp cards from the stories. The sync to
    - Show the sync diff and confirm before creating cards
 6. **Offer sprint planning** — after cards are created, ask: *"Want to assign stories and plan the sprint?"* If yes:
    - Invoke `/sprint-plan` to assign stories to team members, set priorities, and push updates to ClickUp
+7. **Offer plan review** — after generating the detailed plan (or at any point if the user has an existing plan), ask: *"Want me to run a multi-persona review on this plan? I'll dispatch expert reviewers to score it and produce an enhanced version."* If yes:
+   - Invoke `/plan-review <path-to-plan>` to dispatch 3-5 reviewer agents in parallel
+   - Results go to `review/<date>-<slug>/analysis.md` (scored evaluation) and `plan.md` (enhanced plan)
 
 ## Common Mistakes
 

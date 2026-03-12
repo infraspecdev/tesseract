@@ -6,5 +6,5 @@
   },
   "repository": "https://github.com/infraspecdev/tesseract",
   "license": "MIT",
-  "keywords": ["research", "feature", "tdd", "workflow", "implementation", "planning", "adr", "plan-docs", "architecture"]
+  "keywords": ["research", "feature", "tdd", "workflow", "implementation", "planning", "adr", "plan-docs", "architecture", "plan-review", "review", "scoring"]
 }
