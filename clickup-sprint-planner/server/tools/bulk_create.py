@@ -2,11 +2,36 @@
 
 from __future__ import annotations
 
+import re
+
 from mcp.server.fastmcp import FastMCP
 
 from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
+
+# Matches names already prefixed like "P3 - ", "P1a - ", "P2b - "
+_EPIC_PREFIX_RE = re.compile(r"^[A-Z]\d+[a-z]?\s*-\s*")
+
+# Required sections in card descriptions
+_REQUIRED_SECTIONS = ["Summary", "Tasks", "Context", "Acceptance Criteria"]
+
+
+def _auto_format_name(story: dict) -> str:
+    """Auto-prefix task name with epic_id if not already prefixed."""
+    name = story["name"]
+    epic_id = story.get("epic_id")
+    if epic_id and not _EPIC_PREFIX_RE.match(name):
+        return f"{epic_id} - {name}"
+    return name
+
+
+def _check_description_sections(description: str | None) -> list[str]:
+    """Check for required sections in a card description. Returns missing section names."""
+    if not description:
+        return list(_REQUIRED_SECTIONS)
+    desc_lower = description.lower()
+    return [s for s in _REQUIRED_SECTIONS if s.lower() not in desc_lower]
 
 
 def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config: SprintPlannerConfig):
@@ -36,9 +61,20 @@ def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config:
         created = []
         failed = []
         relationships = []
+        format_warnings = []
 
         for story in stories:
-            task_data: dict = {"name": story["name"]}
+            # Auto-format name with epic prefix
+            formatted_name = _auto_format_name(story)
+            task_data: dict = {"name": formatted_name}
+
+            # Validate description sections
+            missing = _check_description_sections(story.get("description"))
+            if missing:
+                format_warnings.append({
+                    "name": formatted_name,
+                    "missing_sections": missing,
+                })
 
             if story.get("description"):
                 task_data["description"] = story["description"]
@@ -56,7 +92,7 @@ def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config:
                 created.append({
                     "task_id": task_id,
                     "task_url": task_url,
-                    "name": story["name"],
+                    "name": formatted_name,
                     "status": "success",
                 })
 
@@ -82,7 +118,7 @@ def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config:
 
             except ClickUpAPIError as e:
                 failed.append({
-                    "name": story["name"],
+                    "name": formatted_name,
                     "status": "failed",
                     "error": str(e),
                 })
@@ -118,6 +154,8 @@ def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config:
             "failed": failed,
             "relationships": relationships,
         }
+        if format_warnings:
+            result["format_warnings"] = format_warnings
         if log_warning:
             result["log_warning"] = log_warning
         return result
