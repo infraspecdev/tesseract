@@ -43,6 +43,7 @@ Orchestrate ClickUp sprint operations through the sprint-planner MCP server — 
 4. **Confirm before mutating.** Show the user exactly what will happen and ask for confirmation.
 5. **Surface errors clearly.** Our tools use the direct REST endpoint — if they report failure, it's real. Show which operations succeeded vs failed.
 6. **Present results as tables.** After any operation, show task names, IDs, statuses, and any failures.
+7. **Never use raw ClickUp MCP tools for sprint write operations.** Tools like `clickup_create_task`, `clickup_update_task`, `clickup_create_task_comment` bypass the action log, skip relationship linking, and ignore naming conventions. Always use `sprint_bulk_create`, `sprint_bulk_update`, and `sprint_set_relationship` instead.
 
 ## Workflows
 
@@ -50,10 +51,15 @@ Orchestrate ClickUp sprint operations through the sprint-planner MCP server — 
 
 ```
 1. sprint_sync(epic="P1a")            → see what exists vs plan doc
-2. Present diff table to user         → match / to_create / to_update
+2. Present diff table to user         → match / to_create / to_update / to_link
 3. User confirms which to create
 4. sprint_bulk_create(list_id=config.lists.backlog.id, stories=[...], set_relationships=true)
+   - Names auto-formatted as "{epic_id} - {name}" (e.g. "P3 - Install Istio")
+   - Include orderindex with sequence * 1000 gaps
+   - Include full card descriptions with all required sections
 5. Show results table                 → created tasks with IDs and URLs
+6. If sprint_sync flagged "to_link" items:
+   sprint_sync(apply_links=true)      → auto-set relationship fields + log action
 ```
 
 ### Updating Stories
@@ -91,3 +97,4 @@ Every card MUST include: Summary, Tasks checklist, Context/Notes, Acceptance Cri
 | One-line card descriptions | Include all 4 required sections (see `card-format.md`) |
 | Hardcoding ClickUp IDs | Read from `sprint-planner.json` config |
 | Setting orderindex without gaps | Use `sequence * 1000` to leave room for inserts |
+| Using raw ClickUp MCP tools (`clickup_create_task`, etc.) for sprint ops | Always use `sprint_bulk_create` / `sprint_bulk_update` / `sprint_set_relationship` — raw tools bypass the action log and skip naming/relationship logic |
