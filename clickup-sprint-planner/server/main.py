@@ -22,6 +22,7 @@ from server.tools import (
     sync,
     sprint_status,
     bulk_update,
+    rename,
     action_log_tool,
 )
 
@@ -61,6 +62,7 @@ def _register_tools():
     sync.register(mcp, client, config, base_path, action_log)
     sprint_status.register(mcp, client, config)
     bulk_update.register(mcp, client, action_log)
+    rename.register(mcp, client, action_log, config)
     action_log_tool.register(mcp, action_log)
 
 

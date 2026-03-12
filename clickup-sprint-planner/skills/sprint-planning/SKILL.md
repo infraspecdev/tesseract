@@ -32,6 +32,7 @@ Orchestrate ClickUp sprint operations through the sprint-planner MCP server — 
 | `sprint_bulk_create` | Create multiple tasks + set EPIC relationships |
 | `sprint_set_relationship` | Set list_relationship custom fields directly |
 | `sprint_bulk_update` | Batch update status/assignee/priority |
+| `sprint_bulk_rename` | Preview/apply `[EpicID]` prefix to non-compliant task names |
 | `sprint_status` | Get epic overview with stats |
 | `sprint_action_log` | Query past operations |
 
