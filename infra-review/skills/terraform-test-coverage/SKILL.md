@@ -7,7 +7,7 @@ description: Use when reviewing Terraform test files (.tftest.hcl), assessing te
 
 ## Overview
 
-Test quality assessment for Terraform components using the native `terraform test` framework (`.tftest.hcl` files). Evaluates coverage across 6 dimensions and provides test patterns for `mock_provider`, `override_resource`, and plan-only assertions.
+Test quality assessment for Terraform components using the native `terraform test` framework (`.tftest.hcl` files). Evaluates coverage across 6 dimensions and provides patterns for `mock_provider`, `override_resource`, and plan-only assertions.
 
 ## When to Use
 
@@ -16,312 +16,54 @@ Test quality assessment for Terraform components using the native `terraform tes
 - After adding new variables, resources, or feature flags
 - Assessing whether a component is adequately tested before release
 
+## When NOT to Use
+
+- For non-native test frameworks (Terratest, kitchen-terraform)
+- For syntax or formatting checks -- use `terraform validate` / `terraform fmt`
+- For security auditing -- use the `terraform-security-audit` skill
+- For module API design or variable naming reviews
+- When the component has no `.tftest.hcl` files and you are not asked to create them
+
 ## Coverage Dimensions
 
-### Dimension 1: Happy Path
-
-Does a basic test exist that provisions the component with valid inputs?
-
-**What to check:**
-- At least one `run` block that uses `command = plan` with `mock_provider`
-- Valid values for all required variables
-- Assertions on key resource attributes (not just "plan succeeds")
-
-**Pattern:**
-```hcl
-mock_provider "aws" {}
-
-variables {
-  aws_region   = "us-east-1"
-  environment  = "test"
-  stage        = "test"
-  tags         = { ManagedBy = "terraform-test" }
-  # ... component-specific required variables
-}
-
-run "happy_path" {
-  command = plan
-
-  assert {
-    condition     = aws_vpc.main.cidr_block != ""
-    error_message = "VPC CIDR block should be set"
-  }
-
-  assert {
-    condition     = length(aws_subnet.private) > 0
-    error_message = "At least one private subnet should be created"
-  }
-}
-```
-
-### Dimension 2: Variable Validation
-
-Are validation rules on variables actually tested?
-
-**What to check:**
-- For every `validation` block in `variables.tf`, there should be a test that triggers it
-- Tests use `expect_failures` to verify validation catches bad input
-
-**Pattern:**
-```hcl
-run "invalid_environment_rejected" {
-  command = plan
-
-  variables {
-    environment = "INVALID"
-  }
-
-  expect_failures = [
-    var.environment,
-  ]
-}
-
-run "empty_tags_rejected" {
-  command = plan
-
-  variables {
-    tags = {}
-  }
-
-  expect_failures = [
-    var.tags,
-  ]
-}
-```
-
-### Dimension 3: Feature Toggles
-
-Are enable/disable flags tested in both states?
-
-**What to check:**
-- If component has `enable_nat_gateway`, test both `true` and `false`
-- When disabled, verify dependent resources are NOT created
-- When enabled, verify resources ARE created with expected attributes
-
-**Pattern:**
-```hcl
-run "nat_gateway_disabled" {
-  command = plan
-
-  variables {
-    enable_nat_gateway = false
-  }
-
-  assert {
-    condition     = length(aws_nat_gateway.main) == 0
-    error_message = "NAT gateways should not be created when disabled"
-  }
-
-  assert {
-    condition     = length(aws_eip.nat) == 0
-    error_message = "EIPs should not be created when NAT is disabled"
-  }
-}
-
-run "nat_gateway_enabled" {
-  command = plan
-
-  variables {
-    enable_nat_gateway = true
-    nat_gateway_count  = 2
-  }
-
-  assert {
-    condition     = length(aws_nat_gateway.main) == 2
-    error_message = "Expected 2 NAT gateways"
-  }
-}
-```
-
-### Dimension 4: Edge Cases
-
-Are boundary values and unusual inputs tested?
-
-**What to check:**
-- Minimum and maximum values for numeric variables (e.g., `az_count = 1`)
-- Empty lists/maps where allowed
-- Single-AZ deployment
-- All optional features disabled simultaneously
-
-**Pattern:**
-```hcl
-run "single_az_deployment" {
-  command = plan
-
-  variables {
-    az_count = 1
-  }
-
-  assert {
-    condition     = length(aws_subnet.private) == 1
-    error_message = "Single AZ should create exactly 1 private subnet"
-  }
-}
-
-run "all_optional_features_disabled" {
-  command = plan
-
-  variables {
-    enable_nat_gateway    = false
-    enable_vpc_endpoints  = false
-    enable_flow_logs      = false
-  }
-
-  # Should still create base VPC and subnets
-  assert {
-    condition     = aws_vpc.main.cidr_block != ""
-    error_message = "VPC should still be created with all options disabled"
-  }
-}
-```
-
-### Dimension 5: CIDR Math Verification
-
-For networking components, are CIDR calculations tested?
-
-**What to check:**
-- Subnet CIDR blocks don't overlap
-- Subnet sizes match expected netmask
-- Subnets fit within VPC CIDR
-- AZ distribution is correct
-
-**Pattern:**
-```hcl
-run "subnet_cidr_distribution" {
-  command = plan
-
-  variables {
-    vpc_cidr = "10.0.0.0/16"
-    az_count = 3
-  }
-
-  # Verify subnets are created per AZ
-  assert {
-    condition     = length(aws_subnet.private) == 3
-    error_message = "Should have one private subnet per AZ"
-  }
-
-  # Verify no CIDR overlap (subnet CIDRs are distinct)
-  assert {
-    condition     = length(distinct([for s in aws_subnet.private : s.cidr_block])) == length(aws_subnet.private)
-    error_message = "Subnet CIDRs must not overlap"
-  }
-}
-```
-
-### Dimension 6: Naming Convention Tests
-
-Are resource names and tags consistent?
-
-**What to check:**
-- Resources have expected Name tags
-- Naming follows component conventions
-- Environment and stage propagate to names/tags
-
-**Pattern:**
-```hcl
-run "naming_conventions" {
-  command = plan
-
-  variables {
-    environment = "dev"
-    stage       = "use1"
-  }
-
-  assert {
-    condition     = aws_vpc.main.tags["Environment"] == "dev"
-    error_message = "VPC should be tagged with environment"
-  }
-
-  assert {
-    condition     = can(regex("dev", aws_vpc.main.tags["Name"]))
-    error_message = "VPC Name tag should contain environment"
-  }
-}
-```
-
-## Test Infrastructure Patterns
-
-### mock_provider (plan-only testing)
-
-```hcl
-mock_provider "aws" {
-  # Optionally override specific resources or data sources
-  override_resource {
-    target = aws_vpc_ipam_pool_cidr_allocation.main
-    values = {
-      cidr = "10.0.0.0/16"
-    }
-  }
-
-  override_data {
-    target = data.aws_availability_zones.available
-    values = {
-      names = ["us-east-1a", "us-east-1b", "us-east-1c"]
-    }
-  }
-}
-```
-
-### override_resource for IPAM components
-
-Components using IPAM need mock values since IPAM allocations happen at apply time:
-
-```hcl
-override_resource {
-  target = aws_vpc_ipam_pool_cidr_allocation.vpc
-  values = {
-    cidr = "10.0.0.0/16"
-    id   = "ipam-cidr-alloc-mock"
-  }
-}
-```
-
-### Test file organization
-
-```
-src/
-  main.tf
-  variables.tf
-  outputs.tf
-  versions.tf
-  providers.tf
-  main.tftest.hcl        # Happy path + feature toggle tests
-  validation.tftest.hcl   # Variable validation tests
-  edge_cases.tftest.hcl   # Edge cases + CIDR math
-```
-
-## Coverage Assessment Output
-
-```markdown
-## Test Coverage Assessment
-
-**Component:** [name]
-**Test files found:** [count]
-**Total test runs:** [count]
-
-### Coverage Matrix
-
-| Dimension | Coverage | Tests | Status |
-|-----------|----------|-------|--------|
-| Happy Path | X/Y scenarios | [list] | Full/Partial/None |
-| Variable Validation | X/Y validations tested | [list] | Full/Partial/None |
-| Feature Toggles | X/Y flags tested both states | [list] | Full/Partial/None |
-| Edge Cases | X scenarios | [list] | Full/Partial/None |
-| CIDR Math | X scenarios | [list] | Full/Partial/None (N/A if not networking) |
-| Naming Conventions | X scenarios | [list] | Full/Partial/None |
-
-### Missing Coverage
-
-| Gap | Priority | Suggested Test |
-|-----|----------|---------------|
-| ... | High/Medium/Low | Brief description of what to test |
-
-### Test Quality Notes
-
-- [Observations about test quality, mock patterns, assertion depth]
-
-## Coverage Score: X/10
-
-## Verdict: [Well Tested / Adequately Tested / Under Tested / Untested]
-```
+Assess each component against these 6 dimensions (see `test-patterns.md` for HCL examples):
+
+1. **Happy Path** -- `run` block with `command = plan`, valid inputs, assertions on key resource attributes
+2. **Variable Validation** -- Every `validation` block has a test using `expect_failures`
+3. **Feature Toggles** -- Every enable/disable flag tested in both states
+4. **Edge Cases** -- Boundary values, empty collections, single-AZ, all features disabled
+5. **CIDR Math** -- Subnet CIDRs do not overlap, fit within VPC CIDR, correct AZ distribution (N/A for non-networking)
+6. **Naming Conventions** -- Name tags and environment/stage propagate consistently
+
+## Workflow
+
+1. **Discover tests**: Find all `.tftest.hcl` files in the component
+2. **Inventory variables**: Read `variables.tf` to list all required variables, validation blocks, and feature toggle flags
+3. **Map coverage**: For each `run` block, determine which dimension(s) it covers
+4. **Identify gaps**: Cross-reference dimensions against existing tests. Flag missing coverage
+5. **Assess quality**: Check assertion depth -- tests should verify specific attributes, not just "plan succeeds"
+6. **Produce report**: Use the template from `templates.md`
+
+## Critical Rules
+
+- Every `validation` block MUST have a matching `expect_failures` test
+- Every boolean feature flag MUST be tested in both states
+- Happy path tests MUST assert on specific resource attributes, not just plan success
+- `mock_provider` is required for plan-only tests -- do not rely on real AWS credentials
+- IPAM components need `override_resource` to provide mock CIDR values since allocations happen at apply time
+
+## Common Mistakes
+
+| Mistake | Why It Happens | Correct Approach |
+|---------|---------------|-----------------|
+| Happy path test with zero assertions | Developer assumes "plan succeeds" is sufficient | Assert on specific resource attributes (count, CIDR, tags) |
+| Missing `expect_failures` for validations | Validation blocks seem self-documenting | Every validation block needs an explicit negative test |
+| Testing feature toggle in one state only | Enabled state is the default, so it "works" | Test both enabled and disabled; verify resource count is 0 when disabled |
+| Hardcoding AZ names without mock | Tests fail in different regions | Use `override_data` on `data.aws_availability_zones` |
+| Skipping CIDR overlap checks | Subnets "look right" in small configs | Use `distinct()` assertion to verify no CIDR overlap programmatically |
+| No edge case for single AZ | Multi-AZ is the common path | Single-AZ is a valid deployment; test `az_count = 1` explicitly |
+
+## Supporting Files
+
+- `test-patterns.md` -- HCL code examples for each coverage dimension and mock_provider patterns
+- `templates.md` -- Coverage assessment output template

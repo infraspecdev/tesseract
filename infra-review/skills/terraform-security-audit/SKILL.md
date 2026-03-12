@@ -7,7 +7,7 @@ description: Use when auditing Terraform code for security vulnerabilities, revi
 
 ## Overview
 
-Deep security audit for Terraform AWS components that complements Checkov static analysis. This skill catches patterns that automated scanners miss: overly broad IAM policies that pass syntax checks, NACLs with ephemeral port gaps, encryption using AWS-managed keys instead of CMKs, and policy documents that are technically valid but operationally dangerous.
+Deep security audit for Terraform AWS components that complements Checkov static analysis. This skill catches patterns that automated scanners miss: overly broad IAM policies, NACL ephemeral port gaps, encryption using AWS-managed keys instead of CMKs, and policy documents that are technically valid but operationally dangerous.
 
 ## When to Use
 
@@ -17,125 +17,48 @@ Deep security audit for Terraform AWS components that complements Checkov static
 - When validating encryption configuration meets organizational standards
 - During security review of new or modified AWS components
 
-## Audit Dimensions
+## When NOT to Use
 
-### Dimension 1: IAM Policy Analysis
+- For syntax-only validation -- use `terraform validate` instead
+- When Checkov has not been run yet -- run Checkov first, then use this skill for deeper analysis
+- For non-AWS providers (this skill is AWS-specific)
+- For Terraform module API design reviews -- use a general code review instead
+- For runtime security monitoring or incident response -- this is static code audit only
 
-Analyze every `aws_iam_policy_document`, `aws_iam_policy`, and inline policy for:
+## Workflow
 
-| Check | What Automated Tools Miss | How to Verify |
-|-------|--------------------------|---------------|
-| Overly broad actions | `s3:Get*` passes Checkov but grants `s3:GetBucketPolicy` | Expand wildcards mentally, check if all expanded actions are needed |
-| Resource scope gaps | `arn:aws:s3:::*` passes but should be `arn:aws:s3:::specific-bucket/*` | Verify Resource ARN patterns match intended scope |
-| Missing conditions | Policy allows `sts:AssumeRole` without `aws:PrincipalOrgID` condition | Check sensitive actions have condition blocks |
-| Cross-account exposure | Trust policy allows external account without external ID | Verify `sts:ExternalId` condition on cross-account trust |
-| Service-linked confusion | Custom role when service-linked role exists | Check if AWS provides a service-linked role for the use case |
-| Policy size risk | Many statements approaching 6,144 char managed policy limit | Count policy document size, suggest splitting if close to limits |
+1. **Collect scope**: Identify all `.tf` files in the component
+2. **IAM audit**: Read every `aws_iam_policy_document` and inline policy. Expand wildcards, verify resource scoping, check conditions on sensitive actions, flag `"*"` in actions or resources
+3. **Network trace**: Map subnets and route tables. Trace paths from Internet through IGW, public subnets, security groups, and NACLs to private resources. Check both IPv4 and IPv6 rules
+4. **Encryption check**: List all data-storing resources (S3, RDS, EBS, DynamoDB, CloudWatch). Verify CMK usage, key rotation, encryption in transit, and that logs/backups inherit encryption
+5. **Checkov review**: Validate skip justifications are meaningful and scoped. Confirm critical checks are not skipped without strong justification
+6. **Produce report**: Use the template from `templates.md`
 
-**How to audit:**
-1. Read every `data "aws_iam_policy_document"` block
-2. For each statement, list the actual permissions granted (expand wildcards)
-3. Verify `Resource` is scoped to specific ARNs
-4. Check `Condition` blocks exist on sensitive actions
-5. Flag any `Effect = "Allow"` with `"*"` in actions or resources
+See `audit-dimensions.md` for detailed check tables and verification steps for each dimension.
 
-### Dimension 2: Network Exposure Tracing
+## Critical Checks
 
-Trace network paths from public internet to private resources:
+These are the highest-priority items to flag:
 
-| Check | What Automated Tools Miss | How to Verify |
-|-------|--------------------------|---------------|
-| Ephemeral port gaps | NACLs allow 1024-65535 inbound but should only allow specific ranges | Trace which services listen on which ports |
-| IPv6 blind spots | IPv4 security groups are tight but IPv6 (`::/0`) is wide open | Check every SG rule for both `cidr_blocks` AND `ipv6_cidr_blocks` |
-| Transitive exposure | Public subnet → private subnet rules allow more than intended | Trace SG references: if SG-A allows SG-B, what can SG-B access? |
-| NACL rule ordering | Higher-priority deny rules may be shadowed by lower-number allow rules | Read NACL rules in order (lowest number first) |
-| Missing egress restrictions | Egress is default-allow, should be restricted for sensitive subnets | Check for explicit egress deny rules on private subnets |
+- `Effect = "Allow"` with `Action = "*"` or `Resource = "*"`
+- Security groups or NACLs open to `::/0` (IPv6 internet)
+- Data resources using `aws/s3` or `aws/rds` managed keys instead of CMKs
+- CloudWatch log groups missing `kms_key_id`
+- Checkov skips on critical checks (CKV_AWS_144, CKV_AWS_145, CKV2_AWS_19) without strong justification
+- Cross-account trust policies missing `sts:ExternalId` condition
 
-**How to audit:**
-1. Map all subnets (public, private, isolated) and their route tables
-2. For each security group, list all inbound and outbound rules
-3. Trace: Internet → IGW → public subnet → SG → resource → SG → private subnet
-4. Verify no unintended path exists from public to private resources
+## Common Mistakes
 
-### Dimension 3: Encryption Audit
+| Mistake | Why It Happens | Correct Approach |
+|---------|---------------|-----------------|
+| Reporting only Checkov findings | Over-reliance on scanner output | Checkov is the baseline; manually expand wildcards and trace network paths |
+| Ignoring IPv6 rules | IPv4 rules look secure | Always check both `cidr_blocks` and `ipv6_cidr_blocks` on every SG rule |
+| Treating `aws/s3` default key as sufficient | Encryption is technically present | CMK is required for key rotation control and cross-account grant ability |
+| Skipping egress rule review | Egress defaults to allow-all | Sensitive subnets need explicit egress restrictions |
+| Accepting vague Checkov skip reasons | Skip exists so it must be intentional | Every skip must have a specific, meaningful justification |
+| Missing log/backup encryption gaps | Main resource is encrypted | Cross-check that CloudWatch logs, replicas, and backups also use CMKs |
 
-| Check | What Automated Tools Miss | How to Verify |
-|-------|--------------------------|---------------|
-| AWS-managed vs CMK | `aws/s3` key passes checks but CMK provides rotation control and cross-account access | Check `kms_key_id` references a custom KMS key, not default |
-| Missing key rotation | CMK exists but `enable_key_rotation = true` not set | Grep for `aws_kms_key` resources, verify rotation enabled |
-| Encryption in transit | Resources encrypted at rest but connections allow non-TLS | Check for `ssl_mode`, `require_ssl`, security group port restrictions |
-| Log encryption gap | Main resource encrypted but its CloudWatch log group is not | Verify every `aws_cloudwatch_log_group` has `kms_key_id` |
-| Backup encryption | Source encrypted but backup/replica uses default encryption | Check replication and backup configurations for KMS settings |
+## Supporting Files
 
-**How to audit:**
-1. List all resources that store data (S3, RDS, EBS, DynamoDB, CloudWatch)
-2. For each, verify encryption at rest with CMK
-3. For each, verify encryption in transit configuration
-4. Cross-check: if resource A is encrypted, are its logs/backups also encrypted?
-
-### Dimension 4: Checkov Configuration Review
-
-| Check | What to Verify |
-|-------|---------------|
-| Skip justification quality | Every `#checkov:skip=CKV_*:reason` has a meaningful reason, not "not applicable" |
-| Skip scope | Skips are on specific resources, not file-level or directory-level |
-| Critical check coverage | CKV_AWS_144, CKV_AWS_145, CKV2_AWS_19 are NOT skipped without director-level justification |
-| Custom policies | If `.checkov/` directory exists, review custom policies for gaps |
-| CI integration | Checkov runs in CI with `--hard-fail-on CRITICAL` at minimum |
-
-## Output Format
-
-```markdown
-## Security Audit Report
-
-**Component:** [name]
-**Date:** [date]
-**Auditor:** terraform-security-audit skill
-
-### Executive Summary
-
-[2-3 sentence summary of security posture]
-
-### IAM Policy Analysis
-
-| Policy/Role | Risk Level | Finding | Recommendation |
-|------------|-----------|---------|----------------|
-| ... | High/Medium/Low | ... | ... |
-
-### Network Exposure Map
-
-| Path | Risk | Status |
-|------|------|--------|
-| Internet → Public Subnet | Expected | Controlled by SG-X |
-| Public → Private | ... | ... |
-
-### Encryption Status
-
-| Resource | At Rest | In Transit | Key Type | Status |
-|----------|---------|-----------|----------|--------|
-| ... | Yes/No | Yes/No | CMK/AWS-managed/None | OK/Risk |
-
-### Checkov Skip Review
-
-| Resource | Skip ID | Reason | Assessment |
-|----------|---------|--------|-----------|
-| ... | CKV_... | "reason" | Justified/Unjustified |
-
-### Risk Register
-
-| # | Risk | Severity | Likelihood | Mitigation |
-|---|------|----------|-----------|-----------|
-| 1 | ... | Critical/High/Medium/Low | ... | ... |
-
-## Overall Assessment: [Secure / Acceptable Risk / Needs Remediation / Unsafe]
-```
-
-## Common False Negatives (What Checkov Misses)
-
-| Pattern | Why Checkov Misses It | Real Risk |
-|---------|----------------------|-----------|
-| `s3:Get*` action | Syntactically valid wildcard | Grants GetBucketPolicy, GetBucketAcl, GetEncryptionConfiguration |
-| SG with `::/0` IPv6 | Only checks IPv4 cidr_blocks | Full IPv6 internet access |
-| NACL allow-all on ephemeral ports | Ports 1024-65535 needed for responses | Over-broad, should restrict to expected ranges |
-| `Resource = "*"` on scoped action | Action seems narrow | Resource scope matters even for read-only actions |
-| Default KMS key | Encryption present | No key rotation control, no cross-account grant ability |
+- `audit-dimensions.md` -- Detailed check tables for IAM, network, encryption, and Checkov dimensions
+- `templates.md` -- Report output template
