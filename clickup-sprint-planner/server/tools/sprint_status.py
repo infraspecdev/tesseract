@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
+from server.tools._helpers import _get_linked_epic_ids
 
 
 def _normalize_status(status_str: str) -> str:
@@ -18,15 +19,6 @@ def _normalize_status(status_str: str) -> str:
     if s in ("blocked",):
         return "blocked"
     return "ready"
-
-
-def _get_linked_epic_ids(task: dict, relationship_field_id: str) -> set[str]:
-    """Extract epic task IDs from a task's relationship custom field."""
-    for cf in task.get("custom_fields", []):
-        if cf.get("id") == relationship_field_id:
-            value = cf.get("value") or []
-            return {str(v.get("id", "")) for v in value if isinstance(v, dict)}
-    return set()
 
 
 def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig):
