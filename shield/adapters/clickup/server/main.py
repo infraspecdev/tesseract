@@ -15,7 +15,7 @@ from mcp.server.fastmcp import FastMCP
 
 from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient
-from server.config import load_config, get_api_token
+from server.config import load_config, load_shield_config, get_api_token
 from server.tools import (
     capabilities,
     relationships,
@@ -45,10 +45,16 @@ def _register_tools():
     """Load config, create client, and register all tool modules."""
     import os
 
-    config_path = Path(
-        os.environ.get("SPRINT_PLANNER_CONFIG", "./sprint-planner.json")
-    ).resolve()
-    config = load_config(config_path)
+    # Try Shield native config first (~/.tesseract/ paths)
+    config = load_shield_config()
+    if config is not None:
+        config_path = Path.cwd()  # base_path resolution fallback
+    else:
+        # Fall back to legacy sprint-planner.json
+        config_path = Path(
+            os.environ.get("SPRINT_PLANNER_CONFIG", "./sprint-planner.json")
+        ).resolve()
+        config = load_config(config_path)
     api_token = get_api_token(config)
     client = ClickUpClient(api_token)
 
