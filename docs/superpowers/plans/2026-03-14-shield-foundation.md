@@ -175,92 +175,87 @@ git add .gitignore
 git commit -m "chore: update gitignore for shield plugin structure"
 ```
 
-### Task 4: Add Release Please configuration
+### Task 4: Add release workflow
 
 **Files:**
-- Create: `release-please-config.json`
-- Create: `.release-please-manifest.json`
-- Create: `.github/workflows/release-please.yml`
+- Create: `.github/workflows/release.yml`
 
-- [ ] **Step 1: Create release-please-config.json**
+- [ ] **Step 1: Create release workflow**
 
-```json
-{
-  "packages": {
-    "shield": {
-      "release-type": "simple",
-      "component": "shield",
-      "changelog-path": "shield/CHANGELOG.md"
-    }
-  }
-}
-```
+A custom GitHub Actions workflow that detects version changes in `marketplace.json` on push to main. If a plugin version was bumped, it creates a git tag and GitHub Release for that plugin.
 
-- [ ] **Step 2: Create .release-please-manifest.json**
-
-```json
-{
-  "shield": "2.0.0"
-}
-```
-
-- [ ] **Step 3: Create GitHub Actions workflow**
-
-Create `.github/workflows/release-please.yml`:
+Create `.github/workflows/release.yml`:
 
 ```yaml
-name: Release Please
+name: Release
 on:
   push:
     branches: [main]
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  release-please:
+  check-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-
       - uses: actions/checkout@v6
-        if: steps.release.outputs.releases_created
         with:
-          ref: main
+          fetch-depth: 2
 
-      - name: Update marketplace.json versions
-        if: steps.release.outputs.releases_created
+      - name: Detect version changes and create releases
         run: |
-          for path in $(echo '${{ steps.release.outputs.paths_released }}' | jq -r '.[]'); do
-            plugin_name=$(basename "$path")
-            version=$(jq -r --arg p "$path" '.[$p]' .release-please-manifest.json)
-            jq --arg name "$plugin_name" --arg ver "$version" \
-              '(.plugins[] | select(.name == $name)).version = $ver' \
-              .claude-plugin/marketplace.json > tmp && mv tmp .claude-plugin/marketplace.json
+          # Get marketplace.json from current and previous commit
+          CURRENT=$(cat .claude-plugin/marketplace.json)
+          PREVIOUS=$(git show HEAD~1:.claude-plugin/marketplace.json 2>/dev/null || echo '{"plugins":[]}')
+
+          # Compare each plugin's version
+          echo "$CURRENT" | jq -r '.plugins[] | "\(.name) \(.version)"' | while read -r name version; do
+            prev_version=$(echo "$PREVIOUS" | jq -r --arg n "$name" '.plugins[] | select(.name == $n) | .version // "0.0.0"')
+
+            if [ "$version" != "$prev_version" ]; then
+              echo "Version changed for $name: $prev_version -> $version"
+              TAG="${name}-v${version}"
+
+              # Check if tag already exists
+              if git rev-parse "$TAG" >/dev/null 2>&1; then
+                echo "Tag $TAG already exists, skipping"
+                continue
+              fi
+
+              # Create tag
+              git tag "$TAG"
+              git push origin "$TAG"
+
+              # Build release notes from git log since last tag for this plugin
+              PREV_TAG=$(git tag -l "${name}-v*" --sort=-v:refname | head -2 | tail -1)
+              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+                NOTES=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD" -- "${name}/")
+              else
+                NOTES="Initial release"
+              fi
+
+              # Create GitHub Release
+              gh release create "$TAG" \
+                --title "${name} v${version}" \
+                --notes "$NOTES" \
+                --target main
+            fi
           done
-          # NOTE: git config is set here because this runs in GitHub Actions CI,
-          # not in the user's local environment. This is standard for bot commits.
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json
-          git commit -m "chore: update marketplace plugin versions"
-          git push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
-git add release-please-config.json .release-please-manifest.json .github/workflows/release-please.yml
-git commit -m "ci: add release please for automated releases
+mkdir -p .github/workflows
+git add .github/workflows/release.yml
+git commit -m "ci: add version-based release workflow
 
-Configure release-please for monorepo setup. Each plugin gets
-independent versioning, changelogs, and git tags. Post-release
-step updates marketplace.json with new version."
+Detects version changes in marketplace.json on push to main.
+Creates git tags and GitHub Releases with commit-based release
+notes for each plugin whose version was bumped."
 ```
 
 ## Chunk 2: JSON Schemas and Config Examples
