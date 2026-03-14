@@ -190,13 +190,11 @@ Each example includes per-phase GIFs and a step-by-step README.
 
 ## Releases
 
-Releases are automated with [Release Please](https://github.com/googleapis/release-please). Write commits using [Conventional Commits](https://www.conventionalcommits.org/) format:
+Releases are triggered by version bumps in `.claude-plugin/marketplace.json`. To release:
 
-- `feat: add Python domain support` → bumps minor version
-- `fix: correct Checkov skip detection` → bumps patch version
-- `feat!: restructure config format` → bumps major version
-
-On merge to `main`, Release Please opens a release PR. Merging that PR creates a git tag, GitHub Release, and updates `CHANGELOG.md`.
+1. Bump the `version` field for the plugin in `marketplace.json`
+2. Merge to `main`
+3. A GitHub Actions workflow detects the change, creates a git tag (`v2.1.0`), and publishes a GitHub Release with auto-generated release notes
 
 ## Contributing
 
