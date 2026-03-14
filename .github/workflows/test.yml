@@ -77,6 +77,37 @@ jobs:
           shellcheck shield/hooks/scripts/*.sh
           echo "✓ Shellcheck passed"
 
+  agent-evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate eval criteria YAML
+        run: |
+          pip install pyyaml
+          python3 -c "
+          import yaml, glob
+          for f in glob.glob('shield/evals/expected/*.yaml'):
+              with open(f) as fh:
+                  data = yaml.safe_load(fh)
+              assert 'agent' in data, f'{f}: missing agent field'
+              assert 'mode' in data, f'{f}: missing mode field'
+              assert 'must_find' in data, f'{f}: missing must_find field'
+              for item in data['must_find']:
+                  assert 'id' in item, f'{f}: must_find item missing id'
+                  assert 'match' in item, f'{f}: must_find item missing match'
+              print(f'✓ {f} valid')
+          "
+
+  adapter-contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v4
+      - name: Run contract tests
+        run: |
+          cd shield/adapters/clickup
+          uv run --extra test pytest tests/ -v
+
   mcp-server-tests:
     runs-on: ubuntu-latest
     if: hashFiles('shield/adapters/clickup/server/**') != ''
