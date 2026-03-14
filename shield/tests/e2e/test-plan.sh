@@ -21,7 +21,9 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   3 120)
 
 echo "--- Assertions ---"
-assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield planning invoked"
+# Shield's plan-docs MUST be invoked (produces the sidecar JSON)
+# Superpowers may also be invoked for design thinking — that's fine
+assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield plan-docs invoked (sidecar generation)"
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
 report_tokens "$OUTPUT" "$(basename $0 .sh)"

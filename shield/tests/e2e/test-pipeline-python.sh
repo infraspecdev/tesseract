@@ -64,10 +64,11 @@ echo "Phase 2: Planning"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). Write the plan sidecar to plan-sidecar.json with at least 1 epic and 2 stories with acceptance_criteria." \
-  8 300)
+  "Use /plan to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). You may use superpowers for the planning process, but you MUST also invoke shield:plan-docs to generate the plan sidecar JSON at plan-sidecar.json with at least 1 epic and 2 stories with acceptance_criteria." \
+  10 300)
 
-assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield planning invoked"
+# Shield's plan-docs MUST run to produce the sidecar
+assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield plan-docs invoked (sidecar generation)"
 
 # Artifact: sidecar created with stories
 if [ -f "$PROJECT_DIR/plan-sidecar.json" ]; then

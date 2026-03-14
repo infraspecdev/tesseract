@@ -11,27 +11,36 @@ Generate Shield plan documents with a machine-readable sidecar.
 
 `/plan [topic or requirements]`
 
-## CRITICAL: Use Shield's Plan Skill
-
-This command MUST invoke `shield:general:plan-docs` — NOT superpowers:brainstorming, superpowers:writing-plans, or any other external planning skill. Shield's plan-docs skill generates the **plan sidecar JSON** that the rest of the pipeline depends on (PM sync, acceptance criteria confirmation, review verification). External planning skills do not produce this sidecar.
-
-If superpowers or other planning plugins are installed, they should NOT be used for this command. Use the Skill tool to invoke `shield:plan-docs` directly.
-
 ## Behavior
 
 1. If topic/requirements provided, use as starting context
 2. If no topic, ask the user what they're planning
-3. **Invoke the `shield:plan-docs` skill using the Skill tool** — this is mandatory
-4. The skill generates:
+
+### Planning Phase
+
+3. If `superpowers:brainstorming` or `superpowers:writing-plans` is available, invoke it first — it handles design thinking, plan structure, and story breakdown well
+4. Whether or not superpowers ran, **always invoke `shield:plan-docs` afterward** to generate the plan sidecar JSON
+   - If superpowers produced a plan document, pass it to plan-docs as input
+   - If superpowers was not available, plan-docs handles the full planning workflow itself
+
+### Sidecar Generation
+
+5. The `shield:plan-docs` skill generates:
    - Architecture/ADR document (HTML)
    - Detailed execution plan with stories (HTML)
-   - **Plan sidecar JSON** (machine-readable story data at `plan-sidecar.json`)
-5. Verify the sidecar JSON was created and contains:
+   - **Plan sidecar JSON** (`plan-sidecar.json`) — machine-readable story data
+6. Verify the sidecar JSON was created and contains:
    - At least 1 epic with stories
    - Each story has acceptance criteria
-   - Validates against the plan-sidecar schema
-6. After completion, invoke `shield:general:summarize` to produce a plan summary
-7. Write the summary to the run directory
-8. Offer next steps:
-   - `/plan-review` — run multi-agent review on the plan
-   - `/pm-sync` — sync stories to project management tool
+7. The sidecar is **required** by downstream phases:
+   - `/pm-sync` reads stories from it
+   - `/implement` reads acceptance criteria from it
+   - `/review` verifies acceptance criteria against it
+
+### Completion
+
+8. Invoke `shield:general:summarize` to produce a plan summary
+9. Write the summary to the run directory
+10. Offer next steps:
+    - `/plan-review` — run multi-agent review on the plan
+    - `/pm-sync` — sync stories to project management tool
