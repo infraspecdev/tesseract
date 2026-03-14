@@ -17,6 +17,7 @@ from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient
 from server.config import load_config, get_api_token
 from server.tools import (
+    capabilities,
     relationships,
     bulk_create,
     sync,
@@ -57,6 +58,7 @@ def _register_tools():
     action_log = ActionLog(log_path)
 
     # Register tools — each module adds @mcp.tool() decorated functions
+    capabilities.register(mcp)
     relationships.register(mcp, client, action_log)
     bulk_create.register(mcp, client, action_log, config)
     sync.register(mcp, client, config, base_path, action_log)
