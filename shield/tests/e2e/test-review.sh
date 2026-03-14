@@ -40,4 +40,6 @@ assert_output_contains "$OUTPUT" "security\|Security" "security concerns mention
 assert_output_contains "$OUTPUT" "cost\|Cost\|NAT" "cost concerns mentioned"
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
+report_tokens "$OUTPUT" "$(basename $0 .sh)"
+
 print_summary

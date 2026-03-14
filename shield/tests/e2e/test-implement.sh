@@ -59,4 +59,6 @@ echo "--- Assertions ---"
 assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
+report_tokens "$OUTPUT" "$(basename $0 .sh)"
+
 print_summary

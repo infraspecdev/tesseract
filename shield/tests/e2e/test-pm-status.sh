@@ -27,4 +27,6 @@ assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up
 assert_output_not_contains "$OUTPUT" "Traceback\|FATAL\|panic\|segfault" \
   "no crashes when PM missing"
 
+report_tokens "$OUTPUT" "$(basename $0 .sh)"
+
 print_summary

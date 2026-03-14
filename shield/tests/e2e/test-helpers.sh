@@ -4,9 +4,13 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHIELD_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+E2E_OUTPUT_DIR="${E2E_OUTPUT_DIR:-/tmp/shield-e2e-$(date +%s)}"
+mkdir -p "$E2E_OUTPUT_DIR"
 PASS=0
 FAIL=0
 SKIP=0
+TOTAL_INPUT_TOKENS=0
+TOTAL_OUTPUT_TOKENS=0
 
 # Check Claude CLI is available
 check_claude() {
@@ -18,13 +22,17 @@ check_claude() {
 
 # Run Claude in headless mode against a project directory
 # Usage: run_claude_in_project "project_dir" "prompt" [max_turns] [timeout_seconds]
+# Output file is saved to $E2E_OUTPUT_DIR for post-run analysis
 run_claude_in_project() {
   local project_dir="$1"
   local prompt="$2"
   local max_turns="${3:-3}"
   local timeout_secs="${4:-120}"
-  local output_file
-  output_file=$(mktemp)
+
+  # Derive a stable name from the calling test script
+  local caller_name
+  caller_name=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
+  local output_file="${E2E_OUTPUT_DIR}/${caller_name}.jsonl"
 
   cd "$project_dir" || return 1
 
@@ -37,6 +45,57 @@ run_claude_in_project() {
 
   cd - >/dev/null || true
   echo "$output_file"
+}
+
+# Extract token usage from a stream-json output file
+# Usage: extract_tokens "output_file"
+# Prints: input_tokens output_tokens cache_read cache_creation
+extract_tokens() {
+  local output_file="$1"
+  python3 -c "
+import json, sys
+
+input_tokens = 0
+output_tokens = 0
+cache_read = 0
+cache_creation = 0
+
+for line in open('$output_file'):
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        data = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    usage = data.get('usage', {})
+    if usage:
+        input_tokens += usage.get('input_tokens', 0)
+        output_tokens += usage.get('output_tokens', 0)
+        cache_read += usage.get('cache_read_input_tokens', usage.get('cache_read', 0))
+        cache_creation += usage.get('cache_creation_input_tokens', usage.get('cache_creation', 0))
+
+print(f'{input_tokens} {output_tokens} {cache_read} {cache_creation}')
+" 2>/dev/null || echo "0 0 0 0"
+}
+
+# Report token usage for the current test
+# Usage: report_tokens "output_file" "test_name"
+report_tokens() {
+  local output_file="$1"
+  local test_name="${2:-test}"
+
+  local tokens
+  tokens=$(extract_tokens "$output_file")
+  local input output cache_read cache_creation
+  read -r input output cache_read cache_creation <<< "$tokens"
+
+  TOTAL_INPUT_TOKENS=$((TOTAL_INPUT_TOKENS + input))
+  TOTAL_OUTPUT_TOKENS=$((TOTAL_OUTPUT_TOKENS + output))
+
+  if [ "$input" -gt 0 ] || [ "$output" -gt 0 ]; then
+    echo "  Tokens: ${input} in / ${output} out (cache read: ${cache_read}, cache write: ${cache_creation})"
+  fi
 }
 
 # Check if a specific skill was invoked in the output
@@ -200,6 +259,9 @@ print_summary() {
   echo ""
   echo "==========================="
   echo "Results: $PASS passed, $FAIL failed, $SKIP skipped (${total} total)"
+  if [ "$TOTAL_INPUT_TOKENS" -gt 0 ]; then
+    echo "Tokens: ${TOTAL_INPUT_TOKENS} input / ${TOTAL_OUTPUT_TOKENS} output"
+  fi
   if [ "$FAIL" -gt 0 ]; then
     echo "FAILED"
     return 1
@@ -210,6 +272,8 @@ print_summary() {
 }
 
 export -f run_claude_in_project
+export -f extract_tokens
+export -f report_tokens
 export -f assert_skill_invoked
 export -f assert_agent_dispatched
 export -f assert_output_contains
@@ -218,3 +282,6 @@ export -f assert_no_premature_action
 export -f create_shield_test_project
 export -f cleanup_test_project
 export -f print_summary
+export E2E_OUTPUT_DIR
+export TOTAL_INPUT_TOKENS
+export TOTAL_OUTPUT_TOKENS

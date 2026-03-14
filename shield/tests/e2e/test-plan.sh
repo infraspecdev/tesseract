@@ -39,4 +39,6 @@ if [ "$PLAN_SKILL_FOUND" = "false" ]; then
 fi
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
+report_tokens "$OUTPUT" "$(basename $0 .sh)"
+
 print_summary

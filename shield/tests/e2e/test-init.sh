@@ -30,4 +30,6 @@ assert_output_contains "$OUTPUT" "init\|initialized\|created\|tesseract.json" \
 assert_output_not_contains "$OUTPUT" "Traceback\|FATAL\|panic\|segfault" \
   "no crashes during init"
 
+report_tokens "$OUTPUT" "$(basename $0 .sh)"
+
 print_summary
