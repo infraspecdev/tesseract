@@ -129,6 +129,32 @@ assert_skill_invoked() {
   fi
 }
 
+# Check if any of multiple skill names was invoked
+# Usage: assert_any_skill_invoked "output_file" "name1|name2|name3" "test_name"
+assert_any_skill_invoked() {
+  local output_file="$1"
+  local names="$2"
+  local test_name="${3:-skill invoked}"
+
+  IFS='|' read -ra NAME_ARRAY <<< "$names"
+  for skill_name in "${NAME_ARRAY[@]}"; do
+    local skill_pattern="\"skill\":\"([^\"]*:)?${skill_name}\""
+    if grep -q '"name":"Skill"' "$output_file" && grep -qE "$skill_pattern" "$output_file"; then
+      echo "  [PASS] $test_name ($skill_name)"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+  done
+
+  echo "  [FAIL] $test_name"
+  echo "    Expected one of: $names"
+  local triggered
+  triggered=$(grep -o '"skill":"[^"]*"' "$output_file" 2>/dev/null | sort -u || echo "(none)")
+  echo "    Skills triggered: $triggered"
+  FAIL=$((FAIL + 1))
+  return 1
+}
+
 # Check if a specific agent was dispatched
 # Usage: assert_agent_dispatched "output_file" "agent_name" "test_name"
 assert_agent_dispatched() {
@@ -538,6 +564,7 @@ export -f run_claude_in_project
 export -f extract_tokens
 export -f report_tokens
 export -f assert_skill_invoked
+export -f assert_any_skill_invoked
 export -f assert_agent_dispatched
 export -f assert_output_contains
 export -f assert_output_not_contains

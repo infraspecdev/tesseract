@@ -56,9 +56,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   3 120)
 
 echo "--- Assertions ---"
-# Command is /implement, skill is implement-feature — accept either
-assert_skill_invoked "$OUTPUT" "implement" "implement command/skill invoked" || \
-  assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
+assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement command/skill invoked"
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
 report_tokens "$OUTPUT" "$(basename $0 .sh)"

@@ -70,21 +70,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /plan to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). Write the plan sidecar to plan-sidecar.json in the project root. The sidecar must have at least 1 epic with 2 stories, each with acceptance_criteria. Also create a plan.html file." \
   8 300)
 
-# Accept command name (plan) or skill names (plan-docs, writing-plans, brainstorming)
-PLAN_SKILL_FOUND=false
-for skill_name in plan plan-docs writing-plans brainstorming; do
-  SKILL_PATTERN="\"skill\":\"([^\"]*:)?${skill_name}\""
-  if grep -q '"name":"Skill"' "$OUTPUT" && grep -qE "$SKILL_PATTERN" "$OUTPUT"; then
-    echo "  [PASS] planning skill invoked ($skill_name)"
-    PASS=$((PASS + 1))
-    PLAN_SKILL_FOUND=true
-    break
-  fi
-done
-if [ "$PLAN_SKILL_FOUND" = "false" ]; then
-  echo "  [FAIL] no planning skill invoked"
-  FAIL=$((FAIL + 1))
-fi
+assert_any_skill_invoked "$OUTPUT" "plan|plan-docs|writing-plans|brainstorming" "planning invoked"
 
 # Artifact: sidecar JSON created and valid
 if [ -f "$PROJECT_DIR/plan-sidecar.json" ]; then
@@ -164,8 +150,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /implement to fix the security issue in src/main.tf: the flow log IAM policy (aws_iam_role_policy.flow_log) has Resource = \"*\" — scope it to the specific CloudWatch log group ARN using aws_cloudwatch_log_group.flow_logs.arn. Make the change and commit it." \
   8 240)
 
-assert_skill_invoked "$OUTPUT" "implement" "implement command/skill invoked" || \
-  assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
+assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement command/skill invoked"
 
 # Artifact: code was changed and committed
 assert_git_commits_since "$PROJECT_DIR" "$INIT_REF" "new commits from implementation"
