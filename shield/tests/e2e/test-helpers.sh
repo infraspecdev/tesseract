@@ -273,6 +273,261 @@ print_summary() {
   fi
 }
 
+# --- Artifact Assertions ---
+
+# Check that a file exists in the project directory
+# Usage: assert_file_exists "project_dir" "relative_path" "test_name"
+assert_file_exists() {
+  local project_dir="$1"
+  local rel_path="$2"
+  local test_name="${3:-file exists: $rel_path}"
+
+  if [ -f "$project_dir/$rel_path" ]; then
+    echo "  [PASS] $test_name"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    File not found: $project_dir/$rel_path"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# Check that a file matches a glob pattern exists
+# Usage: assert_file_glob "project_dir" "glob_pattern" "test_name"
+assert_file_glob() {
+  local project_dir="$1"
+  local pattern="$2"
+  local test_name="${3:-file matching $pattern exists}"
+
+  local found
+  found=$(find "$project_dir" -path "$project_dir/$pattern" -type f 2>/dev/null | head -1)
+  if [ -n "$found" ]; then
+    echo "  [PASS] $test_name ($(basename "$found"))"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    No file matching: $pattern"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# Check that a JSON file validates against a schema
+# Usage: assert_json_valid "json_file" "schema_file" "test_name"
+assert_json_valid() {
+  local json_file="$1"
+  local schema_file="$2"
+  local test_name="${3:-JSON validates against schema}"
+
+  if [ ! -f "$json_file" ]; then
+    echo "  [FAIL] $test_name (file not found: $json_file)"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+
+  local result
+  result=$(python3 -c "
+import json, jsonschema, sys
+try:
+    data = json.load(open('$json_file'))
+    schema = json.load(open('$schema_file'))
+    jsonschema.validate(data, schema)
+    print('OK')
+except Exception as e:
+    print(f'ERROR: {e}')
+" 2>&1)
+
+  if [ "$result" = "OK" ]; then
+    echo "  [PASS] $test_name"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    $result"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# Check that a JSON file contains a field with a non-empty value
+# Usage: assert_json_field "json_file" "jsonpath_expr" "test_name"
+# jsonpath_expr is a Python expression applied to the loaded JSON (variable: data)
+assert_json_field() {
+  local json_file="$1"
+  local expr="$2"
+  local test_name="${3:-JSON field check}"
+
+  if [ ! -f "$json_file" ]; then
+    echo "  [FAIL] $test_name (file not found)"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+
+  local result
+  result=$(python3 -c "
+import json
+data = json.load(open('$json_file'))
+result = $expr
+if result:
+    print('OK')
+else:
+    print('EMPTY')
+" 2>&1)
+
+  if [ "$result" = "OK" ]; then
+    echo "  [PASS] $test_name"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    Expression '$expr' returned empty/false"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# Check that git has new commits since a given ref
+# Usage: assert_git_commits_since "project_dir" "ref" "test_name"
+assert_git_commits_since() {
+  local project_dir="$1"
+  local ref="$2"
+  local test_name="${3:-new commits since $ref}"
+
+  local count
+  count=$(git -C "$project_dir" rev-list --count "$ref..HEAD" 2>/dev/null || echo "0")
+
+  if [ "$count" -gt 0 ]; then
+    echo "  [PASS] $test_name ($count new commits)"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name (no new commits)"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# Check that git diff shows changes in specific files
+# Usage: assert_git_files_changed "project_dir" "pattern" "test_name"
+assert_git_files_changed() {
+  local project_dir="$1"
+  local pattern="$2"
+  local test_name="${3:-files matching $pattern changed}"
+
+  local changed
+  changed=$(git -C "$project_dir" diff --name-only HEAD~1 2>/dev/null | grep "$pattern" || true)
+
+  if [ -n "$changed" ]; then
+    echo "  [PASS] $test_name"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    No changed files matching: $pattern"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
+# --- PM Mock Server ---
+
+# Start a mock PM server that records calls and returns canned responses
+# Usage: start_pm_mock "port"
+# Returns the PID. Stop with: kill $PID
+start_pm_mock() {
+  local port="${1:-9876}"
+  local mock_log="${E2E_OUTPUT_DIR}/pm-mock.log"
+
+  python3 -c "
+import http.server, json, sys, os
+
+PORT = $port
+LOG = '$mock_log'
+
+class MockPMHandler(http.server.BaseHTTPRequestHandler):
+    def do_POST(self):
+        length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(length).decode() if length else ''
+
+        # Log the request
+        with open(LOG, 'a') as f:
+            f.write(json.dumps({
+                'method': 'POST',
+                'path': self.path,
+                'body': body
+            }) + '\n')
+
+        # Return canned responses based on path
+        if 'capabilities' in self.path:
+            response = {
+                'adapter': 'mock',
+                'adapter_mode': 'hybrid',
+                'capabilities': ['pm_sync', 'pm_bulk_create', 'pm_get_status', 'pm_get_capabilities']
+            }
+        elif 'sync' in self.path:
+            response = {'status': 'synced', 'created': 0, 'updated': 0, 'matched': 2}
+        elif 'status' in self.path:
+            response = {'epics': [{'id': 'EPIC-1', 'name': 'Test', 'total': 2, 'done': 0}]}
+        elif 'bulk_create' in self.path:
+            response = {'created': [{'id': 'task-1', 'name': 'Test Story'}], 'failed': []}
+        else:
+            response = {'ok': True}
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(response).encode())
+
+    def log_message(self, fmt, *args):
+        pass  # Suppress request logging to stderr
+
+server = http.server.HTTPServer(('127.0.0.1', PORT), MockPMHandler)
+print(f'Mock PM server on port {PORT}', file=sys.stderr)
+server.serve_forever()
+" &
+  local pid=$!
+  sleep 1  # Wait for server to start
+
+  # Verify it's running
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "$pid"
+    return 0
+  else
+    echo ""
+    return 1
+  fi
+}
+
+# Check that the mock PM server received a specific call
+# Usage: assert_pm_mock_called "pattern" "test_name"
+assert_pm_mock_called() {
+  local pattern="$1"
+  local test_name="${2:-PM mock received call}"
+  local mock_log="${E2E_OUTPUT_DIR}/pm-mock.log"
+
+  if [ ! -f "$mock_log" ]; then
+    echo "  [FAIL] $test_name (no PM mock calls recorded)"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+
+  if grep -qi "$pattern" "$mock_log"; then
+    echo "  [PASS] $test_name"
+    PASS=$((PASS + 1))
+    return 0
+  else
+    echo "  [FAIL] $test_name"
+    echo "    Expected call matching: $pattern"
+    echo "    Calls recorded:"
+    cat "$mock_log" | sed 's/^/    /'
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+}
+
 export -f run_claude_in_project
 export -f extract_tokens
 export -f report_tokens
@@ -281,6 +536,14 @@ export -f assert_agent_dispatched
 export -f assert_output_contains
 export -f assert_output_not_contains
 export -f assert_no_premature_action
+export -f assert_file_exists
+export -f assert_file_glob
+export -f assert_json_valid
+export -f assert_json_field
+export -f assert_git_commits_since
+export -f assert_git_files_changed
+export -f start_pm_mock
+export -f assert_pm_mock_called
 export -f create_shield_test_project
 export -f cleanup_test_project
 export -f print_summary
