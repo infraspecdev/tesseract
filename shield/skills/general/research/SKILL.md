@@ -1,6 +1,10 @@
 ---
 name: research
-description: Use when the user needs to research a technical topic, compare approaches, or build an evidence-based document with industry sources and expert opinions
+description: |
+  Shield's research skill — investigate a technical topic with structured citations
+  and expert opinions. Produces a research document and invokes summarize at the
+  end for the pipeline audit trail.
+  Triggers on: research, investigate, compare approaches, evaluate tools, /research.
 ---
 
 # Research Skill
@@ -8,6 +12,10 @@ description: Use when the user needs to research a technical topic, compare appr
 ## Overview
 
 Research a technical topic and produce a well-sourced document with direct quotes, industry references, and a clear recommendation.
+
+## Shield Pipeline Integration
+
+After producing the research document, invoke `shield:summarize` to write a research summary to the run directory. This creates the audit trail for the pipeline and provides context for the next phase (planning).
 
 ## When to Use
 

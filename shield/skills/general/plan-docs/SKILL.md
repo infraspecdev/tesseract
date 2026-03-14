@@ -12,189 +12,158 @@ description: |
 
 # Plan Docs
 
-Create planning artifacts: an **architecture/ADR** doc, a **detailed execution plan** with stories, and a **plan sidecar JSON** that the rest of the Shield pipeline consumes.
+Create planning artifacts for a project phase:
+1. **Plan sidecar JSON** (`plan-sidecar.json`) — machine-readable source of truth
+2. **Architecture/ADR document** (HTML) — the "why and how"
+3. **Detailed execution plan** (HTML) — the "what to do", rendered from the sidecar
 
-## Output Format
+## Critical: Sidecar First
 
-Default: **HTML** for documents. The **plan sidecar JSON** (`plan-sidecar.json`) is always generated alongside the HTML — it is the machine-readable source of truth.
+**Always generate the sidecar JSON first, then render HTML from it.** The sidecar is the source of truth — the HTML is a rendered view. When anything changes (AC edits, status updates, PM sync), the sidecar is updated and HTML is re-rendered.
 
-**Important:** This skill produces the sidecar JSON that `/pm-sync`, `/implement`, and `/review` depend on. External planning plugins (superpowers:writing-plans, etc.) do not produce this sidecar.
+## Plan Sidecar JSON
+
+The sidecar MUST be written to `plan-sidecar.json` in the project root. It MUST conform to this structure:
+
+```json
+{
+  "version": "1.0",
+  "project": "<project name from .tesseract.json>",
+  "phase": "<phase name>",
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "<epic name>",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "<story name>",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "description": "<2-3 sentences describing what needs to happen>",
+          "tasks": [
+            "Concrete action 1",
+            "Concrete action 2"
+          ],
+          "acceptance_criteria": [
+            "Verifiable outcome 1 (testable, not vague)",
+            "Verifiable outcome 2"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "<YYYY-MM-DD>",
+    "domains": ["<from .tesseract.json>"],
+    "reviewer_grades": {}
+  }
+}
+```
+
+**Sidecar rules:**
+- Every epic MUST have at least 1 story
+- Every story MUST have at least 1 acceptance criterion
+- Acceptance criteria must be testable — not "it works" but "VPC has DNS support enabled"
+- Tasks must be specific enough to execute without questions
+- Status starts as `"ready"` for new stories
+- `pm_id` and `pm_url` start as `null` — populated by `/pm-sync`
 
 ## When to Use
 
-- Creating a new infrastructure phase or project milestone
+- Creating a new project phase or milestone
 - Breaking down a large initiative into executable stories
-- Writing an ADR with a paired execution plan
+- Writing an architecture decision record with a paired execution plan
 - User mentions "phase plan", "detailed plan", "architecture doc", "story breakdown"
+- Invoked by the `/plan` command
 
-## Document Types
+## When NOT to Use
+
+- Pure research without implementation stories — use `/research` instead
+- Reviewing an existing plan — use `/plan-review` instead
+- Single task that doesn't need stories — just implement directly
+
+## HTML Documents
+
+After the sidecar is created, generate HTML documents that render from it.
 
 ### 1. Architecture / ADR
 
 The "why and how" — explains the problem, current state, proposed solution, and key decisions.
 
 **Structure:**
-1. **Nav bar** — links to overview, detailed plan, adjacent phases
-2. **Phase heading** with timeline, month, dependencies
-3. **Problem** — 1-2 paragraphs on what's broken or missing
-4. **Context** — existing infrastructure table (Resource | Details | Status: Exists/To create), current state tables
-5. **Solution** — approach paragraph, ASCII diagram in `<pre>`, "what changes" table, "what does NOT change" list
-6. **Key insights** — in `<blockquote>` blocks (always blue `#1a73e8`, never phase-colored)
-7. **Inter-service / integration impacts** — how this affects other systems
-8. **Deliverables** — bullet list of concrete outputs
-9. **Rollback strategy** — how to undo if things go wrong
+1. Phase heading with timeline
+2. Problem — what's broken or missing
+3. Context — existing infrastructure, current state
+4. Solution — approach, diagrams, "what changes" table
+5. Key decisions and trade-offs
+6. Deliverables
+7. Rollback strategy
 
 ### 2. Detailed Execution Plan
 
-The "what to do" — stories that become ClickUp cards via sprint-planner sync.
+The "what to do" — stories rendered from the sidecar.
 
 **Structure:**
-1. **Nav bar** — links to overview, architecture doc
-2. **Phase heading** with week range and one-line summary
-3. **EPIC metadata block** — ClickUp EPIC link (or `to create` badge), status, assignee, timeline
-4. **Infrastructure section** — resource inventory table (Resource | ID/Value | Status)
-5. **Stories summary table** — index, linked story name, ClickUp badge, status badge, assignee
-6. **Story sections** — each story as a card-ready block (see Story Format below)
-7. **Phase success criteria** — overall acceptance criteria in `.success-criteria` block
+1. Phase heading with summary
+2. Epic metadata (name, status, timeline)
+3. Stories summary table with status
+4. Story sections — each rendered from the sidecar data
 
-## Story Format
-
-Each story MUST contain all sections needed to become a complete ClickUp card:
-
-```
-┌─ Story N: [descriptive name] ─────────────────────────┐
-│  [ClickUp badge]  [Status badge]  [Week, Day range]   │
-│                                                        │
-│  Description paragraph (2-3 sentences, NO user story   │
-│  format — just describe what needs to happen and why)  │
-│                                                        │
-│  Tasks (checklist)                                     │
-│  - [ ] Concrete action with resource IDs where known   │
-│  - [ ] Another action — specific enough to execute     │
-│                                                        │
-│  Existing Infrastructure (when relevant)               │
-│  Resource | ID | Status: Exists / To create            │
-│                                                        │
-│  Acceptance Criteria (checklist)                       │
-│  - [ ] Verifiable outcome (testable, not vague)        │
-│  - [ ] Another verifiable outcome                      │
-└────────────────────────────────────────────────────────┘
-```
-
-**Critical rules:**
-- Story names: `Story 1: Name`, `Story 2: Name` — sequential numbers, NOT phase-prefixed
-- Story divs: `id="story-N"` for anchor links from summary table
-- Summary table story names: `<a href="#story-N">Name</a>` — clickable links
-- Description: direct prose, NOT "As a... I want... so that..."
-- Tasks: specific enough to execute without asking questions — include resource IDs, CIDR blocks, config values
-- Acceptance criteria: testable commands or verifiable states, not "it works"
-- No story points column in summary table
-- No week grouping headers — stories listed flat, ordered by execution sequence
-- Unset fields use `—` (em dash), not blank
-
-## Badge System
-
-| Badge Class | When to Use | Text |
-|---|---|---|
-| `badge-clickup` | Story linked to ClickUp | ClickUp task ID (as `<a>` link) |
-| `badge-to-create` | No ClickUp card yet | `to create` |
-| `badge-done` | Work completed | `done` |
-| `badge-in-dev` | Actively being worked | `in dev` |
-| `badge-ready` | Ready for development | `ready for dev` |
-
-New stories always start with `badge-to-create` for ClickUp and `badge-ready` for status.
-
-## EPIC Metadata Block
-
+The HTML MUST include a meta tag referencing the sidecar:
 ```html
-<div class="epic-meta">
-  <table>
-    <tr><td>EPIC</td><td><span class="badge badge-to-create">to create</span> [EPIC] Project | Phase N: Name</td></tr>
-    <tr><td>Status</td><td>&mdash;</td></tr>
-    <tr><td>Assignee</td><td>&mdash;</td></tr>
-    <tr><td>Timeline</td><td>Week N</td></tr>
-  </table>
-</div>
+<meta name="sidecar" content="./plan-sidecar.json">
 ```
 
-When ClickUp EPIC exists, replace the `to create` badge with a linked badge:
-```html
-<a href="https://app.clickup.com/t/{id}" class="badge badge-clickup">{id}</a>
+### Story Format in HTML
+
+Each story renders from the sidecar JSON:
+
+```
+┌─ Story N: [name from sidecar] ──────────────────────┐
+│  [Status badge]  [Week range]                         │
+│                                                       │
+│  Description (from sidecar.description)              │
+│                                                       │
+│  Tasks (from sidecar.tasks)                          │
+│  - [ ] Task 1                                        │
+│  - [ ] Task 2                                        │
+│                                                       │
+│  Acceptance Criteria (from sidecar.acceptance_criteria)│
+│  - [ ] Criterion 1                                   │
+│  - [ ] Criterion 2                                   │
+└───────────────────────────────────────────────────────┘
 ```
 
 ## CSS & HTML Templates
 
-See `templates.md` in this skill directory for the full CSS and HTML scaffolding for both document types. Use those templates exactly — do not invent new styles or change colors.
-
-**Key style rules:**
-- h1/blockquote accent: always `#1a73e8` (blue) — never use phase-specific colors for these
-- Phase color only used in `.phase-color` CSS class for inline accents
+See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rules:
+- h1/blockquote accent: `#1a73e8` (blue)
 - `max-width: 900px` for architecture, `960px` for detailed plan
-
-## Markdown Alternative
-
-When user requests markdown output:
-
-**Architecture doc** — standard markdown with:
-- `> **Key Insight:**` for blockquotes
-- Pipe tables for resource inventories
-- Fenced code blocks for ASCII diagrams
-
-**Detailed plan** — markdown with:
-- `[CU:{id}]` inline markers for ClickUp IDs (parseable by sprint-planner)
-- `### Story N: Name` headers
-- `- [ ]` checklists for tasks and acceptance criteria
-- `> **EPIC:** ...` block for EPIC metadata
-
-## Sprint Planner Integration
-
-Documents generated by this skill are directly parseable by the `clickup-sprint-planner` plugin. The HTML structure matches the sprint-planner's `story_extraction` selectors:
-
-| Selector | What It Matches |
-|---|---|
-| `div.story[id^='story-']` | Story section containers |
-| `Story \d+: (.+)` | Story name from `<h3>` |
-| `a.badge-clickup` | ClickUp task ID links |
-| `.badge:not(.badge-clickup):not(.badge-to-create)` | Status badges |
-
-**After generating documents**, register the new phase in `sprint-planner.json`:
-
-```json
-{
-  "id": "P7",
-  "name": "Observability Stack",
-  "plan_doc": "07-observability-stack/detailed-plan.html",
-  "epic_id": "..."
-}
-```
-
-Then run `/sprint-sync P7` to create ClickUp cards from the stories. The sync tool will parse story names, descriptions, tasks, and acceptance criteria from the HTML and create cards with the full content.
 
 ## Workflow
 
-1. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies on other phases, timeline
-2. **Generate architecture doc first** — the "thinking" document. Get user feedback.
-3. **Generate detailed plan second** — break the solution into stories. Each story = one reviewable unit of work.
-4. **Verify story quality** — every story must have enough detail to hand to an engineer who wasn't in the planning conversation
-5. **Offer sprint-planner sync** — ask the user: *"Want me to add this phase to sprint-planner config and sync stories to ClickUp?"* If yes:
-   - Find `sprint-planner.json` in the project (check `clickup-sprint-planner/examples/` or project root)
-   - Add a new entry to `plan_docs.epics` with the phase ID, name, plan doc path, and `epic_id` (ask user for EPIC ID, or set to empty string if EPIC doesn't exist yet)
-   - Invoke `/sprint-sync {phase_id}` to create ClickUp cards from the stories
-   - Show the sync diff and confirm before creating cards
-6. **Offer sprint planning** — after cards are created, ask: *"Want to assign stories and plan the sprint?"* If yes:
-   - Invoke `/sprint-plan` to assign stories to team members, set priorities, and push updates to ClickUp
-7. **Offer plan review** — after generating the detailed plan (or at any point if the user has an existing plan), ask: *"Want me to run a multi-persona review on this plan? I'll dispatch expert reviewers to score it and produce an enhanced version."* If yes:
-   - Invoke `/plan-review <path-to-plan>` to dispatch 3-5 reviewer agents in parallel
-   - Results go to `review/<date>-<slug>/analysis.md` (scored evaluation) and `plan.md` (enhanced plan)
+1. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
+2. **Read `.tesseract.json`** — get project name and active domains
+3. **Generate sidecar JSON first** — write `plan-sidecar.json` with epics, stories, tasks, and acceptance criteria
+4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
+5. **Generate architecture doc** (HTML) — the "thinking" document
+6. **Generate detailed plan** (HTML) — renders stories from the sidecar, includes `<meta>` sidecar reference
+7. **Invoke `shield:summarize`** — produce a plan summary for the run directory
+8. **Offer next steps:**
+   - `/plan-review` — multi-agent review of the plan
+   - `/pm-sync` — sync stories to project management tool
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---|---|
-| User story format ("As a...") | Direct description: "Create X to enable Y" |
-| Vague acceptance criteria ("networking works") | Testable: "curl ifconfig.me returns 65.2.46.44" |
-| Missing infrastructure section | Always include resource IDs and exists/to-create status |
-| Phase-colored blockquotes | Blockquotes always use blue (#1a73e8) |
-| Story names prefixed with phase ID | Use `Story 1:`, `Story 2:` — not `P1a-S1:` |
-| Summary table without anchor links | Every story name links to `#story-N` |
-| Invented CSS classes or colors | Use templates.md exactly |
+| Generating HTML without sidecar | Always write sidecar JSON first |
+| Vague acceptance criteria | Testable: specific commands, measurable states |
+| Missing acceptance criteria on stories | Every story MUST have at least 1 criterion |
+| Empty tasks list | Every story needs concrete, actionable tasks |
+| Not reading .tesseract.json | Project name and domains come from the marker |

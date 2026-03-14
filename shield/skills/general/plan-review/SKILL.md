@@ -1,6 +1,10 @@
 ---
 name: plan-review
-description: Use when reviewing a plan document for quality, completeness, and sprint-readiness — after plan-docs generation, when the user mentions plan review, review my plan, document review, or invokes /plan-review.
+description: |
+  Dispatch parallel expert reviewer agents against a plan document to produce
+  a scored analysis with prioritized recommendations. Reads plan data from the
+  sidecar JSON when available. Uses Shield's multi-mode agents in plan-review mode.
+  Triggers on: plan review, review my plan, document review, /plan-review.
 ---
 
 # Plan Review
@@ -16,19 +20,30 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 
 ## When NOT to Use
 
-- **Code review** — use code-reviewer agents instead
+- **Code review** — use `/review` instead (dispatches agents in infra-code/app-code mode)
 - **Single-page design docs** without stories or infrastructure — overkill
 - **Non-plan documents** (READMEs, changelogs, runbooks) — wrong tool
 
+## Plan Input
+
+The skill reads plan data from (in priority order):
+1. **Plan sidecar JSON** (`plan-sidecar.json`) — if present, use stories and AC from the sidecar
+2. **HTML plan document** — if only HTML exists, parse it for story content
+3. **Markdown plan document** — path provided by user or auto-detected
+4. **User-provided path** — explicit path argument
+
 ## Persona Catalog
 
-| Agent | File | Weight | Focus |
-|-------|------|--------|-------|
-| Cloud Architect | `agents/cloud-architect-reviewer.md` | 1.0 | Infrastructure, scalability, HA, ops readiness |
-| Security Engineer | `agents/security-engineer-reviewer.md` | 1.0 | Security, threat modeling, testability |
-| DX Engineer | `agents/dx-engineer-reviewer.md` | 1.0 | Clarity, actionability, software architecture |
-| Cost/FinOps | `agents/cost-finops-reviewer.md` | 0.7 | Cost awareness, right-sizing, env tiering |
-| Agile Coach | `agents/agile-coach-reviewer.md` | 0.7 | Sprint-readiness, story quality, dependencies |
+All agents are dispatched in **plan review mode** — lightweight checks focused on plan quality.
+
+| Agent | Weight | Focus |
+|-------|--------|-------|
+| `shield:architecture-reviewer` | 1.0 | Service topology, scalability, HA, network design |
+| `shield:security-reviewer` | 1.0 | Security posture, threat modeling, access control, testability |
+| `shield:dx-engineer-reviewer` | 1.0 | Plan clarity, actionability, software architecture |
+| `shield:cost-reviewer` | 0.7 | Cost awareness, right-sizing, environment tiering |
+| `shield:agile-coach-reviewer` | 0.7 | Sprint-readiness, story quality, dependencies |
+| `shield:operations-reviewer` | 0.7 | Monitoring, failure modes, backup, on-call readiness |
 
 ## Dynamic Persona Selection
 
