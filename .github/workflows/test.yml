@@ -110,11 +110,14 @@ jobs:
 
   mcp-server-tests:
     runs-on: ubuntu-latest
-    if: hashFiles('shield/adapters/clickup/server/**') != ''
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v4
       - name: Run MCP server tests
         run: |
-          cd shield/adapters/clickup
-          uv run pytest -v
+          if [ -d "shield/adapters/clickup/server" ]; then
+            cd shield/adapters/clickup
+            uv run pytest -v
+          else
+            echo "No MCP server code found, skipping"
+          fi
