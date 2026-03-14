@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: shield-tests
+        name: Shield test suite
+        entry: shield/tests/run-all.sh
+        language: script
+        pass_filenames: false
+        always_run: true
