@@ -185,7 +185,7 @@ echo ""
 echo "6. Eval Criteria"
 run_test_verbose "eval criteria YAML valid" python3 -c "
 import yaml, glob
-for f in glob.glob('$SHIELD_ROOT/../shield/evals/expected/*.yaml'):
+for f in glob.glob('$SHIELD_ROOT/evals/expected/*.yaml'):
     with open(f) as fh:
         data = yaml.safe_load(fh)
     assert 'agent' in data, f'{f}: missing agent'
@@ -197,8 +197,58 @@ for f in glob.glob('$SHIELD_ROOT/../shield/evals/expected/*.yaml'):
 "
 echo ""
 
-# --- 7. Session-Start Hook E2E ---
-echo "7. Session-Start Hook E2E"
+# --- 7. Example Project Validation ---
+echo "7. Example Projects"
+
+# Validate example .tesseract.json files against schema
+for example_dir in "$SHIELD_ROOT"/examples/*/; do
+  example_name=$(basename "$example_dir")
+  marker="$example_dir/.tesseract.json"
+  if [ -f "$marker" ]; then
+    run_test_verbose "$example_name: .tesseract.json validates" python3 -c "
+import json, jsonschema
+schema = json.load(open('$SHIELD_ROOT/schemas/tesseract.schema.json'))
+marker = json.load(open('$marker'))
+jsonschema.validate(marker, schema)
+"
+  else
+    echo "  ⚠ $example_name: no .tesseract.json found"
+  fi
+done
+
+# Session-start hook against each example project
+for example_dir in "$SHIELD_ROOT"/examples/*/; do
+  example_name=$(basename "$example_dir")
+  if [ -f "$example_dir/.tesseract.json" ]; then
+    PROJECT_NAME=$(python3 -c "import json; print(json.load(open('$example_dir/.tesseract.json'))['project'])")
+    run_test_verbose "$example_name: session-start detects project" bash -c "
+cd '$example_dir'
+OUTPUT=\$(CLAUDE_PLUGIN_ROOT='$SHIELD_ROOT' bash '$SHIELD_ROOT/hooks/scripts/session-start.sh' 2>/dev/null || true)
+echo \"\$OUTPUT\" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+ctx = data[\"hookSpecificOutput\"][\"additionalContext\"]
+assert \"$PROJECT_NAME\" in ctx, f\"project name not in context: {ctx}\"
+'
+"
+  fi
+done
+
+# Verify example Terraform files are syntactically valid HCL (if terraform available)
+if command -v terraform &>/dev/null; then
+  for tf_dir in "$SHIELD_ROOT"/examples/*/src/; do
+    if ls "$tf_dir"/*.tf &>/dev/null 2>&1; then
+      example_name=$(basename "$(dirname "$tf_dir")")
+      run_test_verbose "$example_name: terraform validates" bash -c "cd '$tf_dir' && terraform validate -no-color 2>&1 || terraform fmt -check -diff '$tf_dir' 2>&1"
+    fi
+  done
+else
+  echo "  ⚠ terraform not installed, skipping HCL validation"
+fi
+echo ""
+
+# --- 8. Session-Start Hook E2E ---
+echo "8. Session-Start Hook E2E"
 
 # Create a temp project directory with .tesseract.json and run the hook
 run_test_verbose "session-start produces valid JSON" bash -c "
@@ -241,8 +291,8 @@ assert \"shield init\" in ctx.lower(), f\"init suggestion not in context: {ctx}\
 "
 echo ""
 
-# --- 8. Contract Tests ---
-echo "8. PM Adapter Contract Tests"
+# --- 9. Contract Tests ---
+echo "9. PM Adapter Contract Tests"
 if command -v uv &>/dev/null; then
   ADAPTER_DIR="$SHIELD_ROOT/adapters/clickup"
   run_test_verbose "contract tests pass" bash -c "cd '$ADAPTER_DIR' && uv run --extra test pytest tests/ -q 2>&1"
