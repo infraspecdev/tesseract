@@ -52,8 +52,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /plan to create an execution plan for improving the VPC module in src/. Focus on fixing the security and cost issues. Generate a plan sidecar JSON file at plan-sidecar.json with at least 2 stories with acceptance criteria." \
   5 180)
 
-# Check for skill invocation OR planning-related output
-# Claude may invoke a skill or may start planning directly
+# Must invoke a planning skill — either Shield's plan-docs or superpowers' equivalent
 PLAN_SKILL_FOUND=false
 for skill_name in plan-docs writing-plans brainstorming; do
   SKILL_PATTERN="\"skill\":\"([^\"]*:)?${skill_name}\""
@@ -65,14 +64,8 @@ for skill_name in plan-docs writing-plans brainstorming; do
   fi
 done
 if [ "$PLAN_SKILL_FOUND" = "false" ]; then
-  # Fallback: check if Claude produced planning output without a formal skill invocation
-  if grep -qi "plan\|stories\|epic\|acceptance" "$OUTPUT"; then
-    echo "  [PASS] planning output produced (no formal skill invocation)"
-    PASS=$((PASS + 1))
-  else
-    echo "  [FAIL] no planning skill or output"
-    FAIL=$((FAIL + 1))
-  fi
+  echo "  [FAIL] no planning skill invoked (expected plan-docs, writing-plans, or brainstorming)"
+  FAIL=$((FAIL + 1))
 fi
 report_tokens "$OUTPUT" "2-plan"
 echo ""
