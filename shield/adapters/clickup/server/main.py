@@ -21,7 +21,7 @@ from server.tools import (
     relationships,
     bulk_create,
     sync,
-    sprint_status,
+    status,
     bulk_update,
     rename,
     action_log_tool,
@@ -68,7 +68,7 @@ def _register_tools():
     relationships.register(mcp, client, action_log)
     bulk_create.register(mcp, client, action_log, config)
     sync.register(mcp, client, config, base_path, action_log)
-    sprint_status.register(mcp, client, config)
+    status.register(mcp, client, config)
     bulk_update.register(mcp, client, action_log)
     rename.register(mcp, client, action_log, config)
     action_log_tool.register(mcp, action_log)
