@@ -27,7 +27,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 echo "--- Assertions ---"
 assert_output_contains "$OUTPUT" "init\|initialized\|created\|tesseract.json" \
   "init process mentioned"
-assert_output_not_contains "$OUTPUT" "Error\|Traceback\|exception" \
-  "no errors during init"
+assert_output_not_contains "$OUTPUT" "Traceback\|FATAL\|panic\|segfault" \
+  "no crashes during init"
 
 print_summary

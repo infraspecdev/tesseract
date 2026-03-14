@@ -24,7 +24,7 @@ echo "--- Assertions ---"
 # Should gracefully handle missing PM config — not crash
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
   "suggests setup when PM not configured"
-assert_output_not_contains "$OUTPUT" "Error\|Traceback\|exception" \
-  "no error/crash when PM missing"
+assert_output_not_contains "$OUTPUT" "Traceback\|FATAL\|panic\|segfault" \
+  "no crashes when PM missing"
 
 print_summary

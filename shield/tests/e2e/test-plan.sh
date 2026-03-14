@@ -21,7 +21,18 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   3 120)
 
 echo "--- Assertions ---"
-assert_skill_invoked "$OUTPUT" "plan-docs" "plan-docs skill invoked"
+# Shield's plan-docs skill or superpowers' writing-plans/brainstorming are all valid
+# When superpowers is installed, it may handle planning instead of Shield's skill
+if assert_skill_invoked "$OUTPUT" "plan-docs" "shield plan-docs skill invoked" 2>/dev/null; then
+  true
+elif assert_skill_invoked "$OUTPUT" "writing-plans" "superpowers writing-plans skill invoked (acceptable)" 2>/dev/null; then
+  true
+elif assert_skill_invoked "$OUTPUT" "brainstorming" "superpowers brainstorming skill invoked (acceptable)" 2>/dev/null; then
+  true
+else
+  echo "  [FAIL] no planning skill invoked"
+  FAIL=$((FAIL + 1))
+fi
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
 print_summary
