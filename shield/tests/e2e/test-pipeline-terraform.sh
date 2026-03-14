@@ -30,6 +30,16 @@ trap 'rm -rf "$PROJECT_DIR"' EXIT
 echo "Project: $PROJECT_DIR"
 echo ""
 
+# Fail fast between phases
+check_phase() {
+  if [ "$FAIL" -gt 0 ]; then
+    echo ""
+    echo "STOPPING: phase failed — subsequent phases depend on this output"
+    print_summary
+    exit 1
+  fi
+}
+
 # --- Phase 1: Research ---
 echo "================================================================"
 echo "Phase 1: Research"
@@ -41,6 +51,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 report_tokens "$OUTPUT" "1-research"
+check_phase
 echo ""
 
 # --- Phase 2: Plan ---
@@ -68,6 +79,7 @@ if [ "$PLAN_SKILL_FOUND" = "false" ]; then
   FAIL=$((FAIL + 1))
 fi
 report_tokens "$OUTPUT" "2-plan"
+check_phase
 echo ""
 
 # --- Phase 3: Plan Review ---
@@ -81,6 +93,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
 report_tokens "$OUTPUT" "3-plan-review"
+check_phase
 echo ""
 
 # --- Phase 4: PM Status (no PM configured — should handle gracefully) ---
@@ -95,6 +108,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
   "suggests setup when PM not configured"
 report_tokens "$OUTPUT" "4-pm-status"
+check_phase
 echo ""
 
 # --- Phase 5: Implementation ---
@@ -108,6 +122,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 
 assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
 report_tokens "$OUTPUT" "5-implement"
+check_phase
 echo ""
 
 # --- Phase 6: Review ---
