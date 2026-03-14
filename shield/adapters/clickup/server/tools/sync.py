@@ -1,4 +1,4 @@
-"""MCP tool: sprint_sync — diff plan documents against ClickUp state."""
+"""MCP tool: pm_sync — diff plan documents against ClickUp state."""
 
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ def register(
     action_log: ActionLog | None = None,
 ):
     @mcp.tool()
-    async def sprint_sync(
+    async def pm_sync(
         epic: str | None = None,
         apply_links: bool = False,
     ) -> dict:

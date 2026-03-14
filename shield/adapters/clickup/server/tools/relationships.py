@@ -1,4 +1,4 @@
-"""MCP tool: sprint_set_relationship — set list_relationship custom fields."""
+"""MCP tool: pm_link_story_to_epic — set list_relationship custom fields."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from server.clickup_client import ClickUpClient, ClickUpAPIError
 
 def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog):
     @mcp.tool()
-    async def sprint_set_relationship(
+    async def pm_link_story_to_epic(
         task_id: str,
         field_id: str,
         linked_task_ids: list[str],

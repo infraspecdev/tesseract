@@ -1,4 +1,4 @@
-"""MCP tool: sprint_bulk_update — batch task updates."""
+"""MCP tool: pm_bulk_update — batch task updates."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from server.clickup_client import ClickUpClient, ClickUpAPIError
 
 def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog):
     @mcp.tool()
-    async def sprint_bulk_update(
+    async def pm_bulk_update(
         updates: list[dict],
     ) -> dict:
         """Batch update status, assignee, or priority across multiple tasks.

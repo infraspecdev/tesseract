@@ -1,4 +1,4 @@
-"""MCP tool: sprint_status — sprint/epic overview with story states."""
+"""MCP tool: pm_get_status — sprint/epic overview with story states."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _normalize_status(status_str: str) -> str:
 
 def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig):
     @mcp.tool()
-    async def sprint_status(
+    async def pm_get_status(
         epic: str | None = None,
         group_by: str = "epic",
     ) -> dict:

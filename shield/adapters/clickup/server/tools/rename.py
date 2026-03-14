@@ -1,4 +1,4 @@
-"""MCP tool: sprint_bulk_rename — prepend epic prefix to non-compliant task names."""
+"""MCP tool: pm_bulk_rename — prepend epic prefix to non-compliant task names."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def register(
     config: SprintPlannerConfig,
 ):
     @mcp.tool()
-    async def sprint_bulk_rename(
+    async def pm_bulk_rename(
         epic: str | None = None,
         apply: bool = False,
         strip_prefix: str | None = None,

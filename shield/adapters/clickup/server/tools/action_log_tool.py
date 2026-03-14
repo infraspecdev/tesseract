@@ -1,4 +1,4 @@
-"""MCP tool: sprint_action_log — query the action log."""
+"""MCP tool: pm_action_log — query the action log."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from server.action_log import ActionLog
 
 def register(mcp: FastMCP, action_log: ActionLog):
     @mcp.tool()
-    async def sprint_action_log(
+    async def pm_action_log(
         epic: str | None = None,
         action: str | None = None,
         since: str | None = None,

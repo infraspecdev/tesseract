@@ -1,4 +1,4 @@
-"""MCP tool: sprint_bulk_create — batch task creation with optional relationship linking."""
+"""MCP tool: pm_bulk_create — batch task creation with optional relationship linking."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def _check_description_sections(description: str | None) -> list[str]:
 
 def register(mcp: FastMCP, client: ClickUpClient, action_log: ActionLog, config: SprintPlannerConfig):
     @mcp.tool()
-    async def sprint_bulk_create(
+    async def pm_bulk_create(
         list_id: str,
         stories: list[dict],
         set_relationships: bool = False,
