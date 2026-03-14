@@ -24,7 +24,7 @@ echo "--- Assertions ---"
 # Shield's plan-docs skill or superpowers' writing-plans/brainstorming are all valid
 # When superpowers is installed, it may handle planning instead of Shield's skill
 PLAN_SKILL_FOUND=false
-for skill_name in plan-docs writing-plans brainstorming; do
+for skill_name in plan plan-docs writing-plans brainstorming; do
   SKILL_PATTERN="\"skill\":\"([^\"]*:)?${skill_name}\""
   if grep -q '"name":"Skill"' "$OUTPUT" && grep -qE "$SKILL_PATTERN" "$OUTPUT"; then
     echo "  [PASS] planning skill invoked ($skill_name)"

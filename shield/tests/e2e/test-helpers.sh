@@ -23,18 +23,24 @@ check_claude() {
 # Run Claude in headless mode against a project directory
 # Usage: run_claude_in_project "project_dir" "prompt" [max_turns] [timeout_seconds]
 # Output file is saved to $E2E_OUTPUT_DIR for post-run analysis
-_RUN_COUNTER=0
+# Uses a file-based counter because $() subshells don't preserve variable state.
+_COUNTER_FILE="${E2E_OUTPUT_DIR}/.run-counter"
+echo "0" > "$_COUNTER_FILE"
+
 run_claude_in_project() {
   local project_dir="$1"
   local prompt="$2"
   local max_turns="${3:-3}"
   local timeout_secs="${4:-120}"
 
-  # Derive a unique name from the calling test script + counter
+  # Derive a unique name from the calling test script + file-based counter
   local caller_name
   caller_name=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
-  _RUN_COUNTER=$((_RUN_COUNTER + 1))
-  local output_file="${E2E_OUTPUT_DIR}/${caller_name}-${_RUN_COUNTER}.jsonl"
+  local count
+  count=$(cat "$_COUNTER_FILE")
+  count=$((count + 1))
+  echo "$count" > "$_COUNTER_FILE"
+  local output_file="${E2E_OUTPUT_DIR}/${caller_name}-${count}.jsonl"
 
   cd "$project_dir" || return 1
 

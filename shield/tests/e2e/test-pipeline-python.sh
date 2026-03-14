@@ -67,18 +67,19 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /plan to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). Write the plan sidecar to plan-sidecar.json with at least 1 epic and 2 stories with acceptance_criteria." \
   8 300)
 
+# Accept command name (plan) or skill names (plan-docs, writing-plans, brainstorming)
 PLAN_SKILL_FOUND=false
-for skill_name in plan-docs writing-plans brainstorming; do
+for skill_name in plan plan-docs writing-plans brainstorming; do
   SKILL_PATTERN="\"skill\":\"([^\"]*:)?${skill_name}\""
   if grep -q '"name":"Skill"' "$OUTPUT" && grep -qE "$SKILL_PATTERN" "$OUTPUT"; then
-    echo "  [PASS] planning skill invoked ($skill_name)"
+    echo "  [PASS] planning invoked ($skill_name)"
     PASS=$((PASS + 1))
     PLAN_SKILL_FOUND=true
     break
   fi
 done
 if [ "$PLAN_SKILL_FOUND" = "false" ]; then
-  echo "  [FAIL] no planning skill invoked"
+  echo "  [FAIL] no planning skill/command invoked"
   FAIL=$((FAIL + 1))
 fi
 
@@ -150,7 +151,8 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /implement to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
   8 240)
 
-assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
+assert_skill_invoked "$OUTPUT" "implement" "implement command/skill invoked" || \
+  assert_skill_invoked "$OUTPUT" "implement-feature" "implement-feature skill invoked"
 
 # Artifact: code was changed and committed
 assert_git_commits_since "$PROJECT_DIR" "$INIT_REF" "new commits from implementation"
