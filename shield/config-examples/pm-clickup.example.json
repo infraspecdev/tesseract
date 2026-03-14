@@ -1,0 +1,10 @@
+{
+  "adapter": "clickup",
+  "adapter_mode": "hybrid",
+  "workspace_id": "YOUR_WORKSPACE_ID",
+  "space_id": "YOUR_SPACE_ID",
+  "naming": {
+    "project_prefix": "PROJ",
+    "story_format": "[{prefix}] {epic_id}-S{index}: {name}"
+  }
+}

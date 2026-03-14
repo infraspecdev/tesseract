@@ -1,0 +1,123 @@
+name: Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  plugin-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate JSON schemas
+        run: |
+          for schema in shield/schemas/*.schema.json; do
+            echo "Validating $schema..."
+            python3 -c "import json; json.load(open('$schema'))" || exit 1
+          done
+          echo "All schemas valid JSON"
+
+      - name: Validate config examples against schemas
+        run: |
+          pip install jsonschema
+          python3 -c "
+          import json, jsonschema
+
+          schema = json.load(open('shield/schemas/config.schema.json'))
+          example = json.load(open('shield/config-examples/config.example.json'))
+          jsonschema.validate(example, schema)
+          print('✓ config.example.json validates')
+
+          schema = json.load(open('shield/schemas/tesseract.schema.json'))
+          example = json.load(open('shield/config-examples/tesseract.example.json'))
+          jsonschema.validate(example, schema)
+          print('✓ tesseract.example.json validates')
+
+          schema = json.load(open('shield/schemas/pm.schema.json'))
+          example = json.load(open('shield/config-examples/pm-clickup.example.json'))
+          jsonschema.validate(example, schema)
+          print('✓ pm-clickup.example.json validates')
+          "
+
+      - name: Validate hooks.json structure
+        run: |
+          python3 -c "
+          import json
+          hooks = json.load(open('shield/hooks/hooks.json'))
+          assert 'hooks' in hooks, 'Missing hooks key'
+          for event in ['SessionStart', 'PostToolUse', 'PreCommit']:
+              assert event in hooks['hooks'], f'Missing {event} hook'
+          print('✓ hooks.json structure valid')
+          "
+
+      - name: Validate plugin.json
+        run: |
+          python3 -c "
+          import json
+          plugin = json.load(open('shield/.claude-plugin/plugin.json'))
+          assert plugin['name'] == 'shield', 'Plugin name mismatch'
+          assert 'permissions' in plugin, 'Missing permissions'
+          print('✓ plugin.json valid')
+          "
+
+      - name: Check hook scripts are executable
+        run: |
+          for script in shield/hooks/scripts/*.sh; do
+            if [ ! -x "$script" ]; then
+              echo "ERROR: $script is not executable"
+              exit 1
+            fi
+          done
+          echo "✓ All hook scripts executable"
+
+      - name: Shellcheck hook scripts
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck shield/hooks/scripts/*.sh
+          echo "✓ Shellcheck passed"
+
+  agent-evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate eval criteria YAML
+        run: |
+          pip install pyyaml
+          python3 -c "
+          import yaml, glob
+          for f in glob.glob('shield/evals/expected/*.yaml'):
+              with open(f) as fh:
+                  data = yaml.safe_load(fh)
+              assert 'agent' in data, f'{f}: missing agent field'
+              assert 'mode' in data, f'{f}: missing mode field'
+              assert 'must_find' in data, f'{f}: missing must_find field'
+              for item in data['must_find']:
+                  assert 'id' in item, f'{f}: must_find item missing id'
+                  assert 'match' in item, f'{f}: must_find item missing match'
+              print(f'✓ {f} valid')
+          "
+
+  adapter-contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run contract tests
+        run: |
+          cd shield/adapters/clickup
+          uv run --extra test pytest tests/ -v
+
+  mcp-server-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run MCP server tests
+        run: |
+          if [ -d "shield/adapters/clickup/server" ]; then
+            cd shield/adapters/clickup
+            uv run --extra test pytest -v
+          else
+            echo "No MCP server code found, skipping"
+          fi

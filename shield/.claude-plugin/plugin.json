@@ -1,0 +1,21 @@
+{
+  "name": "shield",
+  "description": "Unified SDLC plugin — research, planning, PM integration, implementation, and continuous review with multi-domain support and specialist agents.",
+  "author": {
+    "name": "Ashwini Manoj"
+  },
+  "repository": "https://github.com/infraspecdev/tesseract",
+  "license": "MIT",
+  "keywords": [
+    "sdlc", "review", "security", "cost", "architecture", "operations",
+    "terraform", "atmos", "clickup", "sprint", "planning", "research",
+    "implementation", "tdd", "well-architected", "infrastructure"
+  ],
+  "permissions": {
+    "allow": [
+      "Read(${CLAUDE_PLUGIN_ROOT}/**)",
+      "Glob(${CLAUDE_PLUGIN_ROOT}/**)",
+      "Grep(${CLAUDE_PLUGIN_ROOT}/**)"
+    ]
+  }
+}

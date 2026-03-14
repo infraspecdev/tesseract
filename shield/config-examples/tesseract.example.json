@@ -1,0 +1,13 @@
+{
+  "project": "my-project",
+  "domains": ["terraform", "atmos"],
+  "external_skills": {
+    "general": {
+      "implement": ["superpowers:test-driven-development"],
+      "review": ["superpowers:verification-before-completion"]
+    },
+    "terraform": {
+      "review": ["terraform-skills:validate"]
+    }
+  }
+}
