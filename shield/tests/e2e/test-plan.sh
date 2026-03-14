@@ -21,7 +21,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   3 120)
 
 echo "--- Assertions ---"
-assert_any_skill_invoked "$OUTPUT" "plan|plan-docs|writing-plans|brainstorming" "planning invoked"
+assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield planning invoked"
 assert_no_premature_action "$OUTPUT" "no action before skill load"
 
 report_tokens "$OUTPUT" "$(basename $0 .sh)"

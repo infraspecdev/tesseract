@@ -70,7 +70,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Use /plan to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). Write the plan sidecar to plan-sidecar.json in the project root. The sidecar must have at least 1 epic with 2 stories, each with acceptance_criteria. Also create a plan.html file." \
   8 300)
 
-assert_any_skill_invoked "$OUTPUT" "plan|plan-docs|writing-plans|brainstorming" "planning invoked"
+assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "shield planning invoked"
 
 # Artifact: sidecar JSON created and valid
 if [ -f "$PROJECT_DIR/plan-sidecar.json" ]; then

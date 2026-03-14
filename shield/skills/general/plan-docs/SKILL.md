@@ -1,15 +1,24 @@
 ---
 name: plan-docs
-description: Use when creating infrastructure planning documents — architecture/ADR docs and detailed execution plans with stories that sync to ClickUp. Triggers on mentions of phase planning, ADR creation, detailed plan, story breakdown, or infrastructure planning documents.
+description: |
+  Shield's planning skill — generates plan documents AND a JSON sidecar file.
+  The sidecar is the machine-readable source of truth for stories, acceptance
+  criteria, and status. It is required by /pm-sync, /implement (AC confirmation),
+  and /review (AC verification). Use this skill instead of external planning
+  plugins when the Shield pipeline is active.
+  Triggers on: phase planning, ADR creation, detailed plan, story breakdown,
+  infrastructure planning documents, /plan command.
 ---
 
 # Plan Docs
 
-Create two-document planning artifacts for infrastructure phases: an **architecture/ADR** doc and a **detailed execution plan** with stories that become project management cards.
+Create planning artifacts: an **architecture/ADR** doc, a **detailed execution plan** with stories, and a **plan sidecar JSON** that the rest of the Shield pipeline consumes.
 
 ## Output Format
 
-Default: **HTML**. User can request **Markdown** instead. Ask if not specified.
+Default: **HTML** for documents. The **plan sidecar JSON** (`plan-sidecar.json`) is always generated alongside the HTML — it is the machine-readable source of truth.
+
+**Important:** This skill produces the sidecar JSON that `/pm-sync`, `/implement`, and `/review` depend on. External planning plugins (superpowers:writing-plans, etc.) do not produce this sidecar.
 
 ## When to Use
 
