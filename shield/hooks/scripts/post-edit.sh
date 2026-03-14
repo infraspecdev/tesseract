@@ -34,8 +34,7 @@ if [ -z "$EDITED_FILE" ] || [ ! -f "$EDITED_FILE" ]; then
 fi
 
 # Only process if we have a project marker
-MARKER_PATH=""
-if ! MARKER_PATH=$(find_marker); then
+if ! find_marker >/dev/null; then
   exit 0
 fi
 
