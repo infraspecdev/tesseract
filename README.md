@@ -1,10 +1,10 @@
 # Tesseract
 
+A [Claude Code](https://claude.ai/claude-code) plugin marketplace.
+
 > *In the Marvel universe, the Tesseract was a crystalline container that held the Space Stone — one of the six Infinity Stones, each holding power over a fundamental aspect of existence. Whoever possessed the Tesseract didn't just hold an object; they held the potential to reshape reality itself.*
 >
 > *This Tesseract holds something similar. Not Infinity Stones, but plugins — each one a concentrated capability that transforms how you build software. The container is simple. What it holds is powerful.*
-
-A [Claude Code](https://claude.ai/claude-code) plugin marketplace.
 
 ---
 
@@ -41,13 +41,15 @@ Each plugin in the marketplace is independently versioned and released. You can 
 
 ### Shield
 
-**Strategic Homeland Intervention, Enforcement and Logistics Division.**
+Named after Marvel's S.H.I.E.L.D. — the **Strategic Homeland Intervention, Enforcement and Logistics Division** — the organization that gathers intelligence, plans operations, assembles specialists, and executes missions.
 
 Except here, the homeland is your codebase — and the existential threats are unreviewed pull requests, missing test coverage, security holes hiding in plain sight, and acceptance criteria so vague they'd make Nick Fury weep.
 
-Shield assembles a team of specialist agents and orchestrates them through a structured engineering pipeline. A security reviewer who thinks like an attacker. A cost analyst who's seen $10k/month NAT gateway bills in dev environments. An architect who's debugged cascading failures at 3 AM. A developer experience engineer who ensures plans are clear enough to execute without questions.
+Shield assembles a team of specialist agents and orchestrates them through a structured engineering pipeline. A planner who breaks initiatives into executable stories with testable acceptance criteria. A security reviewer who thinks like an attacker. A cost analyst who's seen $10k/month NAT gateway bills in dev environments. An architect who's debugged cascading failures at 3 AM. An agile coach who ensures stories are sprint-ready. A developer experience engineer who ensures plans are clear enough to execute without questions.
 
 It shields you from the mistakes that haunt on-call rotations — because the best incident is the one that never happened.
+
+---
 
 #### Design Philosophy
 
@@ -57,7 +59,7 @@ It shields you from the mistakes that haunt on-call rotations — because the be
 
 **Project management as a pluggable adapter.** The pipeline doesn't know about ClickUp or Jira. It knows about abstract operations — sync stories, get status, link to epic. Each project management tool implements these operations through its own adapter. Adding a new tool means writing an adapter, not touching any skill or agent.
 
-**Agents are specialists, not generalists.** Each agent has a clear domain (security, cost, architecture, operations) and operates in modes depending on context — lightweight checks when reviewing a plan document, deep checklists when reviewing Terraform code. One agent file, multiple depths.
+**Agents are specialists.** Each agent has a clear domain (security, cost, architecture, operations) and operates in modes depending on context — lightweight checks when reviewing a plan document, deep checklists when reviewing Terraform code. One agent file, multiple depths.
 
 **Your config, your rules.** The plugin adapts to your setup:
 - Pick your domains (`terraform`, `atmos`, or both)
