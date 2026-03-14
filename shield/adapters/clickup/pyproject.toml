@@ -1,7 +1,7 @@
 [project]
-name = "clickup-sprint-planner"
-version = "1.4.0"
-description = "MCP server for ClickUp sprint planning — bulk ops, relationships, plan doc sync"
+name = "shield-clickup-adapter"
+version = "2.0.0"
+description = "ClickUp PM adapter for Shield — implements the pm_* tool interface for sprint planning operations"
 requires-python = ">=3.11"
 dependencies = [
     "mcp[cli]>=1.12",
