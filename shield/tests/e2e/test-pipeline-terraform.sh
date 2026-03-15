@@ -41,8 +41,8 @@ echo "Phase 1: Research"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. Write findings to a file called research.md in the project root." \
-  5 180)
+  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. You MUST write the findings to a file called research.md in the project root before finishing." \
+  8 180)
 
 # Skill invocation
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
@@ -50,6 +50,7 @@ assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 # Artifact: research output contains substance
 assert_output_contains "$OUTPUT" "VPC\|vpc\|subnet\|CIDR\|availability.zone" \
   "research output mentions VPC concepts"
+assert_file_exists "$PROJECT_DIR" "research.md" "research.md created"
 
 report_tokens "$OUTPUT" "1-research"
 check_phase
