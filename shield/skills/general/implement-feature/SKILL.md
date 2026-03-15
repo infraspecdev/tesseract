@@ -46,7 +46,7 @@ The user provides one or more of:
 
 ### From plan sidecar (preferred)
 
-If a `plan-sidecar.json` exists in the Shield run directory (`docs/tesseract/latest/plan-sidecar.json`) or project root:
+If a `plan-sidecar.json` exists in the Shield run directory (`.shield/latest/plan-sidecar.json`) or project root:
 1. Read the sidecar
 2. Find the story by ID (if story ID provided)
 3. Extract: name, description, tasks, acceptance criteria

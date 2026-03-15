@@ -23,7 +23,7 @@ Create planning artifacts for a project phase:
 
 ## Plan Sidecar JSON
 
-The sidecar MUST be written to the Shield run directory (`docs/tesseract/<run>/plan-sidecar.json`). The session-start hook injects the current run path — use it. It MUST conform to this structure:
+The sidecar MUST be written to the Shield run directory (`.shield/<run>/plan-sidecar.json`). The session-start hook injects the current run path — use it. It MUST conform to this structure:
 
 ```json
 {

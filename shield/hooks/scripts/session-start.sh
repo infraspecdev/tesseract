@@ -64,10 +64,12 @@ fi
 
 # --- Create run directory for artifacts ---
 RUN_DIR=""
+DOCS_DIR=""
 if [ -n "$PROJECT_NAME" ]; then
   RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-  RUN_DIR="docs/tesseract/${RUN_TIMESTAMP}"
-  mkdir -p "$RUN_DIR"
+  RUN_DIR=".shield/${RUN_TIMESTAMP}"
+  DOCS_DIR="${RUN_DIR}/docs"
+  mkdir -p "$DOCS_DIR"
 
   # Write run metadata
   python3 -c "
@@ -83,7 +85,7 @@ json.dump(metadata, open('${RUN_DIR}/metadata.json', 'w'), indent=2)
 " 2>/dev/null || true
 
   # Update latest symlink
-  ln -sfn "${RUN_TIMESTAMP}" "docs/tesseract/latest"
+  ln -sfn "${RUN_TIMESTAMP}" ".shield/latest"
 fi
 
 # --- Build context output ---
@@ -113,10 +115,11 @@ if [ -n "$PROJECT_NAME" ]; then
 - PM tool: ${PM_TOOL} (${PM_STATUS})
 - Config: ${TESSERACT_HOME}/projects/${PROJECT_NAME}/
 - Run directory: ${RUN_DIR}/
+- Docs directory: ${DOCS_DIR}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 
-**Artifact output:** Write ALL Shield artifacts (research.md, plan-sidecar.json, plan.md, review reports, etc.) to \`${RUN_DIR}/\`. The \`docs/tesseract/latest\` symlink always points to the current run.
+**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan-sidecar.json, metadata.json) to \`${RUN_DIR}/\`. The \`.shield/latest\` symlink always points to the current run.
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}

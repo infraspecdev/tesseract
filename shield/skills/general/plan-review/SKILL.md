@@ -94,7 +94,7 @@ After all agents return:
 
 ## Output
 
-Write to the Shield run directory (`docs/tesseract/<run>/`). The session-start hook injects the current run path — use it.
+Write to the Shield docs directory (`.shield/<run>/docs/`). The session-start hook injects the current docs path — use it.
 - `analysis.md` — scored evaluation with consolidated recommendations
 - `plan.md` — enhanced version of original plan with feedback applied
 

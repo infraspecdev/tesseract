@@ -24,7 +24,7 @@ The orchestrator passes:
 
 1. Format the phase output as concise bullet points (5-10 bullets max)
 2. Include: what was done, key decisions made, findings if any, next phase
-3. Write to the Shield run directory (`docs/tesseract/<run>/<phase_name>-summary.md`). The session-start hook injects the current run path — use it.
+3. Write to the Shield docs directory (`.shield/<run>/docs/<phase_name>-summary.md`). The session-start hook injects the current docs path — use it.
 4. Return the summary text to the orchestrator for display
 
 ## Summary Format

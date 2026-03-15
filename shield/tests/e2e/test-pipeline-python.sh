@@ -49,7 +49,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "validation\|FastAPI\|Pydantic\|auth" \
   "research mentions relevant concepts"
-assert_file_glob "$PROJECT_DIR" "docs/tesseract/*/research.md" "research.md created in run dir"
+assert_file_glob "$PROJECT_DIR" ".shield/*/docs/research.md" "research.md created in docs dir"
 
 report_tokens "$OUTPUT" "1-research"
 check_phase
@@ -68,7 +68,7 @@ OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
-SIDECAR=$(find "$PROJECT_DIR/docs/tesseract" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
+SIDECAR=$(find "$PROJECT_DIR/.shield" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
 if [ -n "$SIDECAR" ]; then
   assert_json_field "$SIDECAR" \
     "len(data.get('epics', [])) > 0" \
