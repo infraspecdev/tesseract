@@ -4,13 +4,24 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHIELD_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-E2E_OUTPUT_DIR="${E2E_OUTPUT_DIR:-/tmp/shield-e2e-$(date +%s)}"
+TESTS_OUTPUT_DIR="${SHIELD_ROOT}/tests/output"
+
+# Build output dir: tests/output/<datetime>-<testname>/
+# Individual tests derive name from their filename; run-all.sh overrides E2E_OUTPUT_DIR.
+if [ -z "${E2E_OUTPUT_DIR:-}" ]; then
+  _CALLER_BASENAME="$(basename "${BASH_SOURCE[1]:-unknown}" .sh)"
+  _RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+  E2E_OUTPUT_DIR="${TESTS_OUTPUT_DIR}/${_RUN_TIMESTAMP}-${_CALLER_BASENAME}"
+fi
 mkdir -p "$E2E_OUTPUT_DIR"
+
 PASS=0
 FAIL=0
 SKIP=0
 TOTAL_INPUT_TOKENS=0
 TOTAL_OUTPUT_TOKENS=0
+TOTAL_CACHE_READ=0
+TOTAL_CACHE_WRITE=0
 
 # Check Claude CLI is available
 check_claude() {
@@ -44,14 +55,27 @@ run_claude_in_project() {
 
   cd "$project_dir" || return 1
 
+  local exit_code=0
   timeout "$timeout_secs" claude -p "$prompt" \
     --plugin-dir "$SHIELD_ROOT" \
     --dangerously-skip-permissions \
     --max-turns "$max_turns" \
     --output-format stream-json \
-    > "$output_file" 2>&1 || true
+    > "$output_file" 2>&1 || exit_code=$?
 
   cd - >/dev/null || true
+
+  # Warn if output is empty (usually means CLI error or rate limit)
+  if [ ! -s "$output_file" ]; then
+    echo "  [WARN] Claude session produced no output (exit code: $exit_code)" >&2
+    echo "         Output file: $output_file" >&2
+    if [ "$exit_code" -eq 124 ]; then
+      echo "         Cause: timeout after ${timeout_secs}s" >&2
+    elif [ "$exit_code" -ne 0 ]; then
+      echo "         Cause: claude exited with code $exit_code" >&2
+    fi
+  fi
+
   echo "$output_file"
 }
 
@@ -100,6 +124,8 @@ report_tokens() {
 
   TOTAL_INPUT_TOKENS=$((TOTAL_INPUT_TOKENS + input))
   TOTAL_OUTPUT_TOKENS=$((TOTAL_OUTPUT_TOKENS + output))
+  TOTAL_CACHE_READ=$((TOTAL_CACHE_READ + cache_read))
+  TOTAL_CACHE_WRITE=$((TOTAL_CACHE_WRITE + cache_creation))
 
   if [ "$input" -gt 0 ] || [ "$output" -gt 0 ]; then
     echo "  Tokens: ${input} in / ${output} out (cache read: ${cache_read}, cache write: ${cache_creation})"
@@ -287,20 +313,74 @@ cleanup_test_project() {
   fi
 }
 
-# Print test summary
+# Print test summary to stdout and write summary.txt to output dir
 print_summary() {
   local total=$((PASS + FAIL + SKIP))
+  local summary_file="${E2E_OUTPUT_DIR}/summary.txt"
+
+  {
+    echo "==========================="
+    echo "Shield E2E Test Summary"
+    echo "==========================="
+    echo "Date:    $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "Output:  ${E2E_OUTPUT_DIR}"
+    echo ""
+    echo "Results: $PASS passed, $FAIL failed, $SKIP skipped (${total} total)"
+    echo ""
+
+    if [ "$TOTAL_INPUT_TOKENS" -gt 0 ] || [ "$TOTAL_OUTPUT_TOKENS" -gt 0 ]; then
+      echo "--- Token Usage ---"
+      # Per-file breakdown
+      for jsonl_file in "$E2E_OUTPUT_DIR"/*.jsonl; do
+        [ -f "$jsonl_file" ] || continue
+        local fname
+        fname=$(basename "$jsonl_file" .jsonl)
+        local tokens
+        tokens=$(extract_tokens "$jsonl_file")
+        local inp out cr cw
+        read -r inp out cr cw <<< "$tokens"
+        if [ "$inp" -gt 0 ] || [ "$out" -gt 0 ]; then
+          printf "  %-40s %7s in / %7s out  (cache read: %s, write: %s)\n" \
+            "$fname" "$inp" "$out" "$cr" "$cw"
+        fi
+      done
+
+      echo "  ----------------------------------------"
+      printf "  %-40s %7s in / %7s out  (cache read: %s, write: %s)\n" \
+        "TOTAL" "$TOTAL_INPUT_TOKENS" "$TOTAL_OUTPUT_TOKENS" "$TOTAL_CACHE_READ" "$TOTAL_CACHE_WRITE"
+
+      # Cost estimate (Sonnet pricing)
+      local cost
+      cost=$(python3 -c "
+i=$TOTAL_INPUT_TOKENS; o=$TOTAL_OUTPUT_TOKENS; cr=$TOTAL_CACHE_READ; cw=$TOTAL_CACHE_WRITE
+cost = (i*3 + o*15 + cr*0.30 + cw*3.75) / 1_000_000
+print(f'\${cost:.4f}')
+" 2>/dev/null || echo "unknown")
+      echo "  Estimated cost (Sonnet pricing): $cost"
+
+      # Cache hit rate
+      local total_context=$((TOTAL_INPUT_TOKENS + TOTAL_CACHE_READ + TOTAL_CACHE_WRITE))
+      if [ "$total_context" -gt 0 ]; then
+        local hit_rate
+        hit_rate=$(python3 -c "print(f'{$TOTAL_CACHE_READ / $total_context * 100:.1f}%')" 2>/dev/null || echo "n/a")
+        echo "  Cache hit rate: $hit_rate"
+      fi
+      echo ""
+    fi
+
+    if [ "$FAIL" -gt 0 ]; then
+      echo "FAILED"
+    else
+      echo "ALL TESTS PASSED"
+    fi
+  } | tee "$summary_file"
+
   echo ""
-  echo "==========================="
-  echo "Results: $PASS passed, $FAIL failed, $SKIP skipped (${total} total)"
-  if [ "$TOTAL_INPUT_TOKENS" -gt 0 ]; then
-    echo "Tokens: ${TOTAL_INPUT_TOKENS} input / ${TOTAL_OUTPUT_TOKENS} output"
-  fi
+  echo "Summary written to: $summary_file"
+
   if [ "$FAIL" -gt 0 ]; then
-    echo "FAILED"
     return 1
   else
-    echo "ALL TESTS PASSED"
     return 0
   fi
 }
@@ -581,5 +661,8 @@ export -f create_shield_test_project
 export -f cleanup_test_project
 export -f print_summary
 export E2E_OUTPUT_DIR
+export TESTS_OUTPUT_DIR
 export TOTAL_INPUT_TOKENS
 export TOTAL_OUTPUT_TOKENS
+export TOTAL_CACHE_READ
+export TOTAL_CACHE_WRITE

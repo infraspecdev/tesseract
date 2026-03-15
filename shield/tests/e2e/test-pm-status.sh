@@ -17,7 +17,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /pm-status to check sprint status" \
+  "Invoke the skill 'shield:pm-status' to check sprint status" \
   3 60)
 
 echo "--- Assertions ---"

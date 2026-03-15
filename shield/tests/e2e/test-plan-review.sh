@@ -50,7 +50,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan-review to review the plan at docs/plan.md" \
+  "Invoke the skill 'shield:plan-review' to review the plan at docs/plan.md" \
   5 180)
 
 echo "--- Assertions ---"

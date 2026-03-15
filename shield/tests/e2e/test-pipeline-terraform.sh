@@ -45,7 +45,7 @@ echo "Phase 1: Research"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /research to investigate AWS VPC best practices for multi-AZ deployment with IPAM. Write findings to a file called research.md in the project root." \
+  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. Write findings to a file called research.md in the project root." \
   5 180)
 
 # Skill invocation
@@ -67,7 +67,7 @@ echo "Phase 2: Planning"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). You may use superpowers for the planning process, but you MUST also invoke shield:plan-docs to generate the plan sidecar JSON at plan-sidecar.json. The sidecar must have at least 1 epic with 2 stories, each with acceptance_criteria." \
+  "Invoke the skill 'shield:plan-docs' to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). The plan sidecar JSON must be written to plan-sidecar.json with at least 1 epic and 2 stories, each with acceptance_criteria." \
   10 300)
 
 # Shield's plan-docs MUST run to produce the sidecar
@@ -107,7 +107,7 @@ echo "Phase 3: Plan Review"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan-review to review the plan. Look for any plan files in the project. Produce a review with grades (A-F) for each reviewer." \
+  "Invoke the skill 'shield:plan-review' to review the plan. Look for any plan files in the project. Produce a review with grades (A-F) for each reviewer." \
   8 240)
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
@@ -128,7 +128,7 @@ echo "Phase 4: PM Status (graceful no-PM)"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /pm-status to check sprint status" \
+  "Invoke the skill 'shield:pm-status' to check sprint status" \
   3 60)
 
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
@@ -148,8 +148,8 @@ echo "Phase 5: Implementation"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /implement to fix the security issue in src/main.tf: the flow log IAM policy (aws_iam_role_policy.flow_log) has Resource = \"*\" — scope it to the specific CloudWatch log group ARN using aws_cloudwatch_log_group.flow_logs.arn. Make the change and commit it." \
-  8 240)
+  "Invoke the skill 'shield:implement' to fix the security issue in src/main.tf: the flow log IAM policy (aws_iam_role_policy.flow_log) has Resource = \"*\" — scope it to the specific CloudWatch log group ARN using aws_cloudwatch_log_group.flow_logs.arn. Make the change and commit it." \
+  15 360)
 
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement command/skill invoked"
 
@@ -177,7 +177,7 @@ echo "Phase 6: Review"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /review to review the Terraform code in src/. Check for remaining security, cost, and architecture issues. Report specific findings with severity." \
+  "Invoke the skill 'shield:review' to review the Terraform code in src/. Check for remaining security, cost, and architecture issues. Report specific findings with severity." \
   8 300)
 
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"

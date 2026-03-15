@@ -17,7 +17,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /research to investigate VPC IPAM best practices for multi-region deployment" \
+  "Invoke the skill 'shield:research' to investigate VPC IPAM best practices for multi-region deployment" \
   3 120)
 
 echo "--- Assertions ---"

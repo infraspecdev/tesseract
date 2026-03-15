@@ -35,7 +35,13 @@ if ! command -v claude &>/dev/null; then
 fi
 
 # Shared output directory for token tracking
-export E2E_OUTPUT_DIR="/tmp/shield-e2e-$(date +%s)"
+SHIELD_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+_RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+if [ -n "$SPECIFIC_TEST" ]; then
+  export E2E_OUTPUT_DIR="${SHIELD_ROOT}/tests/output/${_RUN_TIMESTAMP}-${SPECIFIC_TEST}"
+else
+  export E2E_OUTPUT_DIR="${SHIELD_ROOT}/tests/output/${_RUN_TIMESTAMP}-all"
+fi
 mkdir -p "$E2E_OUTPUT_DIR"
 
 TOTAL_PASS=0
@@ -43,68 +49,90 @@ TOTAL_FAIL=0
 TOTAL_SKIP=0
 RESULTS=()
 
-print_token_summary() {
-  echo ""
-  echo "--- Token Usage ---"
-  local grand_input=0
-  local grand_output=0
-  local grand_cache=0
-  for jsonl_file in "$E2E_OUTPUT_DIR"/*.jsonl; do
-    [ -f "$jsonl_file" ] || continue
-    local test_name
-    test_name=$(basename "$jsonl_file" .jsonl)
-    local tokens
-    tokens=$(python3 -c "
+print_suite_summary() {
+  local summary_file="${E2E_OUTPUT_DIR}/summary.txt"
+
+  {
+    echo "================================================================"
+    echo "Shield E2E Test Suite Summary"
+    echo "================================================================"
+    echo "Date:    $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "Output:  ${E2E_OUTPUT_DIR}"
+    echo ""
+
+    echo "--- Test Results ---"
+    for result in "${RESULTS[@]}"; do
+      echo "  $result"
+    done
+    echo ""
+    echo "Total: $TOTAL_PASS passed, $TOTAL_FAIL failed"
+    echo ""
+
+    echo "--- Token Usage ---"
+    local grand_input=0 grand_output=0 grand_cache_read=0 grand_cache_write=0
+
+    for jsonl_file in "$E2E_OUTPUT_DIR"/*.jsonl; do
+      [ -f "$jsonl_file" ] || continue
+      local fname
+      fname=$(basename "$jsonl_file" .jsonl)
+      local tokens
+      tokens=$(python3 -c "
 import json
-input_t = output_t = cache_r = 0
+i=o=cr=cw=0
 for line in open('$jsonl_file'):
     line = line.strip()
     if not line: continue
-    try:
-        data = json.loads(line)
+    try: data = json.loads(line)
     except: continue
     u = data.get('usage', {})
     if u:
-        input_t += u.get('input_tokens', 0)
-        output_t += u.get('output_tokens', 0)
-        cache_r += u.get('cache_read_input_tokens', u.get('cache_read', 0))
-print(f'{input_t} {output_t} {cache_r}')
-" 2>/dev/null || echo "0 0 0")
-    local inp out cache
-    read -r inp out cache <<< "$tokens"
-    grand_input=$((grand_input + inp))
-    grand_output=$((grand_output + out))
-    grand_cache=$((grand_cache + cache))
-    if [ "$inp" -gt 0 ] || [ "$out" -gt 0 ]; then
-      printf "  %-35s %6d in / %6d out (cache: %d)\n" "$test_name" "$inp" "$out" "$cache"
-    fi
-  done
-  echo "  ---------------------------------------------------"
-  printf "  %-35s %6d in / %6d out (cache: %d)\n" "TOTAL" "$grand_input" "$grand_output" "$grand_cache"
+        i += u.get('input_tokens', 0)
+        o += u.get('output_tokens', 0)
+        cr += u.get('cache_read_input_tokens', u.get('cache_read', 0))
+        cw += u.get('cache_creation_input_tokens', u.get('cache_creation', 0))
+print(f'{i} {o} {cr} {cw}')
+" 2>/dev/null || echo "0 0 0 0")
+      local inp out cr cw
+      read -r inp out cr cw <<< "$tokens"
+      grand_input=$((grand_input + inp))
+      grand_output=$((grand_output + out))
+      grand_cache_read=$((grand_cache_read + cr))
+      grand_cache_write=$((grand_cache_write + cw))
+      if [ "$inp" -gt 0 ] || [ "$out" -gt 0 ]; then
+        printf "  %-40s %7s in / %7s out  (cache read: %s, write: %s)\n" \
+          "$fname" "$inp" "$out" "$cr" "$cw"
+      fi
+    done
 
-  local cost
-  cost=$(python3 -c "
-inp = $grand_input
-out = $grand_output
-cost = (inp / 1_000_000) * 3 + (out / 1_000_000) * 15
+    echo "  ----------------------------------------"
+    printf "  %-40s %7s in / %7s out  (cache read: %s, write: %s)\n" \
+      "TOTAL" "$grand_input" "$grand_output" "$grand_cache_read" "$grand_cache_write"
+
+    local cost
+    cost=$(python3 -c "
+i=$grand_input; o=$grand_output; cr=$grand_cache_read; cw=$grand_cache_write
+cost = (i*3 + o*15 + cr*0.30 + cw*3.75) / 1_000_000
 print(f'\${cost:.4f}')
 " 2>/dev/null || echo "unknown")
-  echo "  Estimated cost: $cost"
-  echo ""
-  echo "Output saved: $E2E_OUTPUT_DIR"
-}
+    echo "  Estimated cost (Sonnet pricing): $cost"
 
-print_summary() {
+    local total_ctx=$((grand_input + grand_cache_read + grand_cache_write))
+    if [ "$total_ctx" -gt 0 ]; then
+      local hit_rate
+      hit_rate=$(python3 -c "print(f'{$grand_cache_read / $total_ctx * 100:.1f}%')" 2>/dev/null || echo "n/a")
+      echo "  Cache hit rate: $hit_rate"
+    fi
+    echo ""
+
+    if [ "$TOTAL_FAIL" -gt 0 ]; then
+      echo "FAILED"
+    else
+      echo "ALL TESTS PASSED"
+    fi
+  } | tee "$summary_file"
+
   echo ""
-  echo "================================================================"
-  echo "E2E Test Summary"
-  echo "================================================================"
-  for result in "${RESULTS[@]}"; do
-    echo "  $result"
-  done
-  echo ""
-  echo "Total: $TOTAL_PASS passed, $TOTAL_FAIL failed"
-  print_token_summary
+  echo "Summary written to: $summary_file"
 }
 
 run_test_file() {
@@ -131,7 +159,7 @@ run_test_file() {
       echo ""
       echo "STOPPING: test failed (fail-fast mode)"
       echo "  Use --no-fail-fast to continue after failures"
-      print_summary
+      print_suite_summary
       exit 1
     fi
   fi
@@ -163,7 +191,7 @@ else
   done
 fi
 
-print_summary
+print_suite_summary
 
 if [ "$TOTAL_FAIL" -gt 0 ]; then
   exit 1

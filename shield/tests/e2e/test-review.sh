@@ -31,7 +31,7 @@ echo "Project: $PROJECT_DIR (copied from terraform-vpc example)"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /review to review the Terraform code in src/" \
+  "Invoke the skill 'shield:review' to review the Terraform code in src/" \
   5 180)
 
 echo "--- Assertions ---"

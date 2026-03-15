@@ -17,7 +17,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan to create an execution plan for a VPC module with IPAM integration" \
+  "Invoke the skill 'shield:plan-docs' to create an execution plan for a VPC module with IPAM integration. Write the plan sidecar JSON to plan-sidecar.json." \
   3 120)
 
 echo "--- Assertions ---"

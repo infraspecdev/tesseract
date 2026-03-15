@@ -26,3 +26,6 @@ shield/.mcp.json
 
 # Superpowers brainstorming sessions (visual companion artifacts)
 .superpowers/
+
+# E2E test output (JSONL artifacts + summaries)
+shield/tests/output/

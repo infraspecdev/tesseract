@@ -45,7 +45,7 @@ echo "Phase 1: Research"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /research to investigate FastAPI best practices for input validation and authentication. Write findings to research.md." \
+  "Invoke the skill 'shield:research' to investigate FastAPI best practices for input validation and authentication. Write findings to research.md." \
   5 180)
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
@@ -64,7 +64,7 @@ echo "Phase 2: Planning"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). You may use superpowers for the planning process, but you MUST also invoke shield:plan-docs to generate the plan sidecar JSON at plan-sidecar.json with at least 1 epic and 2 stories with acceptance_criteria." \
+  "Invoke the skill 'shield:plan-docs' to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). The plan sidecar JSON must be written to plan-sidecar.json with at least 1 epic and 2 stories, each with acceptance_criteria." \
   10 300)
 
 # Shield's plan-docs MUST run to produce the sidecar
@@ -96,7 +96,7 @@ echo "Phase 3: Plan Review"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /plan-review to review the plan. Produce a review with grades (A-F)." \
+  "Invoke the skill 'shield:plan-review' to review the plan. Produce a review with grades (A-F)." \
   8 240)
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
@@ -115,7 +115,7 @@ echo "Phase 4: PM Status (graceful no-PM)"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /pm-status to check sprint status" \
+  "Invoke the skill 'shield:pm-status' to check sprint status" \
   3 60)
 
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
@@ -135,8 +135,8 @@ echo "Phase 5: Implementation"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /implement to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
-  8 240)
+  "Invoke the skill 'shield:implement' to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
+  15 360)
 
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement command/skill invoked"
 
@@ -174,7 +174,7 @@ echo "Phase 6: Review"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /review to review the Python code in src/. Check for remaining security issues (missing auth), missing error handling, and test coverage gaps. Report findings with severity." \
+  "Invoke the skill 'shield:review' to review the Python code in src/. Check for remaining security issues (missing auth), missing error handling, and test coverage gaps. Report findings with severity." \
   8 300)
 
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"

@@ -52,7 +52,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /implement to start implementing story EPIC-1-S1" \
+  "Invoke the skill 'shield:implement' to start implementing story EPIC-1-S1" \
   3 120)
 
 echo "--- Assertions ---"

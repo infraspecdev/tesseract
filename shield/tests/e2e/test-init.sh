@@ -21,7 +21,7 @@ echo "Project: $PROJECT_DIR (no .tesseract.json)"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Use /shield init to set up this project. Project name: e2e-test. Domains: terraform. PM tool: none." \
+  "Invoke the skill 'shield:init' to set up this project. Project name: e2e-test. Domains: terraform. PM tool: none." \
   5 120)
 
 echo "--- Assertions ---"
