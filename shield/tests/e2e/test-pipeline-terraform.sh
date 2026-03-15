@@ -43,7 +43,7 @@ echo "Phase 1: Research"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. You MUST write the findings to a file called research.md in the project root before finishing." \
+  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. You MUST write the findings to a file called research.md in the project root before finishing. Do the research yourself without dispatching agents — keep it concise." \
   300 "$SESSION_ID")
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
