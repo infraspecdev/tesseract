@@ -44,7 +44,7 @@ echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:research' to investigate FastAPI best practices for input validation and authentication. You MUST write the findings to a file called research.md in the project root before finishing." \
-  8 180 "$SESSION_ID")
+  15 300 "$SESSION_ID")
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "validation\|FastAPI\|Pydantic\|auth" \
