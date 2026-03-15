@@ -43,6 +43,7 @@ run_claude_in_project() {
   local prompt="$2"
   local max_turns="${3:-3}"
   local timeout_secs="${4:-120}"
+  local session_id="${5:-}"  # optional: pass session ID to start a resumable session
 
   # Derive a unique name from the calling test script + file-based counter
   local caller_name
@@ -55,12 +56,18 @@ run_claude_in_project() {
 
   cd "$project_dir" || return 1
 
+  local -a extra_args=()
+  if [ -n "$session_id" ]; then
+    extra_args+=(--session-id "$session_id")
+  fi
+
   local exit_code=0
   timeout "$timeout_secs" claude -p "$prompt" \
     --plugin-dir "$SHIELD_ROOT" \
     --dangerously-skip-permissions \
     --max-turns "$max_turns" \
     --output-format stream-json \
+    "${extra_args[@]}" \
     > "$output_file" 2>&1 || exit_code=$?
 
   cd - >/dev/null || true
@@ -136,6 +143,52 @@ for line in open('$jsonl_file'):
     elif msg_type == 'tool_result':
         pass  # Skip — too verbose
 " > "$txt_file" 2>/dev/null || true
+}
+
+# Resume an existing Claude session with a new prompt
+# Usage: output=$(resume_claude_session "project_dir" "session_id" "prompt" [max_turns] [timeout])
+# Same as run_claude_in_project but uses --resume to continue the session.
+resume_claude_session() {
+  local project_dir="$1"
+  local session_id="$2"
+  local prompt="$3"
+  local max_turns="${4:-3}"
+  local timeout_secs="${5:-120}"
+
+  local caller_name
+  caller_name=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
+  local count
+  count=$(cat "$_COUNTER_FILE")
+  count=$((count + 1))
+  echo "$count" > "$_COUNTER_FILE"
+  local output_file="${E2E_OUTPUT_DIR}/${caller_name}-${count}.jsonl"
+
+  cd "$project_dir" || return 1
+
+  local exit_code=0
+  timeout "$timeout_secs" claude -p "$prompt" \
+    --resume "$session_id" \
+    --plugin-dir "$SHIELD_ROOT" \
+    --dangerously-skip-permissions \
+    --max-turns "$max_turns" \
+    --output-format stream-json \
+    > "$output_file" 2>&1 || exit_code=$?
+
+  cd - >/dev/null || true
+
+  if [ ! -s "$output_file" ]; then
+    echo "  [WARN] Claude session produced no output (exit code: $exit_code)" >&2
+    echo "         Output file: $output_file" >&2
+    if [ "$exit_code" -eq 124 ]; then
+      echo "         Cause: timeout after ${timeout_secs}s" >&2
+    elif [ "$exit_code" -ne 0 ]; then
+      echo "         Cause: claude exited with code $exit_code" >&2
+    fi
+  fi
+
+  _extract_readable "$output_file"
+
+  echo "$output_file"
 }
 
 # Extract token usage from a stream-json output file
@@ -714,6 +767,7 @@ assert_pm_mock_called() {
 }
 
 export -f run_claude_in_project
+export -f resume_claude_session
 export -f extract_tokens
 export -f report_tokens
 export -f assert_skill_invoked
