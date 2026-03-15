@@ -1,11 +1,6 @@
 ---
 name: review
-description: |
-  Comprehensive code review orchestrator. Detects domains from .tesseract.json and
-  changed files, dispatches domain-specific review skills and reviewer agents,
-  verifies acceptance criteria, merges findings, and presents to user.
-  Use when running code review during or after implementation.
-autoInvoke: false
+description: Use when code changes need review for security, cost, architecture, or acceptance criteria verification. Triggers on /review, after implementation, pre-merge.
 ---
 
 # Review Orchestrator
@@ -24,7 +19,14 @@ autoInvoke: false
 
 ## Review Process
 
-### 1. Determine Context and Scope
+### 1. Load Prior Context
+
+Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
+- **Plan sidecar** — `shield/latest/plan-sidecar.json` for stories and acceptance criteria
+- **Research** — `shield/latest/docs/research.md` for domain context
+- **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
+
+### 2. Determine Context and Scope
 
 Identify the review context to determine depth:
 
@@ -91,7 +93,10 @@ If an active story context exists (from the plan sidecar):
 ### 8. Apply Fixes and Update Summary
 
 1. Apply selected fixes
-2. Write review summary to run directory
+2. Write review summary to run directory (`shield/latest/docs/`). If `shield/latest/` doesn't exist, create it:
+   ```bash
+   RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
+   ```
 3. If any fixes were applied, re-render the plan HTML from sidecar
 
 ## Output Format

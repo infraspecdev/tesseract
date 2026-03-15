@@ -1,13 +1,6 @@
 ---
 name: plan-docs
-description: |
-  Shield's planning skill — generates plan documents AND a JSON sidecar file.
-  The sidecar is the machine-readable source of truth for stories, acceptance
-  criteria, and status. It is required by /pm-sync, /implement (AC confirmation),
-  and /review (AC verification). Use this skill instead of external planning
-  plugins when the Shield pipeline is active.
-  Triggers on: phase planning, ADR creation, detailed plan, story breakdown,
-  infrastructure planning documents, /plan command.
+description: Use when breaking down a project phase into stories with acceptance criteria, creating ADRs, or planning infrastructure work. Triggers on /plan, story breakdown, detailed plan, architecture doc.
 ---
 
 # Plan Docs
@@ -23,55 +16,11 @@ Create planning artifacts for a project phase:
 
 ## Plan Sidecar JSON
 
-The sidecar MUST be written to the Shield run directory (`.shield/<run>/plan-sidecar.json`). The session-start hook injects the current run path — use it. It MUST conform to this structure:
-
-```json
-{
-  "version": "1.0",
-  "project": "<project name from .tesseract.json>",
-  "phase": "<phase name>",
-  "epics": [
-    {
-      "id": "EPIC-1",
-      "name": "<epic name>",
-      "stories": [
-        {
-          "id": "EPIC-1-S1",
-          "name": "<story name>",
-          "status": "ready",
-          "assignee": null,
-          "priority": "high",
-          "week": null,
-          "description": "<2-3 sentences describing what needs to happen>",
-          "tasks": [
-            "Concrete action 1",
-            "Concrete action 2"
-          ],
-          "acceptance_criteria": [
-            "Verifiable outcome 1 (testable, not vague)",
-            "Verifiable outcome 2"
-          ],
-          "pm_id": null,
-          "pm_url": null
-        }
-      ]
-    }
-  ],
-  "metadata": {
-    "created_at": "<YYYY-MM-DD>",
-    "domains": ["<from .tesseract.json>"],
-    "reviewer_grades": {}
-  }
-}
+The sidecar MUST be written to the Shield run directory (`shield/<run>/plan-sidecar.json`). Check if `shield/latest/` exists; if not, create the run directory first:
+```bash
+RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
 ```
-
-**Sidecar rules:**
-- Every epic MUST have at least 1 story
-- Every story MUST have at least 1 acceptance criterion
-- Acceptance criteria must be testable — not "it works" but "VPC has DNS support enabled"
-- Tasks must be specific enough to execute without questions
-- Status starts as `"ready"` for new stories
-- `pm_id` and `pm_url` start as `null` — populated by `/pm-sync`
+Then write to `shield/latest/plan-sidecar.json`. See `sidecar-schema.md` for the full JSON schema and rules.
 
 ## When to Use
 
@@ -147,8 +96,9 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 
 ## Workflow
 
-1. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
-2. **Read `.tesseract.json`** — get project name and active domains
+1. **Load prior research** — check if `shield/latest/docs/research.md` exists. If it does, read it and use the research findings to inform the plan. If not, proceed without it.
+2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
+3. **Read `.tesseract.json`** — get project name and active domains
 3. **Generate sidecar JSON first** — write `plan-sidecar.json` with epics, stories, tasks, and acceptance criteria
 4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
 5. **Generate architecture doc** (HTML) — the "thinking" document

@@ -1,10 +1,6 @@
 ---
 name: implement-feature
-description: |
-  Shield's implementation skill — TDD-based feature implementation with acceptance
-  criteria confirmation, per-step lightweight review, and sidecar status updates.
-  Reads stories and AC from the plan sidecar JSON when available.
-  Triggers on: implement, build, create feature, /implement command.
+description: Use when implementing a feature or story, especially with acceptance criteria to verify. Triggers on /implement, build, create feature, add functionality.
 ---
 
 # Implement Feature
@@ -46,7 +42,7 @@ The user provides one or more of:
 
 ### From plan sidecar (preferred)
 
-If a `plan-sidecar.json` exists in the Shield run directory (`.shield/latest/plan-sidecar.json`) or project root:
+If a `plan-sidecar.json` exists in the Shield run directory (`shield/latest/plan-sidecar.json`) or project root:
 1. Read the sidecar
 2. Find the story by ID (if story ID provided)
 3. Extract: name, description, tasks, acceptance criteria

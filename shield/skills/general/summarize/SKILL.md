@@ -1,9 +1,6 @@
 ---
 name: summarize
-description: |
-  Phase summary generator. Called by orchestrators at the end of each pipeline phase.
-  Produces concise bullet-point summaries written to the run directory.
-autoInvoke: false
+description: Use when a pipeline phase completes and needs an audit trail summary. Called by other skills, not directly by users.
 ---
 
 # Phase Summarize
@@ -24,7 +21,10 @@ The orchestrator passes:
 
 1. Format the phase output as concise bullet points (5-10 bullets max)
 2. Include: what was done, key decisions made, findings if any, next phase
-3. Write to the Shield docs directory (`.shield/<run>/docs/<phase_name>-summary.md`). The session-start hook injects the current docs path — use it.
+3. Write to the Shield docs directory (`shield/<run>/docs/<phase_name>-summary.md`). Check if `shield/latest/docs/` exists; if not, create the run directory first:
+   ```bash
+   RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
+   ```
 4. Return the summary text to the orchestrator for display
 
 ## Summary Format

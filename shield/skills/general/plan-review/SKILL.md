@@ -1,10 +1,6 @@
 ---
 name: plan-review
-description: |
-  Dispatch parallel expert reviewer agents against a plan document to produce
-  a scored analysis with prioritized recommendations. Reads plan data from the
-  sidecar JSON when available. Uses Shield's multi-mode agents in plan-review mode.
-  Triggers on: plan review, review my plan, document review, /plan-review.
+description: Use when a plan, architecture doc, or execution plan exists and needs expert review before implementation. Triggers on /plan-review, review my plan, document review.
 ---
 
 # Plan Review
@@ -27,55 +23,17 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Plan sidecar JSON** (`plan-sidecar.json`) — if present, use stories and AC from the sidecar
-2. **HTML plan document** — if only HTML exists, parse it for story content
-3. **Markdown plan document** — path provided by user or auto-detected
-4. **User-provided path** — explicit path argument
+1. **Plan sidecar JSON** (`shield/latest/plan-sidecar.json`) — if present, use stories and AC from the sidecar
+2. **Plan docs** in `shield/latest/docs/` — architecture docs, research findings
+3. **HTML plan document** — if only HTML exists, parse it for story content
+4. **Markdown plan document** — path provided by user or auto-detected
+5. **User-provided path** — explicit path argument
 
-## Persona Catalog
+**Always start by checking for `shield/latest/plan-sidecar.json` and docs in `shield/latest/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
 
-All agents are dispatched in **plan review mode** — lightweight checks focused on plan quality.
+## Persona Selection
 
-| Agent | Weight | Focus |
-|-------|--------|-------|
-| `shield:architecture-reviewer` | 1.0 | Service topology, scalability, HA, network design |
-| `shield:security-reviewer` | 1.0 | Security posture, threat modeling, access control, testability |
-| `shield:dx-engineer-reviewer` | 1.0 | Plan clarity, actionability, software architecture |
-| `shield:cost-reviewer` | 0.7 | Cost awareness, right-sizing, environment tiering |
-| `shield:agile-coach-reviewer` | 0.7 | Sprint-readiness, story quality, dependencies |
-| `shield:operations-reviewer` | 0.7 | Monitoring, failure modes, backup, on-call readiness |
-
-## Dynamic Persona Selection
-
-```dot
-digraph persona_selection {
-    rankdir=TB;
-    node [shape=box];
-
-    read [label="Read plan, extract keywords"];
-    has_stories [label="Plan has stories?" shape=diamond];
-    force_dx_ac [label="Force-include\nDX Engineer + Agile Coach"];
-    count_triggers [label="Count trigger keyword\nmatches per agent"];
-    enough [label="3+ agents selected?" shape=diamond];
-    add_next [label="Add next-closest\nagent by trigger count"];
-    announce [label="Announce selection\nto user with reasons"];
-
-    read -> has_stories;
-    has_stories -> force_dx_ac [label="yes"];
-    has_stories -> count_triggers [label="no"];
-    force_dx_ac -> count_triggers;
-    count_triggers -> enough;
-    enough -> announce [label="yes"];
-    enough -> add_next [label="no"];
-    add_next -> enough;
-}
-```
-
-**Selection rules:**
-- **Always include** DX Engineer + Agile Coach when plan contains stories
-- **Include** any agent with 2+ trigger keyword matches
-- **Minimum 3** agents — backfill by trigger count if needed
-- Announce which reviewers were selected and why before dispatching
+See `personas.md` for the full catalog, weights, and dynamic selection flowchart.
 
 ## Dispatch
 
@@ -94,7 +52,11 @@ After all agents return:
 
 ## Output
 
-Write to the Shield docs directory (`.shield/<run>/docs/`). The session-start hook injects the current docs path — use it.
+Write to the Shield docs directory (`shield/<run>/docs/`). Check if `shield/latest/docs/` exists; if not, create the run directory first:
+```bash
+RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
+```
+Then write to `shield/latest/docs/`.
 - `analysis.md` — scored evaluation with consolidated recommendations
 - `plan.md` — enhanced version of original plan with feedback applied
 

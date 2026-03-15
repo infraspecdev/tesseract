@@ -1,10 +1,6 @@
 ---
 name: research
-description: |
-  Shield's research skill — investigate a technical topic with structured citations
-  and expert opinions. Produces a research document and invokes summarize at the
-  end for the pipeline audit trail.
-  Triggers on: research, investigate, compare approaches, evaluate tools, /research.
+description: Use when comparing approaches, evaluating tools, building evidence-based decisions, or the user needs citations and industry backing. Triggers on /research, investigate, compare, evaluate.
 ---
 
 # Research Skill
@@ -32,7 +28,15 @@ The user provides a topic or question, optionally with:
 - Specific concerns to address
 - Where to save the output
 
-If not specified, save to the Shield docs directory (`.shield/<run>/docs/`). The session-start hook injects the current docs path — use it.
+If not specified, save to the Shield docs directory (`shield/<run>/docs/`).
+
+**Finding the docs directory:** Check if `shield/latest/docs/` exists. If it does, write there. If not, create the run directory structure first:
+```bash
+RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$RUN_DIR/docs"
+ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
+```
+Then write to `$RUN_DIR/docs/research.md`.
 
 ## Workflow
 
@@ -138,6 +142,12 @@ Use this structure:
 
 - [All source URLs as clickable links]
 ```
+
+## When NOT to Use
+
+- Breaking down work into stories — use `shield:plan-docs` instead
+- Reviewing existing code or plans — use `shield:review` or `shield:plan-review`
+- Quick factual lookups that don't need citations
 
 ## Rules
 
