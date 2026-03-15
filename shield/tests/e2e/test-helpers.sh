@@ -76,7 +76,66 @@ run_claude_in_project() {
     fi
   fi
 
+  # Extract readable text output alongside the JSONL
+  _extract_readable "$output_file"
+
   echo "$output_file"
+}
+
+# Extract human-readable text from a stream-json JSONL file
+# Writes a .txt file alongside the .jsonl with assistant messages and tool summaries
+_extract_readable() {
+  local jsonl_file="$1"
+  local txt_file="${jsonl_file%.jsonl}.txt"
+
+  [ -s "$jsonl_file" ] || return 0
+
+  python3 -c "
+import json, sys, textwrap
+
+for line in open('$jsonl_file'):
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        data = json.loads(line)
+    except:
+        continue
+
+    msg_type = data.get('type', '')
+
+    # Assistant text output
+    if msg_type == 'assistant' and 'message' in data:
+        for block in data['message'].get('content', []):
+            if block.get('type') == 'text':
+                print(block['text'])
+                print()
+            elif block.get('type') == 'tool_use':
+                name = block.get('name', '?')
+                inp = block.get('input', {})
+                if name == 'Skill':
+                    print(f'[Skill: {inp.get(\"skill\", \"?\")}]')
+                elif name == 'Write':
+                    print(f'[Write: {inp.get(\"file_path\", \"?\")}]')
+                elif name == 'Edit':
+                    print(f'[Edit: {inp.get(\"file_path\", \"?\")}]')
+                elif name == 'Read':
+                    print(f'[Read: {inp.get(\"file_path\", \"?\")}]')
+                elif name == 'Bash':
+                    cmd = inp.get('command', '?')
+                    if len(cmd) > 100:
+                        cmd = cmd[:100] + '...'
+                    print(f'[Bash: {cmd}]')
+                elif name == 'Agent':
+                    print(f'[Agent: {inp.get(\"description\", \"?\")}]')
+                else:
+                    print(f'[{name}]')
+                print()
+
+    # Tool results (abbreviated)
+    elif msg_type == 'tool_result':
+        pass  # Skip — too verbose
+" > "$txt_file" 2>/dev/null || true
 }
 
 # Extract token usage from a stream-json output file
