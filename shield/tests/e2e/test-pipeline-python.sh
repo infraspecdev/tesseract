@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'trap - INT TERM; kill -- -$$ 2>/dev/null; wait; exit 1' INT TERM
 
 # E2E Pipeline Test: Python API
-# Runs the full Shield SDLC pipeline in a single resumed session.
-# Each phase is a separate prompt that resumes the same session,
-# so artifacts and context carry across phases naturally.
+# Runs the full Shield SDLC pipeline as independent phases.
+# Each phase is a fresh Claude session that reads artifacts from disk.
+# No session resumption — keeps context small for Sonnet compatibility.
 #
 # Timing: ~10-20 minutes
 
@@ -19,11 +20,9 @@ echo ""
 # Create project inside the output dir
 PROJECT_DIR=$(create_test_project_from_example "$SHIELD_ROOT/examples/python-api")
 INIT_REF=$(git -C "$PROJECT_DIR" rev-parse HEAD)
-SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
 
 echo "Project: $PROJECT_DIR"
 echo "Output:  $E2E_OUTPUT_DIR"
-echo "Session: $SESSION_ID"
 echo ""
 
 check_phase() {
@@ -42,33 +41,35 @@ echo "================================================================"
 echo "Phase 1: Research"
 echo "================================================================"
 
-OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Invoke the skill 'shield:research' to investigate FastAPI best practices for input validation and authentication. Write the research findings to the Shield run directory." \
-  600 "$SESSION_ID")
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:research' to investigate FastAPI best practices for input validation and authentication." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "validation\|FastAPI\|Pydantic\|auth" \
   "research mentions relevant concepts"
-assert_file_glob "$PROJECT_DIR" ".shield/*/docs/research.md" "research.md created in docs dir"
+assert_file_glob "$PROJECT_DIR" "shield/*/docs/research.md" "research.md created in docs dir"
 
 report_tokens "$OUTPUT" "1-research"
 check_phase
 echo ""
 
 # ================================================================
-# Phase 2: Planning (resumes session — has research context)
+# Phase 2: Planning
 # ================================================================
 echo "================================================================"
 echo "Phase 2: Planning"
 echo "================================================================"
 
-OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:plan-docs' to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). Write plan-sidecar.json to the Shield run directory with at least 1 epic and 2 stories, each with acceptance_criteria." \
-  300)
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:plan-docs' to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404)." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
-SIDECAR=$(find "$PROJECT_DIR/.shield" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
+SIDECAR=$(find "$PROJECT_DIR/shield" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
 if [ -n "$SIDECAR" ]; then
   assert_json_field "$SIDECAR" \
     "len(data.get('epics', [])) > 0" \
@@ -86,15 +87,16 @@ check_phase
 echo ""
 
 # ================================================================
-# Phase 3: Plan Review (resumes — has research + plan context)
+# Phase 3: Plan Review
 # ================================================================
 echo "================================================================"
 echo "Phase 3: Plan Review"
 echo "================================================================"
 
-OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:plan-review' to review the plan. Produce a review with grades (A-F)." \
-  240)
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:plan-review' to review the plan. Produce a review with grades (A-F) for each reviewer." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
 assert_output_contains "$OUTPUT" "Grade.*[A-F]\|grade.*[A-F]\|[A-F].*grade" \
@@ -111,9 +113,10 @@ echo "================================================================"
 echo "Phase 4: PM Status (graceful no-PM)"
 echo "================================================================"
 
-OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:pm-status' to check sprint status." \
-  60)
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:pm-status' to check sprint status." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
   "suggests setup when PM not configured"
@@ -125,15 +128,16 @@ check_phase
 echo ""
 
 # ================================================================
-# Phase 5: Implementation (resumes — has full plan context)
+# Phase 5: Implementation
 # ================================================================
 echo "================================================================"
 echo "Phase 5: Implementation"
 echo "================================================================"
 
-OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:implement' to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
-  360)
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:implement' to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement skill invoked"
 assert_git_commits_since "$PROJECT_DIR" "$INIT_REF" "new commits from implementation"
@@ -160,15 +164,16 @@ check_phase
 echo ""
 
 # ================================================================
-# Phase 6: Review (resumes — sees implementation changes)
+# Phase 6: Review
 # ================================================================
 echo "================================================================"
 echo "Phase 6: Review"
 echo "================================================================"
 
-OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:review' to review the Python code in src/. Check for remaining security issues (missing auth), missing error handling, and test coverage gaps. Report findings with severity." \
-  300)
+run_claude_in_project "$PROJECT_DIR" \
+  "Invoke the skill 'shield:review' to review the Python code in src/. Check for remaining security issues (missing auth), missing error handling, and test coverage gaps. Report findings with severity." \
+  1200
+OUTPUT="$LAST_OUTPUT"
 
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"
 assert_output_contains "$OUTPUT" "auth\|authentication\|Authorization" \

@@ -18,16 +18,30 @@ mkdir -p "$E2E_OUTPUT_DIR"
 PASS=0
 FAIL=0
 SKIP=0
+LAST_OUTPUT=""
 TOTAL_INPUT_TOKENS=0
 TOTAL_OUTPUT_TOKENS=0
 TOTAL_CACHE_READ=0
 TOTAL_CACHE_WRITE=0
 
-# Check Claude CLI is available
+# Check Claude CLI is available and API is reachable
 check_claude() {
   if ! command -v claude &>/dev/null; then
     echo "ERROR: claude CLI not found. Install Claude Code first."
     exit 1
+  fi
+
+  # Pre-flight: verify API is reachable with a minimal prompt
+  echo "Pre-flight check..."
+  local preflight_file="${E2E_OUTPUT_DIR}/.preflight"
+  timeout 30 claude -p "reply OK" --output-format json --dangerously-skip-permissions \
+    < /dev/null > "$preflight_file" 2>&1 || true
+  if ! grep -qi "OK" "$preflight_file" 2>/dev/null; then
+    echo "WARNING: Pre-flight check failed — API may be rate-limited or unreachable"
+    echo "  Output: $(head -5 "$preflight_file" 2>/dev/null)"
+    echo "  Continuing anyway..."
+  else
+    echo "Pre-flight check passed."
   fi
 }
 
@@ -42,7 +56,6 @@ run_claude_in_project() {
   local project_dir="$1"
   local prompt="$2"
   local timeout_secs="${3:-180}"
-  local session_id="${4:-}"  # optional: pass session ID to start a resumable session
 
   # Derive a unique name from the calling test script + file-based counter
   local caller_name
@@ -55,18 +68,14 @@ run_claude_in_project() {
 
   cd "$project_dir" || return 1
 
-  local -a extra_args=()
-  if [ -n "$session_id" ]; then
-    extra_args+=(--session-id "$session_id")
-  fi
-
   local exit_code=0
+  local stderr_file="${output_file%.jsonl}.stderr"
   timeout "$timeout_secs" claude -p "$prompt" \
     --plugin-dir "$SHIELD_ROOT" \
     --dangerously-skip-permissions \
     --output-format stream-json \
-    "${extra_args[@]}" \
-    > "$output_file" 2>&1 || exit_code=$?
+    --model "${CLAUDE_MODEL:-sonnet}" \
+    < /dev/null > "$output_file" 2>"$stderr_file" || exit_code=$?
 
   cd - >/dev/null || true
 
@@ -79,12 +88,16 @@ run_claude_in_project() {
     elif [ "$exit_code" -ne 0 ]; then
       echo "         Cause: claude exited with code $exit_code" >&2
     fi
+    if [ -s "$stderr_file" ]; then
+      echo "         Stderr:" >&2
+      head -20 "$stderr_file" | sed 's/^/           /' >&2
+    fi
   fi
 
   # Extract readable text output alongside the JSONL
   _extract_readable "$output_file"
 
-  echo "$output_file"
+  LAST_OUTPUT="$output_file"
 }
 
 # Extract human-readable text from a stream-json JSONL file
@@ -143,48 +156,14 @@ for line in open('$jsonl_file'):
 " > "$txt_file" 2>/dev/null || true
 }
 
-# Resume an existing Claude session with a new prompt
-# Usage: output=$(resume_claude_session "project_dir" "session_id" "prompt" [timeout])
-# Same as run_claude_in_project but uses --resume to continue the session.
+# resume_claude_session is deprecated — use run_claude_in_project with artifact-based context instead.
+# Each phase reads artifacts from shield/latest/ on disk rather than resuming conversation history.
 resume_claude_session() {
   local project_dir="$1"
-  local session_id="$2"
+  local _session_id="$2"  # ignored — kept for backward compat
   local prompt="$3"
   local timeout_secs="${4:-180}"
-
-  local caller_name
-  caller_name=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
-  local count
-  count=$(cat "$_COUNTER_FILE")
-  count=$((count + 1))
-  echo "$count" > "$_COUNTER_FILE"
-  local output_file="${E2E_OUTPUT_DIR}/${caller_name}-${count}.jsonl"
-
-  cd "$project_dir" || return 1
-
-  local exit_code=0
-  timeout "$timeout_secs" claude -p "$prompt" \
-    --resume "$session_id" \
-    --plugin-dir "$SHIELD_ROOT" \
-    --dangerously-skip-permissions \
-    --output-format stream-json \
-    > "$output_file" 2>&1 || exit_code=$?
-
-  cd - >/dev/null || true
-
-  if [ ! -s "$output_file" ]; then
-    echo "  [WARN] Claude session produced no output (exit code: $exit_code)" >&2
-    echo "         Output file: $output_file" >&2
-    if [ "$exit_code" -eq 124 ]; then
-      echo "         Cause: timeout after ${timeout_secs}s" >&2
-    elif [ "$exit_code" -ne 0 ]; then
-      echo "         Cause: claude exited with code $exit_code" >&2
-    fi
-  fi
-
-  _extract_readable "$output_file"
-
-  echo "$output_file"
+  run_claude_in_project "$project_dir" "$prompt" "$timeout_secs"
 }
 
 # Extract token usage from a stream-json output file
