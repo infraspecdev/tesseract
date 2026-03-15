@@ -22,7 +22,9 @@ find_marker() {
 
 # --- Detect project ---
 MARKER_PATH=""
+PROJECT_ROOT=""
 if MARKER_PATH=$(find_marker); then
+  PROJECT_ROOT="$(dirname "$MARKER_PATH")"
   PROJECT_NAME=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['project'])" "$MARKER_PATH" 2>/dev/null || echo "unknown")
   DOMAINS=$(python3 -c "import json,sys; print(', '.join(json.load(open(sys.argv[1])).get('domains',[])))" "$MARKER_PATH" 2>/dev/null || echo "none")
 else
@@ -67,7 +69,7 @@ RUN_DIR=""
 DOCS_DIR=""
 if [ -n "$PROJECT_NAME" ]; then
   RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-  RUN_DIR=".shield/${RUN_TIMESTAMP}"
+  RUN_DIR="${PROJECT_ROOT}/shield/${RUN_TIMESTAMP}"
   DOCS_DIR="${RUN_DIR}/docs"
   mkdir -p "$DOCS_DIR"
 
@@ -85,7 +87,7 @@ json.dump(metadata, open('${RUN_DIR}/metadata.json', 'w'), indent=2)
 " 2>/dev/null || true
 
   # Update latest symlink
-  ln -sfn "${RUN_TIMESTAMP}" ".shield/latest"
+  ln -sfn "${RUN_TIMESTAMP}" "${PROJECT_ROOT}/shield/latest"
 fi
 
 # --- Build context output ---
@@ -119,7 +121,7 @@ if [ -n "$PROJECT_NAME" ]; then
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 
-**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan-sidecar.json, metadata.json) to \`${RUN_DIR}/\`. The \`.shield/latest\` symlink always points to the current run.
+**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan-sidecar.json, metadata.json) to \`${RUN_DIR}/\`. The \`shield/latest\` symlink always points to the current run.
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}
