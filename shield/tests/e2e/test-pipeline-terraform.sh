@@ -88,6 +88,9 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+assert_file_glob "$PROJECT_DIR" "shield/*/architecture.html" "architecture.html created"
+assert_file_glob "$PROJECT_DIR" "shield/*/plan.html" "plan.html created"
+
 report_tokens "$OUTPUT" "2-plan"
 check_phase
 echo ""
