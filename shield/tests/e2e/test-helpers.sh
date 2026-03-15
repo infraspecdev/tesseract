@@ -274,13 +274,14 @@ assert_no_premature_action() {
   fi
 }
 
-# Create a temporary test project with .tesseract.json
-# Usage: project_dir=$(create_shield_test_project "project_name" "domain1,domain2")
-create_shield_test_project() {
+# Create a test project inside the output directory
+# Usage: project_dir=$(create_test_project "project_name" "domain1,domain2")
+# The project lives at $E2E_OUTPUT_DIR/project/ — no cleanup needed.
+create_test_project() {
   local name="${1:-test-project}"
   local domains="${2:-terraform}"
-  local tmpdir
-  tmpdir=$(mktemp -d)
+  local project_dir="${E2E_OUTPUT_DIR}/project"
+  mkdir -p "$project_dir"
 
   # Create .tesseract.json
   local domains_json
@@ -290,7 +291,7 @@ domains = sys.stdin.read().strip().split(',')
 print('[' + ', '.join('\"' + d.strip() + '\"' for d in domains) + ']')
 ")
 
-  cat > "$tmpdir/.tesseract.json" <<EOF
+  cat > "$project_dir/.tesseract.json" <<EOF
 {
   "project": "$name",
   "domains": $domains_json
@@ -298,19 +299,32 @@ print('[' + ', '.join('\"' + d.strip() + '\"' for d in domains) + ']')
 EOF
 
   # Init git repo (Claude Code expects one)
-  git -C "$tmpdir" init -q
-  git -C "$tmpdir" add .
-  git -C "$tmpdir" commit -q -m "init" --no-gpg-sign
+  git -C "$project_dir" init -q
+  git -C "$project_dir" add .
+  git -C "$project_dir" commit -q -m "init" --no-gpg-sign
 
-  echo "$tmpdir"
+  echo "$project_dir"
 }
 
-# Cleanup test project
-cleanup_test_project() {
-  local project_dir="$1"
-  if [ -d "$project_dir" ] && [[ "$project_dir" == /tmp/* ]]; then
-    rm -rf "$project_dir"
-  fi
+# Create a test project from an example directory
+# Usage: project_dir=$(create_test_project_from_example "example_dir")
+# Copies the example into $E2E_OUTPUT_DIR/project/ and inits git.
+create_test_project_from_example() {
+  local example_dir="$1"
+  local project_dir="${E2E_OUTPUT_DIR}/project"
+  mkdir -p "$project_dir"
+
+  cp -r "$example_dir"/* "$project_dir/"
+  # Copy dotfiles separately (cp * doesn't match them)
+  for dotfile in "$example_dir"/.*; do
+    [ -f "$dotfile" ] && cp "$dotfile" "$project_dir/"
+  done
+
+  git -C "$project_dir" init -q
+  git -C "$project_dir" add .
+  git -C "$project_dir" commit -q -m "init example" --no-gpg-sign
+
+  echo "$project_dir"
 }
 
 # Print test summary to stdout and write summary.txt to output dir
@@ -657,8 +671,8 @@ export -f assert_git_commits_since
 export -f assert_git_files_changed
 export -f start_pm_mock
 export -f assert_pm_mock_called
-export -f create_shield_test_project
-export -f cleanup_test_project
+export -f create_test_project
+export -f create_test_project_from_example
 export -f print_summary
 export E2E_OUTPUT_DIR
 export TESTS_OUTPUT_DIR

@@ -10,8 +10,7 @@ check_claude
 
 echo "=== E2E Test: /research ==="
 
-PROJECT_DIR=$(create_shield_test_project "test-research" "terraform")
-trap 'cleanup_test_project "$PROJECT_DIR"' EXIT
+PROJECT_DIR=$(create_test_project "test-research" "terraform")
 
 echo "Project: $PROJECT_DIR"
 echo ""

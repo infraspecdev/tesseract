@@ -4,6 +4,7 @@ set -euo pipefail
 # E2E Pipeline Test: Terraform VPC
 # Runs the full Shield pipeline sequentially against the terraform-vpc example.
 # Verifies artifacts produced by each phase, not just skill invocation.
+# All artifacts (plan-sidecar.json, research.md, source changes) persist in the output dir.
 #
 # Timing: ~15-25 minutes
 
@@ -15,17 +16,12 @@ check_claude
 echo "=== Pipeline Test: Terraform VPC ==="
 echo ""
 
-# Copy example to temp dir
-EXAMPLE_DIR="$SHIELD_ROOT/examples/terraform-vpc"
-PROJECT_DIR=$(mktemp -d)
-cp -r "$EXAMPLE_DIR"/* "$EXAMPLE_DIR"/.tesseract.json "$PROJECT_DIR/"
-git -C "$PROJECT_DIR" init -q
-git -C "$PROJECT_DIR" add .
-git -C "$PROJECT_DIR" commit -q -m "init terraform-vpc example" --no-gpg-sign
+# Create project inside the output dir — artifacts persist after test
+PROJECT_DIR=$(create_test_project_from_example "$SHIELD_ROOT/examples/terraform-vpc")
 INIT_REF=$(git -C "$PROJECT_DIR" rev-parse HEAD)
-trap 'rm -rf "$PROJECT_DIR"' EXIT
 
 echo "Project: $PROJECT_DIR"
+echo "Output:  $E2E_OUTPUT_DIR"
 echo ""
 
 check_phase() {

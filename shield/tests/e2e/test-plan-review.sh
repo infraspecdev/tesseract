@@ -10,8 +10,7 @@ check_claude
 
 echo "=== E2E Test: /plan-review ==="
 
-PROJECT_DIR=$(create_shield_test_project "test-plan-review" "terraform")
-trap 'cleanup_test_project "$PROJECT_DIR"' EXIT
+PROJECT_DIR=$(create_test_project "test-plan-review" "terraform")
 
 # Create a sample plan doc for the review to operate on
 mkdir -p "$PROJECT_DIR/docs"

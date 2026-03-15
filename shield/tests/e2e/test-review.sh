@@ -11,7 +11,7 @@ check_claude
 
 echo "=== E2E Test: /review ==="
 
-# Use the terraform-vpc example project directly
+# Use the terraform-vpc example project
 EXAMPLE_DIR="$SHIELD_ROOT/examples/terraform-vpc"
 
 if [ ! -d "$EXAMPLE_DIR" ]; then
@@ -19,13 +19,7 @@ if [ ! -d "$EXAMPLE_DIR" ]; then
   exit 1
 fi
 
-# Copy to temp dir so we don't pollute the example
-PROJECT_DIR=$(mktemp -d)
-cp -r "$EXAMPLE_DIR"/* "$EXAMPLE_DIR"/.tesseract.json "$PROJECT_DIR/"
-git -C "$PROJECT_DIR" init -q
-git -C "$PROJECT_DIR" add .
-git -C "$PROJECT_DIR" commit -q -m "init" --no-gpg-sign
-trap 'rm -rf "$PROJECT_DIR"' EXIT
+PROJECT_DIR=$(create_test_project_from_example "$EXAMPLE_DIR")
 
 echo "Project: $PROJECT_DIR (copied from terraform-vpc example)"
 echo ""

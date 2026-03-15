@@ -11,11 +11,11 @@ check_claude
 echo "=== E2E Test: /shield init ==="
 
 # Create a bare project with NO .tesseract.json
-PROJECT_DIR=$(mktemp -d)
+PROJECT_DIR="${E2E_OUTPUT_DIR}/project"
+mkdir -p "$PROJECT_DIR"
 git -C "$PROJECT_DIR" init -q
 echo "# Test" > "$PROJECT_DIR/README.md"
 git -C "$PROJECT_DIR" add . && git -C "$PROJECT_DIR" commit -q -m "init" --no-gpg-sign
-trap 'rm -rf "$PROJECT_DIR"' EXIT
 
 echo "Project: $PROJECT_DIR (no .tesseract.json)"
 echo ""

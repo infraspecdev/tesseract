@@ -10,8 +10,7 @@ check_claude
 
 echo "=== E2E Test: /implement ==="
 
-PROJECT_DIR=$(create_shield_test_project "test-implement" "terraform")
-trap 'cleanup_test_project "$PROJECT_DIR"' EXIT
+PROJECT_DIR=$(create_test_project "test-implement" "terraform")
 
 # Create a plan sidecar with a story and acceptance criteria
 mkdir -p "$PROJECT_DIR/.tesseract-run"
