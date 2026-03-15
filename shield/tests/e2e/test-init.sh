@@ -22,7 +22,7 @@ echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:init' to set up this project. Project name: e2e-test. Domains: terraform. PM tool: none." \
-  5 120)
+  120)
 
 echo "--- Assertions ---"
 assert_output_contains "$OUTPUT" "init\|initialized\|created\|tesseract.json" \

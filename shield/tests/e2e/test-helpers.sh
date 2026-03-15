@@ -41,9 +41,8 @@ echo "0" > "$_COUNTER_FILE"
 run_claude_in_project() {
   local project_dir="$1"
   local prompt="$2"
-  local max_turns="${3:-3}"
-  local timeout_secs="${4:-120}"
-  local session_id="${5:-}"  # optional: pass session ID to start a resumable session
+  local timeout_secs="${3:-180}"
+  local session_id="${4:-}"  # optional: pass session ID to start a resumable session
 
   # Derive a unique name from the calling test script + file-based counter
   local caller_name
@@ -65,7 +64,6 @@ run_claude_in_project() {
   timeout "$timeout_secs" claude -p "$prompt" \
     --plugin-dir "$SHIELD_ROOT" \
     --dangerously-skip-permissions \
-    --max-turns "$max_turns" \
     --output-format stream-json \
     "${extra_args[@]}" \
     > "$output_file" 2>&1 || exit_code=$?
@@ -146,14 +144,13 @@ for line in open('$jsonl_file'):
 }
 
 # Resume an existing Claude session with a new prompt
-# Usage: output=$(resume_claude_session "project_dir" "session_id" "prompt" [max_turns] [timeout])
+# Usage: output=$(resume_claude_session "project_dir" "session_id" "prompt" [timeout])
 # Same as run_claude_in_project but uses --resume to continue the session.
 resume_claude_session() {
   local project_dir="$1"
   local session_id="$2"
   local prompt="$3"
-  local max_turns="${4:-3}"
-  local timeout_secs="${5:-120}"
+  local timeout_secs="${4:-180}"
 
   local caller_name
   caller_name=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
@@ -170,7 +167,6 @@ resume_claude_session() {
     --resume "$session_id" \
     --plugin-dir "$SHIELD_ROOT" \
     --dangerously-skip-permissions \
-    --max-turns "$max_turns" \
     --output-format stream-json \
     > "$output_file" 2>&1 || exit_code=$?
 

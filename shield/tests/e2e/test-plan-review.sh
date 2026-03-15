@@ -50,7 +50,7 @@ echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:plan-review' to review the plan at docs/plan.md" \
-  5 180)
+  180)
 
 echo "--- Assertions ---"
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"

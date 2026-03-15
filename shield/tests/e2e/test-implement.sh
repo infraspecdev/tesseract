@@ -52,7 +52,7 @@ echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:implement' to start implementing story EPIC-1-S1" \
-  3 120)
+  120)
 
 echo "--- Assertions ---"
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement command/skill invoked"

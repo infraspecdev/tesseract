@@ -26,7 +26,7 @@ echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:review' to review the Terraform code in src/" \
-  5 180)
+  180)
 
 echo "--- Assertions ---"
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"

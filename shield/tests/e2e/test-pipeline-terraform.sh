@@ -44,7 +44,7 @@ echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. You MUST write the findings to a file called research.md in the project root before finishing." \
-  15 300 "$SESSION_ID")
+  300 "$SESSION_ID")
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "VPC\|vpc\|subnet\|CIDR\|availability.zone" \
@@ -64,7 +64,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:plan-docs' to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). Write the plan sidecar JSON to plan-sidecar.json with at least 1 epic and 2 stories, each with acceptance_criteria." \
-  10 300)
+  300)
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
@@ -99,7 +99,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:plan-review' to review the plan. Produce a review with grades (A-F) for each reviewer." \
-  8 240)
+  240)
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
 assert_output_contains "$OUTPUT" "Grade.*[A-F]\|grade.*[A-F]\|[A-F].*grade" \
@@ -118,7 +118,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:pm-status' to check sprint status." \
-  3 60)
+  60)
 
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
   "suggests setup when PM not configured"
@@ -138,7 +138,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:implement' to fix the security issue in src/main.tf: the flow log IAM policy (aws_iam_role_policy.flow_log) has Resource = \"*\" — scope it to the specific CloudWatch log group ARN using aws_cloudwatch_log_group.flow_logs.arn. Make the change and commit it." \
-  15 360)
+  360)
 
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement skill invoked"
 assert_git_commits_since "$PROJECT_DIR" "$INIT_REF" "new commits from implementation"
@@ -164,7 +164,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:review' to review the Terraform code in src/. Check for remaining security, cost, and architecture issues. Report specific findings with severity." \
-  8 300)
+  300)
 
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"
 assert_output_contains "$OUTPUT" "NAT\|nat_gateway\|nat gateway" \

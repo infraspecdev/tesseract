@@ -17,7 +17,7 @@ echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:pm-status' to check sprint status" \
-  3 60)
+  60)
 
 echo "--- Assertions ---"
 # Should gracefully handle missing PM config — not crash

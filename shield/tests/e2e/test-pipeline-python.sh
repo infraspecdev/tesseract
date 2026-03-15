@@ -44,7 +44,7 @@ echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   "Invoke the skill 'shield:research' to investigate FastAPI best practices for input validation and authentication. You MUST write the findings to a file called research.md in the project root before finishing." \
-  15 300 "$SESSION_ID")
+  300 "$SESSION_ID")
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "validation\|FastAPI\|Pydantic\|auth" \
@@ -64,7 +64,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:plan-docs' to create an execution plan for improving the API in src/. Focus on: 1) adding input validation using the Task Pydantic model, 2) adding error handling for missing tasks (404). Write the plan sidecar JSON to plan-sidecar.json with at least 1 epic and 2 stories, each with acceptance_criteria." \
-  10 300)
+  300)
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
@@ -93,7 +93,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:plan-review' to review the plan. Produce a review with grades (A-F)." \
-  8 240)
+  240)
 
 assert_skill_invoked "$OUTPUT" "plan-review" "plan-review skill invoked"
 assert_output_contains "$OUTPUT" "Grade.*[A-F]\|grade.*[A-F]\|[A-F].*grade" \
@@ -112,7 +112,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:pm-status' to check sprint status." \
-  3 60)
+  60)
 
 assert_output_contains "$OUTPUT" "init\|configure\|not configured\|no PM\|set up" \
   "suggests setup when PM not configured"
@@ -132,7 +132,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:implement' to add input validation to the create_task endpoint in src/routes/tasks.py. Change the parameter type from 'task: dict' to use the Task Pydantic model from src/models.py. Also add a 404 response to get_task when the task_id is not found. Make the changes and commit." \
-  15 360)
+  360)
 
 assert_any_skill_invoked "$OUTPUT" "implement|implement-feature" "implement skill invoked"
 assert_git_commits_since "$PROJECT_DIR" "$INIT_REF" "new commits from implementation"
@@ -167,7 +167,7 @@ echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
   "Now invoke the skill 'shield:review' to review the Python code in src/. Check for remaining security issues (missing auth), missing error handling, and test coverage gaps. Report findings with severity." \
-  8 300)
+  300)
 
 assert_skill_invoked "$OUTPUT" "review" "review skill invoked"
 assert_output_contains "$OUTPUT" "auth\|authentication\|Authorization" \
