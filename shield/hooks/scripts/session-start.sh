@@ -121,7 +121,7 @@ if [ -n "$PROJECT_NAME" ]; then
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 
-**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan-sidecar.json, metadata.json) to \`${RUN_DIR}/\`. The \`shield/latest\` symlink always points to the current run.
+**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan.json, metadata.json) to \`${RUN_DIR}/\`. The \`shield/latest\` symlink always points to the current run.
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}

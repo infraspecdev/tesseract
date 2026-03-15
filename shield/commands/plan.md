@@ -28,7 +28,7 @@ Generate Shield plan documents with a machine-readable sidecar.
 5. The `shield:plan-docs` skill generates:
    - Architecture/ADR document (HTML)
    - Detailed execution plan with stories (HTML)
-   - **Plan sidecar JSON** (`plan-sidecar.json`) — machine-readable story data
+   - **Plan sidecar JSON** (`plan.json`) — machine-readable story data
 6. Verify the sidecar JSON was created and contains:
    - At least 1 epic with stories
    - Each story has acceptance criteria

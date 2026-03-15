@@ -22,7 +22,7 @@ description: Use when code changes need review for security, cost, architecture,
 ### 1. Load Prior Context
 
 Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
-- **Plan sidecar** — `shield/latest/plan-sidecar.json` for stories and acceptance criteria
+- **Plan sidecar** — `shield/latest/plan.json` for stories and acceptance criteria
 - **Research** — `shield/latest/docs/research.md` for domain context
 - **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
 

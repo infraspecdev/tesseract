@@ -69,7 +69,7 @@ OUTPUT="$LAST_OUTPUT"
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
-SIDECAR=$(find "$PROJECT_DIR/shield" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
+SIDECAR=$(find "$PROJECT_DIR/shield" -name "plan.json" -type f 2>/dev/null | head -1)
 if [ -n "$SIDECAR" ]; then
   assert_json_field "$SIDECAR" \
     "len(data.get('epics', [])) > 0" \
@@ -78,7 +78,7 @@ if [ -n "$SIDECAR" ]; then
     "any(len(s.get('acceptance_criteria',[])) > 0 for e in data.get('epics',[]) for s in e.get('stories',[]))" \
     "stories have acceptance criteria"
 else
-  echo "  [FAIL] plan-sidecar.json not created"
+  echo "  [FAIL] plan.json not created"
   FAIL=$((FAIL + 1))
 fi
 

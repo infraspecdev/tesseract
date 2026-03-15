@@ -7,7 +7,7 @@ description: Use when breaking down a project phase into stories with acceptance
 
 **You MUST produce all three artifacts. No exceptions.**
 
-1. **Plan sidecar JSON** (`plan-sidecar.json`) — machine-readable source of truth
+1. **Plan sidecar JSON** (`plan.json`) — machine-readable source of truth
 2. **Architecture/ADR document** (`architecture.html`) — the "why and how"
 3. **Detailed execution plan** (`plan.html`) — the "what to do", rendered from the sidecar
 
@@ -19,11 +19,11 @@ All three go to `shield/latest/`. Producing only a markdown plan or skipping HTM
 
 ## Plan Sidecar JSON
 
-The sidecar MUST be written to the Shield run directory (`shield/<run>/plan-sidecar.json`). Check if `shield/latest/` exists; if not, create the run directory first:
+The sidecar MUST be written to the Shield run directory (`shield/<run>/plan.json`). Check if `shield/latest/` exists; if not, create the run directory first:
 ```bash
 RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
 ```
-Then write to `shield/latest/plan-sidecar.json`. See `sidecar-schema.md` for the full JSON schema and rules.
+Then write to `shield/latest/plan.json`. See `sidecar-schema.md` for the full JSON schema and rules.
 
 ## When to Use
 
@@ -68,7 +68,7 @@ The "what to do" — stories rendered from the sidecar.
 
 The HTML MUST include a meta tag referencing the sidecar:
 ```html
-<meta name="sidecar" content="./plan-sidecar.json">
+<meta name="sidecar" content="./plan.json">
 ```
 
 ### Story Format in HTML
@@ -102,7 +102,7 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 1. **Load prior research** — check if `shield/latest/docs/research.md` exists. If it does, read it and use the research findings to inform the plan. If not, proceed without it.
 2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
 3. **Read `.tesseract.json`** — get project name and active domains
-3. **Generate sidecar JSON first** — write `plan-sidecar.json` with epics, stories, tasks, and acceptance criteria
+3. **Generate sidecar JSON first** — write `plan.json` with epics, stories, tasks, and acceptance criteria
 4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
 5. **Generate architecture doc** (HTML) — the "thinking" document
 6. **Generate detailed plan** (HTML) — renders stories from the sidecar, includes `<meta>` sidecar reference

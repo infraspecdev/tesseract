@@ -23,13 +23,13 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Plan sidecar JSON** (`shield/latest/plan-sidecar.json`) — if present, use stories and AC from the sidecar
+1. **Plan sidecar JSON** (`shield/latest/plan.json`) — if present, use stories and AC from the sidecar
 2. **Plan docs** in `shield/latest/docs/` — architecture docs, research findings
 3. **HTML plan document** — if only HTML exists, parse it for story content
 4. **Markdown plan document** — path provided by user or auto-detected
 5. **User-provided path** — explicit path argument
 
-**Always start by checking for `shield/latest/plan-sidecar.json` and docs in `shield/latest/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
+**Always start by checking for `shield/latest/plan.json` and docs in `shield/latest/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
 
 ## Persona Selection
 

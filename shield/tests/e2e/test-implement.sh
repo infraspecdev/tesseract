@@ -14,7 +14,7 @@ PROJECT_DIR=$(create_test_project "test-implement" "terraform")
 
 # Create a plan sidecar with a story and acceptance criteria
 mkdir -p "$PROJECT_DIR/.tesseract-run"
-cat > "$PROJECT_DIR/.tesseract-run/plan-sidecar.json" <<'EOF'
+cat > "$PROJECT_DIR/.tesseract-run/plan.json" <<'EOF'
 {
   "version": "1.0",
   "project": "test-implement",
