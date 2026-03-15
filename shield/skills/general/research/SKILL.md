@@ -32,7 +32,7 @@ The user provides a topic or question, optionally with:
 - Specific concerns to address
 - Where to save the output
 
-If not specified, save to `docs/` in the current repo.
+If not specified, save to the Shield run directory (`docs/tesseract/<run>/`). The session-start hook injects the current run path — use it.
 
 ## Workflow
 

@@ -62,6 +62,30 @@ if [ "$PM_TOOL" != "none" ] && [ -f "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.jso
   cp "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.json" "${PLUGIN_ROOT}/.mcp.json"
 fi
 
+# --- Create run directory for artifacts ---
+RUN_DIR=""
+if [ -n "$PROJECT_NAME" ]; then
+  RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+  RUN_DIR="docs/tesseract/${RUN_TIMESTAMP}"
+  mkdir -p "$RUN_DIR"
+
+  # Write run metadata
+  python3 -c "
+import json, datetime
+metadata = {
+    'run_id': '${RUN_TIMESTAMP}',
+    'project': '${PROJECT_NAME}',
+    'domains': '${DOMAINS}'.split(', '),
+    'pm_tool': '${PM_TOOL}',
+    'started_at': datetime.datetime.now().isoformat()
+}
+json.dump(metadata, open('${RUN_DIR}/metadata.json', 'w'), indent=2)
+" 2>/dev/null || true
+
+  # Update latest symlink
+  ln -sfn "${RUN_TIMESTAMP}" "docs/tesseract/latest"
+fi
+
 # --- Build context output ---
 if [ -n "$PROJECT_NAME" ]; then
   # Build domain-specific skill guidance
@@ -88,8 +112,11 @@ if [ -n "$PROJECT_NAME" ]; then
 - Domains: ${DOMAINS}
 - PM tool: ${PM_TOOL} (${PM_STATUS})
 - Config: ${TESSERACT_HOME}/projects/${PROJECT_NAME}/
+- Run directory: ${RUN_DIR}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
+
+**Artifact output:** Write ALL Shield artifacts (research.md, plan-sidecar.json, plan.md, review reports, etc.) to \`${RUN_DIR}/\`. The \`docs/tesseract/latest\` symlink always points to the current run.
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}

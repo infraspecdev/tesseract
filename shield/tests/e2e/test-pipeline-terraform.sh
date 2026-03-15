@@ -43,13 +43,13 @@ echo "Phase 1: Research"
 echo "================================================================"
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
-  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. You MUST write the findings to a file called research.md in the project root before finishing." \
+  "Invoke the skill 'shield:research' to investigate AWS VPC best practices for multi-AZ deployment with IPAM. Write the research findings to the Shield run directory." \
   600 "$SESSION_ID")
 
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "VPC\|vpc\|subnet\|CIDR\|availability.zone" \
   "research mentions VPC concepts"
-assert_file_exists "$PROJECT_DIR" "research.md" "research.md created"
+assert_file_glob "$PROJECT_DIR" "docs/tesseract/*/research.md" "research.md created in run dir"
 
 report_tokens "$OUTPUT" "1-research"
 check_phase
@@ -63,26 +63,27 @@ echo "Phase 2: Planning"
 echo "================================================================"
 
 OUTPUT=$(resume_claude_session "$PROJECT_DIR" "$SESSION_ID" \
-  "Now invoke the skill 'shield:plan-docs' to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). Write the plan sidecar JSON to plan-sidecar.json with at least 1 epic and 2 stories, each with acceptance_criteria." \
+  "Now invoke the skill 'shield:plan-docs' to create an execution plan for improving the VPC module in src/. Focus on fixing security issues (wildcard IAM, open SSH) and cost issues (NAT gateways). Write plan-sidecar.json to the Shield run directory with at least 1 epic and 2 stories, each with acceptance_criteria." \
   300)
 
 assert_any_skill_invoked "$OUTPUT" "plan|plan-docs" "plan-docs skill invoked"
 
-if [ -f "$PROJECT_DIR/plan-sidecar.json" ]; then
-  assert_json_valid "$PROJECT_DIR/plan-sidecar.json" \
+SIDECAR=$(find "$PROJECT_DIR/docs/tesseract" -name "plan-sidecar.json" -type f 2>/dev/null | head -1)
+if [ -n "$SIDECAR" ]; then
+  assert_json_valid "$SIDECAR" \
     "$SHIELD_ROOT/schemas/plan-sidecar.schema.json" \
     "sidecar validates against schema"
-  assert_json_field "$PROJECT_DIR/plan-sidecar.json" \
+  assert_json_field "$SIDECAR" \
     "len(data.get('epics', [])) > 0" \
     "sidecar has at least 1 epic"
-  assert_json_field "$PROJECT_DIR/plan-sidecar.json" \
+  assert_json_field "$SIDECAR" \
     "any(len(e.get('stories',[])) > 0 for e in data.get('epics',[]))" \
     "sidecar has stories"
-  assert_json_field "$PROJECT_DIR/plan-sidecar.json" \
+  assert_json_field "$SIDECAR" \
     "any(len(s.get('acceptance_criteria',[])) > 0 for e in data.get('epics',[]) for s in e.get('stories',[]))" \
     "stories have acceptance criteria"
 else
-  echo "  [FAIL] plan-sidecar.json not created"
+  echo "  [FAIL] plan-sidecar.json not created in run dir"
   FAIL=$((FAIL + 1))
 fi
 
