@@ -5,10 +5,13 @@ description: Use when breaking down a project phase into stories with acceptance
 
 # Plan Docs
 
-Create planning artifacts for a project phase:
+**You MUST produce all three artifacts. No exceptions.**
+
 1. **Plan sidecar JSON** (`plan-sidecar.json`) — machine-readable source of truth
-2. **Architecture/ADR document** (HTML) — the "why and how"
-3. **Detailed execution plan** (HTML) — the "what to do", rendered from the sidecar
+2. **Architecture/ADR document** (`architecture.html`) — the "why and how"
+3. **Detailed execution plan** (`plan.html`) — the "what to do", rendered from the sidecar
+
+All three go to `shield/latest/`. Producing only a markdown plan or skipping HTML is a violation.
 
 ## Critical: Sidecar First
 
@@ -112,6 +115,8 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 
 | Mistake | Fix |
 |---|---|
+| Writing only a markdown plan | You MUST produce all 3 artifacts: sidecar JSON + architecture.html + plan.html |
+| Skipping HTML because "it's simpler" | HTML is required. Markdown is not a substitute. |
 | Generating HTML without sidecar | Always write sidecar JSON first |
 | Vague acceptance criteria | Testable: specific commands, measurable states |
 | Missing acceptance criteria on stories | Every story MUST have at least 1 criterion |
