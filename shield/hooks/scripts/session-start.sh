@@ -64,12 +64,35 @@ fi
 
 # --- Build context output ---
 if [ -n "$PROJECT_NAME" ]; then
+  # Build domain-specific skill guidance
+  DOMAIN_SKILLS="Use skills from: general/"
+  DOMAIN_SKIP=""
+  ALL_DOMAINS="terraform atmos github-actions"
+
+  IFS=',' read -ra ACTIVE_DOMAINS <<< "$(echo "$DOMAINS" | tr -d ' ')"
+  for d in "${ACTIVE_DOMAINS[@]}"; do
+    DOMAIN_SKILLS="${DOMAIN_SKILLS}, ${d}/"
+  done
+
+  for d in $ALL_DOMAINS; do
+    is_active=false
+    for a in "${ACTIVE_DOMAINS[@]}"; do
+      [ "$d" = "$a" ] && is_active=true
+    done
+    if [ "$is_active" = "false" ]; then
+      DOMAIN_SKIP="${DOMAIN_SKIP:+${DOMAIN_SKIP}, }${d}/"
+    fi
+  done
+
   CONTEXT="Shield project detected: **${PROJECT_NAME}**
 - Domains: ${DOMAINS}
 - PM tool: ${PM_TOOL} (${PM_STATUS})
 - Config: ${TESSERACT_HOME}/projects/${PROJECT_NAME}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
+
+**Skill domains:** ${DOMAIN_SKILLS}
+${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}
 
 Available commands: /shield init, /research, /plan, /plan-review, /pm-sync, /pm-status, /implement, /review, /review-security, /review-cost, /review-well-architected, /analyze-plan"
 else
