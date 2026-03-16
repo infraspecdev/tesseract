@@ -14,7 +14,17 @@ A [Claude Code](https://claude.ai/claude-code) plugin marketplace.
 |--------|-------------|
 | **[Shield](./shield/)** | A unified software development lifecycle plugin — research, planning, project management integration, implementation, and continuous code review with specialist agents |
 
-*More plugins coming soon.*
+### Deprecated Plugins
+
+The following plugins have been consolidated into Shield and are no longer maintained as separate plugins:
+
+| Plugin | Replaced By |
+|--------|------------|
+| `infra-review` | Shield's domain-specific review skills (`terraform/`, `atmos/`, `github-actions/`) and multi-mode reviewer agents |
+| `clickup-sprint-planner` | Shield's PM adapter system (`/pm-sync`, `/pm-status`) with the ClickUp adapter at `shield/adapters/clickup/` |
+| `dev-workflow` | Shield's general skills (`/research`, `/implement`, `/plan`) and superpowers integration |
+
+If you have existing projects using these plugins (e.g., `infra-plans/` directories with `sprint-planner.json`), run `/shield init` in your project to migrate. Shield detects old plugin config and offers to set up the new `.shield.json` marker and `~/.shield/` config structure.
 
 ---
 
@@ -92,12 +102,12 @@ Review findings are presented with severity levels. You pick which fixes to appl
 
 **2. Set up your project:**
 
-Run `/shield init` in your repository root. This creates a `.tesseract.json` project marker and sets up the configuration directory at `~/.tesseract/`.
+Run `/shield init` in your repository root. This creates a `.shield.json` project marker and sets up the configuration directory at `~/.shield/`.
 
 Or do it manually:
 
 ```json
-// .tesseract.json (committed to your repo)
+// .shield.json (committed to your repo)
 {
   "project": "my-project",
   "domains": ["terraform"]
@@ -105,7 +115,7 @@ Or do it manually:
 ```
 
 ```json
-// ~/.tesseract/config.json (global, one-time setup)
+// ~/.shield/config.json (global, one-time setup)
 {
   "pm_tool": "none",
   "reviewers": {
@@ -123,7 +133,7 @@ Or do it manually:
 **3. Set up project management integration (optional):**
 
 ```json
-// ~/.tesseract/projects/my-project/pm.json
+// ~/.shield/projects/my-project/pm.json
 {
   "adapter": "clickup",
   "workspace_id": "12345",
@@ -136,7 +146,7 @@ Or do it manually:
 ```
 
 ```json
-// ~/.tesseract/credentials.json (never committed anywhere)
+// ~/.shield/credentials.json (never committed anywhere)
 {
   "clickup": { "api_token": "pk_..." }
 }
@@ -162,7 +172,7 @@ Or do it manually:
 
 #### External Plugin Integration
 
-Shield discovers and leverages skills from other installed Claude Code plugins. It auto-detects domain-relevant plugins (like `terraform-skills`) and offers to integrate them. You can also explicitly map external skills to phases in `.tesseract.json`:
+Shield discovers and leverages skills from other installed Claude Code plugins. It auto-detects domain-relevant plugins (like `terraform-skills`) and offers to integrate them. You can also explicitly map external skills to phases in `.shield.json`:
 
 ```json
 {
@@ -248,7 +258,7 @@ Releases are triggered by version bumps in `.claude-plugin/marketplace.json`. To
 1. Create `shield/skills/<domain>/` directory
 2. Add phase-specific skills that need domain behavior (for example, `review/SKILL.md`)
 3. Phases without a domain-specific skill fall back to `general/`
-4. Add the domain name to the `domains` array in `.tesseract.json`
+4. Add the domain name to the `domains` array in `.shield.json`
 
 ### Adding a Project Management Adapter to Shield
 
