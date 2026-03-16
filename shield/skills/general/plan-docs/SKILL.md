@@ -11,10 +11,12 @@ description: Use when breaking down a project phase into stories with acceptance
 
 Write each artifact using the Write tool to **exactly** these paths:
 
-1. `shield/plan.json` — machine-readable sidecar (updated in place, no timestamp)
+1. `shield/docs/plans/<name>.json` — machine-readable named plan sidecar (updated in place, no timestamp)
 2. `shield/docs/architecture-YYYYMMDD-HHMMSS.html` — the "why and how"
 3. `shield/docs/plan-YYYYMMDD-HHMMSS.html` — the "what to do", rendered from the sidecar
 4. `shield/docs/index.html` — overview page linking to all artifacts (created or updated)
+
+Where `<name>` is derived from the planning topic in kebab-case (e.g., `input-validation`, `auth-feature`). If the user provides a name explicitly, use it.
 
 Replace `YYYYMMDD-HHMMSS` with the current date and time.
 
@@ -22,11 +24,11 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time.
 
 ## Critical: Sidecar First
 
-**Always generate the sidecar JSON first, then render HTML from it.** The sidecar is the source of truth — the HTML is a rendered view. When anything changes (AC edits, status updates, PM sync), the sidecar is updated and HTML is re-rendered.
+**Always generate the sidecar JSON first, then render HTML from it.** The sidecar (`shield/docs/plans/<name>.json`) is the source of truth — the HTML is a rendered view. When anything changes (AC edits, status updates, PM sync), the sidecar is updated and HTML is re-rendered.
 
 ## Plan Sidecar JSON
 
-The sidecar MUST be written to `shield/plan.json`. See `sidecar-schema.md` for the full JSON schema and rules.
+The sidecar MUST be written to `shield/docs/plans/<name>.json`. See `sidecar-schema.md` for the full JSON schema and rules.
 
 ## When to Use
 
@@ -71,7 +73,7 @@ The "what to do" — stories rendered from the sidecar.
 
 The HTML MUST include a meta tag referencing the sidecar:
 ```html
-<meta name="sidecar" content="./plan.json">
+<meta name="sidecar" content="./plans/<name>.json">
 ```
 
 ### Story Format in HTML
@@ -125,3 +127,4 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 | Missing acceptance criteria on stories | Every story MUST have at least 1 criterion |
 | Empty tasks list | Every story needs concrete, actionable tasks |
 | Not reading .shield.json | Project name and domains come from the marker |
+| Writing to `shield/plan.json` (old path) | Write to `shield/docs/plans/<name>.json` — named plans, not single file |
