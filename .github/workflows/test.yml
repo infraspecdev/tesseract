@@ -29,10 +29,10 @@ jobs:
           jsonschema.validate(example, schema)
           print('✓ config.example.json validates')
 
-          schema = json.load(open('shield/schemas/tesseract.schema.json'))
-          example = json.load(open('shield/config-examples/tesseract.example.json'))
+          schema = json.load(open('shield/schemas/shield.schema.json'))
+          example = json.load(open('shield/config-examples/shield.example.json'))
           jsonschema.validate(example, schema)
-          print('✓ tesseract.example.json validates')
+          print('✓ shield.example.json validates')
 
           schema = json.load(open('shield/schemas/pm.schema.json'))
           example = json.load(open('shield/config-examples/pm-clickup.example.json'))
