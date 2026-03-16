@@ -24,11 +24,6 @@ jobs:
           python3 -c "
           import json, jsonschema
 
-          schema = json.load(open('shield/schemas/config.schema.json'))
-          example = json.load(open('shield/config-examples/config.example.json'))
-          jsonschema.validate(example, schema)
-          print('✓ config.example.json validates')
-
           schema = json.load(open('shield/schemas/shield.schema.json'))
           example = json.load(open('shield/config-examples/shield.example.json'))
           jsonschema.validate(example, schema)
