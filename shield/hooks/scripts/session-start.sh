@@ -102,7 +102,7 @@ if [ -n "$PROJECT_NAME" ]; then
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 
-**Artifact output:** Documents go to \`shield/docs/\` with timestamps in filenames (e.g. \`shield/docs/research-20260315-170930.md\`). The \`shield/plan.json\` sidecar is updated in place (no timestamp).
+**Artifact output:** Documents go to \`shield/docs/\` with timestamps in filenames (e.g. \`shield/docs/research-20260315-170930.md\`). Named plan sidecars live at \`shield/docs/plans/<name>.json\` (updated in place, no timestamp).
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}

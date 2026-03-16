@@ -25,9 +25,9 @@ All artifacts go to `shield/` with timestamps in filenames:
 | Phase | Output |
 |-------|--------|
 | Research | `shield/docs/research-YYYYMMDD-HHMMSS.md` |
-| Planning | `shield/plan.json` + `shield/docs/architecture-YYYYMMDD-HHMMSS.html` + `shield/docs/plan-YYYYMMDD-HHMMSS.html` |
+| Planning | `shield/docs/plans/<name>.json` + `shield/docs/architecture-YYYYMMDD-HHMMSS.html` + `shield/docs/plan-YYYYMMDD-HHMMSS.html` |
 | Plan Review | `shield/docs/analysis-YYYYMMDD-HHMMSS.md` |
-| Implementation | Updates `shield/plan.json` status |
+| Implementation | Updates `shield/docs/plans/<name>.json` status |
 | Code Review | `shield/docs/review-YYYYMMDD-HHMMSS.md` |
 | Summarize | `shield/docs/<phase>-summary-YYYYMMDD-HHMMSS.md` |
 

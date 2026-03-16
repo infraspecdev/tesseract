@@ -27,7 +27,11 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
 ## Behavior
 
 1. If a path is provided, use that plan file
-2. If no path, check for `{project_root}/shield/plan.json` and docs in `{project_root}/shield/docs/`
+2. If no path, list plans in `{project_root}/shield/docs/plans/*.json`:
+   - If exactly one plan exists, use it
+   - If multiple plans exist, present a list and ask which to review
+   - Accept plan name as shorthand: `/plan-review auth-feature`
+   Also check for docs in `{project_root}/shield/docs/`
 3. Follow the plan-review workflow:
    - Read the plan and extract keywords
    - Select reviewers (auto-detect + config overrides)

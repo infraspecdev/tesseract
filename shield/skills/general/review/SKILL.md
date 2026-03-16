@@ -32,7 +32,7 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any oth
 ### 1. Load Prior Context
 
 Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
-- **Plan sidecar** — `shield/plan.json` for stories and acceptance criteria
+- **Plan sidecars** — `shield/docs/plans/*.json` for stories and acceptance criteria (reads all active plans)
 - **Research** — most recent `shield/docs/research-*.md` for domain context
 - **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
 
@@ -84,8 +84,8 @@ Dispatch selected agents in parallel using the appropriate mode:
 
 ### 6. Acceptance Criteria Verification (explicit/final only)
 
-If an active story context exists (from the plan sidecar):
-1. Read acceptance criteria from the sidecar JSON
+If an active story context exists (from plan sidecars in `shield/docs/plans/`):
+1. Read acceptance criteria from the named plan JSON files
 2. Check each criterion against the implementation
 3. Look for evidence in code, tests, and config
 4. Produce an AC report table: criterion | status (met/not met/not verified) | evidence

@@ -30,7 +30,7 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
    - Code correctness review on changed files
    - Domain-specific review skills (terraform, atmos, etc.)
    - Agent reviews (security, cost, architecture, operations)
-   - Acceptance criteria verification (if story context from `{project_root}/shield/plan.json`)
+   - Acceptance criteria verification (if story context from plans in `{project_root}/shield/docs/plans/`)
 2. Findings are merged, deduplicated, sorted by severity
 3. **Write review summary to the path above**
 4. Present to user with options: apply all, select specific, skip, post to PM

@@ -46,7 +46,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 2. **Sync before mutating.** Always call `pm_sync` first. Present the diff and get confirmation.
 3. **Use bulk operations.** Never create tasks one-by-one. Use `pm_bulk_create` with `set_relationships: true`.
 4. **Read config, don't hardcode.** All IDs come from `~/.shield/projects/<project>/pm.json`. Never hardcode PM tool IDs.
-5. **Read the plan sidecar JSON** for story data — not raw HTML or plan docs.
+5. **Read the named plan sidecar JSON** (`shield/docs/plans/<name>.json`) for story data — not raw HTML or plan docs. If multiple plans exist and no name specified, list them and ask.
 6. **Confirm before mutating.** Show the user exactly what will happen and ask for confirmation.
 7. **Surface errors clearly.** If tools report failure, it's real. Show which operations succeeded vs failed.
 8. **Present results as tables.** After any operation, show task names, IDs, statuses, and any failures.
@@ -58,7 +58,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 
 ```
 1. pm_get_capabilities()              → verify adapter supports bulk_create, sync
-2. pm_sync(epic="P1a")               → see what exists vs plan sidecar JSON
+2. pm_sync(plan="<name>", epic="P1a") → see what exists vs named plan sidecar JSON
 3. Present diff table to user         → match / to_create / to_update / to_link
 4. User confirms which to create
 5. pm_bulk_create(list_id=config.lists.backlog.id, stories=[...], set_relationships=true)

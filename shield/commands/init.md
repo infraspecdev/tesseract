@@ -12,6 +12,7 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
 1. **Check for existing setup**
    - If `.shield.json` already exists, show current config and ask if user wants to reconfigure
    - If old plugin config is detected (`sprint-planner.json`, `claude/infra-review/`), suggest `/shield migrate` instead
+   - If `shield/plan.json` exists (old single-plan path), offer to migrate it to `shield/docs/plans/<name>.json` — derive `<name>` from the `project` or `phase` field in the JSON
 
 2. **Gather project info**
    - Ask for project name (default: repo directory name)

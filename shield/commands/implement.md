@@ -14,7 +14,7 @@ Start implementing a feature using test-driven development with progress trackin
 
 ## Behavior
 
-1. If a story ID is provided (e.g., EPIC-1-S1), look up the story in `shield/plan.json`
+1. If a story ID is provided (e.g., EPIC-1-S1), search all plans in `shield/docs/plans/*.json` for the story
 2. If a feature description is provided, use it as the starting context
 3. If nothing provided, ask what the user wants to implement
 
@@ -23,14 +23,14 @@ Start implementing a feature using test-driven development with progress trackin
 4. If story context exists (from sidecar or PM tool):
    - Present acceptance criteria to the user
    - Ask to confirm, edit, or skip
-   - If edited, update `shield/plan.json` and re-render HTML
+   - If edited, update the plan in `shield/docs/plans/` and re-render HTML
 
 ### Implementation
 
 5. Follow the `shield:implement-feature` skill workflow:
    - TDD: write failing tests, implement, per-step review
    - Commit after each step
-   - Update `shield/plan.json` story status
+   - Update story status in the plan's `shield/docs/plans/<name>.json`
 6. If superpowers is available, delegate TDD to `superpowers:test-driven-development`
 7. After all steps complete, invoke `shield:summarize`
 

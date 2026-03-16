@@ -33,13 +33,13 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any oth
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Plan sidecar JSON** (`shield/plan.json`) — if present, use stories and AC from the sidecar
+1. **Named plan sidecar** (`shield/docs/plans/<name>.json`) — if name provided or only one plan exists. If multiple plans exist and no name given, list them and ask.
 2. **Plan docs** in `shield/docs/` — architecture docs, research findings (glob for `shield/docs/architecture-*.html`, `shield/docs/research-*.md`)
 3. **HTML plan document** — if only HTML exists, parse it for story content
 4. **Markdown plan document** — path provided by user or auto-detected
 5. **User-provided path** — explicit path argument
 
-**Always start by checking for `shield/plan.json` and docs in `shield/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
+**Always start by checking for plans in `shield/docs/plans/` and docs in `shield/docs/`.** If no plans exist, ask the user for the plan location or check the project root.
 
 ## Persona Selection
 
