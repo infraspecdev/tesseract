@@ -136,13 +136,39 @@ Update the `<meta name="sidecar">` tag in each plan HTML to point to the new sid
 <meta name="sidecar" content="./plans/<phase-name>.json">
 ```
 
-### 3d. Copy review artifacts
+Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) with the new path:
+```html
+<script src="nav.js"></script>
+```
+
+### 3d. Generate navigation
+
+**`shield/docs/nav.js`** — a sticky top navbar injected into every HTML page via `DOMContentLoaded`. Contains:
+- **Home** link → `index.html`
+- **Architecture** dropdown — links to `architecture-<slug>.html` for each phase
+- **Plans** dropdown — links to `plan-<slug>.html` for each phase
+- **Sidecars** dropdown — links to `plans/<slug>.json` for each phase
+- **Reviews** dropdown — links to review analysis and enhanced plan docs
+- **Page tabs** — when viewing an architecture or plan page, show tabs to switch between Architecture / Detailed Plan / Sidecar JSON for that phase (detected via filename pattern `architecture-<slug>.html` or `plan-<slug>.html`)
+
+Deprioritised/rejected phases should be shown with strikethrough text and status badges (matching the old nav style).
+
+**`shield/docs/index.html`** — a card-grid overview page linking to all artifacts. For each phase, show:
+- Phase tag with color (P1=purple, P2=teal, P3=blue, P4=orange, P5=red, P6=brown)
+- Phase name, timeline, description
+- Links: Architecture, Detailed Plan, Sidecar JSON
+- Story count
+- Deprioritised/rejected phases shown with reduced opacity and status labels
+
+Also include sections for Reviews and Plan Sidecars at the bottom.
+
+### 3e. Copy review artifacts
 
 For each review directory:
 - Copy `review/<date>-<name>/analysis.md` → `shield/docs/analysis-<date>-<name>.md`
 - Copy `review/<date>-<name>/plan.md` → `shield/docs/plan-enhanced-<date>-<name>.md`
 
-### 3e. Migrate legacy shield/plan.json
+### 3f. Migrate legacy shield/plan.json
 
 If `shield/plan.json` exists (old single-plan path):
 - Read the JSON, derive a name from the `project` or `phase` field
@@ -173,6 +199,8 @@ Plans (7 phases migrated):
 HTML docs copied to shield/docs/:
   ✓ 14 architecture + plan HTML files
   ✓ Meta tags updated to reference sidecar JSON
+  ✓ nav.js — sticky navbar with dropdowns and page tabs
+  ✓ index.html — card-grid overview linking all artifacts
 
 Reviews:
   ✓ shield/docs/analysis-2026-03-12-eks-foundation.md
