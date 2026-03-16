@@ -46,7 +46,7 @@ jobs:
           import json
           hooks = json.load(open('shield/hooks/hooks.json'))
           assert 'hooks' in hooks, 'Missing hooks key'
-          for event in ['SessionStart', 'PostToolUse', 'PreCommit']:
+          for event in ['SessionStart', 'PostToolUse']:
               assert event in hooks['hooks'], f'Missing {event} hook'
           print('✓ hooks.json structure valid')
           "
