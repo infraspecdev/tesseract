@@ -20,3 +20,12 @@ clickup-sprint-planner/phases/
 # IDE
 .idea/
 .vscode/
+
+# Shield — generated at runtime by session-start hook
+shield/.mcp.json
+
+# Superpowers brainstorming sessions (visual companion artifacts)
+.superpowers/
+
+# E2E test output (JSONL artifacts + summaries)
+shield/tests/output/

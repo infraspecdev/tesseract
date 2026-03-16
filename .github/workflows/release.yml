@@ -1,0 +1,51 @@
+name: Release
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Detect version changes and create release
+        run: |
+          CURRENT=$(cat .claude-plugin/marketplace.json)
+          PREVIOUS=$(git show HEAD~1:.claude-plugin/marketplace.json 2>/dev/null || echo '{"plugins":[]}')
+
+          echo "$CURRENT" | jq -r '.plugins[] | "\(.name) \(.version)"' | while read -r name version; do
+            prev_version=$(echo "$PREVIOUS" | jq -r --arg n "$name" '.plugins[] | select(.name == $n) | .version // "0.0.0"')
+
+            if [ "$version" != "$prev_version" ]; then
+              echo "Version changed for $name: $prev_version -> $version"
+              TAG="v${version}"
+
+              if git rev-parse "$TAG" >/dev/null 2>&1; then
+                echo "Tag $TAG already exists, skipping"
+                continue
+              fi
+
+              git tag "$TAG"
+              git push origin "$TAG"
+
+              PREV_TAG=$(git tag -l "v*" --sort=-v:refname | head -2 | tail -1)
+              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+                NOTES=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD")
+              else
+                NOTES="Initial release"
+              fi
+
+              gh release create "$TAG" \
+                --title "v${version}" \
+                --notes "$NOTES" \
+                --target main
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

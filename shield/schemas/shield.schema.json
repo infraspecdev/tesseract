@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shield Project Marker",
+  "description": "Project configuration file (.shield.json) committed to the repo",
+  "type": "object",
+  "required": ["project", "domains"],
+  "properties": {
+    "project": { "type": "string", "description": "Project name — used as key in ~/.shield/projects/" },
+    "domains": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "Active domains for this project" },
+    "external_skills": {
+      "type": "object",
+      "description": "External plugin skills mapped to phases",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "research": { "type": "array", "items": { "type": "string" } },
+          "plan": { "type": "array", "items": { "type": "string" } },
+          "implement": { "type": "array", "items": { "type": "string" } },
+          "review": { "type": "array", "items": { "type": "string" } },
+          "debug": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

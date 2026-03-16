@@ -1,0 +1,122 @@
+{
+  "project": "python-api-example",
+  "name": "python-api",
+  "title": "API Hardening: Input Validation & 404 Error Handling",
+  "description": "Improve the FastAPI task management API by replacing untyped dict parameters with the Task Pydantic model and adding proper 404 error handling for missing tasks.",
+  "generated": "2026-03-15T23:00:00Z",
+  "epics": [
+    {
+      "id": "E1",
+      "title": "Input Validation via Pydantic Models",
+      "description": "Replace raw dict parameters in task endpoints with typed Pydantic models to enforce field constraints and prevent mass-assignment vulnerabilities.",
+      "stories": [
+        {
+          "id": "E1-S1",
+          "title": "Enhance Task model with field constraints",
+          "description": "Add Field() constraints to the existing Task Pydantic model: minimum/maximum lengths for title and description, a status enum allowlist, and extra='forbid' to block unexpected keys.",
+          "acceptance_criteria": [
+            "Task.title has min_length=1 and max_length=200",
+            "Task.description has max_length=1000",
+            "Task.status is constrained to the enum values: 'open', 'in_progress', 'done'",
+            "Task model uses ConfigDict(extra='forbid') to reject unexpected fields",
+            "Sending an invalid status value returns HTTP 422 with a descriptive error",
+            "Sending an extra field (e.g. 'admin': true) returns HTTP 422"
+          ],
+          "tasks": [
+            {"id": "E1-S1-T1", "title": "Import Field and ConfigDict from pydantic"},
+            {"id": "E1-S1-T2", "title": "Add Field(min_length=1, max_length=200) to Task.title"},
+            {"id": "E1-S1-T3", "title": "Add Field(default='', max_length=1000) to Task.description"},
+            {"id": "E1-S1-T4", "title": "Add Literal['open', 'in_progress', 'done'] type annotation to Task.status"},
+            {"id": "E1-S1-T5", "title": "Add model_config = ConfigDict(extra='forbid') to Task"}
+          ]
+        },
+        {
+          "id": "E1-S2",
+          "title": "Use Task model in create_task endpoint",
+          "description": "Replace the untyped `task: dict` parameter in POST /tasks/ with `task: Task` so FastAPI automatically validates the request body.",
+          "acceptance_criteria": [
+            "POST /tasks/ accepts only valid Task fields",
+            "Sending a request without 'title' returns HTTP 422",
+            "Sending a title longer than 200 chars returns HTTP 422",
+            "Valid request returns the created task with id, title, description, status",
+            "The stored task preserves the validated values from the model"
+          ],
+          "tasks": [
+            {"id": "E1-S2-T1", "title": "Import Task model into src/routes/tasks.py"},
+            {"id": "E1-S2-T2", "title": "Change create_task signature from task: dict to task: Task"},
+            {"id": "E1-S2-T3", "title": "Use task.model_dump() to build the stored dict instead of **task"}
+          ]
+        },
+        {
+          "id": "E1-S3",
+          "title": "Add TaskUpdate model and use in update_task endpoint",
+          "description": "Create a TaskUpdate Pydantic model with all-optional fields for partial updates, and replace the untyped `updates: dict` parameter in PUT /tasks/{task_id}.",
+          "acceptance_criteria": [
+            "TaskUpdate model exists in src/models.py with optional title, description, status fields",
+            "Each optional field carries the same constraints as Task (max_length, enum, etc.)",
+            "PUT /tasks/{task_id} uses TaskUpdate instead of dict",
+            "Sending an invalid status value in an update returns HTTP 422",
+            "Sending only a subset of fields performs a partial update (other fields unchanged)",
+            "Sending extra fields returns HTTP 422"
+          ],
+          "tasks": [
+            {"id": "E1-S3-T1", "title": "Define TaskUpdate(BaseModel) in models.py with Optional fields"},
+            {"id": "E1-S3-T2", "title": "Import TaskUpdate in tasks.py"},
+            {"id": "E1-S3-T3", "title": "Change update_task signature from updates: dict to updates: TaskUpdate"},
+            {"id": "E1-S3-T4", "title": "Use updates.model_dump(exclude_unset=True) for the partial merge"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "title": "404 Error Handling for Missing Tasks",
+      "description": "All endpoints that look up a task by ID should return a structured HTTP 404 response when the task does not exist, rather than raising an unhandled KeyError.",
+      "stories": [
+        {
+          "id": "E2-S1",
+          "title": "Return 404 in get_task when task not found",
+          "description": "Add an existence check and raise HTTPException(status_code=404) in the GET /tasks/{task_id} endpoint.",
+          "acceptance_criteria": [
+            "GET /tasks/nonexistent returns HTTP 404",
+            "Response body is {\"detail\": \"Task not found\"}",
+            "GET /tasks/{valid_id} still returns the task correctly",
+            "No unhandled KeyError is raised for missing IDs"
+          ],
+          "tasks": [
+            {"id": "E2-S1-T1", "title": "Import HTTPException from fastapi in tasks.py"},
+            {"id": "E2-S1-T2", "title": "Add `if task_id not in tasks: raise HTTPException(404, 'Task not found')` to get_task"}
+          ]
+        },
+        {
+          "id": "E2-S2",
+          "title": "Return 404 in update_task when task not found",
+          "description": "Add an existence check and raise HTTPException(status_code=404) in the PUT /tasks/{task_id} endpoint.",
+          "acceptance_criteria": [
+            "PUT /tasks/nonexistent returns HTTP 404",
+            "Response body is {\"detail\": \"Task not found\"}",
+            "PUT /tasks/{valid_id} with valid body still updates correctly",
+            "No unhandled KeyError is raised for missing IDs"
+          ],
+          "tasks": [
+            {"id": "E2-S2-T1", "title": "Add `if task_id not in tasks: raise HTTPException(404, 'Task not found')` to update_task"}
+          ]
+        },
+        {
+          "id": "E2-S3",
+          "title": "Return 404 in delete_task when task not found",
+          "description": "Add an existence check and raise HTTPException(status_code=404) in the DELETE /tasks/{task_id} endpoint.",
+          "acceptance_criteria": [
+            "DELETE /tasks/nonexistent returns HTTP 404",
+            "Response body is {\"detail\": \"Task not found\"}",
+            "DELETE /tasks/{valid_id} still deletes and returns {\"deleted\": id}",
+            "No unhandled KeyError is raised for missing IDs"
+          ],
+          "tasks": [
+            {"id": "E2-S3-T1", "title": "Add `if task_id not in tasks: raise HTTPException(404, 'Task not found')` to delete_task"}
+          ]
+        }
+      ]
+    }
+  ]
+}

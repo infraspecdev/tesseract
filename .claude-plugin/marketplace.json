@@ -1,28 +1,35 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "tesseract",
-  "description": "Claude Code plugins for infrastructure review, sprint planning, and development workflows",
+  "description": "Claude Code plugin marketplace for the software development lifecycle",
   "owner": {
     "name": "Ashwini Manoj"
   },
   "plugins": [
     {
+      "name": "shield",
+      "description": "Unified SDLC plugin — research, planning, PM integration, implementation, and continuous review with multi-domain support and specialist agents",
+      "version": "2.0.0",
+      "source": "./shield",
+      "category": "development"
+    },
+    {
       "name": "infra-review",
-      "description": "Infrastructure review agents for Terraform/Atmos repositories — security, architecture, operations, cost optimization, AWS Well-Architected Framework reviews, and terraform plan analysis",
+      "description": "[DEPRECATED — use shield] Infrastructure review agents for Terraform/Atmos repositories. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.2.0",
       "source": "./infra-review",
       "category": "development"
     },
     {
       "name": "clickup-sprint-planner",
-      "description": "Sprint planning tools for ClickUp — bulk task operations, relationship field management, plan-doc-to-ClickUp sync, and action logging",
+      "description": "[DEPRECATED — use shield] Sprint planning tools for ClickUp. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.4.0",
       "source": "./clickup-sprint-planner",
       "category": "productivity"
     },
     {
       "name": "dev-workflow",
-      "description": "General-purpose development workflow skills — structured research with citations, TDD-based feature implementation, infrastructure planning document generation (ADR + detailed plans), and multi-persona plan review with scored analysis",
+      "description": "[DEPRECATED — use shield] Development workflow skills — research, TDD, planning. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.2.0",
       "source": "./dev-workflow",
       "category": "development"

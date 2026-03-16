@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shield PM Config",
+  "description": "Project-specific PM adapter configuration (~/.shield/projects/<project>/pm.json)",
+  "type": "object",
+  "required": ["adapter"],
+  "properties": {
+    "adapter": { "type": "string", "description": "PM adapter name (e.g., clickup, jira)" },
+    "adapter_mode": { "type": "string", "enum": ["native", "hybrid", "full"], "default": "hybrid", "description": "Adapter tier" },
+    "workspace_id": { "type": "string", "description": "PM workspace identifier" },
+    "space_id": { "type": "string", "description": "PM space/project identifier" },
+    "naming": {
+      "type": "object",
+      "properties": {
+        "project_prefix": { "type": "string", "description": "Prefix for task naming" },
+        "story_format": { "type": "string", "default": "[{prefix}] {epic_id}-S{index}: {name}", "description": "Template for story/task names" }
+      },
+      "additionalProperties": false
+    },
+    "tool_mapping": { "type": "object", "description": "Tier 1 only: maps pm_* tool names to native MCP tool names", "additionalProperties": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

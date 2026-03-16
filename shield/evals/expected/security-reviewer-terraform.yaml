@@ -1,0 +1,38 @@
+# Security reviewer eval criteria for insecure-vpc-module
+# Evaluated against: shield/evals/inputs/insecure-vpc-module/
+agent: security-reviewer
+mode: infra-code
+input: insecure-vpc-module
+
+must_find:
+  - id: wildcard-iam
+    description: "Flags Action = * in IAM policy"
+    match: "wildcard|Action.*\\*|overly.?permissive"
+  - id: open-ssh
+    description: "Flags 0.0.0.0/0 on port 22"
+    match: "0\\.0\\.0\\.0/0.*22|SSH.*open|port 22.*0\\.0\\.0\\.0"
+  - id: hardcoded-secret
+    description: "Flags hardcoded API key in variable default"
+    match: "hardcoded|secret|credential|api_secret|sk-1234"
+  - id: unencrypted-log-group
+    description: "Flags CloudWatch log group without KMS"
+    match: "kms_key_id|log.*encrypt|CloudWatch.*encrypt"
+  - id: s3-no-encryption
+    description: "Flags S3 bucket without encryption config"
+    match: "S3.*encrypt|server_side_encryption|bucket.*encrypt"
+  - id: s3-no-public-block
+    description: "Flags S3 bucket without public access block"
+    match: "public.?access.?block|block.?public"
+
+should_find:
+  - id: wildcard-resource
+    description: "Flags Resource = * in IAM policy"
+    match: "Resource.*\\*|resource.*wildcard"
+  - id: rds-password-in-var
+    description: "Flags RDS using var.api_secret as password"
+    match: "password.*variable|secret.*password|plaintext.*password"
+
+must_not_false_positive:
+  - id: valid-https
+    description: "Should not flag port 443 open to 0.0.0.0/0"
+    match_absence_in: "443.*0\\.0\\.0\\.0/0.*issue|443.*problem|port 443.*flag"

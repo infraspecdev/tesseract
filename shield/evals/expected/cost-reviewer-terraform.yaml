@@ -1,0 +1,25 @@
+# Cost reviewer eval criteria for insecure-vpc-module
+agent: cost-reviewer
+mode: infra-code
+input: insecure-vpc-module
+
+must_find:
+  - id: nat-gateway-count
+    description: "Flags 3 NAT gateways without configurable count"
+    match: "NAT.*gateway|nat_gateway.*3|three.*NAT"
+  - id: nat-no-disable
+    description: "Flags NAT gateways without enable/disable toggle"
+    match: "enable.*nat|disable.*nat|toggle|configurable"
+
+should_find:
+  - id: eip-cost
+    description: "Flags 3 EIPs tied to NAT gateways"
+    match: "EIP|elastic.?IP|eip.*cost"
+  - id: log-retention
+    description: "Flags CloudWatch log group without retention"
+    match: "retention|log.*retention|infinite.*log"
+  - id: env-recommendations
+    description: "Provides environment-specific sizing recommendations"
+    match: "dev|staging|prod|environment"
+
+must_not_false_positive: []
