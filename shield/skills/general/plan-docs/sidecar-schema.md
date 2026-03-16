@@ -4,6 +4,7 @@
 {
   "version": "1.0",
   "project": "<project name from .shield.json>",
+  "name": "<kebab-case-plan-name>",
   "phase": "<phase name>",
   "epics": [
     {
@@ -48,3 +49,6 @@
 - Tasks must be specific enough to execute without questions
 - Status starts as `"ready"` for new stories
 - `pm_id` and `pm_url` start as `null` — populated by `/pm-sync`
+- Plan name must be kebab-case (`^[a-z0-9-]+$`)
+- Each plan lives at `shield/docs/plans/<name>.json`
+- Story IDs must be unique across all plans in a project

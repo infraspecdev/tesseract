@@ -3,10 +3,11 @@
   "title": "Shield Plan Sidecar",
   "description": "Machine-readable plan data — source of truth for stories, AC, and status",
   "type": "object",
-  "required": ["version", "project", "epics"],
+  "required": ["version", "project", "name", "epics"],
   "properties": {
     "version": { "type": "string", "const": "1.0" },
     "project": { "type": "string" },
+    "name": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Plan name — used as filename: shield/docs/plans/<name>.json" },
     "phase": { "type": "string" },
     "epics": {
       "type": "array",
