@@ -58,7 +58,8 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
      Or skip PM setup for now — you can configure it later.
      ```
    - **Register the PM adapter MCP server:**
-     - Copy `${CLAUDE_PLUGIN_ROOT}/adapters/<pm-tool>/.mcp.json` → `${CLAUDE_PLUGIN_ROOT}/.mcp.json`
+     - Read `${CLAUDE_PLUGIN_ROOT}/adapters/<pm-tool>/.mcp.json` to get the server entries
+     - Merge those entries into `${CLAUDE_PLUGIN_ROOT}/.mcp.json` → `mcpServers` object
      - Tell the user: **"Reload the Shield plugin to start the PM adapter: `/plugin update shield@tesseract`"**
 
 7. **Show summary** of what was created:

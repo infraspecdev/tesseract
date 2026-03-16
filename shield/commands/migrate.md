@@ -49,7 +49,8 @@ If nothing detected, suggest `/shield init` instead.
 
    - Set `adapter: "clickup"` and `adapter_mode: "hybrid"` in pm.json
    - **Register the PM adapter MCP server:**
-     - Copy `${CLAUDE_PLUGIN_ROOT}/adapters/clickup/.mcp.json` → `${CLAUDE_PLUGIN_ROOT}/.mcp.json`
+     - Read `${CLAUDE_PLUGIN_ROOT}/adapters/clickup/.mcp.json` to get the server entries
+     - Merge those entries into `${CLAUDE_PLUGIN_ROOT}/.mcp.json` → `mcpServers` object
 
 ## Phase 3: Migrate Plan Artifacts
 

@@ -55,8 +55,15 @@ fi
 
 # --- Check if PM adapter MCP is registered ---
 PM_MCP_WARNING=""
-if [ "$PM_TOOL" != "none" ] && [ ! -f "${PLUGIN_ROOT}/.mcp.json" ]; then
-  PM_MCP_WARNING="PM tool is configured but the adapter MCP server is not registered. Run /shield init to set it up, then reload the Shield plugin."
+if [ "$PM_TOOL" != "none" ]; then
+  HAS_ADAPTER=$(python3 -c "
+import json
+mcp = json.load(open('${PLUGIN_ROOT}/.mcp.json'))
+print('yes' if mcp.get('mcpServers', {}) else 'no')
+" 2>/dev/null || echo "no")
+  if [ "$HAS_ADAPTER" = "no" ]; then
+    PM_MCP_WARNING="PM tool is configured but the adapter MCP server is not registered. Run /shield init to set it up, then reload the Shield plugin."
+  fi
 fi
 
 # --- Artifact directory ---
