@@ -49,12 +49,6 @@ echo ""
 
 # --- 2. Config Examples vs Schemas ---
 echo "2. Config Examples vs Schemas"
-run_test_verbose "config.example.json validates" python3 -c "
-import json, jsonschema
-schema = json.load(open('$SHIELD_ROOT/schemas/config.schema.json'))
-example = json.load(open('$SHIELD_ROOT/config-examples/config.example.json'))
-jsonschema.validate(example, schema)
-"
 run_test_verbose "shield.example.json validates" python3 -c "
 import json, jsonschema
 schema = json.load(open('$SHIELD_ROOT/schemas/shield.schema.json'))

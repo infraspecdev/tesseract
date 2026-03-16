@@ -22,12 +22,21 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
      - `github-actions` — CI/CD workflows
      - (more domains in future)
    - Allow multiple selections
+   - Ask about reviewer preferences (optional):
+     - `auto_select` — auto-pick reviewers based on content (default: true)
+     - `always_include` — reviewers that always run (e.g., `["security"]`)
+     - `never_include` — reviewers to skip
 
 3. **Create `.shield.json`** in the repo root:
    ```json
    {
      "project": "<project-name>",
-     "domains": ["<selected-domains>"]
+     "domains": ["<selected-domains>"],
+     "reviewers": {
+       "auto_select": true,
+       "always_include": ["security"],
+       "never_include": []
+     }
    }
    ```
 
@@ -36,9 +45,7 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    mkdir -p ~/.shield/projects/<project-name>/runs
    ```
 
-5. **Create `~/.shield/config.json`** if it doesn't exist:
-   - Copy from `${CLAUDE_PLUGIN_ROOT}/config-examples/config.example.json`
-   - Ask user for PM tool preference (clickup / none / skip for now)
+5. **Ask for PM tool preference** (clickup / jira / none / skip for now)
 
 6. **If PM tool selected:**
    - Ask for workspace details (workspace_id, space_id, project_prefix)
@@ -56,8 +63,7 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    Shield initialized for project: <name>
 
    Created:
-     ✓ .shield.json (project marker)
-     ✓ ~/.shield/config.json (global config)
+     ✓ .shield.json (project config)
      ✓ ~/.shield/projects/<name>/pm.json (PM config)
 
    Enable auto-updates:
@@ -68,6 +74,6 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
 
 ## Important
 - Do NOT create `.shield.json` without user confirmation
-- Do NOT overwrite existing `~/.shield/config.json` — merge if it exists
+- Do NOT overwrite existing `.shield.json` — merge if it exists
 - Do NOT store API tokens in `.shield.json` — credentials go in `~/.shield/credentials.json` only
 - Validate all inputs against the JSON schemas in `${CLAUDE_PLUGIN_ROOT}/schemas/`

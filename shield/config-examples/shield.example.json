@@ -1,6 +1,11 @@
 {
   "project": "my-project",
   "domains": ["terraform", "atmos"],
+  "reviewers": {
+    "auto_select": true,
+    "always_include": ["security"],
+    "never_include": []
+  },
   "external_skills": {
     "general": {
       "implement": ["superpowers:test-driven-development"],

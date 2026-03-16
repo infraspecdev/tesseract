@@ -73,9 +73,8 @@ It shields you from the mistakes that haunt on-call rotations — because the be
 
 **Your config, your rules.** The plugin adapts to your setup:
 - Pick your domains (`terraform`, `atmos`, or both)
-- Pick your project management tool (`clickup`, `none`, or future adapters)
-- Override which reviewers always run or never run
-- Enable review-on-commit with configurable severity thresholds
+- Pick your project management tool per project (`clickup`, `jira`, or future adapters)
+- Override which reviewers always run or never run per project
 
 #### Pipeline
 
@@ -102,7 +101,7 @@ Review findings are presented with severity levels. You pick which fixes to appl
 
 **2. Set up your project:**
 
-Run `/shield init` in your repository root. This creates a `.shield.json` project marker and sets up the configuration directory at `~/.shield/`.
+Run `/shield init` in your repository root. This creates a `.shield.json` project config (domains, reviewer settings) and optionally sets up PM integration at `~/.shield/projects/<name>/pm.json`.
 
 Or do it manually:
 
@@ -110,22 +109,10 @@ Or do it manually:
 // .shield.json (committed to your repo)
 {
   "project": "my-project",
-  "domains": ["terraform"]
-}
-```
-
-```json
-// ~/.shield/config.json (global, one-time setup)
-{
-  "pm_tool": "none",
+  "domains": ["terraform"],
   "reviewers": {
     "auto_select": true,
     "always_include": ["security"]
-  },
-  "review_on_commit": {
-    "enabled": false,
-    "block_threshold": "critical",
-    "warn_threshold": "important"
   }
 }
 ```
@@ -217,7 +204,7 @@ shield/
 │   └── dx-engineer-reviewer.md    # Developer experience reviewer
 │
 ├── commands/                      # Slash commands (/research, /plan, /review, etc.)
-├── hooks/                         # Session start, post-edit, pre-commit review
+├── hooks/                         # Session start, post-edit
 ├── adapters/clickup/              # ClickUp project management adapter (Model Context Protocol server)
 └── schemas/                       # JSON schemas for config and plan sidecar
 ```
@@ -265,7 +252,7 @@ Releases are triggered by version bumps in `.claude-plugin/marketplace.json`. To
 1. Create `shield/adapters/<tool>/` with its own Model Context Protocol server
 2. Implement the standard tool interface: `pm_sync`, `pm_bulk_create`, `pm_bulk_update`, `pm_get_status`, `pm_get_stories_for_epic`, `pm_link_story_to_epic`, `pm_action_log`, `pm_get_capabilities`
 3. Add `.mcp.json` and server code
-4. Set `"pm_tool": "<tool>"` in config
+4. Set `"adapter": "<tool>"` in the project's `pm.json`
 
 ---
 

@@ -32,24 +32,18 @@ else
   DOMAINS=""
 fi
 
-# --- Load global config ---
+# --- Load PM config from per-project pm.json ---
 PM_TOOL="none"
 PLUGIN_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-VALIDATE_SCRIPT="${PLUGIN_ROOT}/hooks/scripts/validate-config.sh"
-
-if [ -f "${SHIELD_HOME}/config.json" ]; then
-  if [ -x "$VALIDATE_SCRIPT" ]; then
-    CONFIG_ERRORS=$("$VALIDATE_SCRIPT" "${SHIELD_HOME}/config.json" "${PLUGIN_ROOT}/schemas/config.schema.json" 2>&1 || true)
-    if [ -n "$CONFIG_ERRORS" ]; then
-      CONFIG_WARNINGS="Config validation warning: ${CONFIG_ERRORS}. Using defaults."
-    fi
-  fi
-  PM_TOOL=$(python3 -c "import json; print(json.load(open('${SHIELD_HOME}/config.json')).get('pm_tool','none'))" 2>/dev/null || echo "none")
-fi
 
 # --- Load project PM config ---
 PM_STATUS="not configured"
 if [ -n "$PROJECT_NAME" ] && [ -f "${SHIELD_HOME}/projects/${PROJECT_NAME}/pm.json" ]; then
+  PM_TOOL=$(python3 -c "
+import json
+pm = json.load(open('${SHIELD_HOME}/projects/${PROJECT_NAME}/pm.json'))
+print(pm.get('adapter', 'none'))
+" 2>/dev/null || echo "none")
   PM_STATUS=$(python3 -c "
 import json
 pm = json.load(open('${SHIELD_HOME}/projects/${PROJECT_NAME}/pm.json'))
@@ -97,7 +91,7 @@ if [ -n "$PROJECT_NAME" ]; then
   CONTEXT="Shield project detected: **${PROJECT_NAME}**
 - Domains: ${DOMAINS}
 - PM tool: ${PM_TOOL} (${PM_STATUS})
-- Config: ${SHIELD_HOME}/projects/${PROJECT_NAME}/
+- Project config: ${SHIELD_HOME}/projects/${PROJECT_NAME}/
 - Artifact directory: ${SHIELD_DIR}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
