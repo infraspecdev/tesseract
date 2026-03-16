@@ -47,7 +47,7 @@ Identify the review context to determine depth:
 | Final review | All files in scope | Full: everything + AC for all stories |
 | Pre-commit hook | Staged files only | Checks at/above configured threshold severity only |
 
-### 2. Code Correctness Review
+### 3. Code Correctness Review
 
 For all contexts, review the changed/staged files for:
 - Logic bugs and error handling gaps
@@ -55,7 +55,7 @@ For all contexts, review the changed/staged files for:
 - Test coverage — are new code paths tested?
 - Edge cases and boundary conditions
 
-### 3. Domain-Specific Review
+### 4. Domain-Specific Review
 
 Read `.shield.json` to get active domains. For each active domain, check if a domain-specific review skill exists:
 
@@ -65,11 +65,11 @@ Read `.shield.json` to get active domains. For each active domain, check if a do
 
 Domain skills run in parallel. Their findings are collected and merged.
 
-### 4. External Plugin Skills
+### 5. External Plugin Skills
 
 Check `.shield.json` for `external_skills` configured for the active domain's `review` phase. Invoke each configured external skill and merge findings.
 
-### 5. Agent Reviews (explicit/final only)
+### 6. Agent Reviews (explicit/final only)
 
 Select reviewer agents based on:
 - **Auto-select:** detect file types and content keywords → pick relevant reviewers
@@ -82,7 +82,7 @@ Dispatch selected agents in parallel using the appropriate mode:
 - For plan documents → `plan` mode
 - For application code → `app-code` mode (when available)
 
-### 6. Acceptance Criteria Verification (explicit/final only)
+### 7. Acceptance Criteria Verification (explicit/final only)
 
 If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 1. Read acceptance criteria from the named plan JSON files
@@ -90,7 +90,7 @@ If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 3. Look for evidence in code, tests, and config
 4. Produce an AC report table: criterion | status (met/not met/not verified) | evidence
 
-### 7. Merge and Present Findings
+### 8. Merge and Present Findings
 
 1. Collect all findings from code review, domain skills, agents, and AC verification
 2. Deduplicate — if multiple sources flag the same issue, keep the most detailed finding
@@ -100,7 +100,7 @@ If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 6. For findings flagged `NEEDS_DISCUSSION`, present options before applying
 7. Optionally post findings to PM card (ask user)
 
-### 8. Apply Fixes and Update Summary
+### 9. Apply Fixes and Update Summary
 
 1. Apply selected fixes
 2. Write review summary to `shield/docs/review-YYYYMMDD-HHMMSS.md` (exact path from Output Path section above)

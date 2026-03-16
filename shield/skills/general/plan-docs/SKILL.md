@@ -107,7 +107,7 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 1. **Load prior research** — check if any `shield/docs/research-*.md` files exist. If so, read the most recent one and use the research findings to inform the plan. If not, proceed without it.
 2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
 3. **Read `.shield.json`** — get project name and active domains
-3. **Generate sidecar JSON first** — write `plan.json` with epics, stories, tasks, and acceptance criteria
+3. **Generate sidecar JSON first** — write `shield/docs/plans/<name>.json` with epics, stories, tasks, and acceptance criteria
 4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
 5. **Generate architecture doc** (HTML) — the "thinking" document
 6. **Generate detailed plan** (HTML) — renders stories from the sidecar, includes `<meta>` sidecar reference
