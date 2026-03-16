@@ -12,6 +12,27 @@
       "version": "2.0.0",
       "source": "./shield",
       "category": "development"
+    },
+    {
+      "name": "infra-review",
+      "description": "[DEPRECATED — use shield] Infrastructure review agents for Terraform/Atmos repositories. Migrate: /plugin install shield@tesseract && /shield init",
+      "version": "1.2.0",
+      "source": "./infra-review",
+      "category": "development"
+    },
+    {
+      "name": "clickup-sprint-planner",
+      "description": "[DEPRECATED — use shield] Sprint planning tools for ClickUp. Migrate: /plugin install shield@tesseract && /shield init",
+      "version": "1.4.0",
+      "source": "./clickup-sprint-planner",
+      "category": "productivity"
+    },
+    {
+      "name": "dev-workflow",
+      "description": "[DEPRECATED — use shield] Development workflow skills — research, TDD, planning. Migrate: /plugin install shield@tesseract && /shield init",
+      "version": "1.2.0",
+      "source": "./dev-workflow",
+      "category": "development"
     }
   ]
 }
