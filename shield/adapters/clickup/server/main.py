@@ -1,10 +1,13 @@
-"""clickup-sprint-planner MCP server entry point.
+"""Shield PM adapter MCP server entry point.
 
 Registers all tools and runs the FastMCP server over stdio.
+Config is loaded lazily on first tool call, not at startup,
+so the server starts cleanly even without a project context.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -28,8 +31,8 @@ from server.tools import (
 )
 
 mcp = FastMCP(
-    "clickup-sprint-planner",
-    instructions="Sprint planning tools for ClickUp — bulk operations, relationship fields, plan doc sync.",
+    "shield-pm-adapter",
+    instructions="Shield PM adapter — sprint planning tools for ClickUp via abstract PM operations.",
 )
 
 
@@ -41,29 +44,97 @@ def _resolve_relative(path_str: str, config_path: Path) -> Path:
     return (config_path.parent / p).resolve()
 
 
+class _LazyProxy:
+    """Proxy that defers to a real object loaded on first attribute access.
+
+    Tool modules store references like `client` and call `client.get_tasks()`
+    later. This proxy intercepts those calls, triggers config loading, then
+    forwards to the real object. This lets the server start without config
+    and load it when tools are actually invoked.
+    """
+
+    def __init__(self, loader, attr_name):
+        object.__setattr__(self, "_loader", loader)
+        object.__setattr__(self, "_attr_name", attr_name)
+
+    def _real(self):
+        self._loader.ensure_loaded()
+        return getattr(self._loader, self._attr_name)
+
+    def __getattr__(self, name):
+        return getattr(self._real(), name)
+
+    def __truediv__(self, other):
+        return self._real() / other
+
+    def __iter__(self):
+        return iter(self._real())
+
+    def __str__(self):
+        return str(self._real())
+
+    def __bool__(self):
+        return bool(self._real())
+
+
+class _DepsLoader:
+    """Lazily loads all PM adapter dependencies on first access."""
+
+    def __init__(self):
+        self._loaded = False
+        self._config = None
+        self._client = None
+        self._action_log = None
+        self._base_path = None
+
+    def ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
+
+        config = load_shield_config()
+        if config is not None:
+            config_path = Path.cwd()
+        else:
+            config_path = Path(
+                os.environ.get("SPRINT_PLANNER_CONFIG", "./sprint-planner.json")
+            ).resolve()
+            config = load_config(config_path)
+
+        api_token = get_api_token(config)
+        self._config = config
+        self._client = ClickUpClient(api_token)
+        self._base_path = _resolve_relative(config.plan_docs.base_path, config_path)
+        log_path = _resolve_relative(config.action_log.path, config_path)
+        self._action_log = ActionLog(log_path)
+
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def client(self):
+        return self._client
+
+    @property
+    def action_log(self):
+        return self._action_log
+
+    @property
+    def base_path(self):
+        return self._base_path
+
+
+_deps = _DepsLoader()
+
+
 def _register_tools():
-    """Load config, create client, and register all tool modules."""
-    import os
+    """Register all tool modules with lazy proxies — no config needed at startup."""
+    client = _LazyProxy(_deps, "client")
+    config = _LazyProxy(_deps, "config")
+    action_log = _LazyProxy(_deps, "action_log")
+    base_path = _LazyProxy(_deps, "base_path")
 
-    # Try Shield native config first (~/.shield/ paths)
-    config = load_shield_config()
-    if config is not None:
-        config_path = Path.cwd()  # base_path resolution fallback
-    else:
-        # Fall back to legacy sprint-planner.json
-        config_path = Path(
-            os.environ.get("SPRINT_PLANNER_CONFIG", "./sprint-planner.json")
-        ).resolve()
-        config = load_config(config_path)
-    api_token = get_api_token(config)
-    client = ClickUpClient(api_token)
-
-    # Resolve paths relative to config file location
-    log_path = _resolve_relative(config.action_log.path, config_path)
-    base_path = _resolve_relative(config.plan_docs.base_path, config_path)
-    action_log = ActionLog(log_path)
-
-    # Register tools — each module adds @mcp.tool() decorated functions
     capabilities.register(mcp)
     relationships.register(mcp, client, action_log)
     bulk_create.register(mcp, client, action_log, config)
