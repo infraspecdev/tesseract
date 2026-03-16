@@ -49,8 +49,6 @@ If nothing detected, suggest `/shield init` instead.
 
    - Set `adapter: "clickup"` and `adapter_mode: "hybrid"` in pm.json
 
-4. **Create `~/.shield/config.json`** with defaults
-
 ## Phase 3: Migrate Plan Artifacts
 
 This is the most important step — preserves all plan content by parsing HTML into Shield's sidecar JSON format.
@@ -183,9 +181,8 @@ Present the full migration report:
 Migration complete:
 
 Config:
-  ✓ .shield.json (project marker)
+  ✓ .shield.json (project config + reviewer settings)
   ✓ ~/.shield/projects/<project>/pm.json (ClickUp config)
-  ✓ ~/.shield/config.json (global defaults)
 
 Plans (7 phases migrated):
   ✓ shield/docs/plans/vpc-architecture.json (P1 — 5 stories, 5 with ClickUp IDs)

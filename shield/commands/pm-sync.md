@@ -13,7 +13,7 @@ Sync plan document stories against your project management tool.
 
 ## Behavior
 
-1. Check that a PM tool is configured (`~/.shield/config.json` → `pm_tool`)
+1. Check that a PM tool is configured (`~/.shield/projects/<project>/pm.json` → `adapter`)
 2. If not configured, suggest running `/shield init` to set up PM integration
 3. Invoke the `shield:pm-sync` skill
 4. The skill:

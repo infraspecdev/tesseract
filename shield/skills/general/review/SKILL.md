@@ -20,7 +20,6 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any oth
 - After implementing a feature or story step
 - When explicitly invoked via `/review`
 - As the final review at the end of an implementation pipeline
-- When triggered by the pre-commit hook (lightweight mode)
 
 ## When NOT to Use
 
@@ -45,7 +44,6 @@ Identify the review context to determine depth:
 | Per-step (during implementation) | Changed files for current story only | Code correctness + domain skill. No full agent suite. |
 | Explicit `/review` | All files in scope | Full: code correctness + domain skills + all selected agents + AC verification |
 | Final review | All files in scope | Full: everything + AC for all stories |
-| Pre-commit hook | Staged files only | Checks at/above configured threshold severity only |
 
 ### 3. Code Correctness Review
 
@@ -73,8 +71,8 @@ Check `.shield.json` for `external_skills` configured for the active domain's `r
 
 Select reviewer agents based on:
 - **Auto-select:** detect file types and content keywords → pick relevant reviewers
-- **`always_include`:** from `~/.shield/config.json` — always dispatched
-- **`never_include`:** from config — always skipped
+- **`always_include`:** from `.shield.json` `reviewers` section — always dispatched
+- **`never_include`:** from `.shield.json` `reviewers` section — always skipped
 - **Minimum 3 agents** for full review
 
 Dispatch selected agents in parallel using the appropriate mode:

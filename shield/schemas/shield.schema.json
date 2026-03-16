@@ -1,12 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Shield Project Marker",
+  "title": "Shield Project Config",
   "description": "Project configuration file (.shield.json) committed to the repo",
   "type": "object",
   "required": ["project", "domains"],
   "properties": {
     "project": { "type": "string", "description": "Project name — used as key in ~/.shield/projects/" },
     "domains": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "Active domains for this project" },
+    "reviewers": {
+      "type": "object",
+      "properties": {
+        "auto_select": { "type": "boolean", "default": true, "description": "Automatically select reviewers based on content" },
+        "always_include": { "type": "array", "items": { "type": "string" }, "default": [], "description": "Reviewers that always run regardless of auto-detection" },
+        "never_include": { "type": "array", "items": { "type": "string" }, "default": [], "description": "Reviewers that are skipped even if auto-detected" }
+      },
+      "additionalProperties": false
+    },
     "external_skills": {
       "type": "object",
       "description": "External plugin skills mapped to phases",
