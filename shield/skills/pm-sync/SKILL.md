@@ -5,7 +5,7 @@ description: Use when the user asks about sprint planning, syncing plan docs to 
 
 # PM Sync Skill
 
-> **This skill uses abstract PM operations.** The actual PM adapter (ClickUp, Jira, etc.) is configured in `~/.tesseract/projects/<project>/pm.json`.
+> **This skill uses abstract PM operations.** The actual PM adapter (ClickUp, Jira, etc.) is configured in `~/.shield/projects/<project>/pm.json`.
 
 > **Before calling any `pm_*` tool**, call `pm_get_capabilities` to check which operations the adapter supports. Skip unsupported operations gracefully.
 
@@ -45,7 +45,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 1. **Check capabilities first.** Always call `pm_get_capabilities` before any other `pm_*` call. If an operation is unsupported, inform the user and skip it.
 2. **Sync before mutating.** Always call `pm_sync` first. Present the diff and get confirmation.
 3. **Use bulk operations.** Never create tasks one-by-one. Use `pm_bulk_create` with `set_relationships: true`.
-4. **Read config, don't hardcode.** All IDs come from `~/.tesseract/projects/<project>/pm.json`. Never hardcode PM tool IDs.
+4. **Read config, don't hardcode.** All IDs come from `~/.shield/projects/<project>/pm.json`. Never hardcode PM tool IDs.
 5. **Read the plan sidecar JSON** for story data — not raw HTML or plan docs.
 6. **Confirm before mutating.** Show the user exactly what will happen and ask for confirmation.
 7. **Surface errors clearly.** If tools report failure, it's real. Show which operations succeeded vs failed.
@@ -103,7 +103,7 @@ Every card MUST include: Summary, Tasks checklist, Context/Notes, Acceptance Cri
 | Creating tasks one-by-one | Use `pm_bulk_create` for all stories in one call |
 | Not syncing before creating | Always `pm_sync` first — avoids duplicating existing tasks |
 | One-line card descriptions | Include all 4 required sections (see `card-format.md`) |
-| Hardcoding PM tool IDs | Read from `~/.tesseract/projects/<project>/pm.json` config |
+| Hardcoding PM tool IDs | Read from `~/.shield/projects/<project>/pm.json` config |
 | Setting orderindex without gaps | Use `sequence * 1000` to leave room for inserts |
 | Using raw PM tool APIs for sprint ops | Always use `pm_bulk_create` / `pm_bulk_update` / `pm_link_story_to_epic` — raw APIs bypass the action log and skip naming/relationship logic |
 | Skipping capability check | Always call `pm_get_capabilities` first — adapters may not support all operations |

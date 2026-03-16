@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Shield PM Config",
-  "description": "Project-specific PM adapter configuration (~/.tesseract/projects/<project>/pm.json)",
+  "description": "Project-specific PM adapter configuration (~/.shield/projects/<project>/pm.json)",
   "type": "object",
   "required": ["adapter"],
   "properties": {

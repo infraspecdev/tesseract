@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Shield Global Config",
-  "description": "Global configuration for the Shield plugin (~/.tesseract/config.json)",
+  "description": "Global configuration for the Shield plugin (~/.shield/config.json)",
   "type": "object",
   "properties": {
     "reviewers": {

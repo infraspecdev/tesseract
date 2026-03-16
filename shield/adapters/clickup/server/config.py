@@ -83,11 +83,11 @@ class SprintPlannerConfig(BaseModel):
     action_log: ActionLogConfig = Field(default_factory=ActionLogConfig)
 
 
-def _find_tesseract_marker() -> Path | None:
-    """Walk up from cwd to find .tesseract.json."""
+def _find_shield_marker() -> Path | None:
+    """Walk up from cwd to find .shield.json."""
     current = Path.cwd()
     while current != current.parent:
-        marker = current / ".tesseract.json"
+        marker = current / ".shield.json"
         if marker.exists():
             return marker
         current = current.parent
@@ -95,12 +95,12 @@ def _find_tesseract_marker() -> Path | None:
 
 
 def load_shield_config() -> SprintPlannerConfig | None:
-    """Load config from ~/.tesseract/ paths (Shield native mode).
+    """Load config from ~/.shield/ paths (Shield native mode).
 
-    Returns None if .tesseract.json is not found, falling back to legacy mode.
+    Returns None if .shield.json is not found, falling back to legacy mode.
     """
-    # Find .tesseract.json
-    marker_path = _find_tesseract_marker()
+    # Find .shield.json
+    marker_path = _find_shield_marker()
     if not marker_path:
         return None
 
@@ -108,8 +108,8 @@ def load_shield_config() -> SprintPlannerConfig | None:
         marker = json.load(f)
 
     project_name = marker["project"]
-    tesseract_home = Path.home() / ".tesseract"
-    project_dir = tesseract_home / "projects" / project_name
+    shield_home = Path.home() / ".shield"
+    project_dir = shield_home / "projects" / project_name
 
     # Load PM config
     pm_config_path = project_dir / "pm.json"
@@ -120,7 +120,7 @@ def load_shield_config() -> SprintPlannerConfig | None:
         pm_config = json.load(f)
 
     # Load credentials
-    creds_path = tesseract_home / "credentials.json"
+    creds_path = shield_home / "credentials.json"
     api_token = None
     if creds_path.exists():
         with open(creds_path) as f:

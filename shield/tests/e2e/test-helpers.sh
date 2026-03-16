@@ -157,7 +157,7 @@ for line in open('$jsonl_file'):
 }
 
 # resume_claude_session is deprecated — use run_claude_in_project with artifact-based context instead.
-# Each phase reads artifacts from shield/latest/ on disk rather than resuming conversation history.
+# Each phase reads artifacts from shield/ on disk rather than resuming conversation history.
 resume_claude_session() {
   local project_dir="$1"
   local _session_id="$2"  # ignored — kept for backward compat
@@ -370,7 +370,7 @@ create_test_project() {
   local project_dir="${E2E_OUTPUT_DIR}/project"
   mkdir -p "$project_dir"
 
-  # Create .tesseract.json
+  # Create .shield.json
   local domains_json
   domains_json=$(echo "$domains" | python3 -c "
 import sys
@@ -378,7 +378,7 @@ domains = sys.stdin.read().strip().split(',')
 print('[' + ', '.join('\"' + d.strip() + '\"' for d in domains) + ']')
 ")
 
-  cat > "$project_dir/.tesseract.json" <<EOF
+  cat > "$project_dir/.shield.json" <<EOF
 {
   "project": "$name",
   "domains": $domains_json

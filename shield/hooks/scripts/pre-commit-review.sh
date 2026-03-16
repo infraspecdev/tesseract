@@ -11,13 +11,13 @@ set -euo pipefail
 # commit or ask the user to fix issues first. The blocking is enforced by
 # Claude's behavior, not by this script's exit code.
 
-TESSERACT_HOME="${HOME}/.tesseract"
+SHIELD_HOME="${HOME}/.shield"
 
 ENABLED="false"
-if [ -f "${TESSERACT_HOME}/config.json" ]; then
+if [ -f "${SHIELD_HOME}/config.json" ]; then
   ENABLED=$(python3 -c "
 import json
-cfg = json.load(open('${TESSERACT_HOME}/config.json'))
+cfg = json.load(open('${SHIELD_HOME}/config.json'))
 print(str(cfg.get('review_on_commit', {}).get('enabled', False)).lower())
 " 2>/dev/null || echo "false")
 fi
@@ -28,13 +28,13 @@ fi
 
 BLOCK_THRESHOLD=$(python3 -c "
 import json
-cfg = json.load(open('${TESSERACT_HOME}/config.json'))
+cfg = json.load(open('${SHIELD_HOME}/config.json'))
 print(cfg.get('review_on_commit', {}).get('block_threshold', 'critical'))
 " 2>/dev/null || echo "critical")
 
 WARN_THRESHOLD=$(python3 -c "
 import json
-cfg = json.load(open('${TESSERACT_HOME}/config.json'))
+cfg = json.load(open('${SHIELD_HOME}/config.json'))
 print(cfg.get('review_on_commit', {}).get('warn_threshold', 'important'))
 " 2>/dev/null || echo "important")
 

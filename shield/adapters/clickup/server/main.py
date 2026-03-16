@@ -45,7 +45,7 @@ def _register_tools():
     """Load config, create client, and register all tool modules."""
     import os
 
-    # Try Shield native config first (~/.tesseract/ paths)
+    # Try Shield native config first (~/.shield/ paths)
     config = load_shield_config()
     if config is not None:
         config_path = Path.cwd()  # base_path resolution fallback

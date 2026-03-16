@@ -55,10 +55,10 @@ schema = json.load(open('$SHIELD_ROOT/schemas/config.schema.json'))
 example = json.load(open('$SHIELD_ROOT/config-examples/config.example.json'))
 jsonschema.validate(example, schema)
 "
-run_test_verbose "tesseract.example.json validates" python3 -c "
+run_test_verbose "shield.example.json validates" python3 -c "
 import json, jsonschema
-schema = json.load(open('$SHIELD_ROOT/schemas/tesseract.schema.json'))
-example = json.load(open('$SHIELD_ROOT/config-examples/tesseract.example.json'))
+schema = json.load(open('$SHIELD_ROOT/schemas/shield.schema.json'))
+example = json.load(open('$SHIELD_ROOT/config-examples/shield.example.json'))
 jsonschema.validate(example, schema)
 "
 run_test_verbose "pm-clickup.example.json validates" python3 -c "
@@ -200,27 +200,27 @@ echo ""
 # --- 7. Example Project Validation ---
 echo "7. Example Projects"
 
-# Validate example .tesseract.json files against schema
+# Validate example .shield.json files against schema
 for example_dir in "$SHIELD_ROOT"/examples/*/; do
   example_name=$(basename "$example_dir")
-  marker="$example_dir/.tesseract.json"
+  marker="$example_dir/.shield.json"
   if [ -f "$marker" ]; then
-    run_test_verbose "$example_name: .tesseract.json validates" python3 -c "
+    run_test_verbose "$example_name: .shield.json validates" python3 -c "
 import json, jsonschema
-schema = json.load(open('$SHIELD_ROOT/schemas/tesseract.schema.json'))
+schema = json.load(open('$SHIELD_ROOT/schemas/shield.schema.json'))
 marker = json.load(open('$marker'))
 jsonschema.validate(marker, schema)
 "
   else
-    echo "  ⚠ $example_name: no .tesseract.json found"
+    echo "  ⚠ $example_name: no .shield.json found"
   fi
 done
 
 # Session-start hook against each example project
 for example_dir in "$SHIELD_ROOT"/examples/*/; do
   example_name=$(basename "$example_dir")
-  if [ -f "$example_dir/.tesseract.json" ]; then
-    PROJECT_NAME=$(python3 -c "import json; print(json.load(open('$example_dir/.tesseract.json'))['project'])")
+  if [ -f "$example_dir/.shield.json" ]; then
+    PROJECT_NAME=$(python3 -c "import json; print(json.load(open('$example_dir/.shield.json'))['project'])")
     run_test_verbose "$example_name: session-start detects project" bash -c "
 cd '$example_dir'
 OUTPUT=\$(CLAUDE_PLUGIN_ROOT='$SHIELD_ROOT' bash '$SHIELD_ROOT/hooks/scripts/session-start.sh' 2>/dev/null || true)
@@ -250,13 +250,13 @@ echo ""
 # --- 8. Session-Start Hook E2E ---
 echo "8. Session-Start Hook E2E"
 
-# Create a temp project directory with .tesseract.json and run the hook
+# Create a temp project directory with .shield.json and run the hook
 run_test_verbose "session-start produces valid JSON" bash -c "
 TMPDIR=\$(mktemp -d)
 trap 'rm -rf \$TMPDIR' EXIT
 
 # Create test project marker
-cat > \"\$TMPDIR/.tesseract.json\" <<'MARKER'
+cat > \"\$TMPDIR/.shield.json\" <<'MARKER'
 {\"project\": \"test-project\", \"domains\": [\"terraform\"]}
 MARKER
 

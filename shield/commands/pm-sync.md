@@ -13,7 +13,7 @@ Sync plan document stories against your project management tool.
 
 ## Behavior
 
-1. Check that a PM tool is configured (`~/.tesseract/config.json` → `pm_tool`)
+1. Check that a PM tool is configured (`~/.shield/config.json` → `pm_tool`)
 2. If not configured, suggest running `/shield init` to set up PM integration
 3. Invoke the `shield:pm-sync` skill
 4. The skill:
@@ -26,5 +26,5 @@ Sync plan document stories against your project management tool.
    - For updates: calls `pm_bulk_update`
    - Updates the sidecar JSON with PM IDs and URLs
    - Re-renders HTML from updated sidecar
-5. Invoke `shield:general:summarize` to produce a sync summary
+5. Invoke `shield:summarize` to produce a sync summary
 6. Offer next steps: `/pm-status`, `/implement`

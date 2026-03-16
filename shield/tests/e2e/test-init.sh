@@ -10,14 +10,14 @@ check_claude
 
 echo "=== E2E Test: /shield init ==="
 
-# Create a bare project with NO .tesseract.json
+# Create a bare project with NO .shield.json
 PROJECT_DIR="${E2E_OUTPUT_DIR}/project"
 mkdir -p "$PROJECT_DIR"
 git -C "$PROJECT_DIR" init -q
 echo "# Test" > "$PROJECT_DIR/README.md"
 git -C "$PROJECT_DIR" add . && git -C "$PROJECT_DIR" commit -q -m "init" --no-gpg-sign
 
-echo "Project: $PROJECT_DIR (no .tesseract.json)"
+echo "Project: $PROJECT_DIR (no .shield.json)"
 echo ""
 
 OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
@@ -25,7 +25,7 @@ OUTPUT=$(run_claude_in_project "$PROJECT_DIR" \
   120)
 
 echo "--- Assertions ---"
-assert_output_contains "$OUTPUT" "init\|initialized\|created\|tesseract.json" \
+assert_output_contains "$OUTPUT" "init\|initialized\|created\|shield.json" \
   "init process mentioned"
 assert_output_not_contains "$OUTPUT" "Traceback\|FATAL\|panic\|segfault" \
   "no crashes during init"

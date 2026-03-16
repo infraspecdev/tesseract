@@ -4,7 +4,7 @@ set -euo pipefail
 # Shield post-edit hook
 # Runs lightweight lint checks on edited files that match active domains
 
-MARKER_FILE=".tesseract.json"
+MARKER_FILE=".shield.json"
 
 find_marker() {
   local dir="$PWD"

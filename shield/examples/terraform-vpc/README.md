@@ -58,4 +58,4 @@ Consolidated review across all stories with full agent suite.
 - `src/variables.tf` — Input variables
 - `src/outputs.tf` — Module outputs
 - `src/versions.tf` — Provider requirements
-- `.tesseract.json` — Shield project marker
+- `.shield.json` — Shield project marker

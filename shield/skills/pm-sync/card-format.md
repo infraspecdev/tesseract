@@ -73,7 +73,7 @@ Where `global_story_sequence` is the story's position in the full cross-epic exe
 
 ## Custom Fields
 
-The following custom fields may exist depending on the PM adapter configuration. Check `~/.tesseract/projects/<project>/pm.json` for available fields:
+The following custom fields may exist depending on the PM adapter configuration. Check `~/.shield/projects/<project>/pm.json` for available fields:
 
 | Field | List | Purpose |
 |-------|------|---------|
