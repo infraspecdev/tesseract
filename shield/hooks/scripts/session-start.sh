@@ -53,9 +53,10 @@ print(f'{adapter} (workspace: {ws})')
 " 2>/dev/null || echo "configured (details unreadable)")
 fi
 
-# --- Set up MCP server if PM tool configured ---
-if [ "$PM_TOOL" != "none" ] && [ -f "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.json" ]; then
-  cp "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.json" "${PLUGIN_ROOT}/.mcp.json"
+# --- Check if PM adapter MCP is registered ---
+PM_MCP_WARNING=""
+if [ "$PM_TOOL" != "none" ] && [ ! -f "${PLUGIN_ROOT}/.mcp.json" ]; then
+  PM_MCP_WARNING="PM tool is configured but the adapter MCP server is not registered. Run /shield init to set it up, then reload the Shield plugin."
 fi
 
 # --- Artifact directory ---
@@ -95,6 +96,8 @@ if [ -n "$PROJECT_NAME" ]; then
 - Artifact directory: ${SHIELD_DIR}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
+${PM_MCP_WARNING:+
+⚠ ${PM_MCP_WARNING}}
 
 **Artifact output:** Documents go to \`shield/docs/\` with timestamps in filenames (e.g. \`shield/docs/research-20260315-170930.md\`). Named plan sidecars live at \`shield/docs/plans/<name>.json\` (updated in place, no timestamp).
 
