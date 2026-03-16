@@ -48,6 +48,8 @@ If nothing detected, suggest `/shield init` instead.
    | `CLICKUP_API_TOKEN` env var | `~/.shield/credentials.json` → `clickup.api_token` |
 
    - Set `adapter: "clickup"` and `adapter_mode: "hybrid"` in pm.json
+   - **Register the PM adapter MCP server:**
+     - Copy `${CLAUDE_PLUGIN_ROOT}/adapters/clickup/.mcp.json` → `${CLAUDE_PLUGIN_ROOT}/.mcp.json`
 
 ## Phase 3: Migrate Plan Artifacts
 
@@ -183,6 +185,7 @@ Migration complete:
 Config:
   ✓ .shield.json (project config + reviewer settings)
   ✓ ~/.shield/projects/<project>/pm.json (ClickUp config)
+  ✓ PM adapter MCP server registered
 
 Plans (7 phases migrated):
   ✓ shield/docs/plans/vpc-architecture.json (P1 — 5 stories, 5 with ClickUp IDs)
@@ -208,11 +211,15 @@ Old files left in place (safe to delete after verifying):
   - phases/
   - review/
 
+⚠ Reload the Shield plugin to start the PM adapter:
+  /plugin update shield@tesseract
+
 Next steps:
-  1. Verify plan sidecars: cat shield/docs/plans/eks-foundation.json | jq '.epics[0].stories | length'
-  2. Run /pm-status to verify ClickUp connection
-  3. Run /pm-sync to verify stories match ClickUp state
-  4. Uninstall old plugins: infra-review, clickup-sprint-planner, dev-workflow
+  1. Reload Shield plugin (see above)
+  2. Verify plan sidecars: cat shield/docs/plans/eks-foundation.json | jq '.epics[0].stories | length'
+  3. Run /pm-status to verify ClickUp connection
+  4. Run /pm-sync to verify stories match ClickUp state
+  5. Uninstall old plugins: infra-review, clickup-sprint-planner, dev-workflow
 ```
 
 ## Important

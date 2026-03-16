@@ -57,6 +57,9 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
      Install: curl -LsSf https://astral.sh/uv/install.sh | sh
      Or skip PM setup for now — you can configure it later.
      ```
+   - **Register the PM adapter MCP server:**
+     - Copy `${CLAUDE_PLUGIN_ROOT}/adapters/<pm-tool>/.mcp.json` → `${CLAUDE_PLUGIN_ROOT}/.mcp.json`
+     - Tell the user: **"Reload the Shield plugin to start the PM adapter: `/plugin update shield@tesseract`"**
 
 7. **Show summary** of what was created:
    ```
@@ -65,6 +68,10 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    Created:
      ✓ .shield.json (project config)
      ✓ ~/.shield/projects/<name>/pm.json (PM config)
+     ✓ PM adapter MCP server registered
+
+   ⚠ Reload the Shield plugin to start the PM adapter:
+     /plugin update shield@tesseract
 
    Enable auto-updates:
      /plugin update --auto-update shield@tesseract
