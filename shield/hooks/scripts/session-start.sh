@@ -4,8 +4,8 @@ set -euo pipefail
 # Shield session-start hook
 # Detects project config, loads settings, injects context into Claude
 
-TESSERACT_HOME="${HOME}/.tesseract"
-MARKER_FILE=".tesseract.json"
+SHIELD_HOME="${HOME}/.shield"
+MARKER_FILE=".shield.json"
 CONFIG_WARNINGS=""
 
 find_marker() {
@@ -37,22 +37,22 @@ PM_TOOL="none"
 PLUGIN_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VALIDATE_SCRIPT="${PLUGIN_ROOT}/hooks/scripts/validate-config.sh"
 
-if [ -f "${TESSERACT_HOME}/config.json" ]; then
+if [ -f "${SHIELD_HOME}/config.json" ]; then
   if [ -x "$VALIDATE_SCRIPT" ]; then
-    CONFIG_ERRORS=$("$VALIDATE_SCRIPT" "${TESSERACT_HOME}/config.json" "${PLUGIN_ROOT}/schemas/config.schema.json" 2>&1 || true)
+    CONFIG_ERRORS=$("$VALIDATE_SCRIPT" "${SHIELD_HOME}/config.json" "${PLUGIN_ROOT}/schemas/config.schema.json" 2>&1 || true)
     if [ -n "$CONFIG_ERRORS" ]; then
       CONFIG_WARNINGS="Config validation warning: ${CONFIG_ERRORS}. Using defaults."
     fi
   fi
-  PM_TOOL=$(python3 -c "import json; print(json.load(open('${TESSERACT_HOME}/config.json')).get('pm_tool','none'))" 2>/dev/null || echo "none")
+  PM_TOOL=$(python3 -c "import json; print(json.load(open('${SHIELD_HOME}/config.json')).get('pm_tool','none'))" 2>/dev/null || echo "none")
 fi
 
 # --- Load project PM config ---
 PM_STATUS="not configured"
-if [ -n "$PROJECT_NAME" ] && [ -f "${TESSERACT_HOME}/projects/${PROJECT_NAME}/pm.json" ]; then
+if [ -n "$PROJECT_NAME" ] && [ -f "${SHIELD_HOME}/projects/${PROJECT_NAME}/pm.json" ]; then
   PM_STATUS=$(python3 -c "
 import json
-pm = json.load(open('${TESSERACT_HOME}/projects/${PROJECT_NAME}/pm.json'))
+pm = json.load(open('${SHIELD_HOME}/projects/${PROJECT_NAME}/pm.json'))
 adapter = pm.get('adapter', 'unknown')
 ws = pm.get('workspace_id', 'not set')
 print(f'{adapter} (workspace: {ws})')
@@ -64,30 +64,12 @@ if [ "$PM_TOOL" != "none" ] && [ -f "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.jso
   cp "${PLUGIN_ROOT}/adapters/${PM_TOOL}/.mcp.json" "${PLUGIN_ROOT}/.mcp.json"
 fi
 
-# --- Create run directory for artifacts ---
-RUN_DIR=""
-DOCS_DIR=""
+# --- Artifact directory ---
+# Skills write directly to shield/ with timestamps in filenames.
+# The Write tool creates the directory automatically — no pre-creation needed.
+SHIELD_DIR=""
 if [ -n "$PROJECT_NAME" ]; then
-  RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-  RUN_DIR="${PROJECT_ROOT}/shield/${RUN_TIMESTAMP}"
-  DOCS_DIR="${RUN_DIR}/docs"
-  mkdir -p "$DOCS_DIR"
-
-  # Write run metadata
-  python3 -c "
-import json, datetime
-metadata = {
-    'run_id': '${RUN_TIMESTAMP}',
-    'project': '${PROJECT_NAME}',
-    'domains': '${DOMAINS}'.split(', '),
-    'pm_tool': '${PM_TOOL}',
-    'started_at': datetime.datetime.now().isoformat()
-}
-json.dump(metadata, open('${RUN_DIR}/metadata.json', 'w'), indent=2)
-" 2>/dev/null || true
-
-  # Update latest symlink
-  ln -sfn "${RUN_TIMESTAMP}" "${PROJECT_ROOT}/shield/latest"
+  SHIELD_DIR="${PROJECT_ROOT}/shield"
 fi
 
 # --- Build context output ---
@@ -115,20 +97,19 @@ if [ -n "$PROJECT_NAME" ]; then
   CONTEXT="Shield project detected: **${PROJECT_NAME}**
 - Domains: ${DOMAINS}
 - PM tool: ${PM_TOOL} (${PM_STATUS})
-- Config: ${TESSERACT_HOME}/projects/${PROJECT_NAME}/
-- Run directory: ${RUN_DIR}/
-- Docs directory: ${DOCS_DIR}/
+- Config: ${SHIELD_HOME}/projects/${PROJECT_NAME}/
+- Artifact directory: ${SHIELD_DIR}/
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 
-**Artifact output:** Write user-facing docs (research.md, plan.md, analysis.md, review reports, summaries) to \`${DOCS_DIR}/\`. Write non-docs artifacts (plan.json, metadata.json) to \`${RUN_DIR}/\`. The \`shield/latest\` symlink always points to the current run.
+**Artifact output:** Documents go to \`shield/docs/\` with timestamps in filenames (e.g. \`shield/docs/research-20260315-170930.md\`). The \`shield/plan.json\` sidecar is updated in place (no timestamp).
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}
 
 Available commands: /shield init, /research, /plan, /plan-review, /pm-sync, /pm-status, /implement, /review, /review-security, /review-cost, /review-well-architected, /analyze-plan"
 else
-  CONTEXT="No .tesseract.json found in this project. Run **/shield init** to set up Shield."
+  CONTEXT="No .shield.json found in this project. Run **/shield init** to set up Shield."
 fi
 
 CONTEXT_ESCAPED=$(echo "$CONTEXT" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" | sed 's/^"//;s/"$//')

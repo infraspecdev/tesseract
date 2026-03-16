@@ -6,27 +6,34 @@ args: "[path to plan file]"
 
 # Plan Review
 
-Run the Shield multi-persona plan review on a plan document.
+Run a multi-persona plan review on a plan document.
 
 ## Usage
 
 `/plan-review [path]`
 
+## Output Path — MANDATORY
+
+First, find the project root by locating `.shield.json` (check current directory, then parent directories). Then write the analysis using the Write tool to:
+
+```
+{project_root}/shield/docs/analysis-YYYYMMDD-HHMMSS.md
+```
+
+Replace `{project_root}` with the absolute path to the directory containing `.shield.json`, and `YYYYMMDD-HHMMSS` with the current date and time.
+
+**Do NOT** use a relative path. **Do NOT** use the plugin directory. **Do NOT** invent custom filenames. The Write tool creates directories automatically.
+
 ## Behavior
 
 1. If a path is provided, use that plan file
-2. If no path, auto-detect recent plan files in the working directory
-3. Invoke the `shield:general:plan-review` skill
-4. The skill:
-   - Reads the plan and extracts keywords
-   - Selects reviewers (auto-detect + config overrides from `~/.tesseract/config.json`)
-   - Dispatches selected agents in parallel (plan review mode)
-   - Parses grades, calculates scores
-   - Classifies recommendations (P0/P1/P2)
-   - Writes analysis and enhanced plan to `review/` directory
-5. Present results with three options:
-   - Apply recommendations as-is
-   - Apply with edits
-   - Skip
-6. Invoke `shield:general:summarize` to produce a plan-review summary
-7. Offer next steps: `/pm-sync`, `/implement`
+2. If no path, check for `{project_root}/shield/plan.json` and docs in `{project_root}/shield/docs/`
+3. Follow the plan-review workflow:
+   - Read the plan and extract keywords
+   - Select reviewers (auto-detect + config overrides)
+   - Dispatch selected agents in parallel
+   - Parse grades, calculate scores
+   - Classify recommendations (P0/P1/P2)
+   - **Write analysis to the path above**
+4. Present results with options: apply as-is, apply with edits, skip
+5. Offer next steps: `/pm-sync`, `/implement`

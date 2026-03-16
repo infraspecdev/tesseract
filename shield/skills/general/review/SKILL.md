@@ -5,6 +5,16 @@ description: Use when code changes need review for security, cost, architecture,
 
 # Review Orchestrator
 
+## Output Path — MANDATORY
+
+Write the review summary using the Write tool to **exactly** this path:
+
+```
+shield/docs/review-YYYYMMDD-HHMMSS.md
+```
+
+Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
+
 ## When to Use
 
 - After implementing a feature or story step
@@ -22,8 +32,8 @@ description: Use when code changes need review for security, cost, architecture,
 ### 1. Load Prior Context
 
 Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
-- **Plan sidecar** — `shield/latest/plan.json` for stories and acceptance criteria
-- **Research** — `shield/latest/docs/research.md` for domain context
+- **Plan sidecar** — `shield/plan.json` for stories and acceptance criteria
+- **Research** — most recent `shield/docs/research-*.md` for domain context
 - **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
 
 ### 2. Determine Context and Scope
@@ -47,7 +57,7 @@ For all contexts, review the changed/staged files for:
 
 ### 3. Domain-Specific Review
 
-Read `.tesseract.json` to get active domains. For each active domain, check if a domain-specific review skill exists:
+Read `.shield.json` to get active domains. For each active domain, check if a domain-specific review skill exists:
 
 - `terraform` → invoke `shield:terraform:review`
 - `atmos` → invoke `shield:atmos:review`
@@ -57,13 +67,13 @@ Domain skills run in parallel. Their findings are collected and merged.
 
 ### 4. External Plugin Skills
 
-Check `.tesseract.json` for `external_skills` configured for the active domain's `review` phase. Invoke each configured external skill and merge findings.
+Check `.shield.json` for `external_skills` configured for the active domain's `review` phase. Invoke each configured external skill and merge findings.
 
 ### 5. Agent Reviews (explicit/final only)
 
 Select reviewer agents based on:
 - **Auto-select:** detect file types and content keywords → pick relevant reviewers
-- **`always_include`:** from `~/.tesseract/config.json` — always dispatched
+- **`always_include`:** from `~/.shield/config.json` — always dispatched
 - **`never_include`:** from config — always skipped
 - **Minimum 3 agents** for full review
 
@@ -93,10 +103,7 @@ If an active story context exists (from the plan sidecar):
 ### 8. Apply Fixes and Update Summary
 
 1. Apply selected fixes
-2. Write review summary to run directory (`shield/latest/docs/`). If `shield/latest/` doesn't exist, create it:
-   ```bash
-   RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
-   ```
+2. Write review summary to `shield/docs/review-YYYYMMDD-HHMMSS.md` (exact path from Output Path section above)
 3. If any fixes were applied, re-render the plan HTML from sidecar
 
 ## Output Format

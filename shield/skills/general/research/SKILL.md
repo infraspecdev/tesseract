@@ -5,93 +5,66 @@ description: Use when comparing approaches, evaluating tools, building evidence-
 
 # Research Skill
 
-## Overview
-
 Research a technical topic and produce a well-sourced document with direct quotes, industry references, and a clear recommendation.
 
-## Shield Pipeline Integration
+## Output Path — MANDATORY
 
-After producing the research document, invoke `shield:summarize` to write a research summary to the run directory. This creates the audit trail for the pipeline and provides context for the next phase (planning).
+Write the final document using the Write tool to **exactly** this path:
+
+```
+shield/docs/research-YYYYMMDD-HHMMSS.md
+```
+
+Replace `YYYYMMDD-HHMMSS` with the current date and time (e.g. `shield/docs/research-20260315-170930.md`).
+
+**Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
 
 ## When to Use
 
 - Comparing architectural approaches (monorepo vs multi-repo, REST vs gRPC, etc.)
 - Evaluating tools or technologies for adoption
 - Building evidence-based ADRs or decision documents
-- Answering "what do experts recommend for X?" questions
 - Any time the user needs citations and industry backing for a decision
 
-## Input
+## When NOT to Use
 
-The user provides a topic or question, optionally with:
-- Context about their team/project
-- Specific concerns to address
-- Where to save the output
-
-If not specified, save to the Shield docs directory (`shield/<run>/docs/`).
-
-**Finding the docs directory:** Check if `shield/latest/docs/` exists. If it does, write there. If not, create the run directory structure first:
-```bash
-RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$RUN_DIR/docs"
-ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
-```
-Then write to `$RUN_DIR/docs/research.md`.
+- Breaking down work into stories — use `shield:plan-docs`
+- Reviewing existing code or plans — use `shield:review` or `shield:plan-review`
+- Quick factual lookups that don't need citations
 
 ## Workflow
 
-```dot
-digraph research_flow {
-    rankdir=TB;
-    node [shape=box];
+1. **Clarify topic** — skip if user already provided enough context
+2. **Research with parallel agents**
+3. **Synthesize findings**
+4. **Write to `shield/docs/research-YYYYMMDD-HHMMSS.md`** — the Write tool creates the directory automatically
 
-    input [label="1. Clarify Topic & Scope"];
-    research [label="2. Research (Parallel Agents)"];
-    synthesize [label="3. Synthesize Findings"];
-    write [label="4. Write Document"];
-    review [label="5. Show Summary to User"];
+## Clarify Topic & Scope
 
-    input -> research;
-    research -> synthesize;
-    synthesize -> write;
-    write -> review;
-}
-```
-
-## Phase 1: Clarify Topic & Scope
-
-Ask the user (if not already clear):
+Skip if the user already provided enough context. Otherwise ask:
 - What decision or question are they trying to answer?
-- Who is the audience? (teammates, leadership, future self)
 - Any constraints or preferences to bias toward?
-- Where should the doc be saved?
 
-**Skip if the user already provided enough context.**
+## Research (Parallel Agents)
 
-## Phase 2: Research (Use Parallel Agents)
+Launch **3 parallel agents** to maximize coverage:
 
-Launch **parallel Task agents** to maximize coverage:
+- **Agent 1: Official sources** — docs from primary tools/frameworks
+- **Agent 2: Industry voices** — blog posts, conference talks, expert recommendations
+- **Agent 3: Community experience** — GitHub discussions, Stack Overflow, case studies
 
-- **Agent 1: Official sources** — Documentation from the primary tools/frameworks involved (e.g., Terraform docs, Atmos docs, AWS docs)
-- **Agent 2: Industry voices** — Blog posts, conference talks, and recommendations from recognized companies and engineers
-- **Agent 3: Community experience** — GitHub discussions, Stack Overflow, Reddit, real-world case studies and post-mortems
+Each agent returns: direct quotes with attribution, source URLs, key data points.
 
-Each agent should return:
-- Direct quotes with attribution
-- Source URLs
-- Key data points (scale thresholds, timelines, costs)
+## Synthesize Findings
 
-## Phase 3: Synthesize Findings
-
-Combine research into a coherent narrative:
 - Identify consensus across sources
-- Note disagreements and what drives them (scale, team size, use case)
+- Note disagreements and what drives them
 - Map findings to the user's specific context
 - Form a clear recommendation with reasoning
 
-## Phase 4: Write Document
+## Write Document
 
-Use this structure:
+**Output: `shield/docs/research-YYYYMMDD-HHMMSS.md`** (use current timestamp, e.g. `shield/research-20260315-170930.md`)
 
 ```markdown
 # [Decision Title]
@@ -101,59 +74,35 @@ Use this structure:
 **Context:** [1-2 sentences on what prompted this]
 
 ## Decision
-
 [Clear statement of the recommended approach]
 
 ## Why Not [Alternative]?
-
-[Side-by-side comparison table if applicable]
+[Comparison table if applicable]
 
 ## What the Industry Recommends
-
-### [Source 1 Name] ([Role/Context])
+### [Source Name] ([Role/Context])
 > *"Direct quote"*
 > — [Source with link]
-
-### [Source 2 Name] ([Role/Context])
-> *"Direct quote"*
-> — [Source with link]
-
 [Repeat for 4-8 authoritative sources]
 
 ## How This Works in Practice
-
-[Concrete examples, config snippets, or workflow descriptions relevant to the user's setup]
+[Concrete examples relevant to the user's setup]
 
 ## Migration Path / Reversibility
-
 [How to change course if the decision turns out wrong]
 
-## When to Reconsider
-
-| Signal | Threshold |
-|--------|-----------|
-| [trigger] | [specific number or condition] |
-
 ## Summary
-
 [2-3 sentence wrap-up tying recommendation to evidence]
 
 ## References
-
 - [All source URLs as clickable links]
 ```
 
-## When NOT to Use
-
-- Breaking down work into stories — use `shield:plan-docs` instead
-- Reviewing existing code or plans — use `shield:review` or `shield:plan-review`
-- Quick factual lookups that don't need citations
-
 ## Rules
 
-1. **Every claim needs a source** — No unsourced opinions. If you can't find a source, say "based on general industry practice" rather than presenting it as cited fact.
-2. **Use direct quotes** — Don't paraphrase when the original wording is impactful. Quote then explain.
-3. **Bias toward the user's context** — A recommendation for a Fortune 500 is different from one for a 5-person startup. Always frame advice relative to the user's scale and situation.
-4. **Include dissenting views** — If credible sources disagree, present both sides and explain what factors drive the disagreement.
-5. **Make it actionable** — End with concrete next steps, not just "it depends."
-6. **Keep it skimmable** — Use tables, headers, and bullet points. Teammates should get the gist in 2 minutes.
+1. **Every claim needs a source** — no unsourced opinions
+2. **Use direct quotes** — don't paraphrase when the original wording is impactful
+3. **Bias toward the user's context** — frame advice relative to their scale
+4. **Include dissenting views** — present both sides when sources disagree
+5. **Make it actionable** — end with concrete next steps
+6. **Keep it skimmable** — tables, headers, bullet points

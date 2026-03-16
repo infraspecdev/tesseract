@@ -5,13 +5,20 @@ description: Use when breaking down a project phase into stories with acceptance
 
 # Plan Docs
 
-**You MUST produce all three artifacts. No exceptions.**
+**You MUST produce all four artifacts. No exceptions.**
 
-1. **Plan sidecar JSON** (`plan.json`) — machine-readable source of truth
-2. **Architecture/ADR document** (`architecture.html`) — the "why and how"
-3. **Detailed execution plan** (`plan.html`) — the "what to do", rendered from the sidecar
+## Output Paths — MANDATORY
 
-All three go to `shield/latest/`. Producing only a markdown plan or skipping HTML is a violation.
+Write each artifact using the Write tool to **exactly** these paths:
+
+1. `shield/plan.json` — machine-readable sidecar (updated in place, no timestamp)
+2. `shield/docs/architecture-YYYYMMDD-HHMMSS.html` — the "why and how"
+3. `shield/docs/plan-YYYYMMDD-HHMMSS.html` — the "what to do", rendered from the sidecar
+4. `shield/docs/index.html` — overview page linking to all artifacts (created or updated)
+
+Replace `YYYYMMDD-HHMMSS` with the current date and time.
+
+**Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
 
 ## Critical: Sidecar First
 
@@ -19,11 +26,7 @@ All three go to `shield/latest/`. Producing only a markdown plan or skipping HTM
 
 ## Plan Sidecar JSON
 
-The sidecar MUST be written to the Shield run directory (`shield/<run>/plan.json`). Check if `shield/latest/` exists; if not, create the run directory first:
-```bash
-RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
-```
-Then write to `shield/latest/plan.json`. See `sidecar-schema.md` for the full JSON schema and rules.
+The sidecar MUST be written to `shield/plan.json`. See `sidecar-schema.md` for the full JSON schema and rules.
 
 ## When to Use
 
@@ -99,9 +102,9 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 
 ## Workflow
 
-1. **Load prior research** — check if `shield/latest/docs/research.md` exists. If it does, read it and use the research findings to inform the plan. If not, proceed without it.
+1. **Load prior research** — check if any `shield/docs/research-*.md` files exist. If so, read the most recent one and use the research findings to inform the plan. If not, proceed without it.
 2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
-3. **Read `.tesseract.json`** — get project name and active domains
+3. **Read `.shield.json`** — get project name and active domains
 3. **Generate sidecar JSON first** — write `plan.json` with epics, stories, tasks, and acceptance criteria
 4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
 5. **Generate architecture doc** (HTML) — the "thinking" document
@@ -121,4 +124,4 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 | Vague acceptance criteria | Testable: specific commands, measurable states |
 | Missing acceptance criteria on stories | Every story MUST have at least 1 criterion |
 | Empty tasks list | Every story needs concrete, actionable tasks |
-| Not reading .tesseract.json | Project name and domains come from the marker |
+| Not reading .shield.json | Project name and domains come from the marker |

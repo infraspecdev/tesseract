@@ -7,6 +7,16 @@ description: Use when a plan, architecture doc, or execution plan exists and nee
 
 Dispatch parallel expert reviewer agents against a plan document to produce a scored analysis with prioritized recommendations and an enhanced plan.
 
+## Output Path — MANDATORY
+
+Write the analysis using the Write tool to **exactly** this path:
+
+```
+shield/docs/analysis-YYYYMMDD-HHMMSS.md
+```
+
+Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
+
 ## When to Use
 
 - User asks to review a plan, architecture doc, or execution plan
@@ -23,13 +33,13 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Plan sidecar JSON** (`shield/latest/plan.json`) — if present, use stories and AC from the sidecar
-2. **Plan docs** in `shield/latest/docs/` — architecture docs, research findings
+1. **Plan sidecar JSON** (`shield/plan.json`) — if present, use stories and AC from the sidecar
+2. **Plan docs** in `shield/docs/` — architecture docs, research findings (glob for `shield/docs/architecture-*.html`, `shield/docs/research-*.md`)
 3. **HTML plan document** — if only HTML exists, parse it for story content
 4. **Markdown plan document** — path provided by user or auto-detected
 5. **User-provided path** — explicit path argument
 
-**Always start by checking for `shield/latest/plan.json` and docs in `shield/latest/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
+**Always start by checking for `shield/plan.json` and docs in `shield/docs/`.** If they don't exist, ask the user for the plan location or check the project root.
 
 ## Persona Selection
 
@@ -52,13 +62,9 @@ After all agents return:
 
 ## Output
 
-Write to the Shield docs directory (`shield/<run>/docs/`). Check if `shield/latest/docs/` exists; if not, create the run directory first:
-```bash
-RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
-```
-Then write to `shield/latest/docs/`.
-- `analysis.md` — scored evaluation with consolidated recommendations
-- `plan.md` — enhanced version of original plan with feedback applied
+Write to `shield/docs/`:
+- `shield/docs/analysis-YYYYMMDD-HHMMSS.md` — scored evaluation with consolidated recommendations
+- `shield/docs/plan-enhanced-YYYYMMDD-HHMMSS.md` — enhanced version of original plan with feedback applied
 
 See `templates.md` for output formats and enhanced plan rules.
 
@@ -67,11 +73,11 @@ See `templates.md` for output formats and enhanced plan rules.
 **Do NOT proceed until the user explicitly confirms.**
 
 After writing output files, present the user with three options:
-1. **Apply as-is** — replace original plan with enhanced `plan.md`
-2. **Apply with edits** — user modifies `plan.md` first, re-read before applying
+1. **Apply as-is** — replace original plan with enhanced `plan-enhanced-YYYYMMDD-HHMMSS.md`
+2. **Apply with edits** — user modifies `plan-enhanced-YYYYMMDD-HHMMSS.md` first, re-read before applying
 3. **Skip** — keep original plan unchanged
 
-The user may also edit `analysis.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
+The user may also edit `analysis-YYYYMMDD-HHMMSS.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
 
 ## Common Mistakes
 

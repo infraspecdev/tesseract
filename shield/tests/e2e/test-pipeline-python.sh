@@ -49,7 +49,7 @@ OUTPUT="$LAST_OUTPUT"
 assert_skill_invoked "$OUTPUT" "research" "research skill invoked"
 assert_output_contains "$OUTPUT" "validation\|FastAPI\|Pydantic\|auth" \
   "research mentions relevant concepts"
-assert_file_glob "$PROJECT_DIR" "shield/*/docs/research.md" "research.md created in docs dir"
+assert_file_glob "$PROJECT_DIR" "shield/docs/research-*.md" "research.md created in docs dir"
 
 report_tokens "$OUTPUT" "1-research"
 check_phase
@@ -82,8 +82,8 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-assert_file_glob "$PROJECT_DIR" "shield/*/architecture.html" "architecture.html created"
-assert_file_glob "$PROJECT_DIR" "shield/*/plan.html" "plan.html created"
+assert_file_glob "$PROJECT_DIR" "shield/docs/architecture-*.html" "architecture.html created"
+assert_file_glob "$PROJECT_DIR" "shield/docs/plan-*.html" "plan.html created"
 
 report_tokens "$OUTPUT" "2-plan"
 check_phase

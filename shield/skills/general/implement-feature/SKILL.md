@@ -5,6 +5,8 @@ description: Use when implementing a feature or story, especially with acceptanc
 
 # Implement Feature
 
+**Plan sidecar:** `shield/plan.json` (reads and updates story status in place)
+
 Structured feature implementation workflow with test-driven development, acceptance criteria confirmation, and continuous lightweight review.
 
 ## Input
@@ -42,7 +44,7 @@ The user provides one or more of:
 
 ### From plan sidecar (preferred)
 
-If a `plan.json` exists in the Shield run directory (`shield/latest/plan.json`) or project root:
+If a `plan.json` exists in the Shield run directory (`shield/plan.json`) or project root:
 1. Read the sidecar
 2. Find the story by ID (if story ID provided)
 3. Extract: name, description, tasks, acceptance criteria

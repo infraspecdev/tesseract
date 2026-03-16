@@ -5,6 +5,16 @@ description: Use when a pipeline phase completes and needs an audit trail summar
 
 # Phase Summarize
 
+## Output Path — MANDATORY
+
+Write the summary using the Write tool to **exactly** this path:
+
+```
+shield/docs/<phase_name>-summary-YYYYMMDD-HHMMSS.md
+```
+
+Replace `<phase_name>` with the phase (e.g. `research`, `plan`, `review`) and `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no custom filenames. The Write tool creates `shield/docs/` automatically.
+
 ## When to Use
 
 Called automatically by each phase's orchestrator at the end of execution. Not invoked directly by users.
@@ -14,17 +24,14 @@ Called automatically by each phase's orchestrator at the end of execution. Not i
 The orchestrator passes:
 - `phase_name`: The pipeline phase that just completed (research, plan, plan-review, sync, implement-step-N, review-step-N, final-review)
 - `phase_output`: Structured data about what was done
-- `project_name`: From `.tesseract.json`
+- `project_name`: From `.shield.json`
 - `run_id`: The current run identifier (date-topic)
 
 ## Process
 
 1. Format the phase output as concise bullet points (5-10 bullets max)
 2. Include: what was done, key decisions made, findings if any, next phase
-3. Write to the Shield docs directory (`shield/<run>/docs/<phase_name>-summary.md`). Check if `shield/latest/docs/` exists; if not, create the run directory first:
-   ```bash
-   RUN_DIR="shield/$(date +%Y%m%d-%H%M%S)" && mkdir -p "$RUN_DIR/docs" && ln -sfn "$(basename "$RUN_DIR")" "shield/latest"
-   ```
+3. Write to `shield/docs/<phase_name>-summary-YYYYMMDD-HHMMSS.md`
 4. Return the summary text to the orchestrator for display
 
 ## Summary Format

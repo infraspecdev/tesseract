@@ -3,7 +3,7 @@
 ```json
 {
   "version": "1.0",
-  "project": "<project name from .tesseract.json>",
+  "project": "<project name from .shield.json>",
   "phase": "<phase name>",
   "epics": [
     {
@@ -34,7 +34,7 @@
   ],
   "metadata": {
     "created_at": "<YYYY-MM-DD>",
-    "domains": ["<from .tesseract.json>"],
+    "domains": ["<from .shield.json>"],
     "reviewer_grades": {}
   }
 }

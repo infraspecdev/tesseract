@@ -1,5 +1,56 @@
 # Plan Docs — HTML Templates
 
+## Overview / Index Template
+
+This page is written to `shield/docs/index.html` and updated by each skill that produces artifacts. It links to all shield docs.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{Project} — Shield Overview</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 30px; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; }
+th { background-color: #f1f3f4; font-weight: bold; }
+tr:nth-child(even) { background-color: #f8f9fa; }
+a { color: #1a73e8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.phase { margin: 15px 0; padding: 15px; border: 1px solid #dadce0; border-radius: 8px; }
+.phase h3 { margin-top: 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+.badge-research { background-color: #e8f0fe; color: #1a73e8; }
+.badge-plan { background-color: #e6f4ea; color: #1e8e3e; }
+.badge-review { background-color: #fef7e0; color: #e65100; }
+</style>
+</head>
+<body>
+
+<h1>{Project} — Shield Overview</h1>
+
+<p>Generated: {date}</p>
+
+<h2>Artifacts</h2>
+
+<table>
+  <tr><th>Phase</th><th>Document</th><th>Date</th></tr>
+  <tr><td><span class="badge badge-research">Research</span></td><td><a href="research-{ts}.md">Research Document</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="architecture-{ts}.html">Architecture / ADR</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="plan-{ts}.html">Detailed Execution Plan</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="../plan.json">Plan Sidecar (JSON)</a></td><td>{date}</td></tr>
+  <!-- Add rows as phases complete -->
+  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="analysis-{ts}.md">Plan Review</a></td><td>{date}</td></tr> -->
+  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="review-{ts}.md">Code Review</a></td><td>{date}</td></tr> -->
+</table>
+
+</body>
+</html>
+```
+
 ## Architecture / ADR Template
 
 ```html
@@ -32,10 +83,8 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 <body>
 
 <div class="nav">
-  <a href="../00-overview.html">&larr; Back to Overview</a> |
-  <a href="detailed-plan.html">Detailed Plan &rarr;</a> |
-  <a href="../{prev-phase}/architecture.html">&larr; Phase {N-1}: {PrevName}</a> |
-  <a href="../{next-phase}/architecture.html">&rarr; Phase {N+1}: {NextName}</a>
+  <a href="index.html">&larr; Overview</a> |
+  <a href="plan-{YYYYMMDD-HHMMSS}.html">Detailed Plan &rarr;</a>
 </div>
 
 <h2>Phase {N}: {Name}</h2>
@@ -165,8 +214,8 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 <body>
 
 <div class="nav">
-  <a href="../00-overview.html">&larr; Back to Overview</a> |
-  <a href="architecture.html">Architecture &rarr;</a>
+  <a href="index.html">&larr; Overview</a> |
+  <a href="architecture-{YYYYMMDD-HHMMSS}.html">&larr; Architecture</a>
 </div>
 
 <h1>Phase {N}: {Name} &mdash; Detailed Plan</h1>
