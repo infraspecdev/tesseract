@@ -4,7 +4,7 @@
 # Fixture levels:
 #   initialized     — .shield.json + source code (from example)
 #   post-research   — above + shield/docs/research-*.md
-#   post-planning   — above + shield/plan.json + shield/docs/architecture-*.html + plan-*.html
+#   post-planning   — above + shield/docs/plans/<name>.json + shield/docs/architecture-*.html + plan-*.html
 #   post-implement  — above + code changes committed
 #
 # Usage: setup_fixture "post-planning" "python-api" "/path/to/project"
@@ -70,7 +70,8 @@ setup_fixture_cold() {
   if [ "$level" -ge 3 ]; then
     local ts
     ts=$(date +%Y%m%d-%H%M%S)
-    cp "$fixture_dir/plan.json" "$project_dir/shield/plan.json"
+    mkdir -p "$project_dir/shield/docs/plans"
+    cp "$fixture_dir/plan.json" "$project_dir/shield/docs/plans/${example}.json"
     cp "$fixture_dir/architecture.html" "$project_dir/shield/docs/architecture-${ts}.html"
     cp "$fixture_dir/plan.html" "$project_dir/shield/docs/plan-${ts}.html"
     git -C "$project_dir" add .

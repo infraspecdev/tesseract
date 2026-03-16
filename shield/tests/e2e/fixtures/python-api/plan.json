@@ -1,5 +1,6 @@
 {
   "project": "python-api-example",
+  "name": "python-api",
   "title": "API Hardening: Input Validation & 404 Error Handling",
   "description": "Improve the FastAPI task management API by replacing untyped dict parameters with the Task Pydantic model and adding proper 404 error handling for missing tasks.",
   "generated": "2026-03-15T23:00:00Z",
