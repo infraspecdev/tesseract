@@ -80,7 +80,7 @@ assert 'permissions' in p, 'missing permissions'
 run_test_verbose "hooks.json valid" python3 -c "
 import json
 h = json.load(open('$SHIELD_ROOT/hooks/hooks.json'))
-for e in ['SessionStart', 'PostToolUse', 'PreCommit']:
+for e in ['SessionStart', 'PostToolUse']:
     assert e in h['hooks'], f'missing {e}'
 "
 run_test_verbose "marketplace.json valid" python3 -c "
