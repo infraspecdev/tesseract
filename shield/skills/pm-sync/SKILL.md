@@ -46,7 +46,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 2. **Sync before mutating.** Always call `pm_sync` first. Present the diff and get confirmation.
 3. **Use bulk operations.** Never create tasks one-by-one. Use `pm_bulk_create` with `set_relationships: true`.
 4. **Read config, don't hardcode.** All IDs come from `~/.shield/projects/<project>/pm.json`. Never hardcode PM tool IDs.
-5. **Read the named plan sidecar JSON** (`shield/docs/plans/<name>.json`) for story data — not raw HTML or plan docs. If multiple plans exist and no name specified, list them and ask.
+5. **Always locate and read plan sidecar JSONs first.** Run `Glob("shield/docs/plans/*.json")` at the project root to find all sidecars. Read the relevant sidecar for story data — not raw HTML or plan docs. If multiple plans exist and no name specified, list them and ask. Never claim sidecars don't exist without searching first.
 6. **Confirm before mutating.** Show the user exactly what will happen and ask for confirmation.
 7. **Surface errors clearly.** If tools report failure, it's real. Show which operations succeeded vs failed.
 8. **Present results as tables.** After any operation, show task names, IDs, statuses, and any failures.
