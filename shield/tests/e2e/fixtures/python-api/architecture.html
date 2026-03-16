@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture: API Hardening — python-api-example</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+      padding: 2rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { border-bottom: 1px solid #2d3748; padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    header .badge {
+      display: inline-block;
+      background: #1a365d;
+      color: #90cdf4;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: #f7fafc; }
+    h2 { font-size: 1.35rem; font-weight: 600; color: #90cdf4; margin: 2rem 0 0.75rem; border-left: 3px solid #3182ce; padding-left: 0.75rem; }
+    h3 { font-size: 1.05rem; font-weight: 600; color: #e2e8f0; margin: 1.25rem 0 0.5rem; }
+    p { margin-bottom: 0.75rem; color: #cbd5e0; }
+    ul, ol { margin-left: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e0; }
+    li { margin-bottom: 0.3rem; }
+    code {
+      background: #2d3748;
+      color: #68d391;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 0.875rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+    }
+    pre {
+      background: #1a202c;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    pre code { background: none; padding: 0; color: #e2e8f0; font-size: 0.85rem; }
+    .callout {
+      background: #1a365d;
+      border-left: 4px solid #3182ce;
+      padding: 0.85rem 1.1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .callout.warn { background: #2d1a00; border-color: #dd6b20; }
+    .callout.success { background: #1c3a29; border-color: #38a169; }
+    .decision-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .decision-table th {
+      background: #2d3748;
+      color: #90cdf4;
+      padding: 0.6rem 0.9rem;
+      text-align: left;
+      font-weight: 600;
+    }
+    .decision-table td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid #2d3748;
+      color: #cbd5e0;
+    }
+    .decision-table tr:last-child td { border-bottom: none; }
+    .meta { font-size: 0.8rem; color: #718096; margin-top: 0.5rem; }
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #2d3748; font-size: 0.8rem; color: #4a5568; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Architecture Document</div>
+    <h1>API Hardening: Input Validation &amp; 404 Error Handling</h1>
+    <p class="meta">Project: python-api-example &nbsp;·&nbsp; Generated: 2026-03-15 23:00 UTC</p>
+  </header>
+
+  <!-- CONTEXT -->
+  <h2>1. Context &amp; Problem Statement</h2>
+  <p>
+    The <code>src/routes/tasks.py</code> router currently accepts request bodies as untyped <code>dict</code>
+    objects and performs no existence checks before accessing the in-memory store. This creates two classes of defects:
+  </p>
+  <ul>
+    <li><strong>Injection surface</strong> — any arbitrary JSON key is persisted without validation (mass-assignment risk, unexpected types).</li>
+    <li><strong>Unhandled runtime errors</strong> — accessing <code>tasks[task_id]</code> for a missing key raises an unhandled <code>KeyError</code>, causing a <code>500 Internal Server Error</code> instead of a structured <code>404</code>.</li>
+  </ul>
+  <p>
+    Both issues are straightforward to fix using FastAPI's built-in Pydantic integration and <code>HTTPException</code>.
+    The existing <code>Task</code> model in <code>src/models.py</code> already provides the right foundation — it only needs
+    field constraints added before being wired into the endpoints.
+  </p>
+
+  <div class="callout warn">
+    <strong>Current behaviour:</strong> <code>GET /tasks/999</code> returns <code>500 Internal Server Error</code>
+    (unhandled <code>KeyError</code>) rather than <code>404 Not Found</code>. Any client can also POST arbitrary fields
+    like <code>"admin": true</code> which are silently stored.
+  </div>
+
+  <!-- GOALS -->
+  <h2>2. Goals &amp; Non-Goals</h2>
+  <h3>Goals</h3>
+  <ul>
+    <li>Enforce field-level validation on task creation and update via the <code>Task</code> Pydantic model.</li>
+    <li>Return <code>HTTP 422 Unprocessable Entity</code> (automatically by FastAPI) for invalid input.</li>
+    <li>Return <code>HTTP 404 Not Found</code> with a structured body for any endpoint that accesses a non-existent task.</li>
+    <li>Introduce a <code>TaskUpdate</code> model for partial updates (all fields optional).</li>
+  </ul>
+  <h3>Non-Goals</h3>
+  <ul>
+    <li>Persistent storage (still in-memory; a separate database migration story is not in scope).</li>
+    <li>Authentication / authorization (a separate epic; the security reviewer has already flagged this).</li>
+    <li>Pagination on list endpoint.</li>
+    <li>Custom 422 response shape (FastAPI's default shape is acceptable for now).</li>
+  </ul>
+
+  <!-- ARCHITECTURE DECISIONS -->
+  <h2>3. Architecture Decisions</h2>
+
+  <h3>ADR-1: Constrain the Task model rather than creating a new one</h3>
+  <p>
+    The existing <code>Task</code> model has the right fields (<code>title</code>, <code>description</code>, <code>status</code>).
+    Rather than replacing it, we add <code>Field()</code> constraints in place and set
+    <code>model_config = ConfigDict(extra='forbid')</code>. FastAPI's OpenAPI schema generation will automatically
+    reflect the new constraints.
+  </p>
+  <table class="decision-table">
+    <thead><tr><th>Option</th><th>Pros</th><th>Cons</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Extend existing Task</strong> ✓</td><td>Minimal diff; reuses existing model; automatic OpenAPI update</td><td>Existing tests (if any) may need updating for max_length</td></tr>
+      <tr><td>New ValidatedTask model</td><td>Non-breaking for old code</td><td>Duplicate models, confusing naming, old model stays unvalidated</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ADR-2: Separate TaskUpdate model for PUT endpoint</h3>
+  <p>
+    <code>PUT /tasks/{task_id}</code> is a partial update — not all fields are required. Rather than making <code>Task</code>
+    fields optional (which would break the creation endpoint), we introduce a <code>TaskUpdate</code> model where every field is
+    <code>Optional[…]</code> with the same constraints. <code>model_dump(exclude_unset=True)</code> is used to merge only
+    the provided fields into the stored record.
+  </p>
+
+  <h3>ADR-3: HTTPException at the point of access, not middleware</h3>
+  <p>
+    Global error-handling middleware could catch <code>KeyError</code> and return 404, but this is fragile (it catches
+    <em>all</em> KeyErrors, not just task lookups). Raising <code>HTTPException(status_code=404)</code> explicitly at each
+    endpoint makes the intent clear, keeps each endpoint self-documenting, and plays well with FastAPI's automatic
+    OpenAPI response-code generation.
+  </p>
+  <pre><code># Pattern applied to get_task, update_task, delete_task
+if task_id not in tasks:
+    raise HTTPException(status_code=404, detail="Task not found")</code></pre>
+
+  <!-- AFFECTED FILES -->
+  <h2>4. Affected Files</h2>
+  <table class="decision-table">
+    <thead><tr><th>File</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/models.py</code></td><td>Add <code>Field()</code> constraints to <code>Task</code>; add <code>ConfigDict(extra='forbid')</code>; add <code>TaskUpdate</code> model</td></tr>
+      <tr><td><code>src/routes/tasks.py</code></td><td>Import <code>Task</code>, <code>TaskUpdate</code>, <code>HTTPException</code>; update <code>create_task</code>, <code>update_task</code> signatures; add 404 guards to <code>get_task</code>, <code>update_task</code>, <code>delete_task</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- BEFORE / AFTER -->
+  <h2>5. Before / After Comparison</h2>
+
+  <h3>src/models.py — before</h3>
+  <pre><code>from pydantic import BaseModel
+
+class Task(BaseModel):
+    title: str
+    description: str = ""
+    status: str = "open"</code></pre>
+
+  <h3>src/models.py — after</h3>
+  <pre><code>from typing import Literal, Optional
+from pydantic import BaseModel, ConfigDict, Field
+
+class Task(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=1000)
+    status: Literal["open", "in_progress", "done"] = "open"
+
+class TaskUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    status: Optional[Literal["open", "in_progress", "done"]] = None</code></pre>
+
+  <h3>src/routes/tasks.py — create_task (before → after)</h3>
+  <pre><code># BEFORE
+@router.post("/")
+async def create_task(task: dict):
+    ...
+    tasks[task_id] = {**task, "id": task_id, "status": "open"}
+
+# AFTER
+@router.post("/")
+async def create_task(task: Task):
+    ...
+    tasks[task_id] = {**task.model_dump(), "id": task_id}</code></pre>
+
+  <h3>src/routes/tasks.py — get_task (before → after)</h3>
+  <pre><code># BEFORE
+@router.get("/{task_id}")
+async def get_task(task_id: str):
+    return tasks[task_id]   # KeyError → 500
+
+# AFTER
+@router.get("/{task_id}")
+async def get_task(task_id: str):
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return tasks[task_id]</code></pre>
+
+  <!-- RISKS -->
+  <h2>6. Risks &amp; Mitigations</h2>
+  <table class="decision-table">
+    <thead><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Existing API consumers sending <code>status: "pending"</code> (not in enum) break</td>
+        <td>Low — no known consumers</td>
+        <td>Document breaking change in CHANGELOG; provide migration note in PR description</td>
+      </tr>
+      <tr>
+        <td><code>create_task</code> no longer forcibly sets <code>status: "open"</code> — validated model passes through the provided status</td>
+        <td>Medium</td>
+        <td>Either keep the explicit <code>"status": "open"</code> override in the store dict, or rely on the model default. Be explicit in implementation.</td>
+      </tr>
+      <tr>
+        <td>In-memory store is still not thread-safe</td>
+        <td>High under load</td>
+        <td>Out of scope for this plan; noted for a future persistence epic</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- TESTING -->
+  <h2>7. Testing Strategy</h2>
+  <p>All changes should be covered by <code>pytest</code> + <code>httpx</code> (via FastAPI's <code>TestClient</code>):</p>
+  <ul>
+    <li><strong>Happy path:</strong> valid POST/GET/PUT/DELETE requests still return 200/201.</li>
+    <li><strong>422 validation:</strong> missing <code>title</code>, oversized <code>title</code>, invalid <code>status</code>, extra fields.</li>
+    <li><strong>404 handling:</strong> GET/PUT/DELETE with a non-existent ID returns <code>{"detail": "Task not found"}</code>.</li>
+    <li><strong>Partial update:</strong> PUT with only <code>status</code> does not overwrite <code>title</code>.</li>
+  </ul>
+
+  <div class="callout success">
+    <strong>Outcome:</strong> After these changes the API will automatically validate all task input via FastAPI's
+    Pydantic integration and return structured 404 responses for missing resources — both behaviours are observable
+    in the auto-generated OpenAPI docs at <code>/docs</code>.
+  </div>
+
+  <footer>
+    Architecture document · python-api-example · 2026-03-15
+    &nbsp;·&nbsp; <a href="./plan-20260315-230000.html" style="color:#90cdf4;">View execution plan →</a>
+    &nbsp;·&nbsp; <a href="./index.html" style="color:#90cdf4;">Back to index</a>
+  </footer>
+</div>
+</body>
+</html>

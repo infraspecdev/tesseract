@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="sidecar" content="./plan.json" />
+  <title>Execution Plan: API Hardening — python-api-example</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+      padding: 2rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { border-bottom: 1px solid #2d3748; padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .badge {
+      display: inline-block;
+      background: #1a365d;
+      color: #90cdf4;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: #f7fafc; }
+    .meta { font-size: 0.8rem; color: #718096; margin-top: 0.5rem; }
+
+    /* Epic */
+    .epic {
+      margin-bottom: 2.5rem;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .epic-header {
+      background: #1a202c;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      border-bottom: 1px solid #2d3748;
+    }
+    .epic-id {
+      background: #2c5282;
+      color: #bee3f8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 0.2rem;
+    }
+    .epic-title { font-size: 1.2rem; font-weight: 700; color: #f7fafc; }
+    .epic-desc { font-size: 0.9rem; color: #a0aec0; margin-top: 0.3rem; }
+
+    /* Story */
+    .stories { padding: 0.75rem 1.25rem 1.25rem; }
+    .story {
+      background: #171923;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .story-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      border-bottom: 1px solid #2d3748;
+      background: #1a202c;
+    }
+    .story-id {
+      background: #276749;
+      color: #9ae6b4;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      white-space: nowrap;
+      margin-top: 0.25rem;
+    }
+    .story-title { font-size: 1rem; font-weight: 600; color: #e2e8f0; }
+    .story-desc { font-size: 0.875rem; color: #a0aec0; margin-top: 0.3rem; }
+    .story-body { padding: 0.85rem 1rem; }
+
+    h4 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #718096; margin-bottom: 0.5rem; }
+
+    /* Acceptance Criteria */
+    .ac-list { list-style: none; margin-left: 0; margin-bottom: 1rem; }
+    .ac-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #cbd5e0;
+      margin-bottom: 0.3rem;
+    }
+    .ac-list li::before {
+      content: "✓";
+      color: #68d391;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    /* Tasks */
+    .task-list { list-style: none; margin-left: 0; }
+    .task-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: #a0aec0;
+      margin-bottom: 0.25rem;
+    }
+    .task-list li::before {
+      content: "□";
+      color: #4a5568;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .task-id {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.7rem;
+      color: #4a5568;
+      flex-shrink: 0;
+    }
+
+    code {
+      background: #2d3748;
+      color: #68d391;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+    }
+
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #2d3748; font-size: 0.8rem; color: #4a5568; }
+    footer a { color: #90cdf4; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Execution Plan</div>
+    <h1>API Hardening: Input Validation &amp; 404 Error Handling</h1>
+    <p class="meta">Project: python-api-example &nbsp;·&nbsp; Generated: 2026-03-15 23:00 UTC &nbsp;·&nbsp; 2 epics · 6 stories · 14 tasks</p>
+  </header>
+
+  <!-- EPIC 1 -->
+  <div class="epic">
+    <div class="epic-header">
+      <span class="epic-id">E1</span>
+      <div>
+        <div class="epic-title">Input Validation via Pydantic Models</div>
+        <div class="epic-desc">Replace raw <code>dict</code> parameters in task endpoints with typed Pydantic models to enforce field constraints and prevent mass-assignment vulnerabilities.</div>
+      </div>
+    </div>
+    <div class="stories">
+
+      <!-- E1-S1 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E1-S1</span>
+          <div>
+            <div class="story-title">Enhance Task model with field constraints</div>
+            <div class="story-desc">Add <code>Field()</code> constraints to the existing Task model: min/max lengths, status enum, and <code>extra='forbid'</code>.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>Task.title</code> has <code>min_length=1</code> and <code>max_length=200</code></li>
+            <li><code>Task.description</code> has <code>max_length=1000</code></li>
+            <li><code>Task.status</code> is constrained to <code>'open'</code>, <code>'in_progress'</code>, <code>'done'</code></li>
+            <li>Task model uses <code>ConfigDict(extra='forbid')</code> to reject unexpected fields</li>
+            <li>Sending an invalid status value returns HTTP 422 with a descriptive error</li>
+            <li>Sending an extra field (e.g. <code>"admin": true</code>) returns HTTP 422</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E1-S1-T1</span> Import <code>Field</code> and <code>ConfigDict</code> from pydantic</li>
+            <li><span class="task-id">E1-S1-T2</span> Add <code>Field(min_length=1, max_length=200)</code> to <code>Task.title</code></li>
+            <li><span class="task-id">E1-S1-T3</span> Add <code>Field(default="", max_length=1000)</code> to <code>Task.description</code></li>
+            <li><span class="task-id">E1-S1-T4</span> Add <code>Literal["open", "in_progress", "done"]</code> type annotation to <code>Task.status</code></li>
+            <li><span class="task-id">E1-S1-T5</span> Add <code>model_config = ConfigDict(extra="forbid")</code> to <code>Task</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- E1-S2 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E1-S2</span>
+          <div>
+            <div class="story-title">Use Task model in create_task endpoint</div>
+            <div class="story-desc">Replace the untyped <code>task: dict</code> parameter in <code>POST /tasks/</code> with <code>task: Task</code>.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>POST /tasks/</code> accepts only valid Task fields</li>
+            <li>Sending a request without <code>title</code> returns HTTP 422</li>
+            <li>Sending a <code>title</code> longer than 200 chars returns HTTP 422</li>
+            <li>Valid request returns the created task with <code>id</code>, <code>title</code>, <code>description</code>, <code>status</code></li>
+            <li>The stored task preserves the validated values from the model</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E1-S2-T1</span> Import <code>Task</code> model into <code>src/routes/tasks.py</code></li>
+            <li><span class="task-id">E1-S2-T2</span> Change <code>create_task</code> signature from <code>task: dict</code> to <code>task: Task</code></li>
+            <li><span class="task-id">E1-S2-T3</span> Use <code>task.model_dump()</code> to build the stored dict instead of <code>**task</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- E1-S3 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E1-S3</span>
+          <div>
+            <div class="story-title">Add TaskUpdate model and use in update_task endpoint</div>
+            <div class="story-desc">Create a <code>TaskUpdate</code> model with all-optional fields for partial updates; replace <code>updates: dict</code> in PUT endpoint.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>TaskUpdate</code> model exists in <code>src/models.py</code> with optional <code>title</code>, <code>description</code>, <code>status</code> fields</li>
+            <li>Each optional field carries the same constraints as <code>Task</code> (max_length, enum)</li>
+            <li><code>PUT /tasks/{task_id}</code> uses <code>TaskUpdate</code> instead of <code>dict</code></li>
+            <li>Sending an invalid <code>status</code> value in an update returns HTTP 422</li>
+            <li>Sending only a subset of fields performs a partial update (other fields unchanged)</li>
+            <li>Sending extra fields returns HTTP 422</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E1-S3-T1</span> Define <code>TaskUpdate(BaseModel)</code> in <code>models.py</code> with <code>Optional</code> fields</li>
+            <li><span class="task-id">E1-S3-T2</span> Import <code>TaskUpdate</code> in <code>tasks.py</code></li>
+            <li><span class="task-id">E1-S3-T3</span> Change <code>update_task</code> signature from <code>updates: dict</code> to <code>updates: TaskUpdate</code></li>
+            <li><span class="task-id">E1-S3-T4</span> Use <code>updates.model_dump(exclude_unset=True)</code> for the partial merge</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EPIC 2 -->
+  <div class="epic">
+    <div class="epic-header">
+      <span class="epic-id">E2</span>
+      <div>
+        <div class="epic-title">404 Error Handling for Missing Tasks</div>
+        <div class="epic-desc">All endpoints that look up a task by ID must return a structured HTTP 404 response when the task does not exist, rather than an unhandled <code>KeyError</code>.</div>
+      </div>
+    </div>
+    <div class="stories">
+
+      <!-- E2-S1 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E2-S1</span>
+          <div>
+            <div class="story-title">Return 404 in get_task when task not found</div>
+            <div class="story-desc">Add existence check and <code>HTTPException(404)</code> to <code>GET /tasks/{task_id}</code>.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>GET /tasks/nonexistent</code> returns HTTP 404</li>
+            <li>Response body is <code>{"detail": "Task not found"}</code></li>
+            <li><code>GET /tasks/{valid_id}</code> still returns the task correctly</li>
+            <li>No unhandled <code>KeyError</code> is raised for missing IDs</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E2-S1-T1</span> Import <code>HTTPException</code> from <code>fastapi</code> in <code>tasks.py</code></li>
+            <li><span class="task-id">E2-S1-T2</span> Add <code>if task_id not in tasks: raise HTTPException(404, "Task not found")</code> to <code>get_task</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- E2-S2 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E2-S2</span>
+          <div>
+            <div class="story-title">Return 404 in update_task when task not found</div>
+            <div class="story-desc">Add existence check and <code>HTTPException(404)</code> to <code>PUT /tasks/{task_id}</code>.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>PUT /tasks/nonexistent</code> returns HTTP 404</li>
+            <li>Response body is <code>{"detail": "Task not found"}</code></li>
+            <li><code>PUT /tasks/{valid_id}</code> with valid body still updates correctly</li>
+            <li>No unhandled <code>KeyError</code> is raised for missing IDs</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E2-S2-T1</span> Add <code>if task_id not in tasks: raise HTTPException(404, "Task not found")</code> to <code>update_task</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- E2-S3 -->
+      <div class="story">
+        <div class="story-header">
+          <span class="story-id">E2-S3</span>
+          <div>
+            <div class="story-title">Return 404 in delete_task when task not found</div>
+            <div class="story-desc">Add existence check and <code>HTTPException(404)</code> to <code>DELETE /tasks/{task_id}</code>.</div>
+          </div>
+        </div>
+        <div class="story-body">
+          <h4>Acceptance Criteria</h4>
+          <ul class="ac-list">
+            <li><code>DELETE /tasks/nonexistent</code> returns HTTP 404</li>
+            <li>Response body is <code>{"detail": "Task not found"}</code></li>
+            <li><code>DELETE /tasks/{valid_id}</code> still deletes and returns <code>{"deleted": id}</code></li>
+            <li>No unhandled <code>KeyError</code> is raised for missing IDs</li>
+          </ul>
+          <h4>Tasks</h4>
+          <ul class="task-list">
+            <li><span class="task-id">E2-S3-T1</span> Add <code>if task_id not in tasks: raise HTTPException(404, "Task not found")</code> to <code>delete_task</code></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Execution plan · python-api-example · 2026-03-15
+    &nbsp;·&nbsp; <a href="./architecture-20260315-230000.html">View architecture doc →</a>
+    &nbsp;·&nbsp; <a href="./index.html">Back to index</a>
+  </footer>
+</div>
+</body>
+</html>
