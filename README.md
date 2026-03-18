@@ -76,20 +76,47 @@ It shields you from the mistakes that haunt on-call rotations — because the be
 - Pick your project management tool per project (`clickup`, `jira`, or future adapters)
 - Override which reviewers always run or never run per project
 
-#### Pipeline
+#### Usage
+
+Shield is a multi-phase pipeline. **Every phase is standalone** — you can run any phase independently, skip phases you don't need, or run the full pipeline end-to-end.
 
 ```
-research → planning → plan review → project management sync → confirm acceptance criteria → implement → code review → final review
+/research ──→ /plan ──→ /plan-review ──→ /pm-sync ──→ /implement ──→ /review
+     │            │            │              │             │            │
+     ▼            ▼            ▼              ▼             ▼            ▼
+  Research    Architecture   Scored       Stories      TDD-based    Multi-agent
+  findings    + execution    analysis     synced to    feature      code review
+  with        plan with      with P0/     your PM      impl with    with detailed
+  citations   stories        P1/P2 recs   tool         AC tracking  per-agent findings
 ```
+
+**First time?** Run `/shield init` to set up your project config (`.shield.json`). Migrating from older plugins? Use `/shield migrate`.
+
+**Pick your entry point:**
+- Starting fresh? Begin with `/research` to build domain context
+- Have a plan already? Jump to `/plan-review` to get it scored
+- Code written? Run `/review` directly for a comprehensive code review
+- Just want security? `/review-security` for a single-agent pass
 
 Each phase:
 1. Does the work (with domain-specific skills when available)
-2. Produces a summary of what was done
+2. Produces output to `shield/docs/` (summaries, plans, review findings)
 3. Waits for your confirmation before proceeding
 
 Review findings are presented with severity levels. You pick which fixes to apply, which to skip, and which need discussion. Optionally post findings to your project management tool.
 
-#### Installation and Usage
+**What to commit vs gitignore:**
+
+| Path | Commit? | Why |
+|------|---------|-----|
+| `.shield.json` | Yes | Project config — domains, reviewer settings |
+| `shield/docs/plans/*.json` | Yes | Plan sidecars — source of truth for stories and status |
+| `shield/docs/*.html` | Yes | Architecture and plan docs — team reference |
+| `shield/docs/research-*.md` | Optional | Research findings — useful context but can be regenerated |
+| `shield/docs/reviews-*/` | No | Review output is ephemeral — fixes become commits |
+| `~/.shield/` | N/A | User-local config (PM credentials, project settings) — never in repo |
+
+#### Installation
 
 **1. Install Shield:**
 
