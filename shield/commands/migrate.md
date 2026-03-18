@@ -166,8 +166,8 @@ Also include sections for Reviews and Plan Sidecars at the bottom.
 ### 3e. Copy review artifacts
 
 For each review directory:
-- Copy `review/<date>-<name>/analysis.md` → `shield/docs/analysis-<date>-<name>.md`
-- Copy `review/<date>-<name>/plan.md` → `shield/docs/plan-enhanced-<date>-<name>.md`
+- Copy `review/<date>-<name>/analysis.md` → `shield/docs/reviews-<date>-<name>/summary/plan-review-summary.md`
+- Copy `review/<date>-<name>/plan.md` → `shield/docs/reviews-<date>-<name>/summary/plan-enhanced.md`
 
 ### 3f. Migrate legacy shield/plan.json
 
@@ -204,8 +204,8 @@ HTML docs copied to shield/docs/:
   ✓ index.html — card-grid overview linking all artifacts
 
 Reviews:
-  ✓ shield/docs/analysis-2026-03-12-eks-foundation.md
-  ✓ shield/docs/plan-enhanced-2026-03-12-eks-foundation.md
+  ✓ shield/docs/reviews-2026-03-12-eks-foundation/summary/plan-review-summary.md
+  ✓ shield/docs/reviews-2026-03-12-eks-foundation/summary/plan-enhanced.md
 
 Old files left in place (safe to delete after verifying):
   - sprint-planner.json
