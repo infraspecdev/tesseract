@@ -30,7 +30,7 @@ Important:
 
 Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer`) when available, otherwise use `general-purpose`.
 
-## analysis.md Format
+## plan-review-summary.md Format
 
 ```markdown
 # Plan Review: <Plan Title>
@@ -75,9 +75,15 @@ Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer
 
 ### P2 — Nice to Have
 1. [DX4] Define acronyms used in plan...
+
+## Detailed Agent Findings
+
+| Agent | Detailed Report |
+|-------|----------------|
+| <Persona Name> | [detailed/<agent>.md](../detailed/<agent>.md) |
 ```
 
-## Enhanced plan.md Rules
+## plan-enhanced.md Rules
 
 - Preserve the original plan's structure and format exactly
 - Enhance each story with: fuller context, expanded requirements, detailed implementation steps (with how-to guidance), stronger acceptance criteria
@@ -104,12 +110,13 @@ After writing both files, summarize:
 > **P2 issues:** 3 (nice to have)
 >
 > Files written:
-> - `review/<date>-<slug>/analysis.md` — full scored analysis
-> - `review/<date>-<slug>/plan.md` — enhanced plan with recommendations applied
+> - `reviews-YYYYMMDD-HHMMSS/summary/plan-review-summary.md` — full scored analysis
+> - `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md` — enhanced plan with recommendations applied
+> - `reviews-YYYYMMDD-HHMMSS/detailed/<agent>.md` — per-agent detailed findings
 >
 > Review the analysis and enhanced plan. You can edit either file before proceeding.
 >
 > When you're ready, let me know:
-> 1. **Apply as-is** — replace the original plan with the enhanced `plan.md`
-> 2. **Apply with your edits** — I'll use your modified `plan.md` as the source
+> 1. **Apply as-is** — replace the original plan with the enhanced `plan-enhanced.md`
+> 2. **Apply with your edits** — I'll use your modified `plan-enhanced.md` as the source
 > 3. **Skip** — keep the original plan unchanged

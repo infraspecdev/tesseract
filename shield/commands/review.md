@@ -17,7 +17,7 @@ Run a comprehensive code review that covers code correctness, domain-specific ch
 First, find the project root by locating `.shield.json` (check current directory, then parent directories). Then write the review summary using the Write tool to:
 
 ```
-{project_root}/shield/docs/review-YYYYMMDD-HHMMSS.md
+{project_root}/shield/docs/reviews-YYYYMMDD-HHMMSS/summary/code-review-summary.md
 ```
 
 Replace `{project_root}` with the absolute path to the directory containing `.shield.json`, and `YYYYMMDD-HHMMSS` with the current date and time.
@@ -32,7 +32,9 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
    - Agent reviews (security, cost, architecture, operations)
    - Acceptance criteria verification (if story context from plans in `{project_root}/shield/docs/plans/`)
 2. Findings are merged, deduplicated, sorted by severity
-3. **Write review summary to the path above**
+   - Per-agent detailed findings written to `reviews-YYYYMMDD-HHMMSS/detailed/<agent>.md`
+   - Applied fixes logged to `reviews-YYYYMMDD-HHMMSS/summary/code-review-changes.md`
+3. **Write review summary, detailed findings, and changes log to the paths above**
 4. Present to user with options: apply all, select specific, skip, post to PM
 5. Apply selected fixes
 

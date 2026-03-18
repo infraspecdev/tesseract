@@ -9,13 +9,18 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 
 ## Output Path — MANDATORY
 
-Write the analysis using the Write tool to **exactly** this path:
+All review output goes into a timestamped directory:
 
 ```
-shield/docs/analysis-YYYYMMDD-HHMMSS.md
+shield/docs/reviews-YYYYMMDD-HHMMSS/
+├── summary/
+│   ├── plan-review-summary.md       ← scored analysis (main output)
+│   └── plan-enhanced.md             ← enhanced plan with feedback applied
+└── detailed/
+    └── <agent-name>.md               ← one file per dispatched agent
 ```
 
-Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
+Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -51,6 +56,16 @@ Read each selected agent's markdown file from `agents/` and `scoring.md`, then l
 
 Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer`) when available, otherwise `general-purpose`.
 
+After all agents return, write each agent's full raw output to `reviews-YYYYMMDD-HHMMSS/detailed/<agent-name>.md` with a header and back-link:
+
+```markdown
+# <Agent Name> — Detailed Findings
+
+> Back to [plan-review-summary](../summary/plan-review-summary.md)
+
+<full agent output>
+```
+
 ## Collection & Scoring
 
 After all agents return:
@@ -62,9 +77,12 @@ After all agents return:
 
 ## Output
 
-Write to `shield/docs/`:
-- `shield/docs/analysis-YYYYMMDD-HHMMSS.md` — scored evaluation with consolidated recommendations
-- `shield/docs/plan-enhanced-YYYYMMDD-HHMMSS.md` — enhanced version of original plan with feedback applied
+Write to `shield/docs/reviews-YYYYMMDD-HHMMSS/`:
+- `summary/plan-review-summary.md` — scored evaluation with consolidated recommendations
+- `summary/plan-enhanced.md` — enhanced version of original plan with feedback applied
+- `detailed/<agent-name>.md` — full output from each dispatched agent
+
+The summary should include a "Detailed Agent Findings" section linking to each detailed file.
 
 See `templates.md` for output formats and enhanced plan rules.
 
@@ -73,11 +91,11 @@ See `templates.md` for output formats and enhanced plan rules.
 **Do NOT proceed until the user explicitly confirms.**
 
 After writing output files, present the user with three options:
-1. **Apply as-is** — replace original plan with enhanced `plan-enhanced-YYYYMMDD-HHMMSS.md`
-2. **Apply with edits** — user modifies `plan-enhanced-YYYYMMDD-HHMMSS.md` first, re-read before applying
+1. **Apply as-is** — replace original plan with enhanced `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md`
+2. **Apply with edits** — user modifies `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md` first, re-read before applying
 3. **Skip** — keep original plan unchanged
 
-The user may also edit `analysis-YYYYMMDD-HHMMSS.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
+The user may also edit `reviews-YYYYMMDD-HHMMSS/summary/plan-review-summary.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
 
 ## Common Mistakes
 
