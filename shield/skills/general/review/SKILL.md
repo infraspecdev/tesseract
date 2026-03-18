@@ -7,13 +7,18 @@ description: Use when code changes need review for security, cost, architecture,
 
 ## Output Path — MANDATORY
 
-Write the review summary using the Write tool to **exactly** this path:
+All review output goes into a timestamped directory:
 
 ```
-shield/docs/review-YYYYMMDD-HHMMSS.md
+shield/docs/reviews-YYYYMMDD-HHMMSS/
+├── summary/
+│   ├── code-review-summary.md      ← consolidated findings (main output)
+│   └── code-review-changes.md      ← fixes applied (written after step 9)
+└── detailed/
+    └── <agent-name>.md              ← one file per dispatched agent
 ```
 
-Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
+Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -80,7 +85,29 @@ Dispatch selected agents in parallel using the appropriate mode:
 - For plan documents → `plan` mode
 - For application code → `app-code` mode (when available)
 
-### 7. Acceptance Criteria Verification (explicit/final only)
+### 7. Save Detailed Findings
+
+For each agent that returned results, write its full raw output to:
+
+```
+reviews-YYYYMMDD-HHMMSS/detailed/<agent-name>.md
+```
+
+Where `<agent-name>` matches the agent (e.g., `security.md`, `cost.md`, `architecture.md`, `operations.md`, `well-architected.md`).
+
+Each detailed file should include a header and back-link:
+
+```markdown
+# <Agent Name> — Detailed Findings
+
+> Back to [code-review-summary](../summary/code-review-summary.md)
+
+<full agent output>
+```
+
+If an agent fails or times out, omit its detailed file — do not write a placeholder.
+
+### 8. Acceptance Criteria Verification (explicit/final only)
 
 If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 1. Read acceptance criteria from the named plan JSON files
@@ -88,7 +115,7 @@ If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 3. Look for evidence in code, tests, and config
 4. Produce an AC report table: criterion | status (met/not met/not verified) | evidence
 
-### 8. Merge and Present Findings
+### 9. Merge and Present Findings
 
 1. Collect all findings from code review, domain skills, agents, and AC verification
 2. Deduplicate — if multiple sources flag the same issue, keep the most detailed finding
@@ -97,14 +124,41 @@ If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 5. Ask user which fixes to apply: all / select specific / skip
 6. For findings flagged `NEEDS_DISCUSSION`, present options before applying
 7. Optionally post findings to PM card (ask user)
+8. In the summary file, add a "Detailed Agent Findings" section linking to each agent's file:
+   ```markdown
+   ## Detailed Agent Findings
+   - [Security](../detailed/security.md)
+   - [Cost](../detailed/cost.md)
+   - [Architecture](../detailed/architecture.md)
+   ...
+   ```
 
-### 9. Apply Fixes and Update Summary
+### 10. Apply Fixes and Update Summary
 
 1. Apply selected fixes
-2. Write review summary to `shield/docs/review-YYYYMMDD-HHMMSS.md` (exact path from Output Path section above)
-3. If any fixes were applied, re-render the plan HTML from sidecar
+2. Write review summary to `shield/docs/reviews-YYYYMMDD-HHMMSS/summary/code-review-summary.md` (exact path from Output Path section above)
+3. Write `summary/code-review-changes.md` documenting applied fixes:
+   ```markdown
+   # Code Review Changes
+
+   > Review: [code-review-summary.md](code-review-summary.md)
+
+   | # | Finding | File | Change Description |
+   |---|---------|------|--------------------|
+   | 1 | <finding from summary> | <file:line> | <what was changed> |
+   ```
+4. If any fixes were applied, re-render the plan HTML from sidecar
 
 ## Output Format
+
+## Output Structure
+
+```
+reviews-YYYYMMDD-HHMMSS/
+├── summary/code-review-summary.md    ← table below
+├── summary/code-review-changes.md    ← applied fixes log
+└── detailed/<agent>.md               ← full per-agent output
+```
 
 ### Review Summary
 
@@ -127,3 +181,11 @@ Which fixes would you like to apply?
 - [s] Select specific fixes
 - [n] Skip — review only
 - [p] Post findings to PM card
+
+### Detailed Agent Findings
+
+- [Security](../detailed/security.md)
+- [Cost](../detailed/cost.md)
+- [Architecture](../detailed/architecture.md)
+- [Operations](../detailed/operations.md)
+- [Well-Architected](../detailed/well-architected.md)
