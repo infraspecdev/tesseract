@@ -102,7 +102,7 @@ The user may also edit `plan-review/{N}-{slug}/summary.md`, ask for changes to s
 
 | Mistake | Fix |
 |---------|-----|
-| Dispatching all 5 agents for a simple app plan with no infra | Follow trigger keyword matching — skip Cloud Architect and Cost/FinOps if no infra keywords |
+| Dispatching all 7 agents for a simple app plan with no infra | Follow trigger keyword matching — skip Cloud Architect and Cost/FinOps if no infra keywords |
 | Grading infra points F on a non-infrastructure plan | Only activated personas grade — don't penalize for out-of-scope concerns |
 | Applying enhanced plan without user review | Always wait for Step 5 confirmation — never auto-apply |
 | Repeating scoring logic instead of referencing scoring.md | All grade math lives in `scoring.md` — reference it, don't inline it |
