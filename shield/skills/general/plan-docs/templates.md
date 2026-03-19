@@ -2,7 +2,7 @@
 
 ## Overview / Index Template
 
-This page is written to `shield/docs/index.html` and updated by each skill that produces artifacts. It links to all shield docs.
+This page is written to `{output_dir}/index.html` and updated by each skill that produces artifacts. It links to all features and their artifacts.
 
 ```html
 <!DOCTYPE html>

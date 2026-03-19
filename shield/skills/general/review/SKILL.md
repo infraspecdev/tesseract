@@ -7,18 +7,17 @@ description: Use when code changes need review for security, cost, architecture,
 
 ## Output Path — MANDATORY
 
-All review output goes into a timestamped directory:
+All review output goes into the feature's code-review directory:
 
 ```
-shield/docs/reviews-YYYYMMDD-HHMMSS/
-├── summary/
-│   ├── code-review-summary.md      ← consolidated findings (main output)
-│   └── code-review-changes.md      ← fixes applied (written after step 9)
+{output_dir}/{feature}/code-review/{N}-{slug}/
+├── summary.md                       ← consolidated findings (main output)
+├── changes.md                       ← fixes applied (written after step 9)
 └── detailed/
     └── <agent-name>.md              ← one file per dispatched agent
 ```
 
-Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{N}` is a sequential number, and `{slug}` is a short kebab-case descriptor. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -36,8 +35,8 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any oth
 ### 1. Load Prior Context
 
 Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
-- **Plan sidecars** — `shield/docs/plans/*.json` for stories and acceptance criteria (reads all active plans)
-- **Research** — most recent `shield/docs/research-*.md` for domain context
+- **Plan sidecar** — `{output_dir}/{feature}/plan.json` for stories and acceptance criteria
+- **Research** — `{output_dir}/{feature}/research/` for domain context
 - **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
 
 ### 2. Determine Context and Scope
@@ -90,7 +89,7 @@ Dispatch selected agents in parallel using the appropriate mode:
 For each agent that returned results, write its full raw output to:
 
 ```
-reviews-YYYYMMDD-HHMMSS/detailed/<agent-name>.md
+code-review/{N}-{slug}/detailed/<agent-name>.md
 ```
 
 Where `<agent-name>` matches the agent (e.g., `security.md`, `cost.md`, `architecture.md`, `operations.md`, `well-architected.md`).
@@ -100,7 +99,7 @@ Each detailed file should include a header and back-link:
 ```markdown
 # <Agent Name> — Detailed Findings
 
-> Back to [code-review-summary](../summary/code-review-summary.md)
+> Back to [summary](../summary.md)
 
 <full agent output>
 ```
@@ -109,8 +108,8 @@ If an agent fails or times out, omit its detailed file — do not write a placeh
 
 ### 8. Acceptance Criteria Verification (explicit/final only)
 
-If an active story context exists (from plan sidecars in `shield/docs/plans/`):
-1. Read acceptance criteria from the named plan JSON files
+If an active story context exists (from the plan sidecar `{output_dir}/{feature}/plan.json`):
+1. Read acceptance criteria from the plan JSON
 2. Check each criterion against the implementation
 3. Look for evidence in code, tests, and config
 4. Produce an AC report table: criterion | status (met/not met/not verified) | evidence
@@ -127,36 +126,37 @@ If an active story context exists (from plan sidecars in `shield/docs/plans/`):
 8. In the summary file, add a "Detailed Agent Findings" section linking to each agent's file:
    ```markdown
    ## Detailed Agent Findings
-   - [Security](../detailed/security.md)
-   - [Cost](../detailed/cost.md)
-   - [Architecture](../detailed/architecture.md)
+   - [Security](detailed/security.md)
+   - [Cost](detailed/cost.md)
+   - [Architecture](detailed/architecture.md)
    ...
    ```
 
 ### 10. Apply Fixes and Update Summary
 
 1. Apply selected fixes
-2. Write review summary to `shield/docs/reviews-YYYYMMDD-HHMMSS/summary/code-review-summary.md` (exact path from Output Path section above)
-3. Write `summary/code-review-changes.md` documenting applied fixes:
+2. Write review summary to `{output_dir}/{feature}/code-review/{N}-{slug}/summary.md` (exact path from Output Path section above)
+3. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`
+4. Write `changes.md` in the same directory documenting applied fixes:
    ```markdown
    # Code Review Changes
 
-   > Review: [code-review-summary.md](code-review-summary.md)
+   > Review: [summary.md](summary.md)
 
    | # | Finding | File | Change Description |
    |---|---------|------|--------------------|
    | 1 | <finding from summary> | <file:line> | <what was changed> |
    ```
-4. If any fixes were applied, re-render the plan HTML from sidecar
+5. If any fixes were applied, re-render the plan HTML from sidecar
 
 ## Output Format
 
 ## Output Structure
 
 ```
-reviews-YYYYMMDD-HHMMSS/
-├── summary/code-review-summary.md    ← table below
-├── summary/code-review-changes.md    ← applied fixes log
+code-review/{N}-{slug}/
+├── summary.md                        ← table below
+├── changes.md                        ← applied fixes log
 └── detailed/<agent>.md               ← full per-agent output
 ```
 
@@ -184,8 +184,8 @@ Which fixes would you like to apply?
 
 ### Detailed Agent Findings
 
-- [Security](../detailed/security.md)
-- [Cost](../detailed/cost.md)
-- [Architecture](../detailed/architecture.md)
-- [Operations](../detailed/operations.md)
-- [Well-Architected](../detailed/well-architected.md)
+- [Security](detailed/security.md)
+- [Cost](detailed/cost.md)
+- [Architecture](detailed/architecture.md)
+- [Operations](detailed/operations.md)
+- [Well-Architected](detailed/well-architected.md)

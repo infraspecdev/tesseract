@@ -21,7 +21,7 @@ Analyze `terraform plan -json` output for security, cost, and operational impact
    - Or offer to run `terraform plan -json` (NEVER `terraform apply`)
 3. Invoke `shield:terraform:plan-analysis` skill
 4. The skill analyzes: change summary, destructive actions, security changes, cost impact, drift
-5. Write report to run directory
+5. Write report to `{output_dir}/{feature}/` structure (under the appropriate subdirectory)
 6. Present summary with flagged items
 
 ## Important

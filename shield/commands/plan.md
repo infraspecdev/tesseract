@@ -13,16 +13,23 @@ Generate Shield plan documents with a machine-readable sidecar.
 
 ## Output Paths — MANDATORY
 
-First, find the project root by locating `.shield.json` (check current directory, then parent directories). Then write each artifact using the Write tool to:
+First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read the `output_dir` field from `.shield.json` (default: `docs/shield` if not set). Then write each artifact using the Write tool to:
 
-1. `{project_root}/shield/docs/plans/<name>.json` — machine-readable named plan sidecar (updated in place, no timestamp)
-2. `{project_root}/shield/docs/architecture-YYYYMMDD-HHMMSS.html` — the "why and how"
-3. `{project_root}/shield/docs/plan-YYYYMMDD-HHMMSS.html` — the "what to do", rendered from the sidecar
-4. `{project_root}/shield/docs/index.html` — overview page linking to all artifacts (create or update)
+1. `{project_root}/{output_dir}/{feature-name}-YYYYMMDD/plan.json` — machine-readable sidecar (updated in place at feature root)
+2. `{project_root}/{output_dir}/{feature-name}-YYYYMMDD/plan/{N}-{slug}/architecture.html` — the "why and how"
+3. `{project_root}/{output_dir}/{feature-name}-YYYYMMDD/plan/{N}-{slug}/plan.html` — the "what to do", rendered from the sidecar
+4. `{project_root}/{output_dir}/index.html` — single dashboard linking to all artifacts (create or update)
 
-If `--name` is not provided, derive from the topic in kebab-case. Example: `/plan input validation` → `shield/docs/plans/input-validation.json`.
+Where:
+- `{output_dir}` = the `output_dir` value from `.shield.json` (default: `docs/shield`)
+- `{feature-name}` = derived from `--name` or topic in kebab-case
+- `YYYYMMDD` = current date
+- `{N}` = run number, determined by counting existing folders in `{feature-name}-YYYYMMDD/plan/` + 1
+- `{slug}` = the plan name in kebab-case
 
-Replace `{project_root}` with the absolute path to the directory containing `.shield.json`, and `YYYYMMDD-HHMMSS` with the current date and time.
+If `--name` is not provided, derive from the topic in kebab-case. Example: `/plan input validation` → feature folder `input-validation-20260319/`.
+
+Replace `{project_root}` with the absolute path to the directory containing `.shield.json`.
 
 **Do NOT** use a relative path. **Do NOT** use the plugin directory. **Do NOT** invent custom filenames. **Do NOT** delegate to superpowers or other skills that write to different paths. The Write tool creates directories automatically.
 
@@ -30,13 +37,17 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
 
 1. If topic/requirements provided, use as starting context
 2. If no topic, ask the user what they're planning
-3. Check for prior research: glob for `{project_root}/shield/docs/research-*.md` and read the most recent one if it exists
-4. **Generate `shield/docs/plans/<name>.json` first** — the sidecar JSON with epics, stories, tasks, and acceptance criteria. See the `shield:plan-docs` skill for the schema.
-5. **Generate architecture HTML** — the "why and how" document
-6. **Generate plan HTML** — stories rendered from the sidecar, includes `<meta name="sidecar" content="./plans/<name>.json">`
-7. **Generate or update `index.html`** — overview page linking to all artifacts in `shield/docs/`
-8. **You MUST produce all four artifacts and write them to the paths above.** No exceptions.
-8. Verify the sidecar JSON contains at least 1 epic with stories, each with acceptance criteria
-9. Offer next steps:
+3. Read `output_dir` from `.shield.json` (default: `docs/shield`)
+4. If `--name` not provided, derive from topic in kebab-case
+5. Feature folder = `{plan-name}-YYYYMMDD`
+6. Determine run number by counting existing folders in `{output_dir}/{feature}/plan/` + 1
+7. Check for prior research: glob for `{project_root}/{output_dir}/{feature}/research/*/findings.md` and read the most recent one if it exists
+8. **Generate `{feature}/plan.json` first** — the sidecar JSON with epics, stories, tasks, and acceptance criteria. See the `shield:plan-docs` skill for the schema.
+9. **Generate architecture HTML** — the "why and how" document
+10. **Generate plan HTML** — stories rendered from the sidecar, includes `<meta name="sidecar" content="../plan.json">`
+11. **Update `manifest.json`** in `{output_dir}/` and **regenerate `index.html`** — single dashboard linking to all artifacts
+12. **You MUST produce all four artifacts and write them to the paths above.** No exceptions.
+13. Verify the sidecar JSON contains at least 1 epic with stories, each with acceptance criteria
+14. Offer next steps:
     - `/plan-review` — run multi-agent review on the plan
     - `/pm-sync` — sync stories to project management tool

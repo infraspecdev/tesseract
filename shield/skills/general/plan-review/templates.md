@@ -110,13 +110,13 @@ After writing both files, summarize:
 > **P2 issues:** 3 (nice to have)
 >
 > Files written:
-> - `reviews-YYYYMMDD-HHMMSS/summary/plan-review-summary.md` — full scored analysis
-> - `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md` — enhanced plan with recommendations applied
-> - `reviews-YYYYMMDD-HHMMSS/detailed/<agent>.md` — per-agent detailed findings
+> - `{feature}/plan-review/{N}-{slug}/summary.md` — full scored analysis
+> - `{feature}/plan-review/{N}-{slug}/enhanced-plan.md` — enhanced plan with recommendations applied
+> - `{feature}/plan-review/{N}-{slug}/detailed/<agent>.md` — per-agent detailed findings
 >
 > Review the analysis and enhanced plan. You can edit either file before proceeding.
 >
 > When you're ready, let me know:
-> 1. **Apply as-is** — replace the original plan with the enhanced `plan-enhanced.md`
-> 2. **Apply with your edits** — I'll use your modified `plan-enhanced.md` as the source
+> 1. **Apply as-is** — replace the original plan with the enhanced `enhanced-plan.md`
+> 2. **Apply with your edits** — I'll use your modified `enhanced-plan.md` as the source
 > 3. **Skip** — keep the original plan unchanged

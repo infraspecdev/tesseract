@@ -12,12 +12,16 @@ Research a technical topic and produce a well-sourced document with direct quote
 Write the final document using the Write tool to **exactly** this path:
 
 ```
-shield/docs/research-YYYYMMDD-HHMMSS.md
+{output_dir}/{feature-name}-YYYYMMDD/research/{N}-{slug}/findings.md
 ```
 
-Replace `YYYYMMDD-HHMMSS` with the current date and time (e.g. `shield/docs/research-20260315-170930.md`).
+Where:
+- `{output_dir}` — read from `.shield.json` `output_dir` field (default: `docs/shield`)
+- `{feature-name}-YYYYMMDD` — the feature folder (ask user if no active feature context: "No active feature context. What feature name should this go under?")
+- `{N}` — run number (count existing folders in `{feature}/research/` + 1)
+- `{slug}` — slugified research topic (lowercase, hyphens only, max 50 chars)
 
-**Do NOT** use any other path, filename, or directory. No `latest/`, no topic-based names, no custom filenames. The Write tool creates `shield/docs/` automatically.
+**Do NOT** use any other path, filename, or directory. The Write tool creates directories automatically. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
 
 ## When to Use
 
@@ -37,7 +41,7 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time (e.g. `shield/docs/rese
 1. **Clarify topic** — skip if user already provided enough context
 2. **Research with parallel agents**
 3. **Synthesize findings**
-4. **Write to `shield/docs/research-YYYYMMDD-HHMMSS.md`** — the Write tool creates the directory automatically
+4. **Write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`** — the Write tool creates directories automatically
 
 ## Clarify Topic & Scope
 
@@ -64,7 +68,7 @@ Each agent returns: direct quotes with attribution, source URLs, key data points
 
 ## Write Document
 
-**Output: `shield/docs/research-YYYYMMDD-HHMMSS.md`** (use current timestamp, e.g. `shield/research-20260315-170930.md`)
+**Output: `{output_dir}/{feature}/research/{N}-{slug}/findings.md`**
 
 ```markdown
 # [Decision Title]
