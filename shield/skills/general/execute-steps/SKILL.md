@@ -86,3 +86,4 @@ Path: `~/.shield/shield/<project>/steps.json`
 | Leaving `steps.json` after all steps complete | Delete it on completion — stale state causes false resume prompts |
 | Writing step state to `{output_dir}/` instead of `~/.shield/` | Step state goes in `~/.shield/shield/<project>/steps.json` — artifacts go in `{output_dir}/` |
 | Treating execute-steps as the entry point | Skills are the entry point — execute-steps is a utility they call, not an orchestrator |
+| Relying on steps.json for loop iteration tracking | steps.json tracks coarse workflow position, not per-item progress within loops. For loops (e.g., per-AC in implement-feature), use the domain artifact (plan.json) as the per-item source of truth |
