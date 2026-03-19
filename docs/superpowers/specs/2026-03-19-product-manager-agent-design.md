@@ -8,13 +8,15 @@
 
 Add a **Technical Product Manager agent** to Shield with a thin orchestration skill, following the same patterns as the existing 7 reviewer agents. The agent operates in 4 modes and is available to any Shield workflow.
 
+> **Note on Research Framing mode:** Unlike the other 7 agents which are purely evaluative (grading existing work), the PM agent's research-framing mode is **prescriptive** — it produces output that shapes future work. This is an intentional departure from the reviewer pattern. The other 3 modes (research-review, plan-review, standalone) are evaluative as usual.
+
 ## Architecture
 
 ### Two New Files
 
 | File | Role |
 |------|------|
-| `shield/agents/product-manager.md` | Agent definition — persona, 4 modes, evaluation checklists, output format |
+| `shield/agents/product-manager-reviewer.md` | Agent definition — persona, 4 modes, evaluation checklists, output format |
 | `shield/skills/general/pm-analysis/SKILL.md` | Thin orchestrator — dispatches the agent with the right mode and context |
 
 ### Two Skill Updates
@@ -24,11 +26,31 @@ Add a **Technical Product Manager agent** to Shield with a thin orchestration sk
 | `shield/skills/general/research/SKILL.md` | Add PM framing (before research) and PM review (after synthesis) |
 | `shield/skills/general/plan-review/SKILL.md` | Add PM agent to reviewer dispatch list |
 
+### Two Plan-Review Supporting File Updates
+
+| File | Change |
+|------|--------|
+| `shield/skills/general/plan-review/personas.md` | Add PM agent to persona catalog with weight 0.7, trigger keywords, and selection rules |
+| `shield/skills/general/plan-review/scoring.md` | Add PM persona to weighted scoring table |
+
 ## Agent Definition
+
+### Frontmatter
+
+```yaml
+---
+name: product-manager-reviewer
+description: |
+  Multi-mode product manager. Dispatched for research framing (6 checks),
+  research review / plan review / standalone (10 checks). Evaluates user impact,
+  scope discipline, prioritization, and stakeholder communicability.
+model: inherit
+---
+```
 
 ### Persona
 
-**Technical Product Manager** who bridges engineering and product. Has shipped products at scale, run roadmap prioritization exercises, shaped MVPs from ambiguous requirements, and communicated technical trade-offs to non-technical stakeholders. Thinks in terms of user value, business outcomes, and scope discipline — not just technical elegance.
+You are a **Technical Product Manager** who bridges engineering and product. You've shipped products at scale, run roadmap prioritization exercises, shaped MVPs from ambiguous requirements, and communicated technical trade-offs to non-technical stakeholders. You think in terms of user value, business outcomes, and scope discipline — not just technical elegance. You've seen teams build the wrong thing because nobody asked "who needs this and why?" before diving into architecture.
 
 ### Weight
 
@@ -53,7 +75,7 @@ The agent operates in one of four modes. The dispatching skill specifies the mod
 
 ### Research Framing Checklist (PF1-PF6)
 
-Used in research-framing mode only. Focus is on asking the right questions, not evaluating answers.
+Used in research-framing mode only. Focus is on asking the right questions, not evaluating answers. This mode does **not** produce a graded scorecard — it produces a structured brief that shapes the research agents' prompts.
 
 | # | Check | What to Look For | Severity |
 |---|-------|-------------------|----------|
@@ -81,11 +103,38 @@ Used in research-review, plan-review, and standalone modes.
 | PM9 | Reversibility & exit cost | What happens if this is the wrong bet — how hard is it to change course | Warning |
 | PM10 | Business value alignment | Does this serve actual business goals or is it engineering-driven scope creep | Critical |
 
+## Review Process
+
+### Research Framing Mode
+
+1. Read the research topic/question provided by the user
+2. Identify all stakeholders who will be affected by or care about the decision
+3. Distill the topic into specific, answerable decision statements
+4. Define measurable success criteria for the research
+5. Prioritize research questions by impact — rank, don't just list
+6. Draw explicit scope boundaries (in scope vs. out of scope)
+7. Assess timeline constraints and calibrate recommended research depth
+8. Produce the framing output in the format below
+
+### Research Review, Plan Review, and Standalone Modes
+
+1. Read the full input document (research findings, plan, RFC, or proposal)
+2. Identify the target users/stakeholders and how the proposal affects them
+3. Evaluate problem-solution fit — does the proposed approach actually address the stated problem?
+4. Assess scope — is it disciplined or overloaded?
+5. Analyze prioritization and sequencing rationale
+6. Frame findings for non-technical stakeholders
+7. Check for market/competitive context and adoption risks
+8. Evaluate success metrics and reversibility
+9. Grade each evaluation point PM1-PM10 using A-F scale
+10. Write recommendations for anything graded C or below
+11. Produce the output in the format below
+
 ## Output Format
 
 ### Research Framing Mode
 
-Structured output that directly shapes the research agent prompts:
+Structured output that directly shapes the research agent prompts. No scorecard — this mode produces a brief, not a graded evaluation.
 
 ```markdown
 ## PM Research Framing
@@ -117,21 +166,21 @@ Structured output that directly shapes the research agent prompts:
 Hybrid format — narrative sections followed by a summary scorecard.
 
 ```markdown
-## Product Manager Review
+### Product Manager Review (Grade: X)
 
-### User Impact Analysis
+#### User Impact Analysis
 [Who benefits, how much, what's the risk of not doing it]
 
-### Scope Recommendation
+#### Scope Recommendation
 [What's essential vs. nice-to-have, MVP definition, what to cut]
 
-### Prioritization Framework
+#### Prioritization Framework
 [Effort vs. impact, dependencies, what to build first and why]
 
-### Stakeholder Summary
+#### Stakeholder Summary
 [Non-technical framing of the decision and recommendation — suitable for sharing with leadership or cross-functional partners]
 
-### Scorecard
+#### Scorecard
 
 | # | Evaluation Point | Grade | Notes |
 |---|-----------------|-------|-------|
@@ -157,14 +206,37 @@ Hybrid format — narrative sections followed by a summary scorecard.
 
 ## Skill Definition
 
+### Frontmatter
+
+```yaml
+---
+name: pm-analysis
+description: |
+  Dispatch the product manager agent for product-lens analysis. Use when any workflow
+  needs user impact, prioritization, scope, or stakeholder framing. Triggers on
+  product analysis, PM review, user impact, business value.
+---
+```
+
 ### `shield/skills/general/pm-analysis/SKILL.md`
 
 Thin orchestrator that:
 
-1. Determines mode from context (research-framing, research-review, plan-review, or standalone)
+1. Determines mode from context
 2. Gathers input material (raw topic, research doc, plan doc, or caller-provided input)
-3. Dispatches the PM agent with the mode and input
+3. Dispatches the PM agent (`shield:product-manager-reviewer`) with the mode and input
 4. Returns the output
+
+**Mode selection logic:**
+
+| Context | Mode |
+|---------|------|
+| Called from research skill before research agents run | `research-framing` |
+| Called from research skill after synthesis | `research-review` |
+| Called from plan-review skill | `plan-review` |
+| Called directly or from any other workflow | `standalone` (default) |
+
+The calling skill passes the mode explicitly. Standalone is the default when no mode is specified.
 
 **When to use:** Any workflow that needs a product lens.
 
@@ -175,15 +247,58 @@ Thin orchestrator that:
 Updated research workflow (changes in **bold**):
 
 1. Clarify topic (existing — skip if user provided context)
-2. **PM framing — dispatch PM agent in research-framing mode**
-3. Research with 3 parallel agents — **prompts shaped by PM framing output (prioritized questions, scope boundaries, stakeholder context)**
+2. **PM framing — dispatch PM agent in research-framing mode with the raw topic as input**
+3. Research with 3 parallel agents — **each agent's prompt is prefixed with the PM framing output (stakeholders, prioritized questions, scope boundaries) so they research what matters most**
 4. Synthesize findings (existing)
-5. **PM review — dispatch PM agent in research-review mode**
-6. Write final document — **includes PM review output as a section**
+5. **PM review — dispatch PM agent in research-review mode with the synthesized findings as input**
+6. Write final document — **PM review output is included as a `## Product Lens` section after `## Summary` and before `## References`**
+
+### Concrete Research Agent Prompt Change
+
+Current agent prompt pattern:
+```
+Research [topic] from [source type]. Return direct quotes with attribution, source URLs, key data points.
+```
+
+Updated pattern:
+```
+Research [topic] from [source type].
+
+Context from product analysis:
+- Stakeholders: [from PM framing]
+- Key questions to answer: [from PM framing, prioritized]
+- Scope: [from PM framing]
+- Timeline: [from PM framing]
+
+Return direct quotes with attribution, source URLs, key data points. Prioritize findings that address the key questions above.
+```
 
 ## Plan Review Integration
 
-The PM agent is added to the reviewer dispatch list alongside the existing agents. Dispatched in plan-review mode. Output goes alongside other reviewer outputs (e.g., `detailed/product-manager.md` in the review directory).
+### `personas.md` Update
+
+Add to the persona catalog table:
+
+```
+| `shield:product-manager-reviewer` | 0.7 | User impact, scope discipline, prioritization, business value |
+```
+
+Add to selection rules:
+- **Include** product-manager-reviewer when plan contains user-facing features, product decisions, or scope trade-offs (matched via trigger keywords)
+
+### `scoring.md` Update
+
+Add to the Persona Weights table:
+
+```
+| Product Manager | 0.7 | Supporting |
+```
+
+The composite formula is unchanged — only activated personas contribute to the weighted average.
+
+### Output Location
+
+PM agent output goes to `detailed/product-manager-reviewer.md` in the review directory, alongside the other agent outputs. The `(Grade: X)` header format ensures the scoring pipeline can parse the PM grade for composite calculation.
 
 ## What This Does NOT Cover
 
