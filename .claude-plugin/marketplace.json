@@ -9,7 +9,7 @@
     {
       "name": "shield",
       "description": "Unified SDLC plugin — research, planning, PM integration, implementation, and continuous review with multi-domain support and specialist agents",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "source": "./shield",
       "category": "development"
     },
