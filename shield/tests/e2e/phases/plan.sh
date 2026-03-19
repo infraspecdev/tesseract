@@ -1,6 +1,6 @@
 # Phase: plan
 # Fixture: post-research (optionally reads research docs)
-# Produces: shield/docs/plans/<name>.json, shield/docs/architecture-*.html, shield/docs/plan-*.html
+# Produces: {output_dir}/{feature}/plan.json, plan/{N}-{slug}/architecture.html, plan/{N}-{slug}/plan.html
 
 PHASE_FIXTURE="post-research"
 PHASE_TIMEOUT=1200
@@ -25,7 +25,7 @@ phase_assertions() {
   assert_any_skill_invoked "$output" "plan|plan-docs" "plan-docs skill invoked"
 
   local sidecar
-  sidecar=$(find "$project_dir/shield/docs/plans" -name "*.json" -type f 2>/dev/null | head -1)
+  sidecar=$(find "$project_dir/docs/shield" -name "plan.json" -type f 2>/dev/null | head -1)
   if [ -n "$sidecar" ]; then
     assert_json_field "$sidecar" \
       "len(data.get('epics', [])) > 0" \
@@ -41,10 +41,10 @@ phase_assertions() {
         "sidecar validates against schema"
     fi
   else
-    echo "  [FAIL] no plan JSON found in shield/docs/plans/"
+    echo "  [FAIL] no plan.json found in docs/shield/*/"
     FAIL=$((FAIL + 1))
   fi
 
-  assert_file_glob "$project_dir" "shield/docs/architecture-*.html" "architecture.html created"
-  assert_file_glob "$project_dir" "shield/docs/plan-*.html" "plan.html created"
+  assert_file_glob "$project_dir" "docs/shield/*/plan/*/architecture.html" "architecture.html created"
+  assert_file_glob "$project_dir" "docs/shield/*/plan/*/plan.html" "plan.html created"
 }

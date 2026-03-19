@@ -1,6 +1,6 @@
 # Phase: research
 # Fixture: initialized (just needs .shield.json)
-# Produces: shield/docs/research-*.md
+# Produces: {output_dir}/{feature}/research/{N}-{slug}/findings.md
 
 PHASE_FIXTURE="initialized"
 PHASE_TIMEOUT=1200
@@ -35,5 +35,5 @@ phase_assertions() {
       ;;
   esac
 
-  assert_file_glob "$project_dir" "shield/docs/research-*.md" "research.md created in docs dir"
+  assert_file_glob "$project_dir" "docs/shield/*/research/*/findings.md" "research findings.md created in feature dir"
 }
