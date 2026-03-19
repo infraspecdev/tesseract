@@ -40,7 +40,12 @@ Example: if `.shield.json` is at `/home/user/myproject/.shield.json` with `outpu
 4. Read `output_dir` from `.shield.json` (default: `docs/shield`)
 5. Determine the run number by counting existing folders in `{feature-name}-YYYYMMDD/research/` + 1
 6. Derive the slug from the research topic argument (kebab-case)
-7. Follow the research workflow: clarify scope, launch parallel research agents, synthesize findings
-8. **You MUST write the document to the path above using the Write tool** — do not just output it as text
-9. After writing, update `manifest.json` in `{output_dir}/` and regenerate `{output_dir}/index.html`
-10. Confirm the file path to the user
+7. Invoke the `shield:research` skill — it defines the full research workflow including PM integration
+8. The skill workflow runs these steps in order:
+   a. **PM framing** — dispatch `shield:product-manager-reviewer` agent in `research-framing` mode. This shapes the research questions. Do NOT skip this step.
+   b. **Parallel research agents** — 3 agents (official sources, industry voices, community experience) shaped by PM framing output
+   c. **Synthesize findings**
+   d. **PM review** — dispatch `shield:product-manager-reviewer` agent in `research-review` mode. Include output as `## Product Lens` section in the final document. Do NOT skip this step.
+9. **You MUST write the document to the path above using the Write tool** — do not just output it as text
+10. After writing, update `manifest.json` in `{output_dir}/` and regenerate `{output_dir}/index.html`
+11. Confirm the file path to the user

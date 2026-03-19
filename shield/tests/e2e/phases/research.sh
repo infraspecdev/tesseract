@@ -24,6 +24,13 @@ phase_assertions() {
 
   assert_skill_invoked "$output" "research" "research skill invoked"
 
+  # PM agent must be dispatched for both framing and review
+  assert_agent_dispatched "$output" "product-manager-reviewer" "PM agent dispatched during research"
+  assert_output_contains "$output" "research-framing\|research.framing\|PM.*[Ff]raming\|framing.*mode" \
+    "PM framing mode invoked before research agents"
+  assert_output_contains "$output" "research-review\|research.review\|PM.*[Rr]eview\|Product Lens" \
+    "PM review mode invoked after synthesis"
+
   case "$example" in
     python-api)
       assert_output_contains "$output" "validation\|FastAPI\|Pydantic\|auth" \
@@ -36,4 +43,11 @@ phase_assertions() {
   esac
 
   assert_file_glob "$project_dir" "docs/shield/*/research/*/findings.md" "research findings.md created in feature dir"
+
+  # Verify Product Lens section in findings
+  local findings
+  findings=$(find "$project_dir" -path "*/research/*/findings.md" -print -quit 2>/dev/null)
+  if [ -n "$findings" ]; then
+    assert_output_contains "$findings" "Product Lens" "findings.md contains Product Lens section from PM review"
+  fi
 }
