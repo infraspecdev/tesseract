@@ -294,11 +294,17 @@ Add to the Persona Weights table:
 | Product Manager | 0.7 | Supporting |
 ```
 
+> **Pre-existing fix:** `scoring.md` is missing `operations-reviewer` (weight 0.7, Supporting). Add it in the same change.
+
 The composite formula is unchanged — only activated personas contribute to the weighted average.
+
+### Plan-Review SKILL.md Update
+
+The plan-review SKILL.md references "all 5 agents" in its Common Mistakes section — update to reflect the new agent count.
 
 ### Output Location
 
-PM agent output goes to `detailed/product-manager-reviewer.md` in the review directory, alongside the other agent outputs. The `(Grade: X)` header format ensures the scoring pipeline can parse the PM grade for composite calculation.
+PM agent output goes to `detailed/product-manager-reviewer.md` in the review directory, alongside the other agent outputs. The `(Grade: X)` header format (using `###` heading level, matching architecture-reviewer and agile-coach-reviewer) ensures the scoring pipeline can parse the PM grade for composite calculation.
 
 ## What This Does NOT Cover
 
