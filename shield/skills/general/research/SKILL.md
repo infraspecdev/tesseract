@@ -39,15 +39,25 @@ Where:
 ## Workflow
 
 1. **Clarify topic** — skip if user already provided enough context
-2. **Research with parallel agents**
-3. **Synthesize findings**
-4. **Write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`** — the Write tool creates directories automatically
+2. **PM framing** — dispatch PM agent in research-framing mode
+3. **Research with parallel agents** — shaped by PM framing output
+4. **Synthesize findings**
+5. **PM review** — dispatch PM agent in research-review mode
+6. **Write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`** — the Write tool creates directories automatically
 
 ## Clarify Topic & Scope
 
 Skip if the user already provided enough context. Otherwise ask:
 - What decision or question are they trying to answer?
 - Any constraints or preferences to bias toward?
+
+## PM Framing
+
+Dispatch the PM agent in **research-framing** mode with the research topic as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+
+The agent returns a structured brief with: stakeholders, decision(s) to make, success criteria, prioritized research questions, scope boundaries, and timeline constraints.
+
+This output shapes the research agent prompts in the next step. If PM framing fails or times out, proceed with research without framing context — do not block the workflow.
 
 ## Research (Parallel Agents)
 
@@ -57,7 +67,21 @@ Launch **3 parallel agents** to maximize coverage:
 - **Agent 2: Industry voices** — blog posts, conference talks, expert recommendations
 - **Agent 3: Community experience** — GitHub discussions, Stack Overflow, case studies
 
-Each agent returns: direct quotes with attribution, source URLs, key data points.
+Each agent's prompt includes the PM framing context (if available):
+
+```
+Research [topic] from [source type].
+
+Context from product analysis:
+- Stakeholders: [from PM framing]
+- Key questions to answer: [from PM framing, prioritized]
+- Scope: [from PM framing]
+- Timeline: [from PM framing]
+
+Return direct quotes with attribution, source URLs, key data points. Prioritize findings that address the key questions above.
+```
+
+If PM framing was skipped, use the original prompt: `Research [topic] from [source type]. Return direct quotes with attribution, source URLs, key data points.`
 
 ## Synthesize Findings
 
@@ -65,6 +89,14 @@ Each agent returns: direct quotes with attribution, source URLs, key data points
 - Note disagreements and what drives them
 - Map findings to the user's specific context
 - Form a clear recommendation with reasoning
+
+## PM Review
+
+After synthesizing findings, dispatch the PM agent in **research-review** mode with the synthesized findings as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+
+The agent returns a hybrid output: narrative sections (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary) plus a graded scorecard (PM1-PM10).
+
+Include this output as a `## Product Lens` section in the final document, placed after `## Summary` and before `## References`.
 
 ## Write Document
 
@@ -97,6 +129,9 @@ Each agent returns: direct quotes with attribution, source URLs, key data points
 
 ## Summary
 [2-3 sentence wrap-up tying recommendation to evidence]
+
+## Product Lens
+[PM review output — narrative sections and scorecard from the PM agent's research-review mode]
 
 ## References
 - [All source URLs as clickable links]

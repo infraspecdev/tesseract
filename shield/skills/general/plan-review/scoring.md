@@ -35,6 +35,8 @@ Weighted average of all activated persona grades.
 | DX Engineer | 1.0 | Core |
 | Cost/FinOps | 0.7 | Supporting |
 | Agile Coach | 0.7 | Supporting |
+| Operations | 0.7 | Supporting |
+| Product Manager | 0.7 | Supporting |
 
 **Formula:**
 
@@ -42,7 +44,7 @@ Weighted average of all activated persona grades.
 composite = sum(persona_numeric_grade * weight) / sum(activated_weights)
 ```
 
-Only activated personas contribute to the composite. The denominator is the sum of weights for personas that actually ran — not all 5.
+Only activated personas contribute to the composite. The denominator is the sum of weights for personas that actually ran — not all 7.
 
 ## Verdict Thresholds
 

@@ -10,6 +10,7 @@ All agents are dispatched in **plan review mode** — lightweight checks focused
 | `shield:cost-reviewer` | 0.7 | Cost awareness, right-sizing, environment tiering |
 | `shield:agile-coach-reviewer` | 0.7 | Sprint-readiness, story quality, dependencies |
 | `shield:operations-reviewer` | 0.7 | Monitoring, failure modes, backup, on-call readiness |
+| `shield:product-manager-reviewer` | 0.7 | User impact, scope discipline, prioritization, business value |
 
 ## Dynamic Persona Selection
 
@@ -42,4 +43,5 @@ digraph persona_selection {
 - **Always include** DX Engineer + Agile Coach when plan contains stories
 - **Include** any agent with 2+ trigger keyword matches
 - **Minimum 3** agents — backfill by trigger count if needed
+- **Include** product-manager-reviewer when plan contains user-facing features, product decisions, or scope trade-offs (matched via trigger keywords)
 - Announce which reviewers were selected and why before dispatching
