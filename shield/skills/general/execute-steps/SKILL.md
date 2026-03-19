@@ -1,63 +1,88 @@
 ---
 name: execute-steps
-description: Use when running a full multi-phase pipeline (research → plan → review → implement) or resuming an interrupted multi-phase run. Not needed for single-skill invocations.
+description: Use when a skill needs step tracking, progress visibility, and resume support within a single phase. Called by skills, not directly by users.
 ---
 
 # Execute Steps
 
-**Optional** multi-phase orchestrator. Individual Shield skills work standalone — they write directly to `{output_dir}/` (from `.shield.json` `output_dir` field, default `docs/shield`) using the Write tool (which creates directories automatically). This skill is only needed when running multiple phases in sequence and you want step tracking and resume support.
+Thin step-tracking utility for individual Shield skills. Each skill defines a fixed skeleton of mandatory steps, calls execute-steps to register them, and execute-steps handles status updates and resume.
+
+**This is NOT a cross-phase orchestrator.** Each skill (research, plan-docs, review, etc.) calls execute-steps independently for its own work.
 
 ## When to Use
 
-- Running a full pipeline (research → plan → review → implement → review)
-- Resuming a multi-phase run that was interrupted
-- When the user explicitly asks for orchestrated execution
+- Called by a skill at startup to register its step skeleton
+- Called by a skill after each step to update status
+- Called by a skill to check for and resume interrupted work
 
 ## When NOT to Use
 
-- Running a single skill (research, plan-docs, review, etc.) — just invoke it directly
-- Skills no longer require this as a prerequisite
+- Directly by users — skills call this, not users
+- As a cross-phase pipeline — each skill manages its own phase
 
-## Artifact Paths
+## How Skills Use execute-steps
 
-All artifacts go to `{output_dir}/{feature}/` where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`) and `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`):
+### 1. At Startup — Register Steps
 
-| Phase | Output |
-|-------|--------|
-| Research | `{output_dir}/{feature}/research/{N}-{slug}/findings.md` |
-| Planning | `{output_dir}/{feature}/plan.json` + `{output_dir}/{feature}/plan/{N}-{slug}/architecture.html` + `plan.html` |
-| Plan Review | `{output_dir}/{feature}/plan-review/{N}-{slug}/summary.md` |
-| Implementation | Updates `{output_dir}/{feature}/plan.json` status |
-| Code Review | `{output_dir}/{feature}/code-review/{N}-{slug}/summary.md` |
-| Summarize | `{output_dir}/{feature}/summary/{N}-{slug}/summary.md` |
+The skill evaluates its Step Skeleton conditions and registers the resolved step list:
 
-## Step Tracking (optional)
+1. Read the skill's `## Step Skeleton` table
+2. Evaluate each step's condition against the current context
+3. Build the resolved step list (skip steps whose conditions are not met, keep all mandatory steps)
+4. Check `~/.shield/shield/<project>/steps.json` for an incomplete run of this skill
+   - If found: ask user "Resume from step N (action) or start fresh?"
+   - If not found: write new `steps.json` with all steps as `pending`
 
-If tracking is desired, write state to `~/.shield/shield/<project>/steps.json`:
+### 2. Before Each Step — Mark In Progress
+
+Before the skill executes a step:
+- Update the step's status to `in_progress` in `steps.json`
+
+### 3. After Each Step — Mark Complete
+
+After the skill finishes a step:
+- Update the step's status to `complete` in `steps.json`
+- Set `output` to the artifact path if the step produced one
+- If the step failed, set status to `failed` and stop execution
+
+### 4. On Completion — Clean Up
+
+When all steps are complete:
+- Delete `steps.json` (the work is done, artifacts are in `{output_dir}/`)
+
+## steps.json Format
+
+Path: `~/.shield/shield/<project>/steps.json`
 
 ```json
 {
-  "phase": "<phase name>",
-  "started_at": "<ISO timestamp>",
-  "artifact_dir": "{output_dir}/{feature}/",
+  "skill": "research",
+  "feature": "vpc-module-20260319",
+  "started_at": "2026-03-19T10:00:00Z",
   "steps": [
-    {"id": 1, "action": "<description>", "output": "<expected file path>", "status": "pending"},
-    {"id": 2, "action": "<description>", "output": "<expected file path>", "status": "pending"}
+    {"id": 1, "action": "PM framing", "mandatory": true, "status": "complete", "output": null},
+    {"id": 2, "action": "Parallel research agents", "mandatory": true, "status": "in_progress", "output": null},
+    {"id": 3, "action": "Synthesize findings", "mandatory": true, "status": "pending", "output": null},
+    {"id": 4, "action": "PM review", "mandatory": true, "status": "pending", "output": null},
+    {"id": 5, "action": "Write document", "mandatory": true, "status": "pending", "output": "docs/shield/vpc-module-20260319/research/1-topic/findings.md"}
   ]
 }
 ```
 
-After each step completes, update its status to `"complete"`. If a step fails, set status to `"failed"` and stop.
+## Resume Flow
 
-## Resume
-
-If `steps.json` exists with incomplete steps, resume from the last incomplete step instead of starting over.
+1. Session starts → session-start hook detects incomplete `steps.json` → shows: `⚠ Incomplete: research phase (step 2/5 — Parallel research agents). Run /research to resume.`
+2. User runs `/research` → research skill calls execute-steps → finds incomplete steps
+3. execute-steps asks: "Resume from step 2 (Parallel research agents) or start fresh?"
+4. If resume: skill skips completed steps, continues from the incomplete step
+5. If fresh: overwrite `steps.json` with new run
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
-| Using this skill for a single phase (just research, just plan) | Single phases work standalone — invoke them directly without this orchestrator |
-| Not checking for existing `steps.json` before creating a new run | Always check for an interrupted run first — resume instead of restarting |
-| Skipping phases in the pipeline without asking the user | If a phase is optional (e.g., research before planning), ask — don't silently skip |
-| Writing step tracking to `{output_dir}/` instead of `~/.shield/` | Step state goes in `~/.shield/shield/<project>/steps.json` — artifacts go in `{output_dir}/` |
+| Skipping mandatory steps because "the context is clear enough" | Mandatory steps always run — conditions only apply to non-mandatory steps |
+| Not checking for incomplete `steps.json` before registering new steps | Always check first — an interrupted run should be offered for resume |
+| Leaving `steps.json` after all steps complete | Delete it on completion — stale state causes false resume prompts |
+| Writing step state to `{output_dir}/` instead of `~/.shield/` | Step state goes in `~/.shield/shield/<project>/steps.json` — artifacts go in `{output_dir}/` |
+| Treating execute-steps as the entry point | Skills are the entry point — execute-steps is a utility they call, not an orchestrator |
