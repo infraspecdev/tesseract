@@ -29,6 +29,21 @@ The user provides one or more of:
 - Single-line changes or trivial edits
 - Pure research or exploration tasks
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Load story from plan.json | skip if no plan context | No |
+| 2 | Confirm acceptance criteria | always | Yes |
+| 3 | Write failing test | always (TDD) | Yes |
+| 4 | Implement to pass test | always | Yes |
+| 5 | Per-step review | always | Yes |
+| 6 | Commit | always | Yes |
+| 7 | Repeat 3-6 for next AC | loop until all AC done | Yes |
+| 8 | Update story status in plan.json | always | Yes |
+
 ## Workflow
 
 ```

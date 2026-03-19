@@ -30,6 +30,21 @@ Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs
 - For plan review — use `plan-review` skill instead
 - For a single specific reviewer — use `/review-security`, `/review-cost`, etc.
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Load prior context (plan, research) | skip if none exists | No |
+| 2 | Code correctness review | always | Yes |
+| 3 | Domain-specific review | skip if no active domains | No |
+| 4 | Dispatch agent reviewers | explicit/final review only | No |
+| 5 | AC verification | skip if no plan.json | No |
+| 6 | Merge + present findings | always | Yes |
+| 7 | Apply selected fixes | always | Yes |
+| 8 | Write summary + update manifest | always | Yes |
+
 ## Review Process
 
 ### 1. Load Prior Context

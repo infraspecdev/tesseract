@@ -36,6 +36,19 @@ Where:
 - Reviewing existing code or plans — use `shield:review` or `shield:plan-review`
 - Quick factual lookups that don't need citations
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Clarify topic | skip if user provided context | No |
+| 2 | PM framing | always | Yes |
+| 3 | Parallel research agents (3) | always | Yes |
+| 4 | Synthesize findings | always | Yes |
+| 5 | PM review | always | Yes |
+| 6 | Write document + update manifest | always | Yes |
+
 ## Workflow
 
 1. **Clarify topic** — skip if user already provided enough context

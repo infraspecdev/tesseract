@@ -104,6 +104,19 @@ See `templates.md` in this skill directory for CSS and HTML scaffolding. Key rul
 - h1/blockquote accent: `#1a73e8` (blue)
 - `max-width: 900px` for architecture, `960px` for detailed plan
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Gather requirements | skip if spec/topic provided | No |
+| 2 | Check for prior research | skip if no research exists | No |
+| 3 | Generate plan.json sidecar | always | Yes |
+| 4 | Generate architecture HTML | always | Yes |
+| 5 | Generate plan HTML | always | Yes |
+| 6 | Update manifest + index.html | always | Yes |
+
 ## Workflow
 
 1. **Load prior research** — check if any research exists in `{output_dir}/{feature}/research/`. If so, read the latest run's `findings.md` and use the research findings to inform the plan. If not, proceed without it.
