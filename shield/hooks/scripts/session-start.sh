@@ -27,9 +27,11 @@ if MARKER_PATH=$(find_marker); then
   PROJECT_ROOT="$(dirname "$MARKER_PATH")"
   PROJECT_NAME=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['project'])" "$MARKER_PATH" 2>/dev/null || echo "unknown")
   DOMAINS=$(python3 -c "import json,sys; print(', '.join(json.load(open(sys.argv[1])).get('domains',[])))" "$MARKER_PATH" 2>/dev/null || echo "none")
+  OUTPUT_DIR=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('output_dir', 'docs/shield'))" "$MARKER_PATH" 2>/dev/null || echo "docs/shield")
 else
   PROJECT_NAME=""
   DOMAINS=""
+  OUTPUT_DIR="docs/shield"
 fi
 
 # --- Load PM config from per-project pm.json ---
@@ -66,12 +68,12 @@ print('yes' if mcp.get('mcpServers', {}) else 'no')
   fi
 fi
 
-# --- Artifact directory ---
-# Skills write directly to shield/ with timestamps in filenames.
-# The Write tool creates the directory automatically — no pre-creation needed.
+# --- Output directory ---
+# Skills write to {output_dir}/ inside feature folders.
+# The Write tool creates directories automatically — no pre-creation needed.
 SHIELD_DIR=""
 if [ -n "$PROJECT_NAME" ]; then
-  SHIELD_DIR="${PROJECT_ROOT}/shield"
+  SHIELD_DIR="${PROJECT_ROOT}/${OUTPUT_DIR}"
 fi
 
 # --- Build context output ---
@@ -100,13 +102,13 @@ if [ -n "$PROJECT_NAME" ]; then
 - Domains: ${DOMAINS}
 - PM tool: ${PM_TOOL} (${PM_STATUS})
 - Project config: ${SHIELD_HOME}/projects/${PROJECT_NAME}/
-- Artifact directory: ${SHIELD_DIR}/
+- Output directory: \`${OUTPUT_DIR}\` (${SHIELD_DIR}/)
 ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 ${PM_MCP_WARNING:+
 ⚠ ${PM_MCP_WARNING}}
 
-**Artifact output:** Documents go to \`shield/docs/\` with timestamps in filenames (e.g. \`shield/docs/research-20260315-170930.md\`). Named plan sidecars live at \`shield/docs/plans/<name>.json\` (updated in place, no timestamp).
+**Artifact output:** Documents go to \`${OUTPUT_DIR}/\` inside feature folders (e.g. \`${OUTPUT_DIR}/vpc-module-20260319/research/1-topic/findings.md\`). Plan sidecars live at \`${OUTPUT_DIR}/{feature}/plan.json\`. Manifest at \`${OUTPUT_DIR}/manifest.json\`.
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}
