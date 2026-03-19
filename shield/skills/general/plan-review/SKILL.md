@@ -9,18 +9,17 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 
 ## Output Path — MANDATORY
 
-All review output goes into a timestamped directory:
+All review output goes into the feature's plan-review directory:
 
 ```
-shield/docs/reviews-YYYYMMDD-HHMMSS/
-├── summary/
-│   ├── plan-review-summary.md       ← scored analysis (main output)
-│   └── plan-enhanced.md             ← enhanced plan with feedback applied
+{output_dir}/{feature}/plan-review/{N}-{slug}/
+├── summary.md                        ← scored analysis (main output)
+├── enhanced-plan.md                  ← enhanced plan with feedback applied
 └── detailed/
     └── <agent-name>.md               ← one file per dispatched agent
 ```
 
-Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{N}` is a sequential number, and `{slug}` is a short kebab-case descriptor. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -38,13 +37,13 @@ Replace `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any oth
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Named plan sidecar** (`shield/docs/plans/<name>.json`) — if name provided or only one plan exists. If multiple plans exist and no name given, list them and ask.
-2. **Plan docs** in `shield/docs/` — architecture docs, research findings (glob for `shield/docs/architecture-*.html`, `shield/docs/research-*.md`)
+1. **Named plan sidecar** (`{output_dir}/{feature}/plan.json`) — if name provided or only one feature exists. If multiple features exist and no name given, list them and ask.
+2. **Plan docs** in `{output_dir}/{feature}/` — architecture docs, research findings (glob for `{output_dir}/{feature}/plan/` and `{output_dir}/{feature}/research/`)
 3. **HTML plan document** — if only HTML exists, parse it for story content
 4. **Markdown plan document** — path provided by user or auto-detected
 5. **User-provided path** — explicit path argument
 
-**Always start by checking for plans in `shield/docs/plans/` and docs in `shield/docs/`.** If no plans exist, ask the user for the plan location or check the project root.
+**Always start by checking for plan sidecar in `{output_dir}/*/plan.json` and docs in `{output_dir}/{feature}/`.** If no plans exist, ask the user for the plan location or check the project root.
 
 ## Persona Selection
 
@@ -56,12 +55,12 @@ Read each selected agent's markdown file from `agents/` and `scoring.md`, then l
 
 Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer`) when available, otherwise `general-purpose`.
 
-After all agents return, write each agent's full raw output to `reviews-YYYYMMDD-HHMMSS/detailed/<agent-name>.md` with a header and back-link:
+After all agents return, write each agent's full raw output to `plan-review/{N}-{slug}/detailed/<agent-name>.md` with a header and back-link:
 
 ```markdown
 # <Agent Name> — Detailed Findings
 
-> Back to [plan-review-summary](../summary/plan-review-summary.md)
+> Back to [summary](../summary.md)
 
 <full agent output>
 ```
@@ -77,12 +76,14 @@ After all agents return:
 
 ## Output
 
-Write to `shield/docs/reviews-YYYYMMDD-HHMMSS/`:
-- `summary/plan-review-summary.md` — scored evaluation with consolidated recommendations
-- `summary/plan-enhanced.md` — enhanced version of original plan with feedback applied
+Write to `{output_dir}/{feature}/plan-review/{N}-{slug}/`:
+- `summary.md` — scored evaluation with consolidated recommendations
+- `enhanced-plan.md` — enhanced version of original plan with feedback applied
 - `detailed/<agent-name>.md` — full output from each dispatched agent
 
 The summary should include a "Detailed Agent Findings" section linking to each detailed file.
+
+After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
 
 See `templates.md` for output formats and enhanced plan rules.
 
@@ -91,11 +92,11 @@ See `templates.md` for output formats and enhanced plan rules.
 **Do NOT proceed until the user explicitly confirms.**
 
 After writing output files, present the user with three options:
-1. **Apply as-is** — replace original plan with enhanced `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md`
-2. **Apply with edits** — user modifies `reviews-YYYYMMDD-HHMMSS/summary/plan-enhanced.md` first, re-read before applying
+1. **Apply as-is** — replace original plan with enhanced `plan-review/{N}-{slug}/enhanced-plan.md`
+2. **Apply with edits** — user modifies `plan-review/{N}-{slug}/enhanced-plan.md` first, re-read before applying
 3. **Skip** — keep original plan unchanged
 
-The user may also edit `reviews-YYYYMMDD-HHMMSS/summary/plan-review-summary.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
+The user may also edit `plan-review/{N}-{slug}/summary.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
 
 ## Common Mistakes
 

@@ -5,7 +5,7 @@ description: Use when implementing a feature or story, especially with acceptanc
 
 # Implement Feature
 
-**Plan sidecar:** `shield/docs/plans/*.json` (searches all named plans, updates story status in place)
+**Plan sidecar:** `{output_dir}/*/plan.json` (searches all feature plans, updates story status in place)
 
 Structured feature implementation workflow with test-driven development, acceptance criteria confirmation, and continuous lightweight review.
 
@@ -44,13 +44,13 @@ The user provides one or more of:
 
 ### From plan sidecar (preferred)
 
-If named plans exist in `shield/docs/plans/*.json`:
-1. Read all plan files in the directory
+If plan sidecars exist in `{output_dir}/*/plan.json`:
+1. Read all plan files found
 2. Search for the story by ID across all plans
 3. Extract: name, description, tasks, acceptance criteria
 4. Show the story details to the user
 
-If no plans found in `shield/docs/plans/`, check for legacy `shield/plan.json` and suggest migration to `shield/docs/plans/<name>.json`.
+If no plans found in `{output_dir}/*/plan.json`, check for legacy `shield/docs/plans/<name>.json` and suggest migration.
 
 ### From project management card
 
