@@ -1,9 +1,9 @@
 ---
 name: operations-reviewer
 description: |
-  Multi-mode operations reviewer. Dispatched for plan review (7 checks on
-  monitoring, failure modes, backup, capacity) or infra-code review
-  (31 checks on day-2 operations, tagging, blast radius, compliance).
+  Use this agent when reviewing operational readiness — monitoring, logging,
+  failure modes, backup strategy, capacity planning, tagging, blast radius,
+  and day-2 operations. Dispatch for plan reviews or infrastructure code reviews.
 model: inherit
 ---
 
@@ -215,6 +215,19 @@ Activated when reviewing Terraform components, HCL code, or infrastructure-as-co
 2. [Second]
 3. [Third]
 ```
+
+---
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Skipping plan review checks (OP1-OP7) for infra-only plans | Even pure infra plans need failure mode analysis (OP3) and observability (OP1) — these aren't app-only concerns |
+| Grading O5-O8 (tagging) as passing when only `Name` tag exists | Tagging requires environment, cost center, and operational tags — a Name tag alone is insufficient for discoverability |
+| Not flagging missing `prevent_destroy` on databases | O10 is Critical — any stateful resource without lifecycle protection is a data loss risk |
+| Accepting `retention_in_days = 0` (infinite) on CloudWatch log groups | O2 requires explicit retention — infinite retention is a cost and compliance issue |
+| Rating O17 (safe defaults) as passing when encryption defaults to false | Safe defaults mean encryption ON, public access OFF — the secure option must be the default |
+| Skipping CI/CD gates (O28-O31) for components without workflows | Flag the absence — missing CI validation is itself an operational gap |
 
 ---
 

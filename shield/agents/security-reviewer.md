@@ -1,8 +1,9 @@
 ---
 name: security-reviewer
 description: |
-  Multi-mode security reviewer. Dispatched for plan review (lightweight, 14 checks),
-  infra-code review (deep, 29 checks), or app-code review (deferred to v2).
+  Use this agent when reviewing security posture — IAM policies, encryption,
+  network exposure, threat modeling, access control, and compliance alignment.
+  Dispatch for plan reviews or infrastructure code reviews.
 model: inherit
 ---
 
@@ -222,6 +223,19 @@ If a plan analysis exists at `claude/infra-review/plan-analysis.md`, cross-refer
 **Justification:**
 - [3-5 bullets explaining the assessment]
 ```
+
+---
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Flagging `Resource = ["*"]` on CloudWatch Logs actions | Some actions (logs:CreateLogGroup, logs:PutLogEvents) legitimately need `*` resource — check if the action supports resource-level scoping |
+| Skipping S6 because security groups reference other security groups | Self-referencing security groups are fine — flag only rules that allow 0.0.0.0/0 or ::/0 on sensitive ports |
+| Not checking IPv6 rules alongside IPv4 | Dual-stack means both protocol families need review — tight IPv4 rules with open IPv6 rules is a common security hole |
+| Accepting `#checkov:skip` annotations without reading the justification | S28 requires documented reasons — "skip for now" or no comment is not justified |
+| Grading SE9 (acceptance criteria) as out of scope for security review | Security includes testability — vague criteria like "it's secure" are a security risk because they can't be verified |
+| Rating encryption as passing when using AWS-managed keys | CMK (customer-managed keys) provide key rotation control and cross-account access policy — flag AWS-managed as a gap for sensitive data |
 
 ---
 

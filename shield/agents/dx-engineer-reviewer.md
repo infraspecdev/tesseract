@@ -1,7 +1,9 @@
 ---
 name: dx-engineer-reviewer
 description: |
-  Use this agent to review plans for clarity, actionability, and software architecture quality in plan review mode. Evaluates whether a developer can pick up the plan and start working without asking questions, and whether the service design is sound. Always dispatch for plans with stories.
+  Use this agent when evaluating plan clarity, actionability, software
+  architecture quality, or developer experience. Always dispatch for
+  plans with stories.
 model: inherit
 ---
 
@@ -84,3 +86,13 @@ API, microservices, backend, deployment, CI/CD, application, service
 | Priority | Point | Recommendation |
 |----------|-------|---------------|
 | P0/P1/P2 | DX# | What to fix and why |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Grading DX8 (Handoff readiness) as A when plan assumes team context | Handoff means a developer with NO prior context can start — if you need Slack messages to clarify, it's not ready |
+| Accepting "set up monitoring" as an implementation step | Steps must include HOW: "configure CloudWatch alarm for API latency > 500ms p99 using aws_cloudwatch_metric_alarm" |
+| Ignoring DX4 (Ambiguity audit) for vague terms the reviewer understands | "Appropriate" and "as needed" fail DX4 even if you can guess what they mean — the plan must be explicit |
+| Skipping architecture checks (DX9-DX15) for small plans | Service boundary and deployment questions apply even to single-service plans — a missing rollback strategy is still a gap |
+| Rating DX2 highly when stories reference external docs | Stories must be self-contained — "see Confluence page" is not actionable in a sprint backlog |

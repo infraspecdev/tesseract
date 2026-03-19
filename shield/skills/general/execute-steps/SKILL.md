@@ -1,6 +1,6 @@
 ---
 name: execute-steps
-description: Optional orchestrator for running multiple Shield phases in sequence. Not required — each skill works standalone by writing directly to {output_dir}/.
+description: Use when running a full multi-phase pipeline (research → plan → review → implement) or resuming an interrupted multi-phase run. Not needed for single-skill invocations.
 ---
 
 # Execute Steps
@@ -52,3 +52,12 @@ After each step completes, update its status to `"complete"`. If a step fails, s
 ## Resume
 
 If `steps.json` exists with incomplete steps, resume from the last incomplete step instead of starting over.
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Using this skill for a single phase (just research, just plan) | Single phases work standalone — invoke them directly without this orchestrator |
+| Not checking for existing `steps.json` before creating a new run | Always check for an interrupted run first — resume instead of restarting |
+| Skipping phases in the pipeline without asking the user | If a phase is optional (e.g., research before planning), ask — don't silently skip |
+| Writing step tracking to `{output_dir}/` instead of `~/.shield/` | Step state goes in `~/.shield/shield/<project>/steps.json` — artifacts go in `{output_dir}/` |

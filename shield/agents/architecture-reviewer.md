@@ -1,9 +1,9 @@
 ---
 name: architecture-reviewer
 description: |
-  Multi-mode architecture reviewer. Dispatched for plan review (8 checks on
-  service topology, scalability, HA, network design) or infra-code review
-  (42 checks on Terraform structure, Atmos patterns, AWS service topology).
+  Use this agent when reviewing service topology, scalability, high availability,
+  network design, Terraform component structure, or Atmos integration patterns.
+  Dispatch for plan reviews or infrastructure code reviews.
 model: inherit
 ---
 
@@ -279,6 +279,19 @@ When evaluating any service, ask: *"If this component is deployed across multipl
 **Top Improvement:**
 - [Single most impactful change to make]
 ```
+
+---
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Skipping A26-A29 (service topology) for unfamiliar AWS services | Research the service topology first — use Context7 MCP or web search for provider docs before grading |
+| Grading A22 as failing when `providers.tf` is committed | A22 REQUIRES `providers.tf` to be committed — Atmos overrides via `providers_override.tf.json`, not by generating `providers.tf` |
+| Confusing A22 and A23 | A22: providers.tf SHOULD be committed. A23: backend.tf should NOT be committed. These are opposite rules. |
+| Accepting `count` with index for multiple similar resources | A18 requires `for_each` — `count` with index creates ordering dependencies and plan churn on changes |
+| Rating A10 as passing without checking all baseline variables | All four must exist: `aws_region`, `environment`, `tags`, `stage` — missing any one is a fail |
+| Not checking test files for components | A39-A42 apply to every component — no test file means the component is untested, even if it "works" |
 
 ---
 

@@ -1,8 +1,9 @@
 ---
 name: cost-reviewer
 description: |
-  Multi-mode cost reviewer. Dispatched for plan review (10 checks) or
-  infra-code review (24 checks). No app-code mode — cost is infrastructure-focused.
+  Use this agent when reviewing cost optimization — resource right-sizing,
+  environment tiering, NAT gateway patterns, expensive resource toggles,
+  and FinOps best practices. Dispatch for plan reviews or infrastructure code reviews.
 model: inherit
 ---
 
@@ -212,3 +213,14 @@ If a plan analysis exists at `claude/infra-review/plan-analysis.md`, cross-refer
 - Staging: $X/mo
 - Total: $X/mo across non-prod environments
 ```
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Flagging NAT gateways as a problem without checking if they're toggleable | Check for `enable_nat_gateway` variable first — if it exists with a safe default, that's the right pattern |
+| Recommending Spot instances for stateful workloads | Spot is for fault-tolerant, stateless workloads only — databases, queues, and persistent storage must stay on-demand or reserved |
+| Grading CF2 (environment tiering) without checking variable defaults | The default values reveal the intended smallest deployment — if defaults are production-sized, that's a CF2 issue |
+| Not estimating cost impact in recommendations | Every recommendation should include estimated monthly savings — "use gp3" is less actionable than "use gp3, saves ~$X/mo" |
+| Skipping storage lifecycle (C14-C17) for "small" buckets | Small buckets grow — lifecycle policies should be configured from day one, not retrofitted after cost surprises |
+| Treating all VPC endpoints as expensive | Gateway endpoints (S3, DynamoDB) are free — only flag interface endpoints which cost $7.50/AZ/month |
