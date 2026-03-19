@@ -189,3 +189,14 @@ Which fixes would you like to apply?
 - [Architecture](detailed/architecture.md)
 - [Operations](detailed/operations.md)
 - [Well-Architected](detailed/well-architected.md)
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Running full agent suite for a per-step review during implementation | Per-step reviews only need code correctness + domain skills — save the full agent suite for explicit `/review` |
+| Dispatching all agents without checking `.shield.json` reviewers config | Respect `always_include` and `never_include` from the project config before auto-selecting |
+| Applying fixes without user confirmation | Always present findings and ask which to apply — never auto-fix, especially for `NEEDS_DISCUSSION` items |
+| Writing detailed agent findings to summary.md instead of separate files | Each agent gets its own file in `detailed/<agent>.md` — summary.md only has the merged table |
+| Skipping AC verification because no plan sidecar exists | If there's no `plan.json`, skip AC verification silently — don't error or ask the user to create one |
+| Not deduplicating findings from multiple sources | If security-reviewer and terraform/security-audit flag the same issue, keep the most detailed one |
