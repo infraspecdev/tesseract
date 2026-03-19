@@ -126,7 +126,7 @@ For each phase, parse the HTML `detailed-plan.html` using these selectors:
 }
 ```
 
-### 3c. Copy HTML docs to shield/docs/
+### 3c. Copy HTML docs to feature folder
 
 For each phase:
 - Copy `phases/<phase>/architecture.html` → `{output_dir}/{feature}/plan/{N}-{slug}/architecture.html`

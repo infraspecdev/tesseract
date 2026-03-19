@@ -13,8 +13,8 @@ echo "=== E2E Test: /implement ==="
 PROJECT_DIR=$(create_test_project "test-implement" "terraform")
 
 # Create a plan sidecar with a story and acceptance criteria
-mkdir -p "$PROJECT_DIR/shield/docs/plans"
-cat > "$PROJECT_DIR/shield/docs/plans/vpc-module.json" <<'EOF'
+mkdir -p "$PROJECT_DIR/docs/shield/vpc-module-$(date +%Y%m%d)"
+cat > "$PROJECT_DIR/docs/shield/vpc-module-$(date +%Y%m%d)/plan.json" <<'EOF'
 {
   "version": "1.0",
   "project": "test-implement",
