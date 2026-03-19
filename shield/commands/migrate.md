@@ -15,7 +15,7 @@ Scan for old plugin artifacts:
 - `phases/` directory with HTML plan docs → plan artifacts
 - `review/` directory with analysis/plan markdown → review artifacts
 - `claude/infra-review/` directory → infra-review was active
-- `shield/plan.json` (old single-plan path) → needs rename to `shield/docs/plans/<name>.json`
+- `shield/plan.json` (old single-plan path) → needs migration to `{output_dir}/{feature}/plan.json`
 
 Report findings:
 ```
@@ -91,7 +91,7 @@ For each phase, parse the HTML `detailed-plan.html` using these selectors:
 | `blocked` | `blocked` |
 | `to create` / `draft` / (no badge) | `draft` |
 
-**Generate sidecar JSON** for each phase and write to `shield/docs/plans/<phase-name>.json`:
+**Generate sidecar JSON** for each phase and write to `{output_dir}/{feature}/plan.json`:
 
 ```json
 {
@@ -126,15 +126,15 @@ For each phase, parse the HTML `detailed-plan.html` using these selectors:
 }
 ```
 
-### 3c. Copy HTML docs to shield/docs/
+### 3c. Copy HTML docs to feature folder
 
 For each phase:
-- Copy `phases/<phase>/architecture.html` → `shield/docs/architecture-<phase-name>.html`
-- Copy `phases/<phase>/detailed-plan.html` → `shield/docs/plan-<phase-name>.html`
+- Copy `phases/<phase>/architecture.html` → `{output_dir}/{feature}/plan/{N}-{slug}/architecture.html`
+- Copy `phases/<phase>/detailed-plan.html` → `{output_dir}/{feature}/plan/{N}-{slug}/plan.html`
 
 Update the `<meta name="sidecar">` tag in each plan HTML to point to the new sidecar path:
 ```html
-<meta name="sidecar" content="./plans/<phase-name>.json">
+<meta name="sidecar" content="../../plan.json">
 ```
 
 Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) with the new path:
@@ -144,36 +144,28 @@ Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) wi
 
 ### 3d. Generate navigation
 
-**`shield/docs/nav.js`** — a sticky top navbar injected into every HTML page via `DOMContentLoaded`. Contains:
-- **Home** link → `index.html`
-- **Architecture** dropdown — links to `architecture-<slug>.html` for each phase
-- **Plans** dropdown — links to `plan-<slug>.html` for each phase
-- **Sidecars** dropdown — links to `plans/<slug>.json` for each phase
-- **Reviews** dropdown — links to review analysis and enhanced plan docs
-- **Page tabs** — when viewing an architecture or plan page, show tabs to switch between Architecture / Detailed Plan / Sidecar JSON for that phase (detected via filename pattern `architecture-<slug>.html` or `plan-<slug>.html`)
-
-Deprioritised/rejected phases should be shown with strikethrough text and status badges (matching the old nav style).
-
-**`shield/docs/index.html`** — a card-grid overview page linking to all artifacts. For each phase, show:
+**`{output_dir}/index.html`** — a card-grid overview page linking to all feature folders and their artifacts. For each feature, show:
 - Phase tag with color (P1=purple, P2=teal, P3=blue, P4=orange, P5=red, P6=brown)
 - Phase name, timeline, description
-- Links: Architecture, Detailed Plan, Sidecar JSON
+- Links: Architecture, Detailed Plan, Sidecar JSON (`{feature}/plan.json`)
 - Story count
 - Deprioritised/rejected phases shown with reduced opacity and status labels
 
 Also include sections for Reviews and Plan Sidecars at the bottom.
 
+**`{output_dir}/manifest.json`** — registry of all feature folders and their metadata, used by nav and index generation.
+
 ### 3e. Copy review artifacts
 
 For each review directory:
-- Copy `review/<date>-<name>/analysis.md` → `shield/docs/reviews-<date>-<name>/summary/plan-review-summary.md`
-- Copy `review/<date>-<name>/plan.md` → `shield/docs/reviews-<date>-<name>/summary/plan-enhanced.md`
+- Copy `review/<date>-<name>/analysis.md` → `{output_dir}/{feature}/plan-review/{N}-{slug}/summary.md`
+- Copy `review/<date>-<name>/plan.md` → `{output_dir}/{feature}/plan-review/{N}-{slug}/enhanced-plan.md`
 
 ### 3f. Migrate legacy shield/plan.json
 
 If `shield/plan.json` exists (old single-plan path):
-- Read the JSON, derive a name from the `project` or `phase` field
-- Write to `shield/docs/plans/<name>.json`, adding the `name` field
+- Read the JSON, derive a feature name from the `project` or `phase` field
+- Write to `{output_dir}/{feature}/plan.json`, adding the `name` field
 - Delete `shield/plan.json`
 
 ## Phase 4: Summary
@@ -189,23 +181,23 @@ Config:
   ✓ PM adapter MCP server registered
 
 Plans (7 phases migrated):
-  ✓ shield/docs/plans/vpc-architecture.json (P1 — 5 stories, 5 with ClickUp IDs)
-  ✓ shield/docs/plans/ecs-vpc-migration.json (P1a — 8 stories, 8 with ClickUp IDs)
-  ✓ shield/docs/plans/database-migration.json (P2 — 6 stories, 6 with ClickUp IDs)
-  ✓ shield/docs/plans/eks-foundation.json (P3 — 11 stories, 11 with ClickUp IDs)
-  ✓ shield/docs/plans/full-migration.json (P4 — 9 stories, 9 with ClickUp IDs)
-  ✓ shield/docs/plans/multi-account.json (P5 — 7 stories, 7 with ClickUp IDs)
-  ✓ shield/docs/plans/account-migration.json (P6 — 5 stories, 5 with ClickUp IDs)
+  ✓ {output_dir}/vpc-architecture-YYYYMMDD/plan.json (P1 — 5 stories, 5 with ClickUp IDs)
+  ✓ {output_dir}/ecs-vpc-migration-YYYYMMDD/plan.json (P1a — 8 stories, 8 with ClickUp IDs)
+  ✓ {output_dir}/database-migration-YYYYMMDD/plan.json (P2 — 6 stories, 6 with ClickUp IDs)
+  ✓ {output_dir}/eks-foundation-YYYYMMDD/plan.json (P3 — 11 stories, 11 with ClickUp IDs)
+  ✓ {output_dir}/full-migration-YYYYMMDD/plan.json (P4 — 9 stories, 9 with ClickUp IDs)
+  ✓ {output_dir}/multi-account-YYYYMMDD/plan.json (P5 — 7 stories, 7 with ClickUp IDs)
+  ✓ {output_dir}/account-migration-YYYYMMDD/plan.json (P6 — 5 stories, 5 with ClickUp IDs)
 
-HTML docs copied to shield/docs/:
-  ✓ 14 architecture + plan HTML files
+HTML docs copied to feature folders:
+  ✓ 14 architecture + plan HTML files under {output_dir}/{feature}/plan/{N}-{slug}/
   ✓ Meta tags updated to reference sidecar JSON
-  ✓ nav.js — sticky navbar with dropdowns and page tabs
-  ✓ index.html — card-grid overview linking all artifacts
+  ✓ {output_dir}/index.html — card-grid overview linking all artifacts
+  ✓ {output_dir}/manifest.json — feature folder registry
 
 Reviews:
-  ✓ shield/docs/reviews-2026-03-12-eks-foundation/summary/plan-review-summary.md
-  ✓ shield/docs/reviews-2026-03-12-eks-foundation/summary/plan-enhanced.md
+  ✓ {output_dir}/{feature}/plan-review/{N}-{slug}/summary.md
+  ✓ {output_dir}/{feature}/plan-review/{N}-{slug}/enhanced-plan.md
 
 Old files left in place (safe to delete after verifying):
   - sprint-planner.json
@@ -217,7 +209,7 @@ Old files left in place (safe to delete after verifying):
 
 Next steps:
   1. Reload Shield plugin (see above)
-  2. Verify plan sidecars: cat shield/docs/plans/eks-foundation.json | jq '.epics[0].stories | length'
+  2. Verify plan sidecars: cat {output_dir}/eks-foundation-YYYYMMDD/plan.json | jq '.epics[0].stories | length'
   3. Run /pm-status to verify ClickUp connection
   4. Run /pm-sync to verify stories match ClickUp state
   5. Uninstall old plugins: infra-review, clickup-sprint-planner, dev-workflow

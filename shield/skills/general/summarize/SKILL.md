@@ -10,10 +10,12 @@ description: Use when a pipeline phase completes and needs an audit trail summar
 Write the summary using the Write tool to **exactly** this path:
 
 ```
-shield/docs/<phase_name>-summary-YYYYMMDD-HHMMSS.md
+{output_dir}/{feature}/summary/{N}-{slug}/summary.md
 ```
 
-Replace `<phase_name>` with the phase (e.g. `research`, `plan`, `review`) and `YYYYMMDD-HHMMSS` with the current date and time. **Do NOT** use any other path, filename, or directory. No `latest/`, no custom filenames. The Write tool creates `shield/docs/` automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{N}` is a sequential number, and `{slug}` is a short kebab-case descriptor (e.g., `1-research`, `2-plan-review`). **Do NOT** use any other path, filename, or directory. The Write tool creates directories automatically.
+
+After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
 
 ## When to Use
 
@@ -31,7 +33,7 @@ The orchestrator passes:
 
 1. Format the phase output as concise bullet points (5-10 bullets max)
 2. Include: what was done, key decisions made, findings if any, next phase
-3. Write to `shield/docs/<phase_name>-summary-YYYYMMDD-HHMMSS.md`
+3. Write to `{output_dir}/{feature}/summary/{N}-{slug}/summary.md`
 4. Return the summary text to the orchestrator for display
 
 ## Summary Format

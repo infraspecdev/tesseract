@@ -27,5 +27,6 @@ clickup-sprint-planner/phases/
 # E2E test output (JSONL artifacts + summaries)
 shield/tests/output/
 
-# Shield review output (ephemeral — fixes become commits)
-**/shield/docs/reviews-*/
+# Shield ephemeral review output (fixes become commits, reviews are disposable)
+**/docs/shield/*/plan-review/
+**/docs/shield/*/code-review/

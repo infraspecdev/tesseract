@@ -25,4 +25,4 @@ Show sprint or epic status overview from your project management tool.
 4. Present results as a formatted table:
    - Epic summary: Total, Done, In Progress, Ready, Blocked
    - Story detail when specific epic is requested
-5. If no PM tool configured, check if a plan sidecar JSON exists and show status from that instead
+5. If no PM tool configured, scan `{output_dir}/*/plan.json` for plan sidecar JSON and show status from that instead

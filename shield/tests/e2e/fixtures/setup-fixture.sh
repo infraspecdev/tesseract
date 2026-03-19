@@ -3,8 +3,8 @@
 #
 # Fixture levels:
 #   initialized     — .shield.json + source code (from example)
-#   post-research   — above + shield/docs/research-*.md
-#   post-planning   — above + shield/docs/plans/<name>.json + shield/docs/architecture-*.html + plan-*.html
+#   post-research   — above + {output_dir}/{feature}/research/1-fixture/findings.md
+#   post-planning   — above + {output_dir}/{feature}/plan.json + plan/1-{example}/architecture.html + plan.html
 #   post-implement  — above + code changes committed
 #
 # Usage: setup_fixture "post-planning" "python-api" "/path/to/project"
@@ -56,24 +56,25 @@ setup_fixture_cold() {
     git -C "$project_dir" commit -q -m "init example" --no-gpg-sign
   fi
 
+  # Read output_dir from .shield.json (default: docs/shield)
+  local output_dir
+  output_dir=$(python3 -c "import json; print(json.load(open('${project_dir}/.shield.json')).get('output_dir', 'docs/shield'))" 2>/dev/null || echo "docs/shield")
+  local feature_dir="${output_dir}/${example}-$(date +%Y%m%d)"
+
   # Level 2: post-research — add research doc
   if [ "$level" -ge 2 ]; then
-    local ts
-    ts=$(date +%Y%m%d-%H%M%S)
-    mkdir -p "$project_dir/shield/docs"
-    cp "$fixture_dir/research.md" "$project_dir/shield/docs/research-${ts}.md"
+    mkdir -p "$project_dir/${feature_dir}/research/1-fixture"
+    cp "$fixture_dir/research.md" "$project_dir/${feature_dir}/research/1-fixture/findings.md"
     git -C "$project_dir" add .
     git -C "$project_dir" commit -q -m "fixture: research" --no-gpg-sign
   fi
 
   # Level 3: post-planning — add plan artifacts
   if [ "$level" -ge 3 ]; then
-    local ts
-    ts=$(date +%Y%m%d-%H%M%S)
-    mkdir -p "$project_dir/shield/docs/plans"
-    cp "$fixture_dir/plan.json" "$project_dir/shield/docs/plans/${example}.json"
-    cp "$fixture_dir/architecture.html" "$project_dir/shield/docs/architecture-${ts}.html"
-    cp "$fixture_dir/plan.html" "$project_dir/shield/docs/plan-${ts}.html"
+    mkdir -p "$project_dir/${feature_dir}/plan/1-${example}"
+    cp "$fixture_dir/plan.json" "$project_dir/${feature_dir}/plan.json"
+    cp "$fixture_dir/architecture.html" "$project_dir/${feature_dir}/plan/1-${example}/architecture.html"
+    cp "$fixture_dir/plan.html" "$project_dir/${feature_dir}/plan/1-${example}/plan.html"
     git -C "$project_dir" add .
     git -C "$project_dir" commit -q -m "fixture: planning" --no-gpg-sign
   fi

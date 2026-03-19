@@ -50,5 +50,5 @@
 - Status starts as `"ready"` for new stories
 - `pm_id` and `pm_url` start as `null` — populated by `/pm-sync`
 - Plan name must be kebab-case (`^[a-z0-9-]+$`)
-- Each plan lives at `shield/docs/plans/<name>.json`
+- Each plan lives at `{output_dir}/{feature}/plan.json`
 - Story IDs must be unique across all plans in a project

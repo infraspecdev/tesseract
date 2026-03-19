@@ -100,7 +100,7 @@ Shield is a multi-phase pipeline. **Every phase is standalone** — you can run 
 
 Each phase:
 1. Does the work (with domain-specific skills when available)
-2. Produces output to `shield/docs/` (summaries, plans, review findings)
+2. Produces output to `{output_dir}/` (default `docs/shield/`) inside feature folders
 3. Waits for your confirmation before proceeding
 
 Review findings are presented with severity levels. You pick which fixes to apply, which to skip, and which need discussion. Optionally post findings to your project management tool.
@@ -109,11 +109,15 @@ Review findings are presented with severity levels. You pick which fixes to appl
 
 | Path | Commit? | Why |
 |------|---------|-----|
-| `.shield.json` | Yes | Project config — domains, reviewer settings |
-| `shield/docs/plans/*.json` | Yes | Plan sidecars — source of truth for stories and status |
-| `shield/docs/*.html` | Yes | Architecture and plan docs — team reference |
-| `shield/docs/research-*.md` | Optional | Research findings — useful context but can be regenerated |
-| `shield/docs/reviews-*/` | No | Review output is ephemeral — fixes become commits |
+| `.shield.json` | Yes | Project config — domains, reviewer settings, output_dir |
+| `{output_dir}/manifest.json` | Yes | Feature index — tracks latest artifacts per feature |
+| `{output_dir}/index.html` | Yes | Dashboard — navigable overview of all features |
+| `{output_dir}/{feature}/plan.json` | Yes | Plan sidecars — source of truth for stories and status |
+| `{output_dir}/{feature}/plan/` | Yes | Architecture and plan docs — team reference |
+| `{output_dir}/{feature}/research/` | Yes | Research findings — useful context |
+| `{output_dir}/{feature}/summary/` | Yes | Phase completion records |
+| `{output_dir}/{feature}/plan-review/` | No | Ephemeral — findings feed back into plan revisions |
+| `{output_dir}/{feature}/code-review/` | No | Ephemeral — fixes become commits |
 | `~/.shield/` | N/A | User-local config (PM credentials, project settings) — never in repo |
 
 #### Installation
