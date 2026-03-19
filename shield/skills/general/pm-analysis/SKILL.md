@@ -1,9 +1,9 @@
 ---
 name: pm-analysis
 description: |
-  Dispatch the product manager agent for product-lens analysis. Use when any workflow
-  needs user impact, prioritization, scope, or stakeholder framing. Triggers on
-  product analysis, PM review, user impact, business value.
+  Use when any workflow needs a product lens — user impact analysis, prioritization,
+  scope discipline, or stakeholder framing. Triggers on product analysis, PM review,
+  user impact, business value.
 ---
 
 # PM Analysis Skill
