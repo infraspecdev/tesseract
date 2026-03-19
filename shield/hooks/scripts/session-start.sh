@@ -76,6 +76,28 @@ if [ -n "$PROJECT_NAME" ]; then
   SHIELD_DIR="${PROJECT_ROOT}/${OUTPUT_DIR}"
 fi
 
+# --- Check for incomplete steps ---
+INCOMPLETE_STEPS_WARNING=""
+STEPS_FILE="${SHIELD_HOME}/projects/${PROJECT_NAME}/steps.json"
+if [ -n "$PROJECT_NAME" ] && [ -f "$STEPS_FILE" ]; then
+  INCOMPLETE_STEPS_WARNING=$(python3 -c "
+import json, sys
+try:
+    data = json.load(open('${STEPS_FILE}'))
+    skill = data.get('skill', 'unknown')
+    steps = data.get('steps', [])
+    total = len(steps)
+    completed = sum(1 for s in steps if s.get('status') == 'complete')
+    if completed < total:
+        current = next((s for s in steps if s['status'] in ('in_progress', 'pending')), None)
+        action = current['action'] if current else 'unknown'
+        step_num = completed + 1
+        print(f'Incomplete: {skill} phase (step {step_num}/{total} — {action}). Run the skill command to resume.')
+except Exception:
+    pass
+" 2>/dev/null || true)
+fi
+
 # --- Build context output ---
 if [ -n "$PROJECT_NAME" ]; then
   # Build domain-specific skill guidance
@@ -107,6 +129,8 @@ ${CONFIG_WARNINGS:+
 ⚠ ${CONFIG_WARNINGS}}
 ${PM_MCP_WARNING:+
 ⚠ ${PM_MCP_WARNING}}
+${INCOMPLETE_STEPS_WARNING:+
+⚠ ${INCOMPLETE_STEPS_WARNING}}
 
 **Artifact output:** Documents go to \`${OUTPUT_DIR}/\` inside feature folders (e.g. \`${OUTPUT_DIR}/vpc-module-20260319/research/1-topic/findings.md\`). Plan sidecars live at \`${OUTPUT_DIR}/{feature}/plan.json\`. Manifest at \`${OUTPUT_DIR}/manifest.json\`.
 
