@@ -18,14 +18,21 @@ Run a targeted cost review using the Shield cost reviewer agent.
 
 ## Output Path
 
-Write findings to a timestamped review directory:
+First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read `.shield.json` to get `output_dir` (default: `docs/shield`). Then determine the feature folder name and run number:
+
+- **Feature folder** (`{feature}`): Use the current feature directory name. If none exists yet, derive from the current branch name or story context and append `-YYYYMMDD`.
+- **Run number** (`{N}`): Count existing folders inside `{output_dir}/{feature}/code-review/` and add 1.
+- **Slug** (`{slug}`): Use the story ID if available, otherwise the current git branch name.
+
+Write findings to the config-driven feature directory:
 
 ```
-{project_root}/shield/docs/reviews-YYYYMMDD-HHMMSS/
-├── summary/cost-review-summary.md
-├── summary/cost-review-changes.md
+{project_root}/{output_dir}/{feature}/code-review/{N}-{slug}/
+├── summary.md          (cost-focused)
+├── changes.md
 └── detailed/cost.md
 ```
 
 5. Write detailed findings, summary, and applied changes to the paths above
-6. Ask user which fixes to apply
+6. After writing, update `{output_dir}/manifest.json` with the new review entry and regenerate `{output_dir}/index.html`
+7. Ask user which fixes to apply
