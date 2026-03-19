@@ -7,7 +7,7 @@
   "properties": {
     "version": { "type": "string", "const": "1.0" },
     "project": { "type": "string" },
-    "name": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Plan name — used as filename: shield/docs/plans/<name>.json" },
+    "name": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Plan name — used as feature folder name: {output_dir}/{name}-YYYYMMDD/plan.json" },
     "phase": { "type": "string" },
     "epics": {
       "type": "array",

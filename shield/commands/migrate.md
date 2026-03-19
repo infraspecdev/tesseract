@@ -34,7 +34,7 @@ If nothing detected, suggest `/shield init` instead.
    - Infer domains from content (HTML plan docs with Terraform → `terraform`)
    - Ask user to confirm/adjust
 
-2. **Create `.shield.json`** with confirmed project name and domains
+2. **Create `.shield.json`** with confirmed project name, `output_dir` (ask user, default: `docs/shield`), and domains. Add gitignore patterns for ephemeral review output (same as `/shield init` step 4).
 
 3. **Migrate sprint-planner.json** (if found):
 
@@ -153,7 +153,7 @@ Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) wi
 
 Also include sections for Reviews and Plan Sidecars at the bottom.
 
-**`{output_dir}/manifest.json`** — registry of all feature folders and their metadata, used by nav and index generation.
+**`{output_dir}/manifest.json`** — populate with all migrated feature folders, their `plan.json` paths, and latest pointers for each phase. This is the source of truth that `index.html` reads. See `manifest-schema.md` for the full schema.
 
 ### 3e. Copy review artifacts
 
@@ -167,6 +167,25 @@ If `shield/plan.json` exists (old single-plan path):
 - Read the JSON, derive a feature name from the `project` or `phase` field
 - Write to `{output_dir}/{feature}/plan.json`, adding the `name` field
 - Delete `shield/plan.json`
+
+### 3g. Migrate old Shield v2.x `shield/docs/` structure
+
+If `shield/docs/` exists with Shield v2.x artifacts (plans, research, reviews):
+
+| Old path | New path |
+|----------|----------|
+| `shield/docs/plans/<name>.json` | `{output_dir}/{name}-YYYYMMDD/plan.json` (use file modified date) |
+| `shield/docs/research-YYYYMMDD-HHMMSS.md` | `{output_dir}/{feature}/research/1-migrated/findings.md` |
+| `shield/docs/architecture-YYYYMMDD-HHMMSS.html` | `{output_dir}/{feature}/plan/1-migrated/architecture.html` |
+| `shield/docs/plan-YYYYMMDD-HHMMSS.html` | `{output_dir}/{feature}/plan/1-migrated/plan.html` |
+| `shield/docs/reviews-<ts>/summary/code-review-summary.md` | `{output_dir}/{feature}/code-review/1-migrated/summary.md` |
+| `shield/docs/reviews-<ts>/summary/plan-review-summary.md` | `{output_dir}/{feature}/plan-review/1-migrated/summary.md` |
+| `shield/docs/reviews-<ts>/detailed/` | `{output_dir}/{feature}/{review-type}/1-migrated/detailed/` |
+
+- Derive `{feature}` from the plan name in `plans/<name>.json`. If research/reviews exist without a matching plan, ask the user for a feature name.
+- Generate `manifest.json` with all migrated features
+- Generate `index.html` from the manifest
+- Offer to delete `shield/docs/` after verification
 
 ## Phase 4: Summary
 
