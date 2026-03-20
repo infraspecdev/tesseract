@@ -73,6 +73,7 @@ run_phase() {
   local output_file="${project_dir}/.shield-generate-${phase_name}.log"
 
   if (cd "$project_dir" && timeout "$TIMEOUT" claude --print \
+    --plugin-dir "$PLUGIN_ROOT" \
     --allowedTools "Read,Write,Edit,Glob,Grep,Bash,Agent,Skill" \
     "$prompt") \
     > "$output_file" 2>&1; then
