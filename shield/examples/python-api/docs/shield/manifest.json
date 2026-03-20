@@ -1,0 +1,46 @@
+{
+  "project": "python-api-example",
+  "artifacts": [
+    {
+      "feature": "input-validation-and-auth",
+      "date": "2026-03-20",
+      "folder": "input-validation-and-auth-20260320",
+      "plan_runs": [
+        {
+          "run": 1,
+          "slug": "input-validation-and-auth",
+          "architecture": "plan/1-input-validation-and-auth/architecture.html",
+          "plan": "plan/1-input-validation-and-auth/plan.html",
+          "sidecar": "plan.json"
+        }
+      ],
+      "plan_reviews": [
+        {
+          "run": 1,
+          "slug": "input-validation-and-auth",
+          "summary": "plan-review/1-input-validation-and-auth/summary.md",
+          "detailed": [
+            "plan-review/1-input-validation-and-auth/detailed/security-engineer.md",
+            "plan-review/1-input-validation-and-auth/detailed/dx-engineer.md",
+            "plan-review/1-input-validation-and-auth/detailed/agile-coach.md",
+            "plan-review/1-input-validation-and-auth/detailed/architecture.md",
+            "plan-review/1-input-validation-and-auth/detailed/product-manager.md"
+          ],
+          "score": 61
+        }
+      ],
+      "code_reviews": [
+        {
+          "run": 1,
+          "slug": "master",
+          "summary": "code-review/1-master/summary.md",
+          "detailed": [
+            "code-review/1-master/detailed/security-reviewer.md",
+            "code-review/1-master/detailed/code-correctness.md"
+          ],
+          "findings": { "critical": 3, "high": 7, "medium": 11, "low": 7 }
+        }
+      ]
+    }
+  ]
+}

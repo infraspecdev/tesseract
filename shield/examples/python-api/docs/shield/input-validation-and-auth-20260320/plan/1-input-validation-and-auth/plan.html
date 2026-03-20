@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="sidecar" content="../../plan.json">
+<title>Plan — Input Validation &amp; JWT Auth</title>
+<style>
+  :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149; --orange: #d29922; --purple: #bc8cff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h2 { font-size: 1.4rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--accent); }
+  h3 { font-size: 1.1rem; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+  p, li { margin-bottom: 0.4rem; }
+  ul, ol { padding-left: 1.5rem; }
+  code { background: var(--surface); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+  .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .epic { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin: 1.5rem 0; overflow: hidden; }
+  .epic-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+  .epic-id { background: var(--accent); color: var(--bg); font-weight: 700; padding: 0.15em 0.5em; border-radius: 4px; font-size: 0.85rem; }
+  .epic-title { font-weight: 600; font-size: 1.1rem; }
+  .story { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .story:last-child { border-bottom: none; }
+  .story-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .story-id { font-weight: 600; color: var(--accent); font-size: 0.9rem; }
+  .story-title { font-weight: 600; }
+  .badge { display: inline-block; border-radius: 12px; padding: 0.1em 0.6em; font-size: 0.75rem; font-weight: 600; }
+  .badge-high { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .badge-medium { background: rgba(210,153,34,0.15); color: var(--orange); border: 1px solid rgba(210,153,34,0.3); }
+  .badge-points { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .badge-dep { background: rgba(139,148,158,0.15); color: var(--muted); border: 1px solid rgba(139,148,158,0.3); }
+  .tasks { margin: 0.75rem 0; }
+  .tasks summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+  .tasks ul { margin-top: 0.5rem; }
+  .ac { margin-top: 0.75rem; }
+  .ac-title { font-weight: 600; font-size: 0.9rem; color: var(--green); margin-bottom: 0.25rem; }
+  .ac ul { list-style: none; padding-left: 0; }
+  .ac li::before { content: "✓ "; color: var(--green); font-weight: 700; }
+  .order { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .order ol { counter-reset: step; list-style: none; padding-left: 0; }
+  .order li { counter-increment: step; padding: 0.3rem 0; padding-left: 2rem; position: relative; }
+  .order li::before { content: counter(step); position: absolute; left: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+  .summary-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .summary-table th, .summary-table td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .summary-table th { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Execution Plan: Input Validation &amp; JWT Auth</h1>
+<p class="meta">
+  Plan: <strong>input-validation-and-auth</strong> &middot; Date: 2026-03-20 &middot; 4 epics &middot; 10 stories &middot; ~20 story points
+</p>
+
+<h2>Summary</h2>
+<table class="summary-table">
+  <thead><tr><th>Epic</th><th>Stories</th><th>Points</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>E1: Input Validation &amp; Pydantic Models</td><td>2</td><td>4</td><td>High</td></tr>
+    <tr><td>E2: Error Handling &amp; HTTP Status Codes</td><td>3</td><td>4</td><td>High/Medium</td></tr>
+    <tr><td>E3: JWT Authentication &amp; Authorization</td><td>4</td><td>9</td><td>High/Medium</td></tr>
+    <tr><td>E4: Test Coverage &amp; CI Readiness</td><td>1</td><td>3</td><td>High</td></tr>
+  </tbody>
+</table>
+
+<h2>Implementation Order</h2>
+<div class="order">
+  <ol>
+    <li><strong>E1-S1:</strong> Define Pydantic models (foundation for validation)</li>
+    <li><strong>E1-S2:</strong> Wire models into routes</li>
+    <li><strong>E2-S1:</strong> Add 404 handling</li>
+    <li><strong>E2-S2:</strong> Global exception handler</li>
+    <li><strong>E2-S3:</strong> Proper HTTP status codes</li>
+    <li><strong>E3-S1:</strong> JWT token utilities</li>
+    <li><strong>E3-S2:</strong> FastAPI auth dependencies</li>
+    <li><strong>E3-S4:</strong> Login endpoint</li>
+    <li><strong>E3-S3:</strong> Protect mutation endpoints</li>
+    <li><strong>E4-S1:</strong> Comprehensive test suite</li>
+  </ol>
+</div>
+
+<h2>Stories by Epic</h2>
+
+<!-- Epic 1 -->
+<div class="epic">
+  <div class="epic-header">
+    <span class="epic-id">E1</span>
+    <span class="epic-title">Input Validation &amp; Pydantic Models</span>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E1-S1</span>
+      <span class="story-title">Define strict Pydantic request/response models</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">2 pts</span>
+    </div>
+    <p>Create TaskCreate, TaskUpdate, and TaskResponse models with field validation (max lengths, status enum, required fields).</p>
+    <details class="tasks">
+      <summary>5 tasks</summary>
+      <ul>
+        <li>Add TaskStatus enum (open, in_progress, done) to models.py</li>
+        <li>Create TaskCreate model with title (str, max_length=200, required), description (str, max_length=2000, optional), status (TaskStatus, default=open)</li>
+        <li>Create TaskUpdate model with all fields optional</li>
+        <li>Create TaskResponse model extending TaskCreate with id field</li>
+        <li>Add unit tests for model validation</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>TaskCreate rejects empty title</li>
+        <li>TaskCreate rejects title longer than 200 characters</li>
+        <li>TaskCreate rejects invalid status values</li>
+        <li>TaskUpdate allows partial updates (all fields optional)</li>
+        <li>TaskResponse includes id field</li>
+        <li>All models have type-safe status enum</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E1-S2</span>
+      <span class="story-title">Wire Pydantic models into route handlers</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">2 pts</span>
+      <span class="badge badge-dep">depends: E1-S1</span>
+    </div>
+    <p>Replace dict parameters in task routes with Pydantic models. Return typed responses.</p>
+    <details class="tasks">
+      <summary>5 tasks</summary>
+      <ul>
+        <li>Update create_task to accept TaskCreate, return TaskResponse</li>
+        <li>Update update_task to accept TaskUpdate, return TaskResponse</li>
+        <li>Update list_tasks to return list[TaskResponse]</li>
+        <li>Update get_task to return TaskResponse</li>
+        <li>Verify FastAPI auto-generates OpenAPI schema with model types</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>POST /tasks/ with invalid body returns 422 with field-level errors</li>
+        <li>PUT /tasks/{id} with invalid status returns 422</li>
+        <li>GET /tasks/ returns typed response array</li>
+        <li>OpenAPI docs at /docs reflect new models</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Epic 2 -->
+<div class="epic">
+  <div class="epic-header">
+    <span class="epic-id">E2</span>
+    <span class="epic-title">Error Handling &amp; HTTP Status Codes</span>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E2-S1</span>
+      <span class="story-title">Add 404 handling for task lookups</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">1 pt</span>
+    </div>
+    <p>Return proper 404 responses when tasks are not found instead of raising unhandled KeyError.</p>
+    <details class="tasks">
+      <summary>3 tasks</summary>
+      <ul>
+        <li>Add helper function or dependency to look up task by ID, raising HTTPException(404) if missing</li>
+        <li>Apply to get_task, update_task, and delete_task endpoints</li>
+        <li>Return consistent error response body: {"detail": "Task not found"}</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>GET /tasks/nonexistent returns 404 with {"detail": "Task not found"}</li>
+        <li>PUT /tasks/nonexistent returns 404</li>
+        <li>DELETE /tasks/nonexistent returns 404</li>
+        <li>No unhandled KeyError stack traces in responses</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E2-S2</span>
+      <span class="story-title">Add global exception handler middleware</span>
+      <span class="badge badge-medium">medium</span>
+      <span class="badge badge-points">2 pts</span>
+    </div>
+    <p>Catch unhandled exceptions and return structured 500 responses. Log errors for observability.</p>
+    <details class="tasks">
+      <summary>4 tasks</summary>
+      <ul>
+        <li>Add exception handler for generic Exception returning 500</li>
+        <li>Add Python logging for caught exceptions (include traceback)</li>
+        <li>Ensure validation errors return clean 422 responses</li>
+        <li>Add tests for exception handler behavior</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>Unhandled exceptions return 500 with consistent JSON body</li>
+        <li>Stack traces are logged server-side but not exposed to clients</li>
+        <li>422 responses include field-level validation details</li>
+        <li>Health endpoint still returns 200</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E2-S3</span>
+      <span class="story-title">Return proper HTTP status codes for mutations</span>
+      <span class="badge badge-medium">medium</span>
+      <span class="badge badge-points">1 pt</span>
+      <span class="badge badge-dep">depends: E1-S2</span>
+    </div>
+    <p>Use 201 for resource creation and 204 for deletion instead of 200 for everything.</p>
+    <details class="tasks">
+      <summary>3 tasks</summary>
+      <ul>
+        <li>Update create_task to return 201 Created</li>
+        <li>Update delete_task to return 204 No Content</li>
+        <li>Update tests to assert correct status codes</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>POST /tasks/ returns 201</li>
+        <li>DELETE /tasks/{id} returns 204 with empty body</li>
+        <li>PUT /tasks/{id} still returns 200</li>
+        <li>GET endpoints still return 200</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Epic 3 -->
+<div class="epic">
+  <div class="epic-header">
+    <span class="epic-id">E3</span>
+    <span class="epic-title">JWT Authentication &amp; Authorization</span>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E3-S1</span>
+      <span class="story-title">Implement JWT token creation and verification</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">3 pts</span>
+    </div>
+    <p>Create auth module with JWT encode/decode utilities using PyJWT. Support configurable secret and expiration.</p>
+    <details class="tasks">
+      <summary>6 tasks</summary>
+      <ul>
+        <li>Add PyJWT to dependencies</li>
+        <li>Create src/auth.py with create_access_token(subject, role, expires_delta)</li>
+        <li>Add verify_token(token) function returning decoded payload or raising HTTPException(401)</li>
+        <li>Load JWT_SECRET from environment variable (fail fast if missing)</li>
+        <li>Add JWT_ALGORITHM and ACCESS_TOKEN_EXPIRE_MINUTES settings</li>
+        <li>Add unit tests for token creation, verification, and expiration</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>create_access_token returns valid JWT with sub, role, and exp claims</li>
+        <li>verify_token decodes valid tokens and returns payload</li>
+        <li>verify_token raises 401 for expired tokens</li>
+        <li>verify_token raises 401 for tokens with invalid signature</li>
+        <li>JWT_SECRET is required (not hardcoded)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E3-S2</span>
+      <span class="story-title">Create FastAPI auth dependencies</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">2 pts</span>
+      <span class="badge badge-dep">depends: E3-S1</span>
+    </div>
+    <p>Build reusable Depends() callables for extracting and validating JWT from Authorization header.</p>
+    <details class="tasks">
+      <summary>5 tasks</summary>
+      <ul>
+        <li>Create get_current_user dependency using OAuth2PasswordBearer</li>
+        <li>Extract Bearer token from Authorization header</li>
+        <li>Decode token and return user payload</li>
+        <li>Create require_role(role) dependency factory</li>
+        <li>Return 401 for missing/invalid tokens, 403 for insufficient role</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>get_current_user extracts user from valid Bearer token</li>
+        <li>Missing Authorization header returns 401</li>
+        <li>Invalid token returns 401 with {"detail": "Invalid credentials"}</li>
+        <li>require_role('admin') returns 403 for non-admin users</li>
+        <li>OpenAPI docs show lock icon on protected endpoints</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E3-S3</span>
+      <span class="story-title">Protect task mutation endpoints</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">2 pts</span>
+      <span class="badge badge-dep">depends: E3-S2, E1-S2</span>
+    </div>
+    <p>Apply auth dependencies to POST, PUT, DELETE endpoints. Keep GET endpoints public.</p>
+    <details class="tasks">
+      <summary>5 tasks</summary>
+      <ul>
+        <li>Add get_current_user dependency to create_task</li>
+        <li>Add get_current_user dependency to update_task</li>
+        <li>Add require_role('admin') to delete_task</li>
+        <li>Keep list_tasks and get_task public</li>
+        <li>Add integration tests with valid/invalid/missing tokens</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>POST /tasks/ without token returns 401</li>
+        <li>POST /tasks/ with valid token returns 201</li>
+        <li>DELETE /tasks/{id} without token returns 401</li>
+        <li>GET /tasks/ works without authentication</li>
+        <li>GET /tasks/{id} works without authentication</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E3-S4</span>
+      <span class="story-title">Add login endpoint for token issuance</span>
+      <span class="badge badge-medium">medium</span>
+      <span class="badge badge-points">2 pts</span>
+      <span class="badge badge-dep">depends: E3-S1</span>
+    </div>
+    <p>Create a simple /auth/token endpoint that issues JWTs using an in-memory user store (demo only).</p>
+    <details class="tasks">
+      <summary>6 tasks</summary>
+      <ul>
+        <li>Create src/routes/auth.py with POST /auth/token endpoint</li>
+        <li>Accept username/password via OAuth2PasswordRequestForm</li>
+        <li>Validate against simple in-memory user store</li>
+        <li>Return {"access_token": "...", "token_type": "bearer"}</li>
+        <li>Register auth router in main.py</li>
+        <li>Add tests for login success and failure</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>POST /auth/token with valid credentials returns access_token</li>
+        <li>POST /auth/token with invalid credentials returns 401</li>
+        <li>Returned token is valid and decodable</li>
+        <li>Token includes sub and role claims</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Epic 4 -->
+<div class="epic">
+  <div class="epic-header">
+    <span class="epic-id">E4</span>
+    <span class="epic-title">Test Coverage &amp; CI Readiness</span>
+  </div>
+
+  <div class="story">
+    <div class="story-header">
+      <span class="story-id">E4-S1</span>
+      <span class="story-title">Comprehensive endpoint test suite</span>
+      <span class="badge badge-high">high</span>
+      <span class="badge badge-points">3 pts</span>
+      <span class="badge badge-dep">depends: E1-S2, E2-S1, E3-S3</span>
+    </div>
+    <p>Add tests for all CRUD operations, error cases, validation failures, and auth flows.</p>
+    <details class="tasks">
+      <summary>7 tasks</summary>
+      <ul>
+        <li>Add tests for 404 responses on all task endpoints</li>
+        <li>Add tests for 422 validation errors</li>
+        <li>Add tests for authenticated create/update/delete flows</li>
+        <li>Add tests for unauthenticated access to protected endpoints</li>
+        <li>Add tests for role-based access control on delete</li>
+        <li>Add test for health endpoint remains accessible</li>
+        <li>Organize tests into test_tasks.py, test_auth.py, test_validation.py</li>
+      </ul>
+    </details>
+    <div class="ac">
+      <p class="ac-title">Acceptance Criteria</p>
+      <ul>
+        <li>All CRUD operations have happy-path tests</li>
+        <li>All error cases (404, 422, 401, 403) have tests</li>
+        <li>Auth flow (login, use token, expired token) is tested</li>
+        <li>Tests pass with pytest and produce clear output</li>
+        <li>Test files are organized by domain</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
