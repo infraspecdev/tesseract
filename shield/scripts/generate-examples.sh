@@ -228,6 +228,13 @@ process_example() {
   log "Processing example: ${example_name}"
   log "Project dir: ${project_dir}"
 
+  # Step 0: Clean up previous generated files
+  log "Cleaning previous generated artifacts..."
+  rm -rf "${project_dir}/docs/shield"
+  rm -rf "${project_dir}/.github"
+  rm -f "${project_dir}"/.shield-generate-*.log
+  ok "Cleaned previous artifacts"
+
   # Step 1: Add GitHub Actions
   add_github_actions "$project_dir" "$example_name"
   ok "Added GitHub Actions"
@@ -237,11 +244,10 @@ process_example() {
   ok "Updated .shield.json"
 
   # Step 3: Init git in example (claude needs git context)
-  if [ ! -d "${project_dir}/.git" ]; then
-    git -C "$project_dir" init -q
-    git -C "$project_dir" add .
-    git -C "$project_dir" commit -q -m "init" --no-gpg-sign
-  fi
+  rm -rf "${project_dir}/.git"
+  git -C "$project_dir" init -q
+  git -C "$project_dir" add .
+  git -C "$project_dir" commit -q -m "init" --no-gpg-sign
 
   # Step 4: Run phases in sequence
   local phases_fn="${example_name//-/_}_phases"
