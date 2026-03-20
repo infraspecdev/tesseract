@@ -36,6 +36,19 @@ Where:
 - Reviewing existing code or plans — use `shield:review` or `shield:plan-review`
 - Quick factual lookups that don't need citations
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Clarify topic | skip if user provided context | No |
+| 2 | PM framing | always | Yes |
+| 3 | Parallel research agents (3) | always | Yes |
+| 4 | Synthesize findings | always | Yes |
+| 5 | PM review | always | Yes |
+| 6 | Write document + update manifest | always | Yes |
+
 ## Workflow
 
 1. **Clarify topic** — skip if user already provided enough context
@@ -145,3 +158,14 @@ Include this output as a `## Product Lens` section in the final document, placed
 4. **Include dissenting views** — present both sides when sources disagree
 5. **Make it actionable** — end with concrete next steps
 6. **Keep it skimmable** — tables, headers, bullet points
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Skipping PM framing because "the topic is straightforward" | Always run PM framing — it prioritizes research questions and sets scope boundaries, preventing unfocused research |
+| Paraphrasing sources instead of using direct quotes | Use the original wording with attribution — paraphrases lose credibility and make claims harder to verify |
+| All 3 research agents returning the same sources | Each agent has a distinct source type (official docs, industry voices, community) — if they overlap, the prompts need sharper differentiation |
+| Writing Product Lens as a separate document instead of a section | PM review output goes inside findings.md as `## Product Lens` between Summary and References |
+| Including recommendations without source backing | Every recommendation must trace to at least one cited source — unsupported opinions violate rule 1 |
+| Omitting dissenting views when sources agree | If all sources agree, state that explicitly — the absence of disagreement is itself a finding worth noting |

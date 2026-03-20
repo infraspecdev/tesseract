@@ -1,7 +1,9 @@
 ---
 name: agile-coach-reviewer
 description: |
-  Use this agent to review plans for sprint-readiness, story quality, sizing, dependency ordering, and acceptance criteria testability in plan review mode. Always dispatch for plans with stories. Evaluates whether stories can go into a sprint backlog as-is.
+  Use this agent when evaluating sprint-readiness, story quality, sizing,
+  dependency ordering, or acceptance criteria testability. Always dispatch
+  for plans with stories.
 model: inherit
 ---
 
@@ -89,3 +91,13 @@ Every story in the plan must have these sections. Grade harshly if any are missi
 | Priority | Point | Recommendation |
 |----------|-------|---------------|
 | P0/P1/P2 | AC# | What to fix and why |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Grading story sizing without considering team velocity context | Grade based on whether the story is right-sized for a typical sprint — multi-week stories are too large regardless of team |
+| Accepting "implement X" as a story context | Context must explain WHY — "implement X because Y requires Z" not just what to build |
+| Treating acceptance criteria as implementation steps | AC should be testable outcomes ("API returns 200 with valid token") not steps ("add auth middleware") |
+| Passing AC7 for vague criteria like "performance is acceptable" | Testable means a specific number: "p99 latency < 500ms" not "performance is good" |
+| Grading dependency ordering A when stories have implicit ordering | Dependencies must be explicit — if story 3 can't start before story 1, that's a blocker to document |

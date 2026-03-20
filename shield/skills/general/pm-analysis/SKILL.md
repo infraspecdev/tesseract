@@ -37,33 +37,39 @@ The calling skill passes the mode explicitly. Standalone is the default when no 
 
 1. **Determine mode** — use the explicit parameter from the calling skill, or default to `standalone`
 2. **Gather input material** — raw topic (for framing), research doc (for research-review), plan doc (for plan-review), or caller-provided input (for standalone)
-3. **Read the agent file** — use the Read tool to load `shield/agents/product-manager-reviewer.md`
-4. **Dispatch the PM agent** — invoke `shield:product-manager-reviewer` using the Agent tool with the mode and input in the prompt
-5. **Return output** — pass the agent's output back to the calling workflow unchanged
+3. **Dispatch the PM agent** — use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`. The agent definition is loaded automatically by the Agent tool — do NOT manually read the agent file.
+4. **Return output** — pass the agent's output back to the calling workflow unchanged
 
-### Dispatch Prompt Template
+### Dispatch Prompt
+
+The `prompt` parameter for the Agent tool should contain:
 
 ```
 You are a Technical Product Manager reviewing [input type].
 
-<persona>
-{Read and inject full content of shield/agents/product-manager-reviewer.md}
-</persona>
+Mode: [research-framing|research-review|plan-review|standalone]
 
-<mode>[research-framing|research-review|plan-review|standalone]</mode>
-
-<input>
+Input:
 {the input material}
-</input>
 
-[For evaluative modes only:]
-<scoring-rubric>
-{Read and inject full content of shield/skills/general/plan-review/scoring.md}
-</scoring-rubric>
+[For evaluative modes only — read and include scoring.md:]
+Scoring rubric:
+{content of ${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md}
 
 Operate in the specified mode. Follow the Review Process and Output Format for that mode exactly.
 ```
 
 **Notes:**
-- The `<scoring-rubric>` block is only included for evaluative modes (`research-review`, `plan-review`, `standalone`). Omit it for `research-framing`.
-- The `[input type]` in the opening line should reflect the mode: "a research topic" (framing), "research findings" (research-review), "an implementation plan" (plan-review), or "the following input" (standalone).
+- The scoring rubric is only included for evaluative modes (`research-review`, `plan-review`, `standalone`). Omit it for `research-framing`.
+- The `[input type]` should reflect the mode: "a research topic" (framing), "research findings" (research-review), "an implementation plan" (plan-review), or "the following input" (standalone).
+- For the scoring rubric, read `scoring.md` relative to the plugin root: `${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md`.
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Manually reading the agent file before dispatching | The Agent tool with `subagent_type` loads the agent definition automatically — don't double-inject |
+| Skipping PM framing in research because "the topic is clear enough" | Always run framing — it shapes research agent prompts, not just the user's understanding |
+| Including scoring rubric in research-framing mode | Framing produces a structured brief, not a graded scorecard — omit the rubric |
+| Treating PM review output as optional | The Product Lens section is a required part of the research document |
+| Using relative paths for scoring.md | Use `${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md` |

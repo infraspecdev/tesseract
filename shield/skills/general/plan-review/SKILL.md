@@ -34,6 +34,20 @@ Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs
 - **Single-page design docs** without stories or infrastructure — overkill
 - **Non-plan documents** (READMEs, changelogs, runbooks) — wrong tool
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Load plan document | always | Yes |
+| 2 | Select reviewer personas | always | Yes |
+| 3 | Dispatch selected agents in parallel | always | Yes |
+| 4 | Parse grades + calculate scores | always | Yes |
+| 5 | Generate enhanced plan | always | Yes |
+| 6 | Write summary + detailed findings | always | Yes |
+| 7 | Update manifest | always | Yes |
+
 ## Plan Input
 
 The skill reads plan data from (in priority order):

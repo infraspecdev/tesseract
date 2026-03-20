@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shield Dashboard — python-api-example</title>
+<style>
+  :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .card-title { font-weight: 600; font-size: 1.1rem; }
+  .card-date { color: var(--muted); font-size: 0.85rem; }
+  .links { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .link { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--accent); text-decoration: none; font-size: 0.9rem; padding: 0.3rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.15s; }
+  .link:hover { border-color: var(--accent); text-decoration: none; }
+  .badge { display: inline-block; background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); border-radius: 12px; padding: 0.1em 0.6em; font-size: 0.75rem; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Shield Dashboard</h1>
+<p class="subtitle">python-api-example &middot; Plan &amp; review artifacts</p>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Input Validation &amp; JWT Auth</span>
+    <span class="card-date">2026-03-20</span>
+  </div>
+  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+    Add input validation, error handling, and JWT authentication to the FastAPI task API.
+    <span class="badge">4 epics &middot; 10 stories</span>
+  </p>
+  <div class="links">
+    <a class="link" href="input-validation-and-auth-20260320/plan/1-input-validation-and-auth/architecture.html">Architecture</a>
+    <a class="link" href="input-validation-and-auth-20260320/plan/1-input-validation-and-auth/plan.html">Execution Plan</a>
+    <a class="link" href="input-validation-and-auth-20260320/plan.json">Sidecar JSON</a>
+  </div>
+</div>
+
+</body>
+</html>

@@ -207,3 +207,14 @@ Flag these common cross-pillar trade-offs and ensure they're handled intentional
 - [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)
 - [AWS Well-Architected Tool](https://aws.amazon.com/well-architected-tool/)
 ```
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Treating all 6 pillars equally for every component | Weight pillars by component type — a VPC component cares more about Security and Reliability than Sustainability |
+| Grading Sustainability without actionable findings | Sustainability checks should produce concrete recommendations (Graviton instances, right-sized resources) not vague "consider carbon footprint" |
+| Missing cross-pillar trade-offs | Always check the Cross-Pillar Interactions table — cost optimizations that weaken security are the most common blind spot |
+| Scoring a pillar based on what's outside the component's scope | Only grade what the component controls — don't penalize a VPC component for missing application-level monitoring |
+| Giving "Needs Improvement" without a prioritized remediation plan | The remediation table (P1-P3) is mandatory — findings without actionable next steps are not useful |
+| Duplicating findings already covered by specialized reviewers | WAF review is holistic — if security-reviewer flagged missing encryption, reference it, don't re-grade it |

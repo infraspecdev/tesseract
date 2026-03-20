@@ -1,4 +1,5 @@
 {
   "project": "terraform-vpc-example",
-  "domains": ["terraform"]
+  "domains": ["terraform", "github-actions"],
+  "output_dir": "docs/shield"
 }

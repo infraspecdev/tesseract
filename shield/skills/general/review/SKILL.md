@@ -30,6 +30,21 @@ Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs
 - For plan review — use `plan-review` skill instead
 - For a single specific reviewer — use `/review-security`, `/review-cost`, etc.
 
+## Step Skeleton
+
+At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
+
+| Step | Action | Condition | Mandatory |
+|------|--------|-----------|-----------|
+| 1 | Load prior context (plan, research) | skip if none exists | No |
+| 2 | Code correctness review | always | Yes |
+| 3 | Domain-specific review | skip if no active domains | No |
+| 4 | Dispatch agent reviewers | explicit/final review only | No |
+| 5 | AC verification | skip if no plan.json | No |
+| 6 | Merge + present findings | always | Yes |
+| 7 | Apply selected fixes | always | Yes |
+| 8 | Write summary + update manifest | always | Yes |
+
 ## Review Process
 
 ### 1. Load Prior Context
@@ -189,3 +204,14 @@ Which fixes would you like to apply?
 - [Architecture](detailed/architecture.md)
 - [Operations](detailed/operations.md)
 - [Well-Architected](detailed/well-architected.md)
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Running full agent suite for a per-step review during implementation | Per-step reviews only need code correctness + domain skills — save the full agent suite for explicit `/review` |
+| Dispatching all agents without checking `.shield.json` reviewers config | Respect `always_include` and `never_include` from the project config before auto-selecting |
+| Applying fixes without user confirmation | Always present findings and ask which to apply — never auto-fix, especially for `NEEDS_DISCUSSION` items |
+| Writing detailed agent findings to summary.md instead of separate files | Each agent gets its own file in `detailed/<agent>.md` — summary.md only has the merged table |
+| Skipping AC verification because no plan sidecar exists | If there's no `plan.json`, skip AC verification silently — don't error or ask the user to create one |
+| Not deduplicating findings from multiple sources | If security-reviewer and terraform/security-audit flag the same issue, keep the most detailed one |
