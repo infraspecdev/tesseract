@@ -194,10 +194,9 @@ run_phase() {
 
   local output_file="${project_dir}/.shield-generate-${phase_name}.log"
 
-  if timeout "$TIMEOUT" claude --print \
-    --cwd "$project_dir" \
+  if (cd "$project_dir" && timeout "$TIMEOUT" claude --print \
     --allowedTools "Read,Write,Edit,Glob,Grep,Bash,Agent,Skill" \
-    "$prompt" \
+    "$prompt") \
     > "$output_file" 2>&1; then
     ok "Phase ${phase_name} completed"
   else
