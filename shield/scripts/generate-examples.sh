@@ -61,128 +61,6 @@ review|Invoke the skill 'shield:review' to review the current Terraform code for
 PHASES
 }
 
-# --- GitHub Actions ---
-
-add_github_actions() {
-  local project_dir="$1"
-  local example_name="$2"
-
-  mkdir -p "${project_dir}/.github/workflows"
-
-  case "$example_name" in
-    python-api)
-      cat > "${project_dir}/.github/workflows/ci.yml" <<'EOF'
-name: CI
-
-on:
-  pull_request:
-    branches: [main]
-    paths: ["src/**", "tests/**", "pyproject.toml"]
-  push:
-    branches: [main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
-      - run: uv sync
-      - run: uv run ruff check src/ tests/
-      - run: uv run ruff format --check src/ tests/
-      - run: uv run pytest tests/ -v --tb=short
-EOF
-      ;;
-    terraform-vpc)
-      cat > "${project_dir}/.github/workflows/ci.yml" <<'EOF'
-name: CI
-
-on:
-  pull_request:
-    branches: [main]
-    paths: ["src/**", "tests/**"]
-  push:
-    branches: [main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "~1.5"
-      - run: terraform -chdir=src fmt -check
-      - run: terraform -chdir=src init -backend=false
-      - run: terraform -chdir=src validate
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: src/
-          quiet: true
-          soft_fail: true
-
-  test:
-    runs-on: ubuntu-latest
-    needs: [validate]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "~1.5"
-      - run: terraform -chdir=src init -backend=false
-      - run: terraform -chdir=src test
-EOF
-      ;;
-  esac
-}
-
-# --- Update .shield.json ---
-
-update_shield_json() {
-  local project_dir="$1"
-  local example_name="$2"
-
-  case "$example_name" in
-    python-api)
-      cat > "${project_dir}/.shield.json" <<'EOF'
-{
-  "project": "python-api-example",
-  "domains": ["python", "github-actions"],
-  "output_dir": "docs/shield"
-}
-EOF
-      ;;
-    terraform-vpc)
-      cat > "${project_dir}/.shield.json" <<'EOF'
-{
-  "project": "terraform-vpc-example",
-  "domains": ["terraform", "github-actions"],
-  "output_dir": "docs/shield"
-}
-EOF
-      ;;
-  esac
-}
-
 # --- Run a single phase ---
 
 run_phase() {
@@ -228,28 +106,19 @@ process_example() {
   log "Processing example: ${example_name}"
   log "Project dir: ${project_dir}"
 
-  # Step 0: Clean up previous generated files
+  # Step 0: Clean up previous generated artifacts
   log "Cleaning previous generated artifacts..."
   rm -rf "${project_dir}/docs/shield"
-  rm -rf "${project_dir}/.github"
   rm -f "${project_dir}"/.shield-generate-*.log
   ok "Cleaned previous artifacts"
 
-  # Step 1: Add GitHub Actions
-  add_github_actions "$project_dir" "$example_name"
-  ok "Added GitHub Actions"
-
-  # Step 2: Update .shield.json
-  update_shield_json "$project_dir" "$example_name"
-  ok "Updated .shield.json"
-
-  # Step 3: Init git in example (claude needs git context)
+  # Step 1: Init git in example (claude needs git context)
   rm -rf "${project_dir}/.git"
   git -C "$project_dir" init -q
   git -C "$project_dir" add .
   git -C "$project_dir" commit -q -m "init" --no-gpg-sign
 
-  # Step 4: Run phases in sequence
+  # Step 2: Run phases in sequence
   local phases_fn="${example_name//-/_}_phases"
   while IFS='|' read -r phase_name prompt; do
     run_phase "$project_dir" "$phase_name" "$prompt" || {
@@ -258,7 +127,7 @@ process_example() {
     }
   done < <("$phases_fn" "$project_dir")
 
-  # Step 5: Clean up temp git
+  # Step 3: Clean up temp git
   rm -rf "${project_dir}/.git"
 
   ok "Example ${example_name} complete"
