@@ -23,7 +23,7 @@ EXAMPLES_DIR="${REPO_ROOT}/shield/examples"
 PLUGIN_ROOT="${REPO_ROOT}/shield"
 
 # --- Config ---
-TIMEOUT=600  # seconds per phase
+TIMEOUT=1200  # seconds per phase (20 min)
 SELECTED_EXAMPLE="${1:-all}"
 
 # --- Colors ---
