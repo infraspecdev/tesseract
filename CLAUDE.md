@@ -47,6 +47,15 @@ tesseract/
 - Config files with real workspace data (`sprint-planner.json`) are gitignored. Only example configs are tracked.
 - Never commit `.env` files or `settings.local.json`.
 
+## Skill Quality
+
+- **RED-GREEN testing is mandatory** when creating or modifying any skill, agent, or command. Before considering the work complete:
+  1. **RED**: Run a subagent WITHOUT the skill against a test scenario. Document baseline behavior — what it catches, what it misses, severity accuracy.
+  2. **GREEN**: Run a subagent WITH the skill loaded against the same scenario. Verify it catches more issues, grades severity correctly, and handles edge cases.
+  3. **REFACTOR**: If GREEN reveals gaps (agents skipping checks, missing edge cases), fix the skill and re-test.
+- Create test fixtures with intentional issues that exercise the skill's checks, including edge cases from the Common Mistakes table.
+- Skills should follow the `superpowers:writing-skills` guide for CSO, frontmatter, structure, and token efficiency.
+
 ## Git Conventions
 
 - Keep commits small and focused.
