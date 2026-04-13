@@ -1,6 +1,6 @@
 ---
 name: kubernetes-security-audit
-description: Use when auditing Kubernetes manifests for security vulnerabilities, reviewing RBAC policies, checking pod security, or validating network policies. Only triggers when K8s manifests are detected.
+description: Use when auditing Kubernetes manifests for security vulnerabilities, reviewing RBAC policies, checking pod security, or validating network policies. Also use when investigating ImagePullBackOff from untrusted registries or permission errors from over-permissive RBAC. Only triggers when K8s manifests are detected.
 ---
 
 # Kubernetes Security Audit

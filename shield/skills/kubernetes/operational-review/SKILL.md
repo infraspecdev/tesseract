@@ -1,6 +1,6 @@
 ---
 name: kubernetes-operational-review
-description: Use when reviewing Kubernetes workloads for production readiness, checking probes, PDBs, rollout strategy, or observability. Only triggers when K8s manifests are detected.
+description: Use when reviewing Kubernetes workloads for production readiness, checking probes, PDBs, rollout strategy, or observability. Also use when investigating CrashLoopBackOff, OOMKilled, Evicted, FailedScheduling, or pods stuck in Pending. Only triggers when K8s manifests are detected.
 ---
 
 # Kubernetes Operational Review

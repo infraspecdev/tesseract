@@ -1,6 +1,6 @@
 ---
 name: kubernetes-deprecation-check-and-upgrade
-description: Use when checking Kubernetes manifests for deprecated or removed APIs, planning K8s version upgrades, or migrating manifests to newer API versions. Triggered directly or cascading from other K8s skills.
+description: Use when checking Kubernetes manifests for deprecated or removed APIs, planning K8s version upgrades, or migrating manifests to newer API versions. Also use when another K8s review skill flags deprecated APIs.
 ---
 
 # Kubernetes Deprecation Check and Upgrade
@@ -50,24 +50,15 @@ Triggered by direct user request for upgrade/version checks, or as a cascading r
 
 ### Phase 4: Testing
 
-13. **Schema validation**: Recommend running `kubeconform` or `kubeval` against the target K8s version schema.
-14. **Dry-run validation**: Recommend `kubectl apply --dry-run=server` against a cluster running the target version.
-15. **Helm validation**: For Helm charts, recommend `helm template` + `helm lint` after migration.
-16. **Kustomize validation**: For Kustomize, recommend `kustomize build` after migration.
-17. **CI tool check**: Verify existing CI tools (kubeconform, pluto, kubeval) are configured for the target version.
-18. **Local Kind cluster validation**: Recommend spinning up a local Kind cluster at the target version for full validation. Provide exact commands:
-    ```
-    kind create cluster --name upgrade-test --image kindest/node:v<target-version>
-    kubectl apply -f <migrated-manifests>
-    # Run tests
-    kind delete cluster --name upgrade-test
-    ```
-    Note: this is a recommendation — user opts in. If Kind is not available, fall back to kubeconform and dry-run.
+13. **Schema validation**: Recommend `kubeconform` or `kubeval` against the target K8s version schema.
+14. **Dry-run validation**: Recommend `kubectl apply --dry-run=server` against a cluster running the target version. For Helm charts, also `helm template` + `helm lint`. For Kustomize, also `kustomize build`.
+15. **CI tool check**: Verify existing CI tools (kubeconform, pluto, kubeval) are configured for the target version.
+16. **Local Kind cluster validation**: Recommend a Kind cluster at the target version for full validation — user opts in. See `migration-guide.md` for exact commands and fallback options when Kind is unavailable.
 
 ### Phase 5: Rollback Assessment
 
-19. **One-way migrations**: Flag APIs where the old version is removed in the target K8s version — no rollback to old manifests possible.
-20. **Rollback strategy**: Recommend migration ordering based on version gap and risk. See `migration-guide.md`.
+17. **One-way migrations**: Flag APIs where the old version is removed in the target K8s version — no rollback to old manifests possible.
+18. **Rollback strategy**: Recommend migration ordering based on version gap and risk. See `migration-guide.md`.
 
 ## Critical Checks
 
