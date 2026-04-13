@@ -79,6 +79,7 @@ Read `.shield.json` to get active domains. For each active domain, check if a do
 - `terraform` → invoke `shield:terraform:review`
 - `atmos` → invoke `shield:atmos:review`
 - `github-actions` → invoke `shield:github-actions:review`
+- `kubernetes` → invoke `shield:kubernetes:review` (security-audit + cost-review + operational-review). Also dispatch `shield:kubernetes-reviewer` agent. Only if K8s manifests detected (YAML files with K8s `apiVersion`/`kind` fields, `Chart.yaml`, or `kustomization.yaml`).
 
 Domain skills run in parallel. Their findings are collected and merged.
 
