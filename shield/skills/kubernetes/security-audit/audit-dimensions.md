@@ -1,5 +1,20 @@
 # Kubernetes Security Audit Dimensions
 
+## Quick Scan — All Dimensions
+
+| # | Dimension | Key Question | Highest Severity |
+|---|-----------|-------------|-----------------|
+| 1 | RBAC Analysis | Are permissions scoped to minimum needed? | Critical |
+| 2 | Pod Security | Do containers run with least privilege? | Critical |
+| 3 | Network Policies | Is east-west traffic restricted? | Critical |
+| 4 | Secrets Management | Are secrets encrypted and properly referenced? | Critical |
+| 5 | Image Security | Are images pinned, versioned, and from trusted sources? | Critical |
+| 6 | Service Accounts | Does each workload have a dedicated SA with minimal permissions? | Important |
+| 7 | Pod Security Standards | Do workloads meet PSS Restricted (or Baseline with justification)? | Critical |
+| 8 | EKS-Specific | Is IRSA used? Is aws-auth minimal? (Only when EKS detected) | Important |
+
+Check every dimension. Do not skip dimensions even if early dimensions find critical issues.
+
 ## Dimension 1: RBAC Analysis
 
 Analyze every Role, ClusterRole, RoleBinding, and ClusterRoleBinding:
