@@ -54,6 +54,10 @@ For each workload, check:
 
 For each workload, recommend resource values for dev, staging, and production. See `sizing-reference.md` for common sizing patterns.
 
+### Step 4: Deprecation Flag
+
+If deprecated APIs with cost implications are found (e.g., deprecated `autoscaling/v2beta1` HPA that affects scaling behavior, deprecated `policy/v1beta1` PDB), flag them in findings and recommend running `deprecation-check-and-upgrade` for full migration guidance.
+
 ## Common Cost Traps
 
 | Trap | Typical Impact | Fix |
@@ -65,10 +69,6 @@ For each workload, recommend resource values for dev, staging, and production. S
 | Over-sized PVCs | Paying for unused storage | Right-size PVCs, use volume expansion if supported |
 | High replica count in dev/staging | Paying for prod-scale in non-prod | Use Kustomize overlays to reduce replicas per environment |
 | CronJobs with large resource requests | Resources allocated for burst but idle most of the time | Right-size to actual job needs, consider spot/preemptible |
-
-## Deprecated API Handling
-
-If deprecated APIs with cost implications are found during the review (e.g., deprecated HPA autoscaling versions that affect scaling behavior), flag them in findings and recommend running `deprecation-check-and-upgrade` for full migration guidance.
 
 ## EKS-Specific Cost Checks
 
