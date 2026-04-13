@@ -63,6 +63,13 @@ See `ops-checklist.md` for detailed check tables.
 | Not checking terminationGracePeriodSeconds | Default 30s assumed sufficient | Must match actual graceful shutdown time (e.g., connection draining) |
 | Flagging missing anti-affinity on dev | Dev typically runs 1 replica | Anti-affinity is for multi-replica production workloads |
 
+## Related Skills
+
+If you find issues outside the operational domain during the review, recommend the relevant K8s skill:
+- RBAC misconfigurations, missing securityContext, secrets in env vars → recommend `kubernetes-security-audit`
+- Over-provisioned resources, missing HPA, LoadBalancer cost → recommend `kubernetes-cost-review`
+- Helm chart structural issues → recommend `kubernetes-helm-review`
+
 ## Supporting Files
 
 - `ops-checklist.md` — Detailed check tables for probes, PDBs, rollout, topology, observability, shutdown, and dependencies

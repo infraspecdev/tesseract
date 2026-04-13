@@ -69,6 +69,13 @@ These are the highest-priority items to flag:
 | Flagging missing NetworkPolicy in kube-system | kube-system typically needs open internal communication | Skip kube-system namespace for NetworkPolicy checks unless explicitly requested |
 | Treating `readOnlyRootFilesystem: false` as always critical | Some applications need writable tmp directories | Flag as Important, not Critical; suggest `emptyDir` volume mounts as alternative |
 
+## Related Skills
+
+If you find issues outside the security domain during the audit, recommend the relevant K8s skill:
+- Over-provisioned resources, missing HPA, LoadBalancer cost → recommend `kubernetes-cost-review`
+- Missing probes, no PDB, no graceful shutdown → recommend `kubernetes-operational-review`
+- Helm chart structural issues → recommend `kubernetes-helm-review`
+
 ## Supporting Files
 
 - `audit-dimensions.md` — Detailed check tables for RBAC, pod security, network policies, secrets, images, service accounts, PSS, and EKS-specific dimensions

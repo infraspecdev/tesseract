@@ -82,6 +82,13 @@ Only apply when EKS is detected:
 | GP2 volumes instead of GP3 | GP2 is 20% more expensive with worse baseline | Use GP3 storage class |
 | No cluster autoscaler or Karpenter | Nodes not scaling down when empty | Configure node scaling for non-prod environments |
 
+## Related Skills
+
+If you find issues outside the cost domain during the review, recommend the relevant K8s skill:
+- RBAC misconfigurations, missing securityContext, secrets in env vars → recommend `kubernetes-security-audit`
+- Missing probes, no PDB, no graceful shutdown → recommend `kubernetes-operational-review`
+- Helm chart structural issues → recommend `kubernetes-helm-review`
+
 ## Supporting Files
 
 - **`sizing-reference.md`** — Resource sizing guidelines by workload type, common patterns
