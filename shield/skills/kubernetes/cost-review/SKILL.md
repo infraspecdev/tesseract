@@ -66,6 +66,10 @@ For each workload, recommend resource values for dev, staging, and production. S
 | High replica count in dev/staging | Paying for prod-scale in non-prod | Use Kustomize overlays to reduce replicas per environment |
 | CronJobs with large resource requests | Resources allocated for burst but idle most of the time | Right-size to actual job needs, consider spot/preemptible |
 
+## Deprecated API Handling
+
+If deprecated APIs with cost implications are found during the review (e.g., deprecated HPA autoscaling versions that affect scaling behavior), flag them in findings and recommend running `deprecation-check-and-upgrade` for full migration guidance.
+
 ## EKS-Specific Cost Checks
 
 Only apply when EKS is detected:
