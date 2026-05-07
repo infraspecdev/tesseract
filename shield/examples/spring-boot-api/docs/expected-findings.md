@@ -42,3 +42,7 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | deployment-safety-review | `config/AppConfig.java` | 14-17 | high | In-memory cache in a singleton bean — diverges across multi-instance deploys |
 | deployment-safety-review | `config/AppConfig.java` | 21 | medium | Risky pricing change rolled in via static constant — no feature flag |
 | deployment-safety-review | `db/migration/V3__drop_email_column.sql` | 5 | high | Destructive migration without feature-flag gating; cannot roll back without restoring data |
+| concurrency-review | `service/CounterService.java` | 14-15 | high | Shared mutable state (`HashMap`, `int`) in singleton without synchronization |
+| concurrency-review | `service/CounterService.java` | 18-23 | high | Read-modify-write race on `totalRequests` and counter map |
+| concurrency-review | `service/CounterService.java` | 27-33 | high | Fire-and-forget `CompletableFuture.runAsync` — exceptions silently lost |
+| concurrency-review | `service/CounterService.java` | 37-39 | medium | Operation not idempotent — retry causes duplicate side effects |
