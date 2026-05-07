@@ -13,3 +13,11 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | code-quality-review | `service/UserService.java` | 37-52 | high | `registerAdmin` is a copy of `registerUser` (DRY violation) |
 | code-quality-review | `service/UserService.java` | 56-58 | medium | `findUsers` accepts unused parameters (YAGNI / speculative generality) |
 | code-quality-review | `service/UserService.java` | 61-76 | medium | `doStuff` has poor naming, deep nesting, no early returns |
+| api-design-review | `controller/UserController.java` | 12 | medium | No version prefix in `@RequestMapping` ("/api" alone) |
+| api-design-review | `controller/UserController.java` | 19-24 | high | GET used for a state-changing operation (`/createUser`) |
+| api-design-review | `controller/UserController.java` | 28-31 | medium | Verb in URI (`/getAllUsers`); resource modeling violation |
+| api-design-review | `controller/UserController.java` | 28-31 | medium | No pagination on a list endpoint |
+| api-design-review | `controller/UserController.java` | 36-41 | high | 200 OK returned for missing resource (should be 404) |
+| api-design-review | `controller/UserController.java` | 36-41 | medium | Inconsistent error response shape vs success shape |
+| api-design-review | `controller/UserController.java` | 44-48 | high | PUT used for non-idempotent operation (append) |
+| api-design-review | `controller/UserController.java` | 51-54 | low | DELETE returns 200 with body (should be 204 No Content) |
