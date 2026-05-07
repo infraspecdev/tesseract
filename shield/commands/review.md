@@ -34,7 +34,7 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
 
 1. Follow the review workflow:
    - Code correctness review on changed files
-   - Domain-specific review skills (terraform, atmos, etc.)
+   - Domain-specific review skills (terraform, atmos, kubernetes, backend, etc.)
    - Agent reviews (security, cost, architecture, operations)
    - Acceptance criteria verification (if story context from `{output_dir}/{feature}/plan.json`)
 2. Findings are merged, deduplicated, sorted by severity
