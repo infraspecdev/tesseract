@@ -24,6 +24,9 @@ clickup-sprint-planner/phases/
 # Superpowers brainstorming sessions (visual companion artifacts)
 .superpowers/
 
+# Git worktrees (isolated dev workspaces)
+.worktrees/
+
 # E2E test output (JSONL artifacts + summaries)
 shield/tests/output/
 
