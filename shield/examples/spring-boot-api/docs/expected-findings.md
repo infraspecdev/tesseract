@@ -65,3 +65,7 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | spring-security | `config/SecurityConfig.java` | 27 | high | CSRF disabled with no compensating control or explicit reason |
 | spring-security | `config/SecurityConfig.java` | 30-32 | high | All endpoints `permitAll()` — authentication effectively disabled |
 | spring-security | `config/SecurityConfig.java` | 35 | medium | HTTP Basic configured without HTTPS enforcement |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 19 | high | `@SpringBootTest` for controller-only test; should be `@WebMvcTest(UserController.class)` |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 21 | high | `@DirtiesContext(BEFORE_EACH_TEST_METHOD)` — context recreation per test is very slow |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 28-32 | medium | `@MockBean` overuse — slice annotation handles auto-config; MockBean only for true external collaborators |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 37-40 | high | Test relies on shared H2 state and has no assertions on the response |
