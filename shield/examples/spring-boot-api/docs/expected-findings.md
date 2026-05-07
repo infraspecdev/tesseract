@@ -39,3 +39,6 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | error-observability-review | `exception/GlobalExceptionHandler.java` | 16 | medium | Returns raw exception message to client — leaks internals |
 | error-observability-review | `service/OrderService.java` | 10-18 | medium | Exception-as-control-flow in `isValid` |
 | error-observability-review | `service/OrderService.java` | 22-30 | high | `chargeCustomer` swallows exception silently with no log/metric/rethrow |
+| deployment-safety-review | `config/AppConfig.java` | 14-17 | high | In-memory cache in a singleton bean — diverges across multi-instance deploys |
+| deployment-safety-review | `config/AppConfig.java` | 21 | medium | Risky pricing change rolled in via static constant — no feature flag |
+| deployment-safety-review | `db/migration/V3__drop_email_column.sql` | 5 | high | Destructive migration without feature-flag gating; cannot roll back without restoring data |
