@@ -42,11 +42,26 @@ jobs:
               git tag "$TAG"
               git push origin "$TAG"
 
-              gh release create "$TAG" \
+              RELEASE_URL=$(gh release create "$TAG" \
                 --title "v${version}" \
                 --notes "$NOTES" \
-                --target main
+                --target main)
+
+              if [ -z "$GCHAT_WEBHOOK_URL" ]; then
+                echo "GCHAT_WEBHOOK_URL secret is not set" >&2
+                exit 1
+              fi
+
+              PAYLOAD=$(jq -n \
+                --arg text "🚀 *${GITHUB_REPOSITORY}* — *v${version}* released by ${GITHUB_ACTOR}"$'\n\n'"${NOTES}"$'\n\n'"${RELEASE_URL}" \
+                '{text: $text}')
+
+              curl -sS --fail-with-body -X POST \
+                -H "Content-Type: application/json" \
+                -d "$PAYLOAD" \
+                "$GCHAT_WEBHOOK_URL"
             fi
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GCHAT_WEBHOOK_URL: ${{ secrets.GCHAT_WEBHOOK_URL }}
