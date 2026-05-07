@@ -69,3 +69,7 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | spring-test | `test/.../UserControllerIntegrationTest.java` | 21 | high | `@DirtiesContext(BEFORE_EACH_TEST_METHOD)` — context recreation per test is very slow |
 | spring-test | `test/.../UserControllerIntegrationTest.java` | 28-32 | medium | `@MockBean` overuse — slice annotation handles auto-config; MockBean only for true external collaborators |
 | spring-test | `test/.../UserControllerIntegrationTest.java` | 37-40 | high | Test relies on shared H2 state and has no assertions on the response |
+| jvm-language-review | `model/User.java` | (getOrdersMutable) | medium | Returns internal mutable list — callers can mutate entity state |
+| jvm-language-review | `model/User.java` | (class level) | medium | Missing `equals`/`hashCode` on entity used in collections |
+| jvm-language-review | `model/Order.java` | (setAmount) | low | Public setter on entity field — prefer intent-revealing methods |
+| jvm-language-review | `model/Order.java` | (class level) | medium | Entity has mutable fields and no `equals`/`hashCode` |
