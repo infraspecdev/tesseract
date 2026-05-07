@@ -61,3 +61,7 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | spring-data | `service/OrderProcessingService.java` | 32-35 | medium | Read method missing `readOnly = true` |
 | spring-data | `service/OrderProcessingService.java` | 39-42 | medium | `REQUIRES_NEW` propagation without justification |
 | spring-data | `repository/UserRepository.java` | (updateEmail) | high | Mutating JPQL `@Query` without `@Modifying` — update never runs |
+| spring-security | `config/SecurityConfig.java` | 16-20 | high | `NoOpPasswordEncoder` stores passwords in plaintext |
+| spring-security | `config/SecurityConfig.java` | 27 | high | CSRF disabled with no compensating control or explicit reason |
+| spring-security | `config/SecurityConfig.java` | 30-32 | high | All endpoints `permitAll()` — authentication effectively disabled |
+| spring-security | `config/SecurityConfig.java` | 35 | medium | HTTP Basic configured without HTTPS enforcement |
