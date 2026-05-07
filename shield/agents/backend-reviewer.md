@@ -70,11 +70,56 @@ Or skip stack-specific review for this run: type "skip"
 
 Treat the user's reply identically to a positive detection. Do NOT persist the choice — re-ask each greenfield run.
 
+### Spring sub-detection (Java/Kotlin path)
+
+When Java/Kotlin is detected (via `pom.xml`, `build.gradle`, `build.gradle.kts`, or `settings.gradle*`), inspect the dependency declarations to decide which Spring skills apply. Spring skills load only when their corresponding starter is present.
+
+| Sub-marker (in pom.xml or build.gradle*) | Spring skill activated |
+|---|---|
+| `org.springframework.boot:spring-boot-starter` (or any `spring-boot-starter-*`) | `spring-config` (default for any Spring Boot app) |
+| `spring-boot-starter-web` or `spring-boot-starter-webflux` | `spring-web` |
+| `spring-boot-starter-data-jpa`, `spring-boot-starter-data-jdbc`, `spring-boot-starter-data-mongodb`, etc. | `spring-data` |
+| `spring-boot-starter-security` | `spring-security` |
+| `spring-boot-starter-test` (with test source files present) | `spring-test` |
+| Any Java or Kotlin source file (`.java`, `.kt`) under the module | `jvm-language-review` |
+| Java/Kotlin module with NO Spring Boot dependency (e.g., Quarkus, Micronaut, plain JVM) | `jvm-language-review` only; emit note "Spring skills do not apply" |
+
+If `spring-boot-starter-test` is in `pom.xml` but no test source files exist, do not load `spring-test` (no targets to review).
+
+For Gradle projects, parse the `dependencies { ... }` block in `build.gradle` or `build.gradle.kts` looking for the same artifact IDs.
+
+### Spring Boot version detection
+
+After detecting that a Spring skill applies, capture the Spring Boot **major version** (`2.x`, `3.x`, `4.x`):
+
+- **Maven (`pom.xml`):** read `<parent><artifactId>spring-boot-starter-parent</artifactId><version>X.Y.Z</version>`. Extract major from `X`. Fallback: any `<dependency>` with `groupId=org.springframework.boot` and an explicit `<version>`.
+- **Gradle (`build.gradle`/`build.gradle.kts`):** read `id 'org.springframework.boot' version 'X.Y.Z'` from the `plugins { ... }` block, OR an explicit `org.springframework.boot:spring-boot-starter` version in `dependencies { ... }`. Extract major.
+- **No version found:** assume `3.x` (current default; v1 skill target).
+
+Each Spring SKILL.md declares its supported versions in the frontmatter `spring_boot_versions` field (e.g., `spring_boot_versions: ["3.x"]`). After loading a skill, compare the detected version to the declared list:
+
+| Detected version | Skill declares | Behavior |
+|---|---|---|
+| In declared list | `["3.x"]` matches `3.x` | Apply skill normally |
+| Not in declared list | `["3.x"]` but detected `2.x` | Apply skill + emit one-line note: "skill `<name>` targets {declared}; detected SB {version} — see the skill's Version Compatibility section for which checks apply" |
+| No spring_boot_versions field | (legacy / version-stable skill) | Apply normally; no note |
+
+For each unsupported-version emission, list the skill name and the detected version in the agent's report header so reviewers don't miss it.
+
+### Java version detection (for `jvm-language-review`)
+
+Capture the Java **major version** from `pom.xml`/`build.gradle*`:
+
+- **Maven:** `<properties><java.version>17</java.version></properties>` or `<maven.compiler.source>17</maven.compiler.source>`.
+- **Gradle:** `sourceCompatibility = JavaVersion.VERSION_17` or `java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }`.
+
+Used by `jvm-language-review` to gate language-feature checks (records require Java 14+, sealed types require Java 17+, etc.). The skill's "Java Version Compatibility" section documents which checks apply at which Java level.
+
 ---
 
 ## Skill Loading
 
-**Always load (agnostic):**
+**Always load (agnostic — apply to all backend stacks):**
 
 - `backend/code-quality-review`
 - `backend/api-design-review`
@@ -84,7 +129,16 @@ Treat the user's reply identically to a positive detection. Do NOT persist the c
 - `backend/deployment-safety-review`
 - `backend/concurrency-review`
 
-**Framework-specific (per detected stack):** None in v1. Plan 2 adds Java/Kotlin Spring skills with conditional sub-detection.
+**Framework-specific (Java/Kotlin path, conditional on Spring sub-detection):**
+
+- `backend/spring-web` — when `spring-boot-starter-web`/`webflux` detected
+- `backend/spring-data` — when `spring-boot-starter-data-*` detected
+- `backend/spring-config` — when any `spring-boot-starter` detected (default)
+- `backend/spring-security` — when `spring-boot-starter-security` detected
+- `backend/spring-test` — when `spring-boot-starter-test` detected and test source files exist
+- `backend/jvm-language-review` — when any `.java` or `.kt` source file in the module
+
+**Other stacks (Python, Node/TS, Go):** No framework skills in v1 — Plan 2 covers Java/Kotlin only. Python ships in v2, Node/TS in v3, Go in v4.
 
 ---
 
@@ -187,4 +241,4 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Dispatching `cost-reviewer` on backend code | `cost-reviewer` is infra-flavored — backend cost concerns (connection pools, executor sizing) are deferred |
 | Failing to scope monorepo output by module | Findings without module grouping are unreadable in a 5-service repo. Always group |
 | Persisting greenfield stack choice | The user re-confirms each greenfield run unless they manually pin via `.shield.json` |
-| Running framework-specific Spring skills before Plan 2 lands | v1 ships zero framework skills. Java/Kotlin repos receive agnostic-only review until Plan 2 |
+| Loading all Spring skills regardless of detected starters | Sub-detect — `spring-security` only loads when `spring-boot-starter-security` is in the dependencies. Avoids false positives on Spring apps that don't use Security |
