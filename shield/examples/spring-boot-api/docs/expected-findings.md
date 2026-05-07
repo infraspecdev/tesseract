@@ -51,3 +51,8 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | spring-config | `config/AppProperties.java` | 13-22 | medium | Mutable `@ConfigurationProperties` bean (setters); prefer immutable records |
 | spring-config | `application-prod.yml` | 8-9 | high | Hardcoded secret (`spring.datasource.password`) in committed source |
 | spring-config | `config/AppConfig.java` | 27-28 | medium | `@Value` for typed config; should use `@ConfigurationProperties` |
+| spring-web | `controller/UserController.java` | 18-19 | high | Field injection via `@Autowired` — should be constructor injection |
+| spring-web | `controller/UserController.java` | 62-65 | medium | `@RequestMapping` with no `method` attribute; use `@PostMapping` |
+| spring-web | `controller/UserController.java` | 62-65 | high | Missing `@Valid` on `@RequestBody`; incoming payload unvalidated |
+| spring-web | `controller/UserController.java` | 71-75 | medium | `@ResponseStatus` + return value mix; status source is ambiguous |
+| spring-web | `controller/UserController.java` | 79-82 | low | Mixed-case path segment `/userProfile/`; inconsistent with kebab-case elsewhere |

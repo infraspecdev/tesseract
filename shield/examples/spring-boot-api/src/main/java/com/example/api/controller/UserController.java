@@ -1,8 +1,11 @@
 package com.example.api.controller;
 
 import com.example.api.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Map;
@@ -51,5 +54,30 @@ public class UserController {
     @DeleteMapping("/user/{id}")
     public Map<String, Object> deleteUser(@PathVariable Long id) {
         return Map.of("deleted", id, "email", "stub@example.com");
+    }
+
+    // VIOLATION: @RequestMapping with no method attribute — defaults to all methods.
+    // Should be @PostMapping for clarity.
+    // VIOLATION: Missing @Valid on @RequestBody — incoming payload not validated.
+    @org.springframework.web.bind.annotation.RequestMapping("/v2/users")
+    public Map<String, Object> createUserV2(@RequestBody Map<String, String> payload) {
+        return Map.of("created", payload.getOrDefault("email", ""));
+    }
+
+    // VIOLATION: ResponseEntity not used where it should be — handler returns a Map but
+    // the spec says return 201 Created with a Location header. Use ResponseEntity.
+    // VIOLATION: @ResponseStatus on a method that also returns ResponseEntity-style map
+    // (status comes from two sources, ambiguous).
+    @org.springframework.web.bind.annotation.PostMapping("/v2/users/{id}/promote")
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.OK)
+    public Map<String, Object> promote(@org.springframework.web.bind.annotation.PathVariable Long id) {
+        return Map.of("promoted", id);
+    }
+
+    // VIOLATION: Mixed-case path segment — Spring is case-sensitive; inconsistent with
+    // the kebab-case convention used elsewhere in this controller.
+    @org.springframework.web.bind.annotation.GetMapping("/userProfile/{userId}")
+    public Map<String, Object> getUserProfile(@org.springframework.web.bind.annotation.PathVariable Long userId) {
+        return Map.of("userId", userId);
     }
 }
