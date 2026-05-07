@@ -27,3 +27,10 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | testing-strategy-review | `test/.../UserServiceTest.java` | 42-47 | medium | Shared mutable static state across tests |
 | testing-strategy-review | `test/.../UserServiceTest.java` | 52-58 | medium | Asserts internal detail / weak assertion |
 | testing-strategy-review | `test/.../UserServiceTest.java` | 61-65 | high | No assertions — test passes regardless |
+| database-review | `model/User.java` | 8 | medium | No `@Table` with explicit name |
+| database-review | `model/User.java` | 13-14 | medium | No `@Column` constraints (nullable, unique, length) on email/password |
+| database-review | `model/User.java` | 18-20 | high | EAGER fetch on `@OneToMany` causes load-everything; risks N+1 and memory blowups |
+| database-review | `repository/UserRepository.java` | 12 | high | `findAll` with EAGER child loads triggers SELECT N+1 |
+| database-review | `repository/UserRepository.java` | 14-15 | medium | LIKE query without pagination; full table scan on production-sized data |
+| database-review | `db/migration/V1__create_users.sql` | 2-6 | medium | No index on `email` column |
+| database-review | `db/migration/V3__drop_email_column.sql` | 5 | high | Destructive migration without expand/contract; breaks rolling deploys |
