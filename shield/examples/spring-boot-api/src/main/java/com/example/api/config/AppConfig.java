@@ -21,4 +21,9 @@ public class AppConfig {
     // No feature flag, no gradual rollout, no kill switch.
     // Risky changes should be behind a runtime flag.
     public static final boolean NEW_PRICING_ENABLED = true;
+
+    // VIOLATION: @Value for a typed config value. Should be in @ConfigurationProperties
+    // for type safety, default handling, and validation.
+    @org.springframework.beans.factory.annotation.Value("${app.timeout-seconds:30}")
+    private int timeoutSeconds;
 }

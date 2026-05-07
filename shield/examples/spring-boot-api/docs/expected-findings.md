@@ -46,3 +46,8 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | concurrency-review | `service/CounterService.java` | 18-23 | high | Read-modify-write race on `totalRequests` and counter map |
 | concurrency-review | `service/CounterService.java` | 27-33 | high | Fire-and-forget `CompletableFuture.runAsync` — exceptions silently lost |
 | concurrency-review | `service/CounterService.java` | 37-39 | medium | Operation not idempotent — retry causes duplicate side effects |
+| spring-config | `config/AppProperties.java` | 8-11 | high | `@ConfigurationProperties` without `prefix` attribute — properties will not bind |
+| spring-config | `config/AppProperties.java` | 8-11 | medium | Missing `@Validated` on `@ConfigurationProperties` — invalid config won't fail at startup |
+| spring-config | `config/AppProperties.java` | 13-22 | medium | Mutable `@ConfigurationProperties` bean (setters); prefer immutable records |
+| spring-config | `application-prod.yml` | 8-9 | high | Hardcoded secret (`spring.datasource.password`) in committed source |
+| spring-config | `config/AppConfig.java` | 27-28 | medium | `@Value` for typed config; should use `@ConfigurationProperties` |
