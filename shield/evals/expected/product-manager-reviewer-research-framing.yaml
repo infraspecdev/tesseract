@@ -1,0 +1,63 @@
+# PM reviewer eval criteria — research-framing mode with broader-coverage discipline
+# Evaluated against: shield/evals/inputs/research-framing-event-sourcing/
+#
+# Test scenario: a topic with clear definitional voices (Greg Young / Martin Fowler
+# on event sourcing) and multiple source-type categories (peer-reviewed, regulatory,
+# vendor docs, practitioner experience). The framing output must explicitly carve
+# out a place for both definitional voices (PF7) and source-type coverage (PF8) —
+# otherwise these slip through the official/industry/community stream model.
+
+agent: product-manager-reviewer
+mode: research-framing
+input: research-framing-event-sourcing
+
+must_find:
+  - id: pf7-must-cite-voices-section
+    description: "Framing output contains a Must-Cite Definitional/Origin Voices section"
+    match: "Must-Cite.*Definitional|Definitional.*Origin.*Voices|Must-Cite.*Origin"
+  - id: pf7-named-individual
+    description: "PF7 names at least one definitional/origin voice (Greg Young, Martin Fowler, or similar)"
+    match: "Greg Young|Martin Fowler|Vaughn Vernon|Eric Evans"
+  - id: pf7-canonical-artifact
+    description: "PF7 entry includes a canonical artifact link or reference"
+    match: "https?://|martinfowler\\.com|youtube\\.com|infoq\\.com|\\.pdf"
+  - id: pf8-coverage-matrix-section
+    description: "Framing output contains a Source-Type Coverage Matrix section"
+    match: "Source-Type Coverage Matrix|Source.Type.Coverage|Coverage Matrix"
+  - id: pf8-peer-reviewed-row
+    description: "Coverage matrix includes peer-reviewed/academic as a category"
+    match: "[Pp]eer.?reviewed|[Aa]cademic|[Rr]esearch.*paper"
+  - id: pf8-regulatory-row
+    description: "Coverage matrix includes regulatory/standards (load-bearing for fintech topic)"
+    match: "[Rr]egulatory|[Ss]tandards|[Cc]ompliance"
+  - id: pf8-vendor-docs-row
+    description: "Coverage matrix includes vendor docs/specs"
+    match: "[Vv]endor.*doc|[Ss]pec|[Vv]endor.*report"
+  - id: pf8-practitioner-row
+    description: "Coverage matrix includes practitioner experience"
+    match: "[Pp]ractitioner|[Cc]ommunity.*experience|[Cc]onference.*talk|[Pp]odcast"
+  - id: pf8-stream-ownership-official
+    description: "Coverage matrix references the 'official' stream"
+    match: "official"
+  - id: pf8-stream-ownership-industry
+    description: "Coverage matrix references the 'industry' stream"
+    match: "industry"
+  - id: pf8-stream-ownership-community
+    description: "Coverage matrix references the 'community' stream"
+    match: "community"
+
+should_find:
+  - id: pf7-voice-greg-young
+    description: "PF7 names Greg Young (event sourcing originator)"
+    match: "Greg Young"
+  - id: pf7-voice-martin-fowler
+    description: "PF7 names Martin Fowler (event sourcing canonical reference)"
+    match: "Martin Fowler"
+  - id: pf8-tunes-to-topic
+    description: "Matrix shows topic-specific tuning — fintech topic should weight regulatory heavy"
+    match: "[Hh]eavily weighted|[Rr]egulatory.*heavy|[Rr]egulatory.*yes"
+
+must_not_false_positive:
+  - id: not-pm-scorecard
+    description: "Framing mode must not produce PM1-PM10 graded scorecard (that's review mode)"
+    match_absence_in: "PM1.*PM2.*PM3|Grade:.*[A-F]|Scorecard"

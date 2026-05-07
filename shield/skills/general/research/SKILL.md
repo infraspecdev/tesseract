@@ -91,10 +91,27 @@ Context from product analysis:
 - Scope: [from PM framing]
 - Timeline: [from PM framing]
 
+## Voices that MUST appear with a direct quote (from framing PF7)
+[Paste the framing's Must-Cite Definitional/Origin Voices list verbatim. These voices MUST be quoted in your output regardless of which stream is your natural home — definitional/origin voices fall between "shipped a system" and "reported a failure" buckets unless explicitly carved out.]
+
+## Source-type categories this stream owns (from framing PF8)
+[Paste the rows of the Source-Type Coverage Matrix where this stream is the owning stream. Find at least one direct quote per assigned category in your output.]
+
 Return direct quotes with attribution, source URLs, key data points. Prioritize findings that address the key questions above.
+
+## Additionally — Further Exploration candidates
+Alongside the sources you cite in the body of your findings, surface 3–8 items for **Further Exploration** — high-quality media that a reader could use to go deeper on this topic but that you did NOT cite in your findings body. Organize by media type:
+- Books
+- Long-form blogs / articles
+- Videos / talks
+- Courses
+- Podcasts / podcast episodes
+- Other (newsletters, communities, X threads, conference programs)
+
+Each item: one line — title, author/host, link, and a short "why it's worth reading/watching." These are NOT citations; they are recommendations for further learning. The synthesis step will curate across all three streams.
 ```
 
-If PM framing was skipped, use the original prompt: `Research [topic] from [source type]. Return direct quotes with attribution, source URLs, key data points.`
+If PM framing was skipped, use the original prompt: `Research [topic] from [source type]. Return direct quotes with attribution, source URLs, key data points.` Note that Further Exploration recommendations should still be surfaced even when framing is skipped.
 
 ## Synthesize Findings
 
@@ -102,6 +119,8 @@ If PM framing was skipped, use the original prompt: `Research [topic] from [sour
 - Note disagreements and what drives them
 - Map findings to the user's specific context
 - Form a clear recommendation with reasoning
+- **Honor the framing brief** — every voice on the framing's PF7 Must-Cite list must appear with a direct quote in the body of the synthesis (not just References); every required category on the framing's PF8 Source-Type Coverage Matrix must have at least one direct quote in the body. The PM-review pass (PM11) will pressure-test this; surface gaps now rather than have them returned as recommendations.
+- **Curate Further Exploration** — collect the Further Exploration candidates from all three stream outputs, deduplicate, drop anything that's already cited in the body (those go in References), and organize the remainder by media type (Books / Long-form blogs / Videos & talks / Courses / Podcasts / Other) for the Further Exploration section of the output.
 
 ## PM Review
 
@@ -147,8 +166,31 @@ Include this output as a `## Product Lens` section in the final document, placed
 [PM review output — narrative sections and scorecard from the PM agent's research-review mode]
 
 ## References
-- [All source URLs as clickable links]
+- [All source URLs that were cited in the body, as clickable links]
+
+## Further Exploration
+*Curated recommendations for going deeper on this topic. Items here are NOT cited in the body — this list is for readers who want to learn beyond the scope of this research. If an item is cited in the body, it belongs in References, not here.*
+
+### Books
+- [Title] — [Author] — [link if available] — [one-line "why it's worth reading"]
+
+### Long-form blogs / articles
+- ...
+
+### Videos / talks
+- ...
+
+### Courses
+- ...
+
+### Podcasts / podcast episodes
+- ...
+
+### Other (newsletters, communities, X threads, conference programs)
+- ...
 ```
+
+Sections may be omitted if no good item exists for that media type — do not pad. The goal is signal, not surface area.
 
 ## Rules
 
@@ -169,3 +211,6 @@ Include this output as a `## Product Lens` section in the final document, placed
 | Writing Product Lens as a separate document instead of a section | PM review output goes inside findings.md as `## Product Lens` between Summary and References |
 | Including recommendations without source backing | Every recommendation must trace to at least one cited source — unsupported opinions violate rule 1 |
 | Omitting dissenting views when sources agree | If all sources agree, state that explicitly — the absence of disagreement is itself a finding worth noting |
+| Treating PF7 must-cite voices and PF8 source-type matrix as optional | Stream prompts inherit them verbatim from framing — the originator of a concept (e.g., Karpathy on context engineering, Willison on lethal trifecta, Young/Fowler on event sourcing) MUST appear with a direct quote in the body, and each PF8 required category MUST have a quoted source in the body. PM-review (PM11) will flag missing items as P0/P1 recommendations. |
+| Confusing References with Further Exploration | References = sources cited in the body. Further Exploration = curated learning resources NOT cited in the body. If something is in References, it must NOT also be in Further Exploration; it's already been used. |
+| Padding Further Exploration to look thorough | Sections without good fits should be omitted entirely. Three excellent items beats nine mediocre ones. The goal is signal, not surface area. |
