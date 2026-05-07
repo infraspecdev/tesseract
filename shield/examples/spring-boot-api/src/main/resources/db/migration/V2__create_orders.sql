@@ -1,0 +1,6 @@
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    amount DOUBLE NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
