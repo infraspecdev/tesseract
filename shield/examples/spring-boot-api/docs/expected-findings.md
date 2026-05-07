@@ -56,3 +56,8 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | spring-web | `controller/UserController.java` | 62-65 | high | Missing `@Valid` on `@RequestBody`; incoming payload unvalidated |
 | spring-web | `controller/UserController.java` | 71-75 | medium | `@ResponseStatus` + return value mix; status source is ambiguous |
 | spring-web | `controller/UserController.java` | 79-82 | low | Mixed-case path segment `/userProfile/`; inconsistent with kebab-case elsewhere |
+| spring-data | `service/OrderProcessingService.java` | 18-21 | high | `@Transactional` on private method — proxies don't intercept private |
+| spring-data | `service/OrderProcessingService.java` | 26-28 | high | Self-invocation of `@Transactional` method bypasses the proxy |
+| spring-data | `service/OrderProcessingService.java` | 32-35 | medium | Read method missing `readOnly = true` |
+| spring-data | `service/OrderProcessingService.java` | 39-42 | medium | `REQUIRES_NEW` propagation without justification |
+| spring-data | `repository/UserRepository.java` | (updateEmail) | high | Mutating JPQL `@Query` without `@Modifying` — update never runs |
