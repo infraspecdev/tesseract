@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Detect version changes and create release
         run: |
@@ -31,15 +32,15 @@ jobs:
                 continue
               fi
 
-              git tag "$TAG"
-              git push origin "$TAG"
-
-              PREV_TAG=$(git tag -l "v*" --sort=-v:refname | head -2 | tail -1)
-              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+              PREV_TAG=$(git tag -l "v*" --sort=-v:refname | head -1)
+              if [ -n "$PREV_TAG" ]; then
                 NOTES=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD")
               else
                 NOTES="Initial release"
               fi
+
+              git tag "$TAG"
+              git push origin "$TAG"
 
               gh release create "$TAG" \
                 --title "v${version}" \
