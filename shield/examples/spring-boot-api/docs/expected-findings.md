@@ -21,3 +21,9 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | api-design-review | `controller/UserController.java` | 36-41 | medium | Inconsistent error response shape vs success shape |
 | api-design-review | `controller/UserController.java` | 44-48 | high | PUT used for non-idempotent operation (append) |
 | api-design-review | `controller/UserController.java` | 51-54 | low | DELETE returns 200 with body (should be 204 No Content) |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 15 | high | `@SpringBootTest` for unit-scope test (heavy slice + slow) |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 20-30 | high | Mocking the class under test — asserts the stub, not the implementation |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 33-39 | medium | Sleep-based timing assertion (flaky) |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 42-47 | medium | Shared mutable static state across tests |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 52-58 | medium | Asserts internal detail / weak assertion |
+| testing-strategy-review | `test/.../UserServiceTest.java` | 61-65 | high | No assertions — test passes regardless |
