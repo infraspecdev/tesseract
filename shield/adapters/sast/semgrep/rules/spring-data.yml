@@ -1,0 +1,29 @@
+rules:
+  - id: java.spring.data.transactional-on-private
+    metadata:
+      shield-area: spring-data
+      shield-severity: high
+    message: '@Transactional on a private method is a no-op. Spring AOP proxies do not intercept private methods.'
+    languages: [java]
+    severity: ERROR
+    pattern: |
+      @Transactional
+      private $RET $METHOD(...) { ... }
+
+  - id: java.spring.data.modifying-required
+    metadata:
+      shield-area: spring-data
+      shield-severity: high
+    message: 'Mutating @Query (UPDATE/DELETE) requires @Modifying. Without it, Spring treats it as SELECT and the change does not execute.'
+    languages: [java]
+    severity: ERROR
+    pattern-either:
+      - pattern: |
+          @Query("UPDATE $...REST")
+          $RET $METHOD(...);
+      - pattern: |
+          @Query("DELETE $...REST")
+          $RET $METHOD(...);
+    pattern-not-inside: |
+      @Modifying
+      ...

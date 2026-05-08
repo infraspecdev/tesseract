@@ -1,0 +1,52 @@
+{
+  "version": "1.50.0",
+  "results": [
+    {
+      "check_id": "java.spring.security.noop-encoder",
+      "path": "shield/examples/spring-boot-api/src/main/java/com/example/api/config/SecurityConfig.java",
+      "start": {"line": 17, "col": 9, "offset": 0},
+      "end": {"line": 17, "col": 50, "offset": 41},
+      "extra": {
+        "severity": "ERROR",
+        "message": "NoOpPasswordEncoder stores plaintext. Use BCrypt/Argon2/PBKDF2.",
+        "metadata": {
+          "category": "security",
+          "shield-area": "spring-security"
+        }
+      }
+    },
+    {
+      "check_id": "java.spring.security.csrf-disabled",
+      "path": "shield/examples/spring-boot-api/src/main/java/com/example/api/config/SecurityConfig.java",
+      "start": {"line": 27, "col": 13, "offset": 0},
+      "end": {"line": 27, "col": 47, "offset": 34},
+      "extra": {
+        "severity": "ERROR",
+        "message": "CSRF protection disabled without a stateless justification.",
+        "metadata": {
+          "category": "security",
+          "shield-area": "spring-security"
+        }
+      }
+    },
+    {
+      "check_id": "java.spring.config.value-for-typed-config",
+      "path": "shield/examples/spring-boot-api/src/main/java/com/example/api/config/AppConfig.java",
+      "start": {"line": 27, "col": 5, "offset": 0},
+      "end": {"line": 28, "col": 30, "offset": 60},
+      "extra": {
+        "severity": "WARNING",
+        "message": "Use @ConfigurationProperties for typed config values rather than @Value.",
+        "metadata": {
+          "category": "code-quality",
+          "shield-area": "spring-config"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "paths": {
+    "scanned": ["shield/examples/spring-boot-api"],
+    "skipped": []
+  }
+}

@@ -14,4 +14,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // VIOLATION: Custom JPQL with no pagination on potentially huge result.
     @Query("SELECT u FROM User u WHERE u.email LIKE :pattern")
     List<User> findByEmailPattern(String pattern);
+
+    // VIOLATION: Mutating JPQL query without @Modifying annotation. Spring will treat
+    // it as a SELECT and the update will not execute. Must add @Modifying (and usually
+    // @Transactional on the caller).
+    @org.springframework.data.jpa.repository.Query("UPDATE User u SET u.email = :email WHERE u.id = :id")
+    int updateEmail(@org.springframework.data.repository.query.Param("id") Long id,
+                    @org.springframework.data.repository.query.Param("email") String email);
 }

@@ -1,0 +1,57 @@
+{
+  "total": 4,
+  "p": 1,
+  "ps": 100,
+  "paging": {"pageIndex": 1, "pageSize": 100, "total": 4},
+  "issues": [
+    {
+      "key": "AYbX1...",
+      "rule": "java:S5547",
+      "severity": "BLOCKER",
+      "component": "tesseract:shield/examples/spring-boot-api/src/main/java/com/example/api/config/SecurityConfig.java",
+      "project": "tesseract",
+      "line": 17,
+      "textRange": {"startLine": 17, "endLine": 21},
+      "message": "Use a more secure password encoder than NoOpPasswordEncoder.",
+      "type": "VULNERABILITY",
+      "status": "OPEN"
+    },
+    {
+      "key": "AYbX2...",
+      "rule": "java:S4502",
+      "severity": "CRITICAL",
+      "component": "tesseract:shield/examples/spring-boot-api/src/main/java/com/example/api/config/SecurityConfig.java",
+      "project": "tesseract",
+      "line": 27,
+      "textRange": {"startLine": 27, "endLine": 27},
+      "message": "Make sure disabling CSRF protection is safe here.",
+      "type": "VULNERABILITY",
+      "status": "OPEN"
+    },
+    {
+      "key": "AYbX3...",
+      "rule": "java:S1144",
+      "severity": "MAJOR",
+      "component": "tesseract:shield/examples/spring-boot-api/src/main/java/com/example/api/service/UserService.java",
+      "project": "tesseract",
+      "line": 56,
+      "textRange": {"startLine": 56, "endLine": 56},
+      "message": "Remove this unused private field.",
+      "type": "CODE_SMELL",
+      "status": "OPEN"
+    },
+    {
+      "key": "AYbX4...",
+      "rule": "java:S100",
+      "severity": "MINOR",
+      "component": "tesseract:shield/examples/spring-boot-api/src/main/java/com/example/api/service/UserService.java",
+      "project": "tesseract",
+      "line": 61,
+      "textRange": {"startLine": 61, "endLine": 76},
+      "message": "Rename this method name to match the regular expression '^[a-z][a-zA-Z0-9]*$'.",
+      "type": "CODE_SMELL",
+      "status": "OPEN"
+    }
+  ],
+  "components": []
+}

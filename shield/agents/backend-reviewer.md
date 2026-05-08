@@ -36,12 +36,12 @@ This agent operates in **review mode** in v1. Future modes (planning, implementa
 
 Walk the file tree (or the changed-files set on a branch) looking for marker files. For each in-scope file, walk **up** the directory tree to the nearest marker.
 
-| Marker | Stack | v1 framework skills |
+| Marker | Stack | Framework skills |
 |---|---|---|
-| `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle*` | Java/Kotlin | (Plan 2 will add Spring/JVM skills; v1 = agnostic only) |
-| `pyproject.toml`, `requirements.txt`, `setup.py`, `Pipfile` | Python | none in v1; emit "framework-specific Python review ships in v2" |
-| `package.json` | Node/TS | none in v1; emit "framework-specific Node/TS review ships in v3" |
-| `go.mod` | Go | none in v1; emit "framework-specific Go review ships in v4" |
+| `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle*` | Java/Kotlin | Spring/JVM skills (loaded conditionally — see Spring sub-detection below) |
+| `pyproject.toml`, `requirements.txt`, `setup.py`, `Pipfile` | Python | none yet; emit "framework-specific Python review not yet available" |
+| `package.json` | Node/TS | none yet; emit "framework-specific Node/TS review not yet available" |
+| `go.mod` | Go | none yet; emit "framework-specific Go review not yet available" |
 | None + non-empty repo | Unknown stack | agnostic only + warn |
 | None + ≤5 source files (configurable) | Greenfield | ask user |
 
@@ -70,11 +70,56 @@ Or skip stack-specific review for this run: type "skip"
 
 Treat the user's reply identically to a positive detection. Do NOT persist the choice — re-ask each greenfield run.
 
+### Spring sub-detection (Java/Kotlin path)
+
+When Java/Kotlin is detected (via `pom.xml`, `build.gradle`, `build.gradle.kts`, or `settings.gradle*`), inspect the dependency declarations to decide which Spring skills apply. Spring skills load only when their corresponding starter is present.
+
+| Sub-marker (in pom.xml or build.gradle*) | Spring skill activated |
+|---|---|
+| `org.springframework.boot:spring-boot-starter` (or any `spring-boot-starter-*`) | `spring-config` (default for any Spring Boot app) |
+| `spring-boot-starter-web` or `spring-boot-starter-webflux` | `spring-web` |
+| `spring-boot-starter-data-jpa`, `spring-boot-starter-data-jdbc`, `spring-boot-starter-data-mongodb`, etc. | `spring-data` |
+| `spring-boot-starter-security` | `spring-security` |
+| `spring-boot-starter-test` (with test source files present) | `spring-test` |
+| Any Java or Kotlin source file (`.java`, `.kt`) under the module | `jvm-language-review` |
+| Java/Kotlin module with NO Spring Boot dependency (e.g., Quarkus, Micronaut, plain JVM) | `jvm-language-review` only; emit note "Spring skills do not apply" |
+
+If `spring-boot-starter-test` is in `pom.xml` but no test source files exist, do not load `spring-test` (no targets to review).
+
+For Gradle projects, parse the `dependencies { ... }` block in `build.gradle` or `build.gradle.kts` looking for the same artifact IDs.
+
+### Spring Boot version detection
+
+After detecting that a Spring skill applies, capture the Spring Boot **major version** (`2.x`, `3.x`, `4.x`):
+
+- **Maven (`pom.xml`):** read `<parent><artifactId>spring-boot-starter-parent</artifactId><version>X.Y.Z</version>`. Extract major from `X`. Fallback: any `<dependency>` with `groupId=org.springframework.boot` and an explicit `<version>`.
+- **Gradle (`build.gradle`/`build.gradle.kts`):** read `id 'org.springframework.boot' version 'X.Y.Z'` from the `plugins { ... }` block, OR an explicit `org.springframework.boot:spring-boot-starter` version in `dependencies { ... }`. Extract major.
+- **No version found:** assume `3.x` (current default; v1 skill target).
+
+Each Spring SKILL.md declares its supported versions in the frontmatter `spring_boot_versions` field (e.g., `spring_boot_versions: ["3.x"]`). After loading a skill, compare the detected version to the declared list:
+
+| Detected version | Skill declares | Behavior |
+|---|---|---|
+| In declared list | `["3.x"]` matches `3.x` | Apply skill normally |
+| Not in declared list | `["3.x"]` but detected `2.x` | Apply skill + emit one-line note: "skill `<name>` targets {declared}; detected SB {version} — see the skill's Version Compatibility section for which checks apply" |
+| No spring_boot_versions field | (legacy / version-stable skill) | Apply normally; no note |
+
+For each unsupported-version emission, list the skill name and the detected version in the agent's report header so reviewers don't miss it.
+
+### Java version detection (for `jvm-language-review`)
+
+Capture the Java **major version** from `pom.xml`/`build.gradle*`:
+
+- **Maven:** `<properties><java.version>17</java.version></properties>` or `<maven.compiler.source>17</maven.compiler.source>`.
+- **Gradle:** `sourceCompatibility = JavaVersion.VERSION_17` or `java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }`.
+
+Used by `jvm-language-review` to gate language-feature checks (records require Java 14+, sealed types require Java 17+, etc.). The skill's "Java Version Compatibility" section documents which checks apply at which Java level.
+
 ---
 
 ## Skill Loading
 
-**Always load (agnostic):**
+**Always load (agnostic — apply to all backend stacks):**
 
 - `backend/code-quality-review`
 - `backend/api-design-review`
@@ -84,7 +129,59 @@ Treat the user's reply identically to a positive detection. Do NOT persist the c
 - `backend/deployment-safety-review`
 - `backend/concurrency-review`
 
-**Framework-specific (per detected stack):** None in v1. Plan 2 adds Java/Kotlin Spring skills with conditional sub-detection.
+**Framework-specific (Java/Kotlin path, conditional on Spring sub-detection):**
+
+- `backend/spring-web` — when `spring-boot-starter-web`/`webflux` detected
+- `backend/spring-data` — when `spring-boot-starter-data-*` detected
+- `backend/spring-config` — when any `spring-boot-starter` detected (default)
+- `backend/spring-security` — when `spring-boot-starter-security` detected
+- `backend/spring-test` — when `spring-boot-starter-test` detected and test source files exist
+- `backend/jvm-language-review` — when any `.java` or `.kt` source file in the module
+
+**Other stacks (Python, Node/TS, Go):** No framework skills yet — currently only Java/Kotlin Spring skills ship. Python, Node/TS, and Go framework skills are tracked as follow-on work.
+
+---
+
+## SAST Adapters
+
+If `.shield.json` includes a `sast.adapters` list, run those adapters in parallel with the skill review. The adapters live under `shield/adapters/sast/<name>/` and produce normalized findings.
+
+### Configuration lookup
+
+```json
+// .shield.json (committed)
+{
+  "project": "...",
+  "sast": {
+    "adapters": ["semgrep", "sonarqube"],
+    "semgrep": { },
+    "sonarqube": { }
+  }
+}
+```
+
+Empty list or missing `sast` key → SAST inactive. Skip the dispatch entirely.
+
+Credentials for adapters that need them live in `~/.shield/credentials.json` under each adapter's name (e.g., `"sonarqube": { "url": "...", "token": "...", "project_key": "..." }`). The adapters resolve credentials themselves; the agent only passes per-project config.
+
+### Dispatch
+
+For each adapter listed:
+
+1. Import its `adapter.run(target_path, config, head_commit_time)` function from `shield.adapters.sast.<name>.adapter`
+2. Pass the target_path being reviewed, the adapter's config block from `.shield.json`, and the HEAD commit's timestamp (used for stale-output detection)
+3. Each adapter returns an `AdapterResult` with `mode` (consumed/invoked/unavailable), `findings`, and an optional `note`
+
+Run adapters concurrently with the skill review (Python `concurrent.futures.ThreadPoolExecutor` or equivalent). They are independent — no shared state.
+
+### Aggregation
+
+After all sources (skills, SAST adapters, specialists) return, aggregate findings:
+
+1. Group all findings by `(file, lines)` — two findings are duplicates if their files match exactly AND their line ranges overlap within ±2 lines
+2. For each duplicate group, collapse to a single entry citing all `source` values (e.g., `source: "skill+semgrep"`)
+3. Findings whose location does not overlap any skill finding go into a separate "Repo-wide SAST findings" section
+4. SAST findings whose location DOES overlap a skill finding merge into the module section where that skill finding lives
 
 ---
 
@@ -128,15 +225,17 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 **Scope:** {N files in M modules}
 **Stacks detected:** {Java/Kotlin: 2 modules; Python: 1 module}
-**Skills applied:** {agnostic: 7; framework: 0 (Plan 2 ships Java)}
+**Skills applied:** 13 (7 agnostic + 6 framework)
+**SAST adapters:** semgrep (invoked, 12 findings) · sonarqube (consumed, mtime stale → re-fetched, 47 findings)
 **Specialists consulted:** {security, architecture, agile-coach, operations, dx-engineer, product-manager}
 
 ### Module: services/api/ (Java/Kotlin)
 
-| Severity | Skill / Source | File | Lines | Finding |
-|---|---|---|---|---|
-| High | code-quality-review:Q1 | service/UserService.java | 9-15 | God class — handles unrelated domains |
-| High | api-design-review:A2 | controller/UserController.java | 18-22 | GET used for state change |
+| Severity | Source | Skill / Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+| High | skill+semgrep | spring-security:SS1 + java.spring.security.noop-encoder | config/SecurityConfig.java | 17-20 | NoOpPasswordEncoder stores plaintext |
+| High | skill | code-quality-review:Q1 | service/UserService.java | 9-13 | God class — handles unrelated domains |
+| High | skill | api-design-review:A2 | controller/UserController.java | 18-22 | GET used for state change |
 ...
 
 ### Module: services/worker/ (Java/Kotlin)
@@ -145,7 +244,15 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 ### Module: frontend/ (Node/TS — framework review pending v3)
 
 (Agnostic-only findings)
-| Severity | Skill / Source | File | Lines | Finding |
+| Severity | Source | Skill / Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+...
+
+### Repo-wide SAST findings (no skill mapping)
+
+| Severity | Source | Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+| Medium | sonarqube | java:S1144 | service/LegacyUtil.java | 42 | Unused private method |
 ...
 
 ### Specialist Findings
@@ -158,7 +265,7 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 ### Summary
 
-- Total findings: {N}
+- Total findings: {N} (skill: {n}, SAST-skill-overlap: {n}, SAST-only: {n})
 - High: {n}; Medium: {n}; Low: {n}
 - Modules with no findings: {list}
 ```
@@ -176,6 +283,10 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Empty diff | Print "no changes to review" and exit; do not fall through to whole-repo |
 | Specialist dispatch fails | Continue review; note the dispatch failure in the report |
 | Skill produces zero findings | Skip in output (no empty sections) |
+| `sast.adapters` references unknown adapter name | Skip with warning; continue with known adapters |
+| All SAST adapters return mode=unavailable | Review proceeds skill-only; report header lists which adapters were unavailable and why |
+| SAST finding location matches a skill finding | Collapse to one entry; cite all sources in the `source` column |
+| SAST finding location does not match any skill finding | Place in "Repo-wide SAST findings" section |
 
 ---
 
@@ -187,4 +298,7 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Dispatching `cost-reviewer` on backend code | `cost-reviewer` is infra-flavored — backend cost concerns (connection pools, executor sizing) are deferred |
 | Failing to scope monorepo output by module | Findings without module grouping are unreadable in a 5-service repo. Always group |
 | Persisting greenfield stack choice | The user re-confirms each greenfield run unless they manually pin via `.shield.json` |
-| Running framework-specific Spring skills before Plan 2 lands | v1 ships zero framework skills. Java/Kotlin repos receive agnostic-only review until Plan 2 |
+| Loading all Spring skills regardless of detected starters | Sub-detect — `spring-security` only loads when `spring-boot-starter-security` is in the dependencies. Avoids false positives on Spring apps that don't use Security |
+| Loading SAST adapters when none configured | If `sast.adapters` list is empty/missing, do NOT invoke any adapter. SAST is opt-in |
+| Treating SAST findings as authoritative over skills | They're complementary. Dedup by location is fine, but don't suppress a skill finding because SAST didn't catch it (skills check things SAST can't) |
+| Running SonarQube full scan on every review | SonarQube's default mode is consume. Don't invoke `sonar-scanner` unless explicitly fallback path |

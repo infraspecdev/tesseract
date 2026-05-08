@@ -1,0 +1,25 @@
+rules:
+  - id: java.spring.web.field-injection
+    metadata:
+      shield-area: spring-web
+      shield-severity: high
+    message: 'Field injection via @Autowired. Prefer constructor injection with final fields.'
+    languages: [java]
+    severity: ERROR
+    pattern: |
+      @Autowired
+      private $TYPE $FIELD;
+
+  - id: java.spring.web.request-mapping-no-method
+    metadata:
+      shield-area: spring-web
+      shield-severity: medium
+    message: '@RequestMapping with no method attribute defaults to all methods. Use @PostMapping/@GetMapping/etc. or set method explicitly.'
+    languages: [java]
+    severity: WARNING
+    pattern: |
+      @RequestMapping($PATH)
+      public $RET $METHOD(...) { ... }
+    pattern-not: |
+      @RequestMapping(value=$PATH, method=$M)
+      public $RET $METHOD(...) { ... }

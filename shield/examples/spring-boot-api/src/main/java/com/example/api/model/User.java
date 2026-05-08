@@ -24,4 +24,14 @@ public class User {
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
     public List<Order> getOrders() { return orders; }
+
+    // VIOLATION: Returns the internal mutable List directly. Callers can mutate the
+    // entity's state through the returned reference. Should return an unmodifiable view
+    // or a defensive copy.
+    public List<Order> getOrdersMutable() { return orders; }
+
+    // VIOLATION: No equals/hashCode override on entity. Default Object identity breaks
+    // HashSet semantics and Hibernate session-cache lookups in some cases.
+    // (Already partially in database-review D10; jvm-language flags it as immutability/
+    // value-equality concern.)
 }

@@ -1,0 +1,15 @@
+# VIOLATION: Hardcoded secret in committed source. Should be sourced from env var,
+# config server, or secret manager.
+# VIOLATION: No @ConfigurationProperties type validation — these values will silently
+# bind even if the type doesn't accept them.
+spring:
+  datasource:
+    url: jdbc:postgresql://prod.example.com:5432/users
+    username: app_user
+    password: hardcoded-prod-password-2026
+
+# VIOLATION: Profile-specific override that contradicts default behavior without
+# explicit @ConditionalOnProperty gating.
+app:
+  api-url: https://api.prod.example.com
+  timeout-seconds: 30

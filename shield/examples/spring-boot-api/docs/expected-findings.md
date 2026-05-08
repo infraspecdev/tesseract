@@ -46,3 +46,30 @@ The table is established in Task 2 (the first skill task). Until then, this file
 | concurrency-review | `service/CounterService.java` | 18-23 | high | Read-modify-write race on `totalRequests` and counter map |
 | concurrency-review | `service/CounterService.java` | 27-33 | high | Fire-and-forget `CompletableFuture.runAsync` — exceptions silently lost |
 | concurrency-review | `service/CounterService.java` | 37-39 | medium | Operation not idempotent — retry causes duplicate side effects |
+| spring-config | `config/AppProperties.java` | 8-11 | high | `@ConfigurationProperties` without `prefix` attribute — properties will not bind |
+| spring-config | `config/AppProperties.java` | 8-11 | medium | Missing `@Validated` on `@ConfigurationProperties` — invalid config won't fail at startup |
+| spring-config | `config/AppProperties.java` | 13-22 | medium | Mutable `@ConfigurationProperties` bean (setters); prefer immutable records |
+| spring-config | `application-prod.yml` | 8-9 | high | Hardcoded secret (`spring.datasource.password`) in committed source |
+| spring-config | `config/AppConfig.java` | 27-28 | medium | `@Value` for typed config; should use `@ConfigurationProperties` |
+| spring-web | `controller/UserController.java` | 18-19 | high | Field injection via `@Autowired` — should be constructor injection |
+| spring-web | `controller/UserController.java` | 62-65 | medium | `@RequestMapping` with no `method` attribute; use `@PostMapping` |
+| spring-web | `controller/UserController.java` | 62-65 | high | Missing `@Valid` on `@RequestBody`; incoming payload unvalidated |
+| spring-web | `controller/UserController.java` | 71-75 | medium | `@ResponseStatus` + return value mix; status source is ambiguous |
+| spring-web | `controller/UserController.java` | 79-82 | low | Mixed-case path segment `/userProfile/`; inconsistent with kebab-case elsewhere |
+| spring-data | `service/OrderProcessingService.java` | 18-21 | high | `@Transactional` on private method — proxies don't intercept private |
+| spring-data | `service/OrderProcessingService.java` | 26-28 | high | Self-invocation of `@Transactional` method bypasses the proxy |
+| spring-data | `service/OrderProcessingService.java` | 32-35 | medium | Read method missing `readOnly = true` |
+| spring-data | `service/OrderProcessingService.java` | 39-42 | medium | `REQUIRES_NEW` propagation without justification |
+| spring-data | `repository/UserRepository.java` | (updateEmail) | high | Mutating JPQL `@Query` without `@Modifying` — update never runs |
+| spring-security | `config/SecurityConfig.java` | 16-20 | high | `NoOpPasswordEncoder` stores passwords in plaintext |
+| spring-security | `config/SecurityConfig.java` | 27 | high | CSRF disabled with no compensating control or explicit reason |
+| spring-security | `config/SecurityConfig.java` | 30-32 | high | All endpoints `permitAll()` — authentication effectively disabled |
+| spring-security | `config/SecurityConfig.java` | 35 | medium | HTTP Basic configured without HTTPS enforcement |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 19 | high | `@SpringBootTest` for controller-only test; should be `@WebMvcTest(UserController.class)` |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 21 | high | `@DirtiesContext(BEFORE_EACH_TEST_METHOD)` — context recreation per test is very slow |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 28-32 | medium | `@MockBean` overuse — slice annotation handles auto-config; MockBean only for true external collaborators |
+| spring-test | `test/.../UserControllerIntegrationTest.java` | 37-40 | high | Test relies on shared H2 state and has no assertions on the response |
+| jvm-language-review | `model/User.java` | (getOrdersMutable) | medium | Returns internal mutable list — callers can mutate entity state |
+| jvm-language-review | `model/User.java` | (class level) | medium | Missing `equals`/`hashCode` on entity used in collections |
+| jvm-language-review | `model/Order.java` | (setAmount) | low | Public setter on entity field — prefer intent-revealing methods |
+| jvm-language-review | `model/Order.java` | (class level) | medium | Entity has mutable fields and no `equals`/`hashCode` |

@@ -11,6 +11,8 @@ All agents are dispatched in **plan review mode** — lightweight checks focused
 | `shield:agile-coach-reviewer` | 0.7 | Sprint-readiness, story quality, dependencies |
 | `shield:operations-reviewer` | 0.7 | Monitoring, failure modes, backup, on-call readiness |
 | `shield:product-manager-reviewer` | 0.7 | User impact, scope discipline, prioritization, business value |
+| `shield:kubernetes-reviewer` | 1.0 | K8s manifests, Helm/Kustomize, RBAC, security, cost, operational readiness |
+| `shield:backend-reviewer` | 1.0 | Backend application code (Java/Kotlin/Python/Node/Go), API design, database, testing, framework patterns |
 
 ## Dynamic Persona Selection
 

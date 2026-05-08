@@ -18,4 +18,9 @@ public class Order {
     public Long getId() { return id; }
     public User getUser() { return user; }
     public double getAmount() { return amount; }
+
+    // VIOLATION: Public mutable setter on entity field — entity is mutable across the
+    // codebase. Prefer constructor + Hibernate-managed state changes via methods that
+    // express intent (e.g., `applyDiscount(...)`).
+    public void setAmount(double amount) { this.amount = amount; }
 }

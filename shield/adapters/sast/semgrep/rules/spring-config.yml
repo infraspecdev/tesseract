@@ -1,0 +1,25 @@
+rules:
+  - id: java.spring.config.properties-no-prefix
+    metadata:
+      shield-area: spring-config
+      shield-severity: high
+    message: '@ConfigurationProperties without prefix attribute — properties will not bind to nested keys correctly.'
+    languages: [java]
+    severity: ERROR
+    pattern: |
+      @ConfigurationProperties
+      public class $C { ... }
+    pattern-not: |
+      @ConfigurationProperties(prefix=$P)
+      public class $C { ... }
+
+  - id: java.spring.config.value-for-typed-config
+    metadata:
+      shield-area: spring-config
+      shield-severity: medium
+    message: '@Value for typed config; prefer @ConfigurationProperties for type safety, defaults, and validation.'
+    languages: [java]
+    severity: WARNING
+    pattern: |
+      @Value("${$KEY:$DEFAULT}")
+      private $TYPE $FIELD;
