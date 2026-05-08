@@ -138,8 +138,14 @@ Write the minimal code to make the test pass.
 ### 5c. Per-step lightweight review
 After each step passes its test:
 - Check for obvious issues (logic bugs, style, missing edge cases)
-- If the active domain has a review skill (e.g., `terraform/review`), run domain-specific checks on the changed files
-- This is NOT a full agent review — just quick correctness checks
+- For the changed file's domain, consult the relevant skill(s):
+  - `*.tf` / `*.tfvars` → `shield/skills/terraform/*/SKILL.md`
+  - `*.java` / `*.kt` / `*.py` / `*.ts` / `*.js` / `*.go` → `shield/skills/backend/*/SKILL.md`
+  - `*.yaml` (K8s manifests) → `shield/skills/kubernetes/*/SKILL.md`
+  - `.github/workflows/*.yml` → `shield/skills/github-actions/*/SKILL.md`
+- Use the LLM's judgment to pick which skills are applicable to the file. Skip skills that don't apply (e.g., spring-security on a controller file).
+- This is NOT a full agent review — keep it focused on what changed in this step. Don't run a comprehensive multi-skill audit; that happens at /review.
+- If the file's domain has no matching skill, fall back to general code-quality judgment.
 
 ### 5d. Commit
 Commit the step immediately:
