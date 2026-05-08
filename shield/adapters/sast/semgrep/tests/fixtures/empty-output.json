@@ -1,0 +1,9 @@
+{
+  "version": "1.50.0",
+  "results": [],
+  "errors": [],
+  "paths": {
+    "scanned": ["src/main/java/com/example/api"],
+    "skipped": []
+  }
+}

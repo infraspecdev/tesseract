@@ -17,7 +17,7 @@ packages = ["semgrep", "sonarqube", "common.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "semgrep/tests", "sonarqube/tests"]
-pythonpath = [".."]
+pythonpath = ["../../.."]
 markers = [
     "integration: tool-installed end-to-end tests (deselect with '-m \"not integration\"')",
 ]
