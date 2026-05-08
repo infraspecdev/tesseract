@@ -142,6 +142,49 @@ Used by `jvm-language-review` to gate language-feature checks (records require J
 
 ---
 
+## SAST Adapters
+
+If `.shield.json` includes a `sast.adapters` list, run those adapters in parallel with the skill review. The adapters live under `shield/adapters/sast/<name>/` and produce normalized findings.
+
+### Configuration lookup
+
+```json
+// .shield.json (committed)
+{
+  "project": "...",
+  "sast": {
+    "adapters": ["semgrep", "sonarqube"],
+    "semgrep": { },
+    "sonarqube": { }
+  }
+}
+```
+
+Empty list or missing `sast` key → SAST inactive. Skip the dispatch entirely.
+
+Credentials for adapters that need them live in `~/.shield/credentials.json` under each adapter's name (e.g., `"sonarqube": { "url": "...", "token": "...", "project_key": "..." }`). The adapters resolve credentials themselves; the agent only passes per-project config.
+
+### Dispatch
+
+For each adapter listed:
+
+1. Import its `adapter.run(target_path, config, head_commit_time)` function from `shield.adapters.sast.<name>.adapter`
+2. Pass the target_path being reviewed, the adapter's config block from `.shield.json`, and the HEAD commit's timestamp (used for stale-output detection)
+3. Each adapter returns an `AdapterResult` with `mode` (consumed/invoked/unavailable), `findings`, and an optional `note`
+
+Run adapters concurrently with the skill review (Python `concurrent.futures.ThreadPoolExecutor` or equivalent). They are independent — no shared state.
+
+### Aggregation
+
+After all sources (skills, SAST adapters, specialists) return, aggregate findings:
+
+1. Group all findings by `(file, lines)` — two findings are duplicates if their files match exactly AND their line ranges overlap within ±2 lines
+2. For each duplicate group, collapse to a single entry citing all `source` values (e.g., `source: "skill+semgrep"`)
+3. Findings whose location does not overlap any skill finding go into a separate "Repo-wide SAST findings" section
+4. SAST findings whose location DOES overlap a skill finding merge into the module section where that skill finding lives
+
+---
+
 ## Specialist Dispatch
 
 For cross-cutting concerns, dispatch to existing specialist agents in parallel (they are independent — no shared state).
@@ -182,15 +225,17 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 **Scope:** {N files in M modules}
 **Stacks detected:** {Java/Kotlin: 2 modules; Python: 1 module}
-**Skills applied:** {agnostic: 7; framework: 0 (Plan 2 ships Java)}
+**Skills applied:** 13 (7 agnostic + 6 framework)
+**SAST adapters:** semgrep (invoked, 12 findings) · sonarqube (consumed, mtime stale → re-fetched, 47 findings)
 **Specialists consulted:** {security, architecture, agile-coach, operations, dx-engineer, product-manager}
 
 ### Module: services/api/ (Java/Kotlin)
 
-| Severity | Skill / Source | File | Lines | Finding |
-|---|---|---|---|---|
-| High | code-quality-review:Q1 | service/UserService.java | 9-15 | God class — handles unrelated domains |
-| High | api-design-review:A2 | controller/UserController.java | 18-22 | GET used for state change |
+| Severity | Source | Skill / Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+| High | skill+semgrep | spring-security:SS1 + java.spring.security.noop-encoder | config/SecurityConfig.java | 17-20 | NoOpPasswordEncoder stores plaintext |
+| High | skill | code-quality-review:Q1 | service/UserService.java | 9-13 | God class — handles unrelated domains |
+| High | skill | api-design-review:A2 | controller/UserController.java | 18-22 | GET used for state change |
 ...
 
 ### Module: services/worker/ (Java/Kotlin)
@@ -199,7 +244,15 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 ### Module: frontend/ (Node/TS — framework review pending v3)
 
 (Agnostic-only findings)
-| Severity | Skill / Source | File | Lines | Finding |
+| Severity | Source | Skill / Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+...
+
+### Repo-wide SAST findings (no skill mapping)
+
+| Severity | Source | Rule | File | Lines | Finding |
+|---|---|---|---|---|---|
+| Medium | sonarqube | java:S1144 | service/LegacyUtil.java | 42 | Unused private method |
 ...
 
 ### Specialist Findings
@@ -212,7 +265,7 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 ### Summary
 
-- Total findings: {N}
+- Total findings: {N} (skill: {n}, SAST-skill-overlap: {n}, SAST-only: {n})
 - High: {n}; Medium: {n}; Low: {n}
 - Modules with no findings: {list}
 ```
@@ -230,6 +283,10 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Empty diff | Print "no changes to review" and exit; do not fall through to whole-repo |
 | Specialist dispatch fails | Continue review; note the dispatch failure in the report |
 | Skill produces zero findings | Skip in output (no empty sections) |
+| `sast.adapters` references unknown adapter name | Skip with warning; continue with known adapters |
+| All SAST adapters return mode=unavailable | Review proceeds skill-only; report header lists which adapters were unavailable and why |
+| SAST finding location matches a skill finding | Collapse to one entry; cite all sources in the `source` column |
+| SAST finding location does not match any skill finding | Place in "Repo-wide SAST findings" section |
 
 ---
 
@@ -242,3 +299,6 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Failing to scope monorepo output by module | Findings without module grouping are unreadable in a 5-service repo. Always group |
 | Persisting greenfield stack choice | The user re-confirms each greenfield run unless they manually pin via `.shield.json` |
 | Loading all Spring skills regardless of detected starters | Sub-detect — `spring-security` only loads when `spring-boot-starter-security` is in the dependencies. Avoids false positives on Spring apps that don't use Security |
+| Loading SAST adapters when none configured | If `sast.adapters` list is empty/missing, do NOT invoke any adapter. SAST is opt-in |
+| Treating SAST findings as authoritative over skills | They're complementary. Dedup by location is fine, but don't suppress a skill finding because SAST didn't catch it (skills check things SAST can't) |
+| Running SonarQube full scan on every review | SonarQube's default mode is consume. Don't invoke `sonar-scanner` unless explicitly fallback path |
