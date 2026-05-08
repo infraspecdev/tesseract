@@ -36,12 +36,12 @@ This agent operates in **review mode** in v1. Future modes (planning, implementa
 
 Walk the file tree (or the changed-files set on a branch) looking for marker files. For each in-scope file, walk **up** the directory tree to the nearest marker.
 
-| Marker | Stack | v1 framework skills |
+| Marker | Stack | Framework skills |
 |---|---|---|
-| `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle*` | Java/Kotlin | (Plan 2 will add Spring/JVM skills; v1 = agnostic only) |
-| `pyproject.toml`, `requirements.txt`, `setup.py`, `Pipfile` | Python | none in v1; emit "framework-specific Python review ships in v2" |
-| `package.json` | Node/TS | none in v1; emit "framework-specific Node/TS review ships in v3" |
-| `go.mod` | Go | none in v1; emit "framework-specific Go review ships in v4" |
+| `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle*` | Java/Kotlin | Spring/JVM skills (loaded conditionally — see Spring sub-detection below) |
+| `pyproject.toml`, `requirements.txt`, `setup.py`, `Pipfile` | Python | none yet; emit "framework-specific Python review not yet available" |
+| `package.json` | Node/TS | none yet; emit "framework-specific Node/TS review not yet available" |
+| `go.mod` | Go | none yet; emit "framework-specific Go review not yet available" |
 | None + non-empty repo | Unknown stack | agnostic only + warn |
 | None + ≤5 source files (configurable) | Greenfield | ask user |
 
@@ -138,7 +138,7 @@ Used by `jvm-language-review` to gate language-feature checks (records require J
 - `backend/spring-test` — when `spring-boot-starter-test` detected and test source files exist
 - `backend/jvm-language-review` — when any `.java` or `.kt` source file in the module
 
-**Other stacks (Python, Node/TS, Go):** No framework skills in v1 — Plan 2 covers Java/Kotlin only. Python ships in v2, Node/TS in v3, Go in v4.
+**Other stacks (Python, Node/TS, Go):** No framework skills yet — currently only Java/Kotlin Spring skills ship. Python, Node/TS, and Go framework skills are tracked as follow-on work.
 
 ---
 
