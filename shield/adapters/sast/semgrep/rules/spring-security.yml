@@ -1,0 +1,33 @@
+rules:
+  - id: java.spring.security.noop-encoder
+    metadata:
+      shield-area: spring-security
+      shield-severity: high
+    message: NoOpPasswordEncoder stores plaintext. Use BCrypt/Argon2/PBKDF2.
+    languages: [java]
+    severity: ERROR
+    pattern: NoOpPasswordEncoder.getInstance()
+
+  - id: java.spring.security.csrf-disabled
+    metadata:
+      shield-area: spring-security
+      shield-severity: high
+    message: CSRF disabled without a stateless justification. For browser flows with cookies, CSRF must be enabled.
+    languages: [java]
+    severity: ERROR
+    pattern-either:
+      - pattern: $H.csrf().disable()
+      - pattern: $H.csrf(csrf -> csrf.disable())
+      - pattern: $H.csrf((csrf) -> csrf.disable())
+
+  - id: java.spring.security.permit-all-any-request
+    metadata:
+      shield-area: spring-security
+      shield-severity: high
+    message: anyRequest().permitAll() — authentication effectively disabled. Enumerate which endpoints are public.
+    languages: [java]
+    severity: ERROR
+    pattern-either:
+      - pattern: $A.anyRequest().permitAll()
+      - pattern: |
+          $H.authorizeHttpRequests($A -> $A.anyRequest().permitAll())
