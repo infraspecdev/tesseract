@@ -23,7 +23,7 @@ Introduce a product-requirements layer to Shield, sitting between research and t
 - **13-dimension rubric** for `/prd-review` covering problem clarity, scope, metrics, scenario coverage & AC testability, NFRs, rollout, RACI, legal/privacy, GTM, support, why-now, risks & assumptions, cost. (i18n/l10n is absorbed into NFR + ACs rather than a standalone dimension.) Dispatched across five reviewer agents in parallel: PM, **agile-coach** (story/AC quality), tech-lead, DX, cost-reviewer.
 - **Three dimension states**: graded (A-F, counted), N/A (excluded with mandatory reasoning), informational (lean-PRD structural exemptions, excluded). Bare N/A grades F.
 - **P0-gate on verdict**: composite alone can drown out a fatal gap; any P0 caps the verdict at "Needs Work" regardless of score. Header shows "Needs Work (composite X.X, blocked by N P0s)".
-- **Canonical comments export** (`review-comments.json` + auto-generated `review-comments.md`) for converting Shield feedback into GitHub/Notion/Confluence/Jira comments via external converters.
+- **Canonical comments export** (`review-comments.json`) for converting Shield feedback into GitHub/Notion/Confluence/Jira comments via external converters. The human-readable views live in `summary.md` (scannable gap triage) and `detailed/<persona>.md` (per-persona prose); the JSON is purely for machine consumption.
 - **Source PRD never overwritten.** `enhanced-prd.md` is always a copy; "Use as Shield's canonical PRD" copies it to `prd/{N}/prd.md`.
 
 **Scoring** aligned with `plan-review/scoring.md` (A-F per evaluation point, weighted-average composite). Persona weights: PM 1.0, agile-coach 1.0, tech-lead 1.0, DX 0.7, cost-reviewer 0.7. P0-gate is a follow-up to also apply to `plan-review`.
@@ -348,7 +348,7 @@ All design-phase open questions have been resolved and folded into the relevant 
 
 | # | Question | Decision | Details in |
 |---|---|---|---|
-| 1 | `enhanced-prd.md` shape | Mirror `plan-review` convention: P0/P1 inline with `<!-- [from: <Persona>] -->` attribution, P2 as comments. Never overwrites source. Optional `enhanced-prd.<ext>` conversion back to source format. New `review-comments.json` + auto-generated `review-comments.md` for tool-export. | Architecture summary → Enhanced PRD output and comments export |
+| 1 | `enhanced-prd.md` shape | Mirror `plan-review` convention: P0/P1 inline with `<!-- [from: <Persona>] -->` attribution, P2 as comments. Never overwrites source. Optional `enhanced-prd.<ext>` conversion back to source format. New `review-comments.json` for tool-export (no parallel markdown — human views live in `summary.md` and `detailed/<persona>.md`). | Architecture summary → Enhanced PRD output and comments export |
 | 2 | Lean rubric — graded vs informational | Lean: dims 1-4, 7, 8, 12 graded (7); dims 5, 6, 9, 10, 11 informational (5). Standard: all 12 graded. Informational entries surfaced but excluded from composite. | Architecture summary → Lean rubric — graded vs informational |
 | 3 | Repo-scan output in `transcript.md` | `## Detected Context` section at top, subsectioned (Stack, Integrations, Compliance, Deployment, Recent activity). Each entry tagged `(detected) / (confirmed) / (corrected by user) / (manual)` with source citation. | Architecture summary → Repo-scan and transcript format |
 | 4 | `/prd` upgrade flow shape | Single multi-select prompt (all missing sections pre-checked) + Start-fresh + Cancel. Selected sections added to a new run folder; original preserved. | Functional requirements → `/prd` Scenario: Add sections to a lean PRD |
@@ -416,8 +416,7 @@ Items deliberately deferred but tracked for later phases.
 │       ├── source-prd.md            ← verbatim snapshot of original source
 │       ├── enhanced-prd.md          ← P0/P1 inline + P2 comments; never overwrites source
 │       ├── enhanced-prd.<ext>       ← (optional) conversion back to source's original format
-│       ├── review-comments.json     ← canonical structured per-section gap comments
-│       ├── review-comments.md       ← auto-generated human view of the JSON
+│       ├── review-comments.json     ← canonical structured per-section gap comments (machine-readable for converters)
 │       └── detailed/
 │           ├── pm-reviewer.md
 │           ├── tech-lead.md
@@ -848,7 +847,7 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 
 Addition vs replacement is the converter's signal — addition becomes "consider adding…"; replacement maps to GitHub suggestion blocks or inline replacements.
 
-**`review-comments.md`** is auto-generated from the JSON for human review. Stable headers (`## Section: <name> (line N)`) so a markdown-only reader can navigate it. Regenerated whenever the JSON changes; never edited directly.
+**No parallel `review-comments.md`.** Earlier drafts proposed an auto-generated markdown view of the JSON; dropped because (a) `summary.md` already provides a scannable human view of the same gaps, (b) `detailed/<persona>.md` covers per-persona prose, and (c) an auto-generated derived file invites sync drift when humans edit the wrong copy. Converters parse the JSON directly.
 
 **Apply options** (presented after review completes):
 1. **Use as Shield's canonical PRD** — copy `enhanced-prd.md` to `prd/{N}/prd.md`. Works for any source type (local file, URL of any cloud tool, paste). Downstream Shield commands consume the enhanced version from here.

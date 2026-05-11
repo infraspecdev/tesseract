@@ -87,7 +87,7 @@ The Phase A primary target is **P1** — engineering leads ingesting external PR
   4. Shield asks: "This looks like a standard PRD. Confirm?"
   5. Lead confirms; 5 reviewer agents dispatched in parallel (PM, agile-coach, tech-lead, DX, cost)
   6. Reviewers grade dimensions A-F; verdict computed with P0-gate
-  7. Outputs written: `summary.md`, `source-prd.md`, `enhanced-prd.md`, `review-comments.json`, `review-comments.md`, `detailed/{persona}.md`
+  7. Outputs written: `summary.md`, `source-prd.md`, `enhanced-prd.md`, `review-comments.json`, `detailed/{persona}.md`
   8. Lead is offered: use enhanced version as canonical / convert back to original format / skip
 - **Error / timeout / abandon paths:**
   - Notion MCP unauthenticated → Shield reports error, offers paste fallback in same turn
@@ -150,7 +150,7 @@ All scenarios in section 6 above are testable Given/When/Then ACs. Additional fu
 Key invariants:
 - Source PRD is never overwritten — `enhanced-prd.md` is always a copy
 - Verdict is gated by P0 presence — composite alone cannot produce "Ready"
-- All output artifacts (summary, source-prd, enhanced-prd, review-comments.json, review-comments.md, detailed/*) are written atomically per run
+- All output artifacts (summary, source-prd, enhanced-prd, review-comments.json, detailed/*) are written atomically per run
 
 ---
 
