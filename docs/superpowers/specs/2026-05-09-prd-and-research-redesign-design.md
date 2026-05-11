@@ -194,6 +194,15 @@ Feature: PRD review
     Then the verdict is "Needs Work" (NOT "Ready") regardless of composite
     And summary.md header reads "Needs Work (composite <X.X>, blocked by <N> P0s)"
     And the composite score is still shown for tracking improvement over time
+
+  Scenario: Agile-coach grades feature-level story coverage (dim 4 eval points 4f, 4g)
+    Given a PRD with 3 personas, 4 named goals, and 2 user stories
+    When the agile-coach reviewer grades dim 4
+    Then it invokes the shield:story-coverage skill with personas + goals + detected feature domain
+    And the skill returns a set of expected stories per persona-goal pair plus archetypal flows for the domain
+    And 4f is graded based on whether every persona-goal pair has >= 1 story
+    And 4g is graded based on whether archetypal flows for the domain are covered
+    And missing-but-expected stories appear as P0/P1 entries in summary.md and review-comments.json with citations to which persona-goal or which archetype they map to
 ```
 
 ### `/prd`
@@ -212,6 +221,14 @@ Feature: PRD authoring
     When I run /prd
     Then Shield reads the transcript and pre-populates Problem, Users, Constraints, Existing systems
     And only asks for sections not derivable from the transcript
+
+  Scenario: Story-coverage scaffolding between Sections 4 and 6
+    Given Sections 3 (Personas) and 4 (Goals & non-goals) have been captured
+    When the author flow reaches Section 6 (User stories)
+    Then Shield invokes the shield:story-coverage skill with the captured personas + goals + detected feature domain
+    And the skill returns a list of expected stories per persona-goal pair plus archetypal flows for the domain
+    And Shield presents the list to the author with multi-select: scaffold each, skip each, or add your own
+    And selected stories are seeded into Section 6 with the standard story template structure (persona, goal, happy path, error paths, edge cases, state transitions, cross-functional handoffs, ACs) — content left blank for the author to fill
 
   Scenario: Custom template via .shield.json
     Given .shield.json has prd_template: "./docs/templates/our-prd.md"
@@ -307,7 +324,9 @@ Three phases, each independently shippable with its own marketplace version bump
 
 1. **Phase A — `/prd-review`** (highest immediate value, lowest competition)
    - New skill: `shield/skills/general/prd-review/`
+   - New skill: `shield/skills/general/story-coverage/` (consumed by agile-coach for dim 4 evaluation points 4f/4g; also consumed by `/prd` in Phase B)
    - New command: `shield/commands/prd-review.md`
+   - Update `shield/agents/agile-coach-reviewer.md` to add AC11 (Persona-goal coverage) and AC12 (Archetypal flow coverage) eval points consuming the new skill
    - Multi-persona dispatch (PM, agile-coach, tech-lead, DX, cost reviewer) reusing existing scoring infra
    - Ingest pipeline: local file / paste / any URL (resolved at runtime) → markdown → snapshot
    - Type detection (lean / standard) with user confirmation
@@ -317,10 +336,11 @@ Three phases, each independently shippable with its own marketplace version bump
 2. **Phase B — `/prd`** (after Phase A is in user hands)
    - New skill: `shield/skills/general/prd-docs/`
    - New command: `shield/commands/prd.md`
-   - 12-section problem-first scaffold + lean variant
+   - 17-section problem-first scaffold + lean variant
    - PRD-type asked at generation time (no config)
    - Custom-template merging
-   - Lean → standard upgrade flow
+   - Lean → standard upgrade flow (multi-select with all missing sections pre-checked)
+   - Story-coverage scaffolding step between Sections 4 (Goals) and 6 (User stories), consuming the `story-coverage` skill shipped in Phase A
    - HTML rendering reusing existing plan-docs CSS / blue accent
    - **Kill-switch:** same as Phase A — revert commit if necessary.
 
@@ -440,6 +460,9 @@ shield/skills/general/
 │   ├── rubric.md                 ← 13 dimensions, evaluation points per dimension (incl. 4a-4e scenario coverage; threat model; RBAC matrix under NFR; i18n under NFR; data migration; risks+mitigations; cost components), severity, citations
 │   ├── ingest.md                 ← classification (local/URL/paste) + resolver chain + known-host map
 │   └── scoring.md                ← per-dim → per-persona → composite, P0/P1/P2
+├── story-coverage/               ← new (Phase A, used by both /prd-review and /prd)
+│   ├── SKILL.md                  ← derives expected stories from personas + goals + domain; cross-references NFR/GTM/rollout for orphan refs
+│   └── archetypes.md             ← library of common flow patterns per domain (auth, payment, content, lifecycle, multi-region/residency, billing, observability)
 ├── research/                     ← existing — extended (Phase C)
 │   ├── SKILL.md                  ← updated: two-phase flow
 │   ├── repo-scan.md              ← new — what to detect, how
@@ -447,6 +470,11 @@ shield/skills/general/
 ├── plan-docs/                    ← existing — minor update to consume prd.md as context
 └── plan-review/                  ← existing — minor update to consume prd.meta.json
 ```
+
+**`story-coverage` skill consumers:**
+- `shield:agile-coach-reviewer` agent — invokes the skill when grading dim 4 evaluation points 4f and 4g during `/prd-review`. Adds AC11 (Persona-goal coverage) and AC12 (Archetypal flow coverage) to the agent's existing AC1-AC10 evaluation framework.
+- `/prd` command (Phase B) — invokes the skill during the author flow after Sections 3 (Personas) and 4 (Goals) are captured, before walking Section 6 (User stories). Surfaces the expected stories as a scaffold; user confirms / skips / adds their own.
+- Future (out of Phase A scope): `/plan` could consult the skill to verify all PRD stories have plan-stories addressing them.
 
 ### `.shield.json` additions (all optional, sensibly defaulted)
 
@@ -656,7 +684,7 @@ After Detected Context, the transcript contains `## Product Context`, `## Techni
 | 1 | Problem clarity | PM | named user, baseline, why-now |
 | 2 | Scope boundaries | PM | explicit Out-of-Scope present |
 | 3 | Measurable success | PM | thresholds, leading + lagging, counter-metric, dashboard plan |
-| 4 | **Scenario coverage & AC testability** | **Agile-coach** (`shield:agile-coach-reviewer`) | 4a: happy path AND error/timeout paths · 4b: edge cases enumerated · 4c: state transitions / lifecycle documented · 4d: cross-functional handoffs noted · 4e: ACs in Given/When/Then · plus the agile-coach's existing AC1-AC10 evaluation points (context, requirements, sprint-readiness, etc.) |
+| 4 | **Scenario coverage & AC testability** | **Agile-coach** (`shield:agile-coach-reviewer`) | **Per-story (existing):** 4a: happy path AND error/timeout paths · 4b: edge cases enumerated · 4c: state transitions / lifecycle documented · 4d: cross-functional handoffs noted · 4e: ACs in Given/When/Then · **Feature-level (new):** 4f: every persona-goal pair has ≥ 1 story addressing it · 4g: archetypal flows for the feature domain are covered (auth → signup + login + recover + delete; payment → happy + decline + refund; etc.) · plus the agile-coach's existing AC1-AC10 evaluation points. Eval points 4f and 4g are derived from the new `shield:story-coverage` skill. |
 | 5 | NFR coverage | Tech-lead | perf, accessibility, privacy, security, **threat model / abuse cases**, **telemetry / event taxonomy completeness**, **RBAC / permissions matrix**, **i18n / l10n (system-level: RTL, encoding, formats, translation pipeline)** |
 | 6 | Rollout & ops | Tech-lead | flag plan, canary, kill-switch, rollback criteria, **data migration & backward compatibility** |
 | 7 | RACI & approvals | PM | named decision-maker, Legal/Security/Support sign-off path |
