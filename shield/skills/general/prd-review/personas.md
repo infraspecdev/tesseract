@@ -55,7 +55,7 @@ You are reviewing a PRD in PRD-Review mode. Mode: Standalone.
 
 ### Special instructions per persona
 
-**PM reviewer:** When grading dim 11 (Why now & cost-of-inaction) and dim 12 (Risks & assumptions), apply your existing PF1-PF11 evaluation framework where relevant.
+**PM reviewer:** When grading dim 11 (Why now & cost-of-inaction) and dim 12 (Risks & assumptions), apply your existing PF1-PF11 evaluation framework where relevant. When grading dim 2, apply the N/A exception from rubric.md for single-purpose internal engineering tools (cron jobs, backfill scripts, infra-only changes) where scope is bounded by the problem statement and there is nothing to de-scope.
 
 **Agile-coach reviewer:** When grading dim 4:
 - Apply your existing AC1-AC10 evaluation framework to eval points 4a-4e

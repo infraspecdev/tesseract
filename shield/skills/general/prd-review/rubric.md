@@ -46,8 +46,12 @@ Bare N/A (no reasoning) → graded F.
 | ID | Eval point | Severity |
 |---|---|---|
 | 2a | Explicit "Out of Scope" / "Non-goals" / "No-gos" section present | Critical |
-| 2b | Out-of-scope items have one-line rationale | Important |
+| 2b | Out-of-scope items each have one-line rationale explaining WHY excluded now | Critical |
 | 2c | Scope creep risks acknowledged | Warning |
+
+**N/A exception:** For single-purpose internal engineering tools (e.g., a cron job, a backfill script) where the scope is entirely bounded by the problem statement and there is nothing to de-scope, grade dim 2 N/A with reasoning rather than flagging absence of a Non-goals section as a gap.
+
+**Grading note:** A "Non-goals" or "Out of Scope" section that lists items WITHOUT per-item rationale satisfies 2a (section present) but fails 2b (rationale absent). With 2b now Critical, missing rationale escalates to P0.
 
 **Authorities:** Atlassian, Shape Up, Kevin Yien (Square), Plane.so — convergent across all PM template traditions.
 
