@@ -20,7 +20,7 @@ Introduce a product-requirements layer to Shield, sitting between research and t
 
 **Load-bearing design decisions:**
 - **Generic ingest.** No cloud provider baked in. Shield classifies input (local file / URL / paste), and for URLs consults an internal known-host map + runtime MCP discovery. Universal paste fallback. Adding a new tool is data, not code.
-- **12-dimension rubric** for `/prd-review` (6 engineer-flavored + 6 stakeholder/PM-lens), dispatched across PM, tech-lead, DX reviewer agents in parallel.
+- **14-dimension rubric** for `/prd-review` covering problem clarity, scope, metrics, scenario coverage & AC testability, NFRs, rollout, RACI, legal/privacy, GTM, support, i18n, why-now, risks & assumptions, cost. Dispatched across four reviewer agents in parallel (PM, tech-lead, DX, cost-reviewer).
 - **Three dimension states**: graded (A-F, counted), N/A (excluded with mandatory reasoning), informational (lean-PRD structural exemptions, excluded). Bare N/A grades F.
 - **P0-gate on verdict**: composite alone can drown out a fatal gap; any P0 caps the verdict at "Needs Work" regardless of score. Header shows "Needs Work (composite X.X, blocked by N P0s)".
 - **Canonical comments export** (`review-comments.json` + auto-generated `review-comments.md`) for converting Shield feedback into GitHub/Notion/Confluence/Jira comments via external converters.
@@ -74,7 +74,7 @@ Shield's current pre-implementation flow is `/research → /plan → /plan-revie
 
 > Given a Notion PRD URL,
 > when I run `/prd-review <url>`,
-> then Shield fetches and snapshots the PRD, detects whether it's a lean or standard PRD and confirms with me, dispatches PM / tech-lead / DX reviewer agents in parallel against a 12-dimension rubric, and produces:
+> then Shield fetches and snapshots the PRD, detects whether it's a lean or standard PRD and confirms with me, dispatches PM / tech-lead / DX / cost reviewer agents in parallel against a 14-dimension rubric, and produces:
 > - `summary.md` with composite verdict, persona grades, dimension grades, and severity-tiered gaps (P0/P1/P2)
 > - `enhanced-prd.md` with my original PRD plus suggested fixes inline
 > - `detailed/<persona>.md` per reviewer with citations to named PM authorities for skeptics
@@ -159,9 +159,9 @@ Feature: PRD review
     Given a source PRD that has only Problem, Goals, Metrics, Open Questions
     When I run /prd-review
     Then Shield detects it as lean, confirms with the user
-    And dimensions 5 (NFR), 6 (Rollout), 9 (GTM), 10 (Support), 11 (i18n) are informational (not graded)
-    And dimensions 1, 2, 3, 4, 7, 8, 12 are graded
-    And the composite verdict is computed over the 7 graded dimensions only
+    And dimensions 5 (NFR), 6 (Rollout), 9 (GTM), 10 (Support), 11 (i18n), 14 (Cost) are informational (not graded)
+    And dimensions 1, 2, 3, 4, 7, 8, 12, 13 are graded
+    And the composite verdict is computed over the 8 graded dimensions only
     And informational gaps appear under "## Informational" in summary.md with severity="informational" in review-comments.json
 
   Scenario: Reviewer marks a dimension N/A (with reasoning)
@@ -306,10 +306,10 @@ Three phases, each independently shippable with its own marketplace version bump
 1. **Phase A — `/prd-review`** (highest immediate value, lowest competition)
    - New skill: `shield/skills/general/prd-review/`
    - New command: `shield/commands/prd-review.md`
-   - Multi-persona dispatch (PM, tech-lead, DX) reusing existing scoring infra
+   - Multi-persona dispatch (PM, tech-lead, DX, cost reviewer) reusing existing scoring infra
    - Ingest pipeline: local file / paste / any URL (resolved at runtime) → markdown → snapshot
    - Type detection (lean / standard) with user confirmation
-   - 12-dimension rubric with severity-tiered output
+   - 14-dimension rubric with severity-tiered output
    - **Kill-switch:** ship behind a feature flag in `.shield.json`? No — Shield commands are inherently opt-in (user chooses to invoke). Rollback = revert the commit and bump the version back.
 
 2. **Phase B — `/prd`** (after Phase A is in user hands)
@@ -361,7 +361,7 @@ Implementation-phase open questions (if any surface) will be tracked in each pha
 - **A `/prd` command argument for type or template path.** Type is asked interactively; template path lives in `.shield.json`.
 - **Replacing or modifying `/plan`'s output.** `/plan` continues to consume `prd.md` as context if present, but its sidecar/architecture/plan HTML are unchanged.
 - **Replacing the existing `/research` external evidence-gathering.** It is preserved as Phase 2.
-- **Per-persona feature flags.** All three personas (PM, tech-lead, DX) run together; users who want a single-persona review can invoke the underlying agent directly.
+- **Per-persona feature flags.** All four personas (PM, tech-lead, DX, cost) run together; users who want a single-persona review can invoke the underlying agent directly.
 - **Project-management sync for PRDs.** `/pm-sync` continues to operate on plan stories; PRDs are documents, not work items.
 - **Version-controlled PRD diffs across runs.** Git already provides this; Shield does not need a custom diff tool.
 
@@ -409,8 +409,8 @@ shield/skills/general/
 │   └── type-detection.md         ← lean vs standard heuristics
 ├── prd-review/                   ← new (Phase A)
 │   ├── SKILL.md
-│   ├── personas.md               ← PM, tech-lead, DX dispatch prompts
-│   ├── rubric.md                 ← 12 dimensions, evaluation points, severity, citations
+│   ├── personas.md               ← PM, tech-lead, DX, cost reviewer dispatch prompts
+│   ├── rubric.md                 ← 14 dimensions, evaluation points per dimension (incl. 4a-4e scenario coverage; threat model; RBAC matrix; data migration; risks+mitigations; cost components), severity, citations
 │   ├── ingest.md                 ← classification (local/URL/paste) + resolver chain + known-host map
 │   └── scoring.md                ← per-dim → per-persona → composite, P0/P1/P2
 ├── research/                     ← existing — extended (Phase C)
@@ -430,7 +430,7 @@ shield/skills/general/
     "Problem", "Goals & non-goals", "Success metrics",
     "Out of scope", "Open questions"
   ],
-  "prd_review_personas": ["pm", "tech-lead", "dx"],
+  "prd_review_personas": ["pm", "tech-lead", "dx", "cost"],
   "prd_ingest_resolvers": [
     { "pattern": "company-wiki.internal/*", "mcp": "internal-wiki-fetch" }
   ],
@@ -441,7 +441,7 @@ shield/skills/general/
 Defaults if absent:
 - `prd_template` → built-in 12-section scaffold (problem-first)
 - `prd_required_sections` → as listed above
-- `prd_review_personas` → all three
+- `prd_review_personas` → all four
 - `prd_ingest_resolvers` → `[]` (empty; Shield's internal known-host map handles mainstream tools at runtime)
 - `research_depth` → `standard`
 
@@ -557,24 +557,26 @@ Sections inside `## Detected Context`: Stack, Integrations, Compliance markers, 
 
 After Detected Context, the transcript contains `## Product Context`, `## Technical Context`, `## Open Questions`, and (if Phase 2 ran) `## External Findings`. Heading structure is stable so downstream parsing is reliable.
 
-### `/prd-review` rubric (12 dimensions)
+### `/prd-review` rubric (14 dimensions)
 
-| # | Dimension | Owner |
-|---|---|---|
-| 1 | Problem clarity | PM |
-| 2 | Scope boundaries | PM |
-| 3 | Measurable success | PM |
-| 4 | AC testability | Tech-lead |
-| 5 | NFR coverage | Tech-lead |
-| 6 | Rollout & ops | Tech-lead |
-| 7 | RACI & approvals | PM |
-| 8 | Legal / privacy / compliance | PM |
-| 9 | GTM / customer-comms | PM |
-| 10 | Support / CX impact | PM |
-| 11 | i18n / l10n | PM |
-| 12 | Why now & cost-of-inaction | PM |
+| # | Dimension | Owner | Notable evaluation points |
+|---|---|---|---|
+| 1 | Problem clarity | PM | named user, baseline, why-now |
+| 2 | Scope boundaries | PM | explicit Out-of-Scope present |
+| 3 | Measurable success | PM | thresholds, leading + lagging, counter-metric, dashboard plan |
+| 4 | **Scenario coverage & AC testability** | Tech-lead | 4a: happy path AND error/timeout paths · 4b: edge cases enumerated · 4c: state transitions / lifecycle documented · 4d: cross-functional handoffs noted · 4e: ACs in Given/When/Then |
+| 5 | NFR coverage | Tech-lead | perf, accessibility, privacy, security, **threat model / abuse cases**, **telemetry / event taxonomy completeness** |
+| 6 | Rollout & ops | Tech-lead | flag plan, canary, kill-switch, rollback criteria, **data migration & backward compatibility** |
+| 7 | RACI & approvals | PM | named decision-maker, Legal/Security/Support sign-off path |
+| 8 | Legal / privacy / compliance | PM | data classification, PII handling, regulated-industry sign-off, **RBAC / permissions matrix** |
+| 9 | GTM / customer-comms | PM | pricing, packaging, in-app messaging, release notes, CS enablement |
+| 10 | Support / CX impact | PM | Day-1 ticket owner, runbook, sales enablement |
+| 11 | i18n / l10n | PM | languages, locale-specific copy, RTL, currency/date |
+| 12 | Why now & cost-of-inaction | PM | sequencing rationale, opportunity cost |
+| **13** | **Risks & assumptions** | **PM** | risks enumerated WITH mitigations + owners; validated vs unvalidated assumptions distinguished |
+| **14** | **Cost & resource impact** | **Cost reviewer** (`shield:cost-reviewer`) | build cost; run cost at projected scale (compute, storage, bandwidth, $$/month); cost counter-metric |
 
-Anti-patterns flagged separately: solution-first ordering, vague language, single-metric-no-counter, missing rollout, missing status/owner header.
+Anti-patterns flagged separately: solution-first ordering, vague language, single-metric-no-counter, missing rollout, missing status/owner header, **risks without mitigations**, **happy-path-only scenarios**.
 
 ### Dimension states — graded, N/A, informational
 
@@ -598,14 +600,14 @@ Every dimension is in one of three states at review time. Only **graded** dimens
 
 ### Lean rubric — graded vs informational
 
-For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced as **informational** (gaps noted, but they don't drag the composite verdict).
+For lean PRDs, 8 of the 14 dimensions are graded; the other 6 are surfaced as **informational** (gaps noted, but they don't drag the composite verdict).
 
 | # | Dimension | Lean treatment | Standard treatment |
 |---|---|---|---|
 | 1 | Problem clarity | Graded | Graded |
 | 2 | Scope boundaries | Graded | Graded |
 | 3 | Measurable success | Graded | Graded |
-| 4 | AC testability | Graded (bullets accepted; prose-only flagged) | Graded (Given/When/Then expected) |
+| 4 | Scenario coverage & AC testability | Graded (bullets accepted; happy-path-only and prose-only ACs still flagged) | Graded (Given/When/Then expected; full scenario coverage including edges, state, cross-functional handoffs) |
 | 5 | NFR coverage | **Informational** | Graded |
 | 6 | Rollout & ops | **Informational** | Graded |
 | 7 | RACI & approvals | Graded | Graded |
@@ -614,6 +616,8 @@ For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced 
 | 10 | Support / CX impact | **Informational** | Graded |
 | 11 | i18n / l10n | **Informational** | Graded |
 | 12 | Why now & cost-of-inaction | Graded | Graded |
+| **13** | **Risks & assumptions** | **Graded** | Graded |
+| **14** | **Cost & resource impact** | **Informational** | Graded |
 
 **Informational entries:**
 - Surfaced in `summary.md` under an `## Informational` section (separate from P0/P1/P2)
@@ -629,11 +633,12 @@ For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced 
 
 Persona weights for `/prd-review`:
 
-| Persona | Weight | Role |
-|---|---|---|
-| PM reviewer | 1.0 | Core |
-| Tech-lead reviewer | 1.0 | Core |
-| DX reviewer | 0.7 | Supporting |
+| Persona | Agent | Weight | Role | Dimensions owned |
+|---|---|---|---|---|
+| PM reviewer | `shield:product-manager-reviewer` | 1.0 | Core | 1, 2, 3, 7, 8, 9, 10, 11, 12, 13 |
+| Tech-lead reviewer | `shield:architecture-reviewer` | 1.0 | Core | 4, 5, 6 |
+| DX reviewer | `shield:dx-engineer-reviewer` | 0.7 | Supporting | anti-patterns + clarity (cross-cutting) |
+| Cost reviewer | `shield:cost-reviewer` | 0.7 | Supporting | 14 |
 
 Priorities (same model as plan-review): P0 = D/F on Critical · P1 = C/D on Important · P2 = C on Warning.
 
@@ -667,6 +672,7 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 | PM reviewer       | C (2.1) | 1.0 |
 | Tech-lead reviewer| D (1.4) | 1.0 |
 | DX reviewer       | B (2.8) | 0.7 |
+| Cost reviewer     | B (2.6) | 0.7 |
 
 ## Dimension grades
 | # | Dimension | Grade | Owner |
