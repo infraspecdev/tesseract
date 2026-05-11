@@ -169,6 +169,14 @@ Feature: PRD review
     When /prd-review processes that section
     Then the dimension is graded F (not excluded)
     And the comment notes "N/A claimed without reasoning — please add one-line justification"
+
+  Scenario: P0 floor on the verdict (averaging-problem guard)
+    Given the composite score computes to >= 2.5
+    And one or more dimensions are graded F on a Critical evaluation point (producing P0s)
+    When the verdict is determined
+    Then the verdict is "Needs Work" (NOT "Ready") regardless of composite
+    And summary.md header reads "Needs Work (composite <X.X>, blocked by <N> P0s)"
+    And the composite score is still shown for tracking improvement over time
 ```
 
 ### `/prd`
@@ -612,8 +620,20 @@ Persona weights for `/prd-review`:
 | Tech-lead reviewer | 1.0 | Core |
 | DX reviewer | 0.7 | Supporting |
 
-Verdicts (same as plan-review): ≥ 2.5 Ready · 1.5–2.4 Needs Work · < 1.5 Not Ready.
-Priorities (same model): P0 = D/F on Critical · P1 = C/D on Important · P2 = C on Warning.
+Priorities (same model as plan-review): P0 = D/F on Critical · P1 = C/D on Important · P2 = C on Warning.
+
+**Verdict logic — composite + P0 gate.** The composite score alone can hide a fatal gap (the "averaging problem"): enough strong dimensions can drown out one F on a critical one. To prevent that, the verdict is gated by P0 presence — if any P0 is open, the verdict cannot be "Ready" regardless of composite.
+
+| Condition | Verdict |
+|---|---|
+| Composite < 1.5 | **Not Ready** |
+| Composite 1.5 – 2.4 | **Needs Work** |
+| Composite ≥ 2.5 AND any P0 present | **Needs Work** (composite is informational; P0 floor is binding) |
+| Composite ≥ 2.5 AND zero P0s | **Ready** |
+
+The header line in `summary.md` makes the gate visible: *"Verdict: Needs Work (composite 3.3, blocked by 4 P0s)"* — readers immediately see why a high composite isn't enough. The composite stays in the report for tracking improvement over time.
+
+**Follow-up (out of scope for this branch):** `shield/skills/general/plan-review/scoring.md` should adopt the same P0-gate rule for consistency. A plan-review where Security = F should not be "Ready" regardless of how strong the architecture grade is. Tracked separately.
 
 Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, Atlassian, Shape Up, etc.) appear:
 - **Once** in the rubric documentation (`rubric.md`) as the foundation
@@ -625,7 +645,7 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 ```markdown
 # PRD Review: <feature>
 
-**Reviewed:** <source>  ·  **Type:** standard  ·  **Verdict:** Needs Work (1.8)
+**Reviewed:** <source>  ·  **Type:** standard  ·  **Verdict:** Needs Work (composite 3.3, blocked by 4 P0s)
 
 ## Persona grades
 | Persona | Grade | Weight |
