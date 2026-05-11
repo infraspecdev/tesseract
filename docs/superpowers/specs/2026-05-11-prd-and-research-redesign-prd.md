@@ -191,7 +191,7 @@ Key invariants:
 | R4 | Generated rubric over-flags well-formed PRDs (false-positive gaps) | M | M | Iterate the rubric over the first 3-5 real reviews; lower-severity points can be promoted/demoted. PM-author declared N/A escape hatch. | @ashwinimanoj |
 | R5 | Adoption-as-habit problem: engineers don't run `/prd-review` even when valuable | M-H | H | Adoption metric tracked from launch; if < 1 run/week at 30 days, dig into friction. Behavior change isn't a tooling problem alone. | @ashwinimanoj |
 | R6 | Rubric drift over time creates inconsistent grades on re-reviewed PRDs | M | L-M | `rubric_version` field in `review-comments.json`; re-runs note version change. | @ashwinimanoj |
-| R7 | Open-source plugin marketplace: PR review bandwidth limits how fast we iterate | L | M | Build in Aspora-Infraspec fork-style work, PR to upstream when stable. | @ashwinimanoj |
+| R7 | Open-source plugin marketplace: PR review bandwidth limits how fast we iterate | L | M | Build in a fork; PR to upstream when stable. | @ashwinimanoj |
 
 ---
 
@@ -279,7 +279,7 @@ Internal-team feature; no external pricing implications. GTM plan:
 | **Day-1 ticket owner** | @ashwinimanoj (escalation: Shield maintainers) |
 | **Runbook for common failures** | Documented in `shield/skills/general/prd-review/ingest.md` under "Failure flow": handler unavailable → paste fallback; unreachable URL → error message + paste fallback |
 | **User documentation** | `SKILL.md` per skill (Shield convention); command-level docs in `shield/commands/prd-review.md` |
-| **Internal training / enablement** | One Loom + one-page user guide for the Aspora-Infraspec team |
+| **Internal training / enablement** | One Loom + one-page user guide for the team |
 | **Triage policy** | P0 bugs (Shield refuses to start, wrong output written, missing artifacts): same-day; P1 (degraded rubric grades, MCP integration issues): 1-week; P2 (cosmetic, edge case): next release |
 
 ---
