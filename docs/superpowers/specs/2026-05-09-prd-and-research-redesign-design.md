@@ -29,7 +29,7 @@ Shield's current pre-implementation flow is `/research → /plan → /plan-revie
 ### Goals
 
 1. Provide a Shield-native PRD authoring command with a defensible default scaffold and support for custom team templates.
-2. Provide a Shield-native PRD review command that ingests external PRDs (file, paste, Notion, URL), produces a multi-persona scored gap analysis with severity tiers, and outputs an enhanced version with suggested fixes.
+2. Provide a Shield-native PRD review command that ingests external PRDs from any source (local file, pasted content, or any URL whose handler is available at runtime), produces a multi-persona scored gap analysis with severity tiers, and outputs an enhanced version with suggested fixes.
 3. Extend `/research` so its first phase is structured Q&A (product + tech) with repo auto-detect; preserve existing external evidence-gathering as an opt-in Phase 2.
 4. Keep all new steps optional and skippable. Downstream commands consume earlier artifacts if present.
 5. Match existing Shield conventions: feature-folder layout, manifest + index.html dashboard, plan-review scoring rubric, multi-persona dispatch.
@@ -111,19 +111,24 @@ Feature: PRD review
     And PM, tech-lead, and DX reviewer agents run in parallel
     And summary.md, enhanced-prd.md, and detailed/<persona>.md are written
 
-  Scenario: Review a Notion URL
-    Given a Notion page URL
-    When I run /prd-review <url>
-    Then the Notion MCP server is used to fetch the page content
-    And content is converted to markdown and snapshotted
-    And review proceeds as for a local file
-
-  Scenario: Review a generic URL
+  Scenario: Review a URL (runtime resolver detection)
     Given any HTTP(S) URL
     When I run /prd-review <url>
-    Then WebFetch retrieves the content
-    And it is converted to markdown and snapshotted
+    Then Shield classifies the input as a URL
+    And matches the URL host pattern against its internal known-host map
+    And looks for a matching MCP among those available in the current session at runtime
+    And if found, uses that MCP to fetch the page
+    Or if the URL has no internal map entry, or no matching MCP is available, falls through to WebFetch
+    Or if .shield.json has a custom prd_ingest_resolvers entry matching the URL, uses the named MCP
+    And content is converted to markdown and snapshotted to source-prd.md
     And review proceeds as for a local file
+
+  Scenario: Ingest handler failure → paste fallback
+    Given a URL whose resolver (matched MCP or WebFetch) is unavailable, unauthenticated, or returns an error
+    When I run /prd-review <url>
+    Then Shield reports the specific error ("Notion MCP not authenticated", "URL returned 403", "Atlassian MCP not present", etc.)
+    And offers a paste fallback in the same turn
+    And the user can drop the content into the prompt; Shield proceeds as for pasted content
 
   Scenario: Review pasted content
     Given the user has pasted PRD content into the prompt
@@ -143,6 +148,27 @@ Feature: PRD review
     And dimensions 1, 2, 3, 4, 7, 8, 12 are graded
     And the composite verdict is computed over the 7 graded dimensions only
     And informational gaps appear under "## Informational" in summary.md with severity="informational" in review-comments.json
+
+  Scenario: Reviewer marks a dimension N/A (with reasoning)
+    Given the feature genuinely doesn't trigger a dimension (e.g., an internal cron job with no user surface for i18n)
+    When the reviewer evaluates that dimension
+    Then it is graded "N/A" with a one-line reasoning, e.g., "N/A — no user-facing surface"
+    And it appears under "## Not applicable (excluded from score)" in summary.md
+    And it is tagged severity="n/a" in review-comments.json with the reasoning in the comment field
+    And it is excluded from the composite (numerator and denominator)
+
+  Scenario: PRD author declares N/A; reviewer evaluates the claim
+    Given the PRD contains "N/A — <reasoning>" under a dimension's section
+    When /prd-review processes that section
+    Then if the reasoning is plausible, the reviewer confirms N/A
+    Or if the reasoning is implausible (e.g., GTM declared N/A for a customer-facing pricing change), the reviewer overrides and grades the dimension normally
+    And the override is noted in the reviewer's detailed report
+
+  Scenario: Bare N/A without reasoning is treated as F
+    Given a PRD contains "N/A" with no reasoning under a dimension's section
+    When /prd-review processes that section
+    Then the dimension is graded F (not excluded)
+    And the comment notes "N/A claimed without reasoning — please add one-line justification"
 ```
 
 ### `/prd`
@@ -228,18 +254,17 @@ Feature: Research with Q&A and external evidence
 | NFR | Requirement |
 |---|---|
 | Performance | `/prd-review` of a 5-page PRD must complete in ≤ 3 minutes (3 parallel agents). `/prd` Q&A walk is human-paced; no SLA on total wall time. `/research` repo scan must complete in ≤ 30 seconds for a typical repo. |
-| Reproducibility | All ingest sources (file, paste, Notion, URL) snapshot to `source-prd.md` so re-runs are deterministic given the same source. |
+| Reproducibility | All ingest sources (local file, paste, any URL) snapshot to `source-prd.md` so re-runs are deterministic given the same source. |
 | Privacy | No content from the user's repo or PRDs leaves Shield's process. External evidence-gathering (existing `/research` Phase 2) is unchanged in privacy posture. |
 | Accessibility | Generated HTML uses the same conventions as existing `/plan` output (semantic headings, max-width 900-960px, blue accent). |
-| Error handling | Notion fetch failure, URL fetch failure, malformed source PRDs: Shield reports the error and prompts for a different source. Never produces a partial or silent review. |
+| Error handling | Resolver failure (MCP unavailable, auth required, network error), unreachable URLs, malformed source PRDs: Shield reports the specific error and offers a paste fallback. Never produces a partial or silent review. |
 | Telemetry / events | Manifest entries for new artifacts (PRD, PRD review, research transcript) appear in `index.html` dashboard with type, verdict (where applicable), date. |
 
 ## Dependencies & assumptions
 
 ### Dependencies
 
-- **Notion MCP server** — already installed in the Shield plugin context. Used by `/prd-review` for Notion URL ingestion. Authentication is the MCP's own concern (its `authenticate` / `complete_authentication` flow), not Shield's. If the MCP is unavailable or unauthenticated when a Notion URL is provided, Shield reports the error and falls back by offering the user to paste the page contents directly in the same turn.
-- **WebFetch tool** — used for generic URL ingestion in `/prd-review` and could be reused inside `/research` Phase 2 (no change to existing behavior). If WebFetch fails (auth required, network), Shield offers the same paste fallback as for Notion.
+- **Ingest is fully generic** — `/prd-review` classifies input as one of: local path, HTTP(S) URL, or paste content. No provider is baked in as "default." For URLs, Shield consults an **internal known-host map** (URL pattern → MCP-name pattern) and resolves at runtime by checking which MCPs are present in the session. If a matching MCP exists, it's used. If not, Shield falls through to WebFetch (for public URLs), then to paste fallback (universal). Authentication is each MCP's own concern (its `authenticate` / `complete_authentication` flow), not Shield's. Read tool handles local files natively (md, txt, pdf). Teams with non-mainstream tools can add custom resolver entries to `.shield.json` (`prd_ingest_resolvers`); the default list is empty. See *Architecture summary → Ingest dispatch* for the full model.
 - **Existing `shield:product-manager-reviewer` agent** — used in PM reviewer dispatch for `/prd-review`.
 - **Existing scoring infrastructure** in `shield/skills/general/plan-review/scoring.md` — reused with the same A-F grade scale and weighted-composite formula. PM weight = 1.0 for PRD reviews (vs 0.7 in plan reviews) since PRDs are product docs.
 
@@ -259,7 +284,7 @@ Three phases, each independently shippable with its own marketplace version bump
    - New skill: `shield/skills/general/prd-review/`
    - New command: `shield/commands/prd-review.md`
    - Multi-persona dispatch (PM, tech-lead, DX) reusing existing scoring infra
-   - Ingest pipeline: file / paste / Notion / URL → markdown → snapshot
+   - Ingest pipeline: local file / paste / any URL (resolved at runtime) → markdown → snapshot
    - Type detection (lean / standard) with user confirmation
    - 12-dimension rubric with severity-tiered output
    - **Kill-switch:** ship behind a feature flag in `.shield.json`? No — Shield commands are inherently opt-in (user chooses to invoke). Rollback = revert the commit and bump the version back.
@@ -302,7 +327,7 @@ All design-phase open questions have been resolved and folded into the relevant 
 | 2 | Lean rubric — graded vs informational | Lean: dims 1-4, 7, 8, 12 graded (7); dims 5, 6, 9, 10, 11 informational (5). Standard: all 12 graded. Informational entries surfaced but excluded from composite. | Architecture summary → Lean rubric — graded vs informational |
 | 3 | Repo-scan output in `transcript.md` | `## Detected Context` section at top, subsectioned (Stack, Integrations, Compliance, Deployment, Recent activity). Each entry tagged `(detected) / (confirmed) / (corrected by user) / (manual)` with source citation. | Architecture summary → Repo-scan and transcript format |
 | 4 | `/prd` upgrade flow shape | Single multi-select prompt (all missing sections pre-checked) + Start-fresh + Cancel. Selected sections added to a new run folder; original preserved. | Functional requirements → `/prd` Scenario: Add sections to a lean PRD |
-| 5 | Notion MCP auth | Documented prerequisite. Shield delegates auth to the Notion MCP's own flow; on failure, Shield offers a paste fallback. Same for WebFetch on generic URLs. | Dependencies & assumptions |
+| 5 | Resolver authentication | Shield doesn't bake in providers as "defaults." For URLs, Shield consults an internal known-host map and resolves at runtime to whichever MCP is available. Auth is each MCP's own concern. On any resolver failure (MCP missing, auth required, network error), Shield offers a universal paste fallback. Local files use Read directly. | Dependencies & assumptions · Architecture summary → Ingest dispatch |
 
 Implementation-phase open questions (if any surface) will be tracked in each phase's implementation plan, not here.
 
@@ -363,7 +388,7 @@ shield/skills/general/
 │   ├── SKILL.md
 │   ├── personas.md               ← PM, tech-lead, DX dispatch prompts
 │   ├── rubric.md                 ← 12 dimensions, evaluation points, severity, citations
-│   ├── ingest.md                 ← file/paste/Notion/URL → markdown pipeline
+│   ├── ingest.md                 ← classification (local/URL/paste) + resolver chain + known-host map
 │   └── scoring.md                ← per-dim → per-persona → composite, P0/P1/P2
 ├── research/                     ← existing — extended (Phase C)
 │   ├── SKILL.md                  ← updated: two-phase flow
@@ -383,6 +408,9 @@ shield/skills/general/
     "Out of scope", "Open questions"
   ],
   "prd_review_personas": ["pm", "tech-lead", "dx"],
+  "prd_ingest_resolvers": [
+    { "pattern": "company-wiki.internal/*", "mcp": "internal-wiki-fetch" }
+  ],
   "research_depth": "standard"
 }
 ```
@@ -391,6 +419,7 @@ Defaults if absent:
 - `prd_template` → built-in 12-section scaffold (problem-first)
 - `prd_required_sections` → as listed above
 - `prd_review_personas` → all three
+- `prd_ingest_resolvers` → `[]` (empty; Shield's internal known-host map handles mainstream tools at runtime)
 - `research_depth` → `standard`
 
 ### Default PRD scaffold (problem-first, 12 sections)
@@ -441,6 +470,55 @@ Header, Problem, Users, Goals, Metrics, Open Questions, Out of scope.
 
 Lean PRDs include a footer listing the standard sections they intentionally omit and pointing to the upgrade flow.
 
+### Ingest dispatch
+
+Shield doesn't enumerate cloud providers. It runs three steps:
+
+**1. Classify the input.**
+
+| Class | Detection | Handler |
+|---|---|---|
+| Local file | Path doesn't match `^https?://` (starts with `/`, `./`, or a relative path) | Read tool — supports md, txt, pdf natively |
+| HTTP(S) URL | Matches `^https?://` | Resolver chain (step 2) |
+| Paste | No source argument; content from the prompt | Direct from prompt |
+
+**2. For URLs, resolve at runtime.**
+
+Shield consults an internal known-host map (URL pattern → MCP-name pattern), then checks which MCPs are actually present in the session.
+
+| URL pattern | Looks for MCP matching | If not present |
+|---|---|---|
+| `notion.so/*` | `*notion*` | WebFetch → paste |
+| `*.atlassian.net/wiki/*` | `*atlassian*` or `*confluence*` | WebFetch → paste |
+| `docs.google.com/document/*` | `*google*drive*` or `*google*docs*` | WebFetch → paste |
+| `github.com/*/blob/*` | (no MCP needed — uses `gh` CLI directly) | WebFetch |
+| anything else | (no map entry) | WebFetch → paste |
+
+This map is **internal Shield knowledge** — not user-facing config. The user never sees it. They give Shield a URL; Shield figures out whether any present MCP can handle it, and if not, falls through.
+
+**3. Fall through universally.**
+
+- WebFetch handles any public HTTP(S) URL (no auth required)
+- Paste handles anything Shield can't reach — works for any document regardless of where it lives
+
+**Custom resolvers (extension point, rarely needed).** Teams using non-mainstream tools (Coda, Quip, Box, internal wikis, custom MCPs) can add explicit rows to `.shield.json` `prd_ingest_resolvers`. The list is empty by default; Shield's internal map covers the mainstream cases. Custom entries are checked before WebFetch fallback:
+
+```json
+{
+  "prd_ingest_resolvers": [
+    { "pattern": "company-wiki.internal/*", "mcp": "internal-wiki-fetch" }
+  ]
+}
+```
+
+**Failure flow** (uniform): handler fails → Shield reports the specific error → offers paste fallback in the same turn → user pastes content → review proceeds.
+
+**Why this is generic:**
+- No provider is baked into Shield as "default."
+- Adding support for a new cloud almost never requires code changes — if the org has an MCP and the URL is mainstream, Shield matches it at runtime; if the tool is exotic, the user adds a config row.
+- Local files work for any format Read can open (md, txt, pdf). Other formats (docx, etc.) → paste fallback.
+- The universal paste fallback means Shield never hard-fails on a document it can't reach.
+
 ### Repo-scan and transcript format
 
 `/research` Phase 1 emits a `transcript.md` that opens with a `## Detected Context` section before the Q&A topics. Each entry is tagged with a confidence marker and a source citation in italics. Downstream `/prd` and `/plan` consume this section to pre-populate Existing systems, Dependencies, and Constraints.
@@ -475,6 +553,26 @@ After Detected Context, the transcript contains `## Product Context`, `## Techni
 
 Anti-patterns flagged separately: solution-first ordering, vague language, single-metric-no-counter, missing rollout, missing status/owner header.
 
+### Dimension states — graded, N/A, informational
+
+Every dimension is in one of three states at review time. Only **graded** dimensions count toward the composite verdict.
+
+| State | When | Effect on composite | Decision driver |
+|---|---|---|---|
+| **Graded** (A/B/C/D/F) | Dimension applies; reviewer evaluates content | Counted | Default |
+| **N/A** | Dimension genuinely doesn't apply to this feature; reasoning required | Excluded | Per-PRD, per-dimension; reviewer judgment (may confirm or override the PRD author's declared N/A) |
+| **Informational** | Lean-PRD structural exemption (dims 5, 6, 9, 10, 11) | Excluded | Per-PRD, automatic for lean type |
+
+**N/A rules:**
+- Reasoning is mandatory. Bare N/A (no justification) is treated as F.
+- If the PRD author declares N/A under a dimension's section, the reviewer evaluates whether the claim is plausible. Implausible declarations are overridden and graded normally; the override is noted in the detailed report.
+- If no declaration but the feature obviously doesn't trigger the dimension, the reviewer infers N/A and writes a one-line reason.
+
+**Examples of plausible N/A:**
+- Dim 11 (i18n): internal cron job with no user-facing surface
+- Dim 9 (GTM) and 10 (Support): purely internal infrastructure changes
+- Dim 8 (Legal/privacy): no user data, no regulated industry
+
 ### Lean rubric — graded vs informational
 
 For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced as **informational** (gaps noted, but they don't drag the composite verdict).
@@ -502,9 +600,9 @@ For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced 
 ### Scoring (aligned with `plan-review/scoring.md`)
 
 - **Per evaluation point:** A (4) / B (3) / C (2) / D (1) / F (0)
-- **Per dimension:** average of points, rounded to letter
-- **Per persona:** average of dimensions, rounded to letter
-- **Composite:** weighted average of activated personas
+- **Per dimension:** average of points, rounded to letter — or **N/A** (excluded) or **informational** (excluded)
+- **Per persona:** average of that persona's *graded* dimensions, rounded to letter (N/A and informational dimensions are dropped from the persona's average)
+- **Composite:** weighted average of activated personas, computed over graded dimensions only (both N/A and informational excluded from numerator and denominator)
 
 Persona weights for `/prd-review`:
 
@@ -547,6 +645,10 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 ## P2 — Nice to have
 - ...
 
+## Not applicable (excluded from score)
+- Dim 8 (Legal / privacy): N/A — internal cron job, no user data
+- Dim 11 (i18n / l10n): N/A — no user-facing surface
+
 ## Informational (lean PRDs only — not graded)
 - ...
 
@@ -575,7 +677,8 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
   "feature": "<feature-name>",
   "review_id": "<YYYYMMDD>-<N>-prd-review",
   "source": {
-    "type": "file | paste | notion-url | url",
+    "type": "file | paste | url",
+    "resolver": "<name of resolver that handled it — e.g., 'notion-fetch', 'webfetch', 'gh-cli'>",
     "uri": "<original location, if applicable>",
     "snapshot": "source-prd.md"
   },
@@ -588,7 +691,7 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
       "section": "<heading name>",
       "section_anchor": "<URL-safe anchor>",
       "line_in_source": 28,
-      "severity": "P0 | P1 | P2 | informational",
+      "severity": "P0 | P1 | P2 | informational | n/a",
       "reviewer": "pm | tech-lead | dx",
       "dimension": "<rubric dimension name>",
       "comment": "<markdown — body of destination comment>",
@@ -599,13 +702,19 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 }
 ```
 
-Per comment: at least one of `suggested_addition` / `suggested_replacement` is non-null. Addition vs replacement is the converter's signal — addition becomes "consider adding…"; replacement maps to GitHub suggestion blocks or inline replacements.
+**Severity values:** `P0` / `P1` / `P2` (graded gaps), `informational` (lean PRD structural exemptions), `n/a` (per-dimension reviewer-judged exclusions with reasoning in the `comment` field).
+
+**Suggestion fields by severity:**
+- P0 / P1 / P2: at least one of `suggested_addition` / `suggested_replacement` is non-null (gap with fix).
+- `informational` and `n/a`: both suggestion fields are null (no fix proposed; entry is explanatory).
+
+Addition vs replacement is the converter's signal — addition becomes "consider adding…"; replacement maps to GitHub suggestion blocks or inline replacements.
 
 **`review-comments.md`** is auto-generated from the JSON for human review. Stable headers (`## Section: <name> (line N)`) so a markdown-only reader can navigate it. Regenerated whenever the JSON changes; never edited directly.
 
 **Apply options** (presented after review completes):
-1. **Use as Shield's canonical PRD** — copy `enhanced-prd.md` to `prd/{N}/prd.md`. Works for any source type (file, URL, Notion, paste). Downstream Shield commands consume the enhanced version from here.
-2. **Convert back to original format** — produce `enhanced-prd.<ext>` (HTML, Notion-flavored markdown, etc.) so the team can paste back into their tool. Shield does NOT write to the original source location.
+1. **Use as Shield's canonical PRD** — copy `enhanced-prd.md` to `prd/{N}/prd.md`. Works for any source type (local file, URL of any cloud tool, paste). Downstream Shield commands consume the enhanced version from here.
+2. **Convert back to original format** — produce `enhanced-prd.<ext>` in a format that matches the source's original tool (HTML, tool-specific markdown flavor, etc.) so the team can paste back into their tool. Shield does NOT write to the original source location.
 3. **Skip** — keep `enhanced-prd.md` in the review folder; do nothing else.
 
 Converter tools that post to external systems (GitHub, Notion, Confluence) are out of scope for Phase A — they consume `review-comments.json` and are tracked as a future enhancement.
