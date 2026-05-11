@@ -77,7 +77,7 @@ Shield's current pre-implementation flow is `/research → /plan → /plan-revie
 
 > When I previously wrote a lean PRD and scope has grown,
 > and I run `/prd` again,
-> then Shield offers: upgrade to standard / add specific sections / start fresh / cancel. Picking upgrade or add-sections creates a new run folder, carries forward existing content, and walks me through filling new sections.
+> then Shield offers a multi-select prompt with all 5 missing standard sections pre-checked (uncheck to skip any), plus "Start fresh" and "Cancel". Picking add-sections creates a new run folder, carries forward existing content, and walks me through filling each newly-added section.
 
 ### Story 3 — Authoring a PRD with a custom team template
 
@@ -139,8 +139,10 @@ Feature: PRD review
     Given a source PRD that has only Problem, Goals, Metrics, Open Questions
     When I run /prd-review
     Then Shield detects it as lean, confirms with the user
-    And dimensions 5, 6, 9, 10, 11 are weighted as informational, not blocking
-    And the rubric output reflects the lean variant
+    And dimensions 5 (NFR), 6 (Rollout), 9 (GTM), 10 (Support), 11 (i18n) are informational (not graded)
+    And dimensions 1, 2, 3, 4, 7, 8, 12 are graded
+    And the composite verdict is computed over the 7 graded dimensions only
+    And informational gaps appear under "## Informational" in summary.md with severity="informational" in review-comments.json
 ```
 
 ### `/prd`
@@ -175,13 +177,14 @@ Feature: PRD authoring
     Then prd.md ends with a footer listing the standard sections that are intentionally omitted
     And prd.meta.json records type=lean and sections_missing=[...]
 
-  Scenario: Upgrade lean to standard
+  Scenario: Add sections to a lean PRD
     Given a lean PRD exists in the feature folder
     When I run /prd again
-    Then Shield offers: upgrade to standard / add specific sections / start fresh / cancel
-    And picking upgrade carries forward existing content into a new run folder
-    And walks the user through filling the missing sections
-    And the original lean run folder is preserved
+    Then Shield presents a multi-select prompt of all standard sections missing from the lean PRD (all pre-checked by default)
+    And user can uncheck sections to skip, or pick "Start fresh" or "Cancel"
+    And the selected sections are added; a focused Q&A pass runs for each newly-added section only
+    And the new PRD is written to a new run folder (prd/{N+1}/), carrying forward existing content
+    And the original lean run folder is preserved at prd/{N}/
 ```
 
 ### `/research` (extended)
@@ -235,8 +238,8 @@ Feature: Research with Q&A and external evidence
 
 ### Dependencies
 
-- **Notion MCP server** — already installed in the Shield plugin context. Used by `/prd-review` for Notion URL ingestion.
-- **WebFetch tool** — used for generic URL ingestion in `/prd-review` and could be reused inside `/research` Phase 2 (no change to existing behavior).
+- **Notion MCP server** — already installed in the Shield plugin context. Used by `/prd-review` for Notion URL ingestion. Authentication is the MCP's own concern (its `authenticate` / `complete_authentication` flow), not Shield's. If the MCP is unavailable or unauthenticated when a Notion URL is provided, Shield reports the error and falls back by offering the user to paste the page contents directly in the same turn.
+- **WebFetch tool** — used for generic URL ingestion in `/prd-review` and could be reused inside `/research` Phase 2 (no change to existing behavior). If WebFetch fails (auth required, network), Shield offers the same paste fallback as for Notion.
 - **Existing `shield:product-manager-reviewer` agent** — used in PM reviewer dispatch for `/prd-review`.
 - **Existing scoring infrastructure** in `shield/skills/general/plan-review/scoring.md` — reused with the same A-F grade scale and weighted-composite formula. PM weight = 1.0 for PRD reviews (vs 0.7 in plan reviews) since PRDs are product docs.
 
@@ -291,13 +294,17 @@ No migration needed. Existing feature folders are unchanged; new subfolders (`pr
 
 ## Open questions
 
-| # | Question | Owner | Notes |
+All design-phase open questions have been resolved and folded into the relevant sections of this spec. The resolutions:
+
+| # | Question | Decision | Details in |
 |---|---|---|---|
-| 1 | Should `/prd-review` enhanced-prd.md make inline edits or use comments? | Phase A implementation | Inline edits = cleaner; comments = preserves original. Suggest comments-first, evaluate. |
-| 2 | Lean rubric — exactly which dimensions are "informational" vs "warning"? | Phase A implementation | Draft: dims 5, 6, 9, 10, 11 informational for lean. Validate against real lean PRDs. |
-| 3 | Repo-scan output format inside `transcript.md` | Phase C implementation | Suggest a "Detected Context" header section before the Q&A sections. |
-| 4 | Should `/prd` upgrade flow let user select sections to add, or force all-or-nothing? | Phase B implementation | Design says "add specific sections" — keep it. Validate UX before shipping. |
-| 5 | Where does Notion MCP authentication live? | Phase A implementation | Existing Notion MCP setup in `~/.claude/plugins/cache/...` should suffice; document the dependency. |
+| 1 | `enhanced-prd.md` shape | Mirror `plan-review` convention: P0/P1 inline with `<!-- [from: <Persona>] -->` attribution, P2 as comments. Never overwrites source. Optional `enhanced-prd.<ext>` conversion back to source format. New `review-comments.json` + auto-generated `review-comments.md` for tool-export. | Architecture summary → Enhanced PRD output and comments export |
+| 2 | Lean rubric — graded vs informational | Lean: dims 1-4, 7, 8, 12 graded (7); dims 5, 6, 9, 10, 11 informational (5). Standard: all 12 graded. Informational entries surfaced but excluded from composite. | Architecture summary → Lean rubric — graded vs informational |
+| 3 | Repo-scan output in `transcript.md` | `## Detected Context` section at top, subsectioned (Stack, Integrations, Compliance, Deployment, Recent activity). Each entry tagged `(detected) / (confirmed) / (corrected by user) / (manual)` with source citation. | Architecture summary → Repo-scan and transcript format |
+| 4 | `/prd` upgrade flow shape | Single multi-select prompt (all missing sections pre-checked) + Start-fresh + Cancel. Selected sections added to a new run folder; original preserved. | Functional requirements → `/prd` Scenario: Add sections to a lean PRD |
+| 5 | Notion MCP auth | Documented prerequisite. Shield delegates auth to the Notion MCP's own flow; on failure, Shield offers a paste fallback. Same for WebFetch on generic URLs. | Dependencies & assumptions |
+
+Implementation-phase open questions (if any surface) will be tracked in each phase's implementation plan, not here.
 
 ## Out of scope
 
@@ -330,8 +337,11 @@ No migration needed. Existing feature folders are unchanged; new subfolders (`pr
 ├── prd-review/
 │   └── {N}-{slug}/
 │       ├── summary.md
-│       ├── enhanced-prd.md
-│       ├── source-prd.md
+│       ├── source-prd.md            ← verbatim snapshot of original source
+│       ├── enhanced-prd.md          ← P0/P1 inline + P2 comments; never overwrites source
+│       ├── enhanced-prd.<ext>       ← (optional) conversion back to source's original format
+│       ├── review-comments.json     ← canonical structured per-section gap comments
+│       ├── review-comments.md       ← auto-generated human view of the JSON
 │       └── detailed/
 │           ├── pm-reviewer.md
 │           ├── tech-lead.md
@@ -431,6 +441,21 @@ Header, Problem, Users, Goals, Metrics, Open Questions, Out of scope.
 
 Lean PRDs include a footer listing the standard sections they intentionally omit and pointing to the upgrade flow.
 
+### Repo-scan and transcript format
+
+`/research` Phase 1 emits a `transcript.md` that opens with a `## Detected Context` section before the Q&A topics. Each entry is tagged with a confidence marker and a source citation in italics. Downstream `/prd` and `/plan` consume this section to pre-populate Existing systems, Dependencies, and Constraints.
+
+| Tag | Meaning |
+|---|---|
+| `(confirmed)` | Shield detected AND user said yes |
+| `(detected)` | Shield inferred from repo; user neither confirmed nor corrected |
+| `(corrected by user)` | Shield's guess was wrong; this is the correction |
+| `(manual)` | User added; Shield did not detect |
+
+Sections inside `## Detected Context`: Stack, Integrations, Compliance markers, Deployment pattern, Recent activity. Each is bullet-list per item, with source citation (`— *from package.json*`, `— *git log*`, etc.).
+
+After Detected Context, the transcript contains `## Product Context`, `## Technical Context`, `## Open Questions`, and (if Phase 2 ran) `## External Findings`. Heading structure is stable so downstream parsing is reliable.
+
 ### `/prd-review` rubric (12 dimensions)
 
 | # | Dimension | Owner |
@@ -449,6 +474,30 @@ Lean PRDs include a footer listing the standard sections they intentionally omit
 | 12 | Why now & cost-of-inaction | PM |
 
 Anti-patterns flagged separately: solution-first ordering, vague language, single-metric-no-counter, missing rollout, missing status/owner header.
+
+### Lean rubric — graded vs informational
+
+For lean PRDs, only 7 of the 12 dimensions are graded; the other 5 are surfaced as **informational** (gaps noted, but they don't drag the composite verdict).
+
+| # | Dimension | Lean treatment | Standard treatment |
+|---|---|---|---|
+| 1 | Problem clarity | Graded | Graded |
+| 2 | Scope boundaries | Graded | Graded |
+| 3 | Measurable success | Graded | Graded |
+| 4 | AC testability | Graded (bullets accepted; prose-only flagged) | Graded (Given/When/Then expected) |
+| 5 | NFR coverage | **Informational** | Graded |
+| 6 | Rollout & ops | **Informational** | Graded |
+| 7 | RACI & approvals | Graded | Graded |
+| 8 | Legal / privacy / compliance | Graded (A if N/A applies) | Graded |
+| 9 | GTM / customer-comms | **Informational** | Graded |
+| 10 | Support / CX impact | **Informational** | Graded |
+| 11 | i18n / l10n | **Informational** | Graded |
+| 12 | Why now & cost-of-inaction | Graded | Graded |
+
+**Informational entries:**
+- Surfaced in `summary.md` under an `## Informational` section (separate from P0/P1/P2)
+- Tagged `severity: "informational"` in `review-comments.json`
+- Excluded from the composite formula entirely (denominator is over graded dimensions only)
 
 ### Scoring (aligned with `plan-review/scoring.md`)
 
@@ -498,9 +547,68 @@ Citations to named PM authorities (Cagan, Lenny, Shreyas, Plane.so, Routine.co, 
 ## P2 — Nice to have
 - ...
 
+## Informational (lean PRDs only — not graded)
+- ...
+
 ## Anti-patterns
 - ...
 ```
+
+### Enhanced PRD output and comments export
+
+`/prd-review` produces an enhanced copy of the source PRD plus a structured comments export. The source PRD is never overwritten.
+
+**`enhanced-prd.md`** mirrors the `plan-review` convention:
+
+- Original PRD structure preserved exactly
+- P0 and P1 recommendations applied **directly inline** with `<!-- [from: <Persona>] -->` attribution (PM Reviewer / Tech-lead Reviewer / DX Reviewer)
+- P2 recommendations added as **comments adjacent to the relevant section**, not direct changes
+- Informational entries (lean PRDs) added as comments tagged `<!-- [informational] -->`
+- Already-good sections left unchanged
+- If source was markdown, output is markdown; if HTML, HTML
+
+**`review-comments.json`** is the canonical structured export, intended for converters that post comments back into the team's PM/code-review tools (GitHub PR review, Notion page comments, Confluence inline comments, Jira). Schema:
+
+```json
+{
+  "schema_version": "1.0",
+  "feature": "<feature-name>",
+  "review_id": "<YYYYMMDD>-<N>-prd-review",
+  "source": {
+    "type": "file | paste | notion-url | url",
+    "uri": "<original location, if applicable>",
+    "snapshot": "source-prd.md"
+  },
+  "prd_type": "standard | lean",
+  "verdict": "Ready | Needs Work | Not Ready",
+  "composite_score": 1.8,
+  "comments": [
+    {
+      "id": "<persona>-<seq>",
+      "section": "<heading name>",
+      "section_anchor": "<URL-safe anchor>",
+      "line_in_source": 28,
+      "severity": "P0 | P1 | P2 | informational",
+      "reviewer": "pm | tech-lead | dx",
+      "dimension": "<rubric dimension name>",
+      "comment": "<markdown — body of destination comment>",
+      "suggested_addition": "<markdown, or null>",
+      "suggested_replacement": "<markdown, or null>"
+    }
+  ]
+}
+```
+
+Per comment: at least one of `suggested_addition` / `suggested_replacement` is non-null. Addition vs replacement is the converter's signal — addition becomes "consider adding…"; replacement maps to GitHub suggestion blocks or inline replacements.
+
+**`review-comments.md`** is auto-generated from the JSON for human review. Stable headers (`## Section: <name> (line N)`) so a markdown-only reader can navigate it. Regenerated whenever the JSON changes; never edited directly.
+
+**Apply options** (presented after review completes):
+1. **Use as Shield's canonical PRD** — copy `enhanced-prd.md` to `prd/{N}/prd.md`. Works for any source type (file, URL, Notion, paste). Downstream Shield commands consume the enhanced version from here.
+2. **Convert back to original format** — produce `enhanced-prd.<ext>` (HTML, Notion-flavored markdown, etc.) so the team can paste back into their tool. Shield does NOT write to the original source location.
+3. **Skip** — keep `enhanced-prd.md` in the review folder; do nothing else.
+
+Converter tools that post to external systems (GitHub, Notion, Confluence) are out of scope for Phase A — they consume `review-comments.json` and are tracked as a future enhancement.
 
 ## References
 
