@@ -141,7 +141,7 @@ Selected stories are seeded into Section 6 with the standard story template stru
 
 Walk Sections 5, then Section 6 (filling in content for the scaffolded stories), then 7-17 in order.
 
-For lean PRDs, only walk Sections 5, 16 (Open Questions), 17 (Out of Scope) — skip 6-15 entirely.
+For lean PRDs, only walk the lean scaffold's sections 5 (Success metrics), 6 (Open questions), 7 (Out of scope) — these map to standard sections 5, 17, 18. Do NOT walk standard sections 6-16; lean omits them intentionally. Use the lean scaffold from `templates.md`, not the standard one.
 
 ### 9. Custom-template merging
 
@@ -184,7 +184,7 @@ PRD authored. What's next?
 |---|---|
 | Writing prd.md without prd.meta.json | Both are mandatory; meta.json holds the type + linked_plans for downstream commands |
 | Skipping story-coverage scaffolding for standard PRDs | Required step for standard; skipping leads to poor dim 4 grades downstream |
-| Walking lean PRD through all 17 sections | Lean is intentionally 7 sections; walk only those |
+| Walking lean PRD through all 17 sections | Lean is intentionally 7 sections (its own numbering); use the lean scaffold from templates.md, not the standard one |
 | Forgetting custom-template required-section merging | Custom templates MUST have all required sections; Shield appends missing ones with markers |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
