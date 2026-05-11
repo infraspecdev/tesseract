@@ -1,0 +1,5 @@
+services:
+  postgres:
+    image: postgres:16
+  redis:
+    image: redis:7

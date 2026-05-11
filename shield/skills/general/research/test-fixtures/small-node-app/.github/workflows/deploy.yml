@@ -1,0 +1,7 @@
+name: deploy
+on: { push: { branches: [main] } }
+jobs:
+  deploy:
+    steps:
+      - name: canary
+        run: helm upgrade --install --set canary.enabled=true ...
