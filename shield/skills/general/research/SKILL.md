@@ -1,6 +1,6 @@
 ---
 name: research
-description: Use when comparing approaches, evaluating tools, building evidence-based decisions, or the user needs citations and industry backing. Triggers on /research, investigate, compare, evaluate.
+description: Use when starting work on a new feature — gathers product + tech context via Q&A walk (Phase 1) with repo auto-detection, then optionally runs external evidence-gathering with citations (Phase 2). Triggers on /research, investigate, compare, evaluate.
 ---
 
 # Research Skill
@@ -40,23 +40,87 @@ Where:
 
 At startup, call execute-steps to register these steps. Execute them in order, updating status after each.
 
-| Step | Action | Condition | Mandatory |
-|------|--------|-----------|-----------|
-| 1 | Clarify topic | skip if user provided context | No |
-| 2 | PM framing | always | Yes |
-| 3 | Parallel research agents (3) | always | Yes |
-| 4 | Synthesize findings | always | Yes |
-| 5 | PM review | always | Yes |
-| 6 | Write document + update manifest | always | Yes |
+| Step | Action | Phase | Condition | Mandatory |
+|------|--------|-------|-----------|-----------|
+| 1 | Repo scan (silent) | Phase 1 | always | Yes |
+| 2 | Surface detected context + confirm | Phase 1 | always | Yes |
+| 3 | Q&A walk | Phase 1 | always | Yes |
+| 4 | Surface open questions + offer Phase 2 | Phase 1 | always | Yes |
+| 5 | PM framing on chosen questions | Phase 2 | if Phase 2 accepted | Conditional |
+| 6 | Parallel research agents (3) | Phase 2 | if Phase 2 accepted | Conditional |
+| 7 | Synthesize findings | Phase 2 | if Phase 2 accepted | Conditional |
+| 8 | PM review | Phase 2 | if Phase 2 accepted | Conditional |
+| 9 | Write transcript.md + findings.md | Both | always | Yes |
 
 ## Workflow
 
-1. **Clarify topic** — skip if user already provided enough context
-2. **PM framing** — dispatch PM agent in research-framing mode
-3. **Research with parallel agents** — shaped by PM framing output
-4. **Synthesize findings**
-5. **PM review** — dispatch PM agent in research-review mode
-6. **Write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`** — the Write tool creates directories automatically
+### Phase 1 — Structured Q&A with repo auto-detection (Phase C addition)
+
+#### Step 1: Repo scan (silent)
+
+See `repo-scan.md`. Scan in background. Categories: Stack, Integrations, Compliance markers, Deployment pattern, Recent activity, Past decisions / ADRs, Prior Shield artifacts. Performance budget ≤ 30s; degrade gracefully on large repos.
+
+#### Step 2: Surface detected context + confirm with user
+
+Display the `## Detected Context` block to the user. Prompt:
+
+> "I scanned your repo and found: <summary>. Confirm or correct before I ask the rest?"
+
+Update tags based on user feedback: `(detected)` → `(confirmed)` if user says yes; `(corrected by user)` if user pushes back with a different value; `(manual)` if user adds something Shield missed.
+
+#### Step 3: Q&A walk
+
+See `qa-topics.md` for the topic catalog, depth modes, and skip rules. Walk topics in order, asking only what's not auto-answered.
+
+Skip handling: `skip` or `I don't know` → record `[unanswered]`, surface in Open Questions section.
+
+#### Step 4: Surface unanswered + offer Phase 2
+
+After Phase 1 completes:
+
+```
+Phase 1 captured your context. These open questions would benefit from external evidence-gathering:
+- <question 1>
+- <question 2>
+
+Run Phase 2 (external research)? (yes / no / pick specific)
+```
+
+If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If no, write transcript.md and finish.
+
+### Phase 2 — External evidence-gathering (existing behavior preserved)
+
+#### Step 5: PM framing on the chosen questions
+
+(Existing PM-framing logic. Dispatches `shield:product-manager-reviewer` in research-framing mode.)
+
+#### Step 6: Three parallel research agents
+
+(Existing 3-agent flow: official sources, industry voices, community experience. Each agent runs with the PM framing context.)
+
+#### Step 7: Synthesize findings
+
+(Existing synthesis logic.)
+
+#### Step 8: PM review on findings
+
+(Existing PM-review mode.)
+
+#### Step 9: Write findings.md
+
+(Existing write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`.)
+
+### Combined output
+
+After both phases complete, the run folder contains:
+- `transcript.md` — Phase 1 Q&A + repo scan summary + product/tech context (always present)
+- `findings.md` — Phase 2 external evidence with citations (present only if Phase 2 ran)
+
+---
+
+### Legacy clarify step (Phase 2 only mode)
+
+When invoked with `--phase2-only`, skip Phase 1 entirely and run the following original workflow:
 
 ## Clarify Topic & Scope
 
