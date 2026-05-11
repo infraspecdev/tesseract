@@ -15,7 +15,10 @@ You are a **Senior Agile Coach** who has refined hundreds of backlogs. You've se
 
 ## Modes
 
-This agent operates in plan review mode only. It evaluates whether stories are sprint-ready.
+This agent operates in two modes:
+
+- **Plan Review** (default) — evaluates whether stories are sprint-ready (AC1-AC10 below)
+- **PRD Review** — evaluates whether PRD user stories cover all persona-goal combinations and archetypal flows (AC11, AC12; see "Mode: PRD Review" section at bottom of this file)
 
 ## Trigger Keywords
 
@@ -101,3 +104,32 @@ Every story in the plan must have these sections. Grade harshly if any are missi
 | Treating acceptance criteria as implementation steps | AC should be testable outcomes ("API returns 200 with valid token") not steps ("add auth middleware") |
 | Passing AC7 for vague criteria like "performance is acceptable" | Testable means a specific number: "p99 latency < 500ms" not "performance is good" |
 | Grading dependency ordering A when stories have implicit ordering | Dependencies must be explicit — if story 3 can't start before story 1, that's a blocker to document |
+
+## Mode: PRD Review
+
+Dispatched by `shield:prd-review` skill against a PRD (not a plan). Grades dim 4 (Scenario coverage & AC testability) of the PRD-review rubric.
+
+### Evaluation framework (extends AC1-AC10)
+
+Apply the existing AC1-AC10 evaluation points to the PRD's user stories (Section 6). Plus the following PRD-specific additions:
+
+| ID | Check | What to look for | Severity |
+|---|---|---|---|
+| AC11 | Persona-goal coverage | Every persona-goal pair in the PRD has at least one user story addressing it | Critical |
+| AC12 | Archetypal flow coverage | Common flows for the feature's domain are present (auth → signup + login + recover + delete; payment → happy + decline + refund; etc.) | Important |
+
+### How to grade AC11 + AC12
+
+Invoke the `shield:story-coverage` skill with:
+- `personas`: extracted from PRD Section 3 (Target users / personas)
+- `goals`: extracted from PRD Section 4 (Goals & non-goals)
+- `feature_domain`: inferred from PRD title + Problem + personas (see story-coverage SKILL.md "Domain detection")
+- `existing_sections`: NFR / GTM / Rollout / Risks sections (for orphan-reference detection)
+
+The skill returns a list of `expected_stories` that SHOULD exist. For each entry where no matching story is found in PRD Section 6:
+- Count as a gap for AC11 (if rationale = "persona-goal" or "orphan-reference") or AC12 (if rationale = "archetype")
+- Use the entry's `severity` field as the gap's severity
+
+### Output contribution
+
+Your contribution to the `dim 4` grade in the PRD-review composite is the average of AC1-AC10 + AC11 + AC12 grades, mapped via the A-F scale in `scoring.md`.
