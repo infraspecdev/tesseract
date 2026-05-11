@@ -78,8 +78,9 @@ Report each as: `<Compliance> (detected) — *mentioned in <file>*`.
 | `helm/values.yaml` containing canary stanza | Canary rollout |
 | `argo-cd-app.yaml` or `Application.yaml` | ArgoCD |
 | `.github/workflows/*.yml` with `terraform plan` | Terraform / Atmos |
+| `CLAUDE.md` or `README.md` mentioning `helm`, `ArgoCD`, `canary`, `blue-green`, `kubernetes`, `k8s` | Deployment context noted in project docs |
 
-Report as: `<Pattern> (detected) — *from <workflow file>*`.
+Report as: `<Pattern> (detected) — *from <workflow file or doc>*`.
 
 ### Recent activity
 
