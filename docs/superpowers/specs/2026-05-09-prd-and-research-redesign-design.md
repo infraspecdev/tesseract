@@ -9,9 +9,24 @@
 
 ## TL;DR
 
-Introduce a product-requirements layer to Shield, sitting between research and technical planning. Two new commands (`/prd`, `/prd-review`) plus an enhancement to the existing `/research` command to capture problem-space and tech-context Q&A before its existing external evidence-gathering. Each command is independently usable; downstream commands consume earlier artifacts as context if present.
+Introduce a product-requirements layer to Shield, sitting between research and technical planning. Two new commands (`/prd`, `/prd-review`) plus an enhancement to the existing `/research` command. All steps optional; each command consumes earlier artifacts as context if present.
 
-Shipping order: `/prd-review` first (highest immediate value, lowest competition), then `/prd` (author mode), then `/research` Phase 1 (Q&A + repo auto-detect).
+**New flow:** `/research` (Q&A + optional external evidence) → `/prd` (or `/prd-review` for existing) → `/plan` → `/plan-review` → `/implement`.
+
+**Shipping order (3 phases):**
+1. `/prd-review` — multi-persona scored gap analysis on an ingested PRD. Highest immediate value, lowest competition vs. existing tools.
+2. `/prd` — author mode with 12-section problem-first scaffold (lean variant available), custom-template merging via `.shield.json`, lean→standard upgrade flow.
+3. `/research` Phase 1 — repo auto-detect + structured product+tech Q&A; existing external evidence-gathering becomes opt-in Phase 2.
+
+**Load-bearing design decisions:**
+- **Generic ingest.** No cloud provider baked in. Shield classifies input (local file / URL / paste), and for URLs consults an internal known-host map + runtime MCP discovery. Universal paste fallback. Adding a new tool is data, not code.
+- **12-dimension rubric** for `/prd-review` (6 engineer-flavored + 6 stakeholder/PM-lens), dispatched across PM, tech-lead, DX reviewer agents in parallel.
+- **Three dimension states**: graded (A-F, counted), N/A (excluded with mandatory reasoning), informational (lean-PRD structural exemptions, excluded). Bare N/A grades F.
+- **P0-gate on verdict**: composite alone can drown out a fatal gap; any P0 caps the verdict at "Needs Work" regardless of score. Header shows "Needs Work (composite X.X, blocked by N P0s)".
+- **Canonical comments export** (`review-comments.json` + auto-generated `review-comments.md`) for converting Shield feedback into GitHub/Notion/Confluence/Jira comments via external converters.
+- **Source PRD never overwritten.** `enhanced-prd.md` is always a copy; "Use as Shield's canonical PRD" copies it to `prd/{N}/prd.md`.
+
+**Scoring** aligned with `plan-review/scoring.md` (A-F per evaluation point, weighted-average composite). PM weight 1.0 (Core for product docs), tech-lead 1.0, DX 0.7. P0-gate is a follow-up to also apply to `plan-review`.
 
 ## Problem
 
