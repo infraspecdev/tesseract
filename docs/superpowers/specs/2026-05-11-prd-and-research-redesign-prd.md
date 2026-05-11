@@ -103,25 +103,32 @@ The Phase A primary target is **P1** — engineering leads ingesting external PR
   - Given a Notion URL with Notion MCP present, When `/prd-review <url>` runs, Then `source-prd.md` is created with the page content snapshot AND all 6 output files are produced AND verdict respects the P0-gate
   - Given Notion MCP is absent, When `/prd-review <url>` runs, Then Shield offers paste fallback in the same turn AND continues review on pasted content
   - Given a PRD with GTM dim graded F, When verdict is computed, Then verdict is "Needs Work (composite X.X, blocked by N P0s)" regardless of composite score
+  - Given a PRD with 3 personas + 4 goals but only 2 stories, When the agile-coach reviewer grades dim 4, Then dim 4 evaluation points 4f (persona-goal coverage) and 4g (archetypal flow coverage) flag the missing stories via the `shield:story-coverage` skill AND missing-but-expected stories appear as P0/P1 entries in summary.md
 
 ### Story P2-S1: PM authors a new PRD using the default scaffold
 
 - **Persona:** P2 — PM or eng lead
-- **Goal:** Author a complete PRD using Shield's 17-section problem-first scaffold without forgetting load-bearing sections.
+- **Goal:** Author a complete PRD using Shield's 17-section problem-first scaffold without forgetting load-bearing sections or load-bearing user stories.
 - **Happy path:**
   1. PM runs `/prd <topic>`
   2. Shield asks PRD type (standard | lean); PM picks standard
   3. Shield checks for prior `/research` transcript in feature folder; if present, pre-populates Problem, Users, Constraints
-  4. Shield walks remaining sections one at a time, asking for content
-  5. PM provides answers; Shield writes `prd.md`, `prd.html`, `prd.meta.json` to new run folder
+  4. Shield walks Sections 1-4 (Header, Problem, Personas, Goals) capturing content
+  5. Between Sections 4 and 6, Shield invokes the `shield:story-coverage` skill with the captured personas + goals + detected feature domain; presents a multi-select list of expected stories ("for Anika's goal X you'll likely want stories Y, Z; archetypal flows for payment domain: happy + decline + refund")
+  6. PM confirms/skips/adds stories; selected ones are seeded into Section 6 with the standard story template structure (blank for PM to fill)
+  7. Shield walks remaining sections (5, 6 content, 7-17) one at a time
+  8. PM provides answers; Shield writes `prd.md`, `prd.html`, `prd.meta.json` to new run folder
 - **Error / timeout / abandon paths:**
   - PM hits "skip" on a required section → Shield records `[TBD]` and surfaces it as an Open Question
+  - PM skips ALL story-coverage suggestions → Section 6 is empty; flagged as P0 by `/prd-review` if run later
 - **Edge cases:**
   - `.shield.json` declares a custom template → Shield merges in any required sections the custom template lacks, reports "Augmented your template with: <list>"
   - PM has a prior lean PRD in the folder → Shield offers multi-select to add sections (defaults to all 10 missing-from-standard checked)
+  - Feature domain can't be detected by the story-coverage skill → only persona-goal derivation is shown; no archetypal flows
 - **Cross-functional handoffs:** if PM names sign-off contacts in Header, downstream `/plan` and `/prd-review` reference them
 - **Acceptance criteria (Given/When/Then):**
   - Given `<topic>` only, When `/prd standard <topic>` runs, Then Shield walks the 17-section scaffold AND writes `prd.md`, `prd.html`, `prd.meta.json` to `prd/{N}-{slug}/`
+  - Given Sections 3 (Personas) and 4 (Goals) have been captured, When the author flow reaches Section 6, Then Shield invokes the `shield:story-coverage` skill AND presents expected stories AND seeds confirmed ones with the standard story template structure
   - Given `.shield.json` `prd_template` is set, When `/prd` runs, Then the custom template is used as the base AND missing required sections are appended with markers AND user is told what was added
   - Given a lean PRD exists in the feature folder, When `/prd` runs again, Then multi-select with missing sections pre-checked is offered AND original lean run is preserved AND new run folder created
 
@@ -174,7 +181,8 @@ Key invariants:
 
 - **Notion MCP server** — already installed in the Shield plugin context; required for Notion URL ingestion.
 - **WebFetch tool** — built-in; used as catch-all for HTTP(S) URLs.
-- **Existing Shield agents** — `product-manager-reviewer`, `agile-coach-reviewer`, `architecture-reviewer`, `dx-engineer-reviewer`, `cost-reviewer`.
+- **Existing Shield agents** — `product-manager-reviewer`, `agile-coach-reviewer` (extended with AC11/AC12 for feature-level story coverage), `architecture-reviewer`, `dx-engineer-reviewer`, `cost-reviewer`.
+- **New Shield skill** — `shield:story-coverage` (ships in Phase A; consumed by both the agile-coach reviewer and the `/prd` author flow). Derives expected stories from personas + goals + feature domain; cross-references NFR/GTM/rollout for orphan references.
 - **Existing scoring infrastructure** — `shield/skills/general/plan-review/scoring.md` (same A-F grade scale, weighted-composite formula).
 - **`gh` CLI** — for `github.com/*/blob/*.md` URL handling.
 - **Optional / extension** — Atlassian (Confluence) MCP, Google Drive MCP for those URL patterns; absence falls back to WebFetch then paste.
