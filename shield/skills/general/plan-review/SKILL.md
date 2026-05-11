@@ -41,12 +41,17 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | Step | Action | Condition | Mandatory |
 |------|--------|-----------|-----------|
 | 1 | Load plan document | always | Yes |
+| 1a | Detect prior PRD in feature folder — read prd.meta.json if present | only if prd.meta.json exists | No |
 | 2 | Select reviewer personas | always | Yes |
 | 3 | Dispatch selected agents in parallel | always | Yes |
 | 4 | Parse grades + calculate scores | always | Yes |
 | 5 | Generate enhanced plan | always | Yes |
 | 6 | Write summary + detailed findings | always | Yes |
 | 7 | Update manifest | always | Yes |
+
+### Step 1a: Detect prior PRD
+
+If `{output_dir}/{feature}/prd/*/prd.meta.json` exists, read the latest one. Use its `sections_present` and `type` to inform the plan-vs-PRD alignment check (future enhancement — for now, record it in `plan-review/{N}-{slug}/summary.md` as a "Source PRD" header line, e.g. `Source PRD: prd/1-gift-card-support/prd.md`). This gives reviewers visibility into which PRD version the plan was built from.
 
 ## Plan Input
 
