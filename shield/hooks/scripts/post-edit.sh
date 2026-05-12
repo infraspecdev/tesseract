@@ -67,6 +67,7 @@ REMINDERS_ESCAPED=$(echo "$REMINDERS" | python3 -c "import sys,json; print(json.
 cat <<EOF
 {
   "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
     "additionalContext": "${REMINDERS_ESCAPED}"
   }
 }
