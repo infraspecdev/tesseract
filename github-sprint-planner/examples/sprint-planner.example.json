@@ -1,0 +1,36 @@
+{
+  "version": "1",
+  "github": {
+    "token_env": "GITHUB_TOKEN",
+    "owner": "your-org",
+    "repo": "your-repo",
+    "project_number": 1
+  },
+  "team": [
+    { "name": "Team Member 1", "github_login": "github-username-1" },
+    { "name": "Team Member 2", "github_login": "github-username-2" }
+  ],
+  "plan_docs": {
+    "format": "html",
+    "base_path": "./epics",
+    "epics": [
+      {
+        "id": "P1",
+        "name": "Epic 1 Name",
+        "plan_doc": "01-epic-name/detailed-plan.html",
+        "epic_issue_number": 42
+      }
+    ]
+  },
+  "story_extraction": {
+    "html": {
+      "story_selector": "div.story[id^='story-']",
+      "name_pattern": "Story \\d+: (.+)",
+      "issue_selector": "a.badge-github",
+      "status_selector": ".badge:not(.badge-github):not(.badge-to-create)"
+    }
+  },
+  "action_log": {
+    "path": "./epics/github_actions.json"
+  }
+}

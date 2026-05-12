@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "github-sprint-planner": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "python", "server/main.py"]
+    }
+  }
+}
