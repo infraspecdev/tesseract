@@ -147,6 +147,7 @@ CONTEXT_ESCAPED=$(echo "$CONTEXT" | python3 -c "import sys,json; print(json.dump
 cat <<EOF
 {
   "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
     "additionalContext": "${CONTEXT_ESCAPED}"
   }
 }
