@@ -42,6 +42,7 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
 5. Feature folder = `{plan-name}-YYYYMMDD`
 6. Determine run number by counting existing folders in `{output_dir}/{feature}/plan/` + 1
 7. Check for prior research: glob for `{project_root}/{output_dir}/{feature}/research/*/findings.md` and read the most recent one if it exists
+7a. **Check for prior PRD:** If a PRD exists in the feature folder (`{output_dir}/{feature}/prd/*/prd.md`), read it as context — Problem, Users, Goals, Stories, NFRs, Risks all inform the plan. Record `source_prd` in plan.json and append this plan's run folder to `prd.meta.json.linked_plans`.
 8. **Domain detection.** Walk the project root for stack/domain markers:
    - `pom.xml` / `build.gradle*` → backend (Java/Kotlin)
    - `pyproject.toml` / `requirements.txt` → backend (Python)

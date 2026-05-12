@@ -120,6 +120,12 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 ## Workflow
 
 1. **Load prior research** — check if any research exists in `{output_dir}/{feature}/research/`. If so, read the latest run's `findings.md` and use the research findings to inform the plan. If not, proceed without it.
+1a. **Detect prior PRD in feature folder** — Glob `{output_dir}/{feature}/prd/*/prd.md` to find any prior PRDs. If multiple exist, pick the most recent (highest `{N}`). If found:
+   - Read the PRD content
+   - Read its `prd.meta.json` for type, sections_present, status
+   - Treat the PRD as authoritative context for: Problem, Users, Goals, Stories, NFRs, Risks
+   - Append the plan's run folder path to `prd.meta.json.linked_plans` (auto-updates the bidirectional linkage)
+   - Record `source_prd` (relative path to prd.md) and `prd_rubric_version_at_planning` (read from prd.meta.json.rubric_version) into the plan.json sidecar
 2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
 3. **Read `.shield.json`** — get project name and active domains
 3. **Generate sidecar JSON first** — write `{output_dir}/{feature}/plan.json` with epics, stories, tasks, and acceptance criteria

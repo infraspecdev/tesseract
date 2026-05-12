@@ -1,51 +1,52 @@
 ---
-name: research
-description: Research a technical topic with structured citations and expert sources
+allowed-tools: Read, Write, Bash, Agent, Glob, Grep, WebFetch
+description: Capture product + tech context for a new feature. Phase 1: Q&A walk with repo auto-detection. Phase 2 (optional): external evidence-gathering with citations.
 ---
 
-# Research
+# /research
 
-Research a technical topic and produce a well-sourced document with direct quotes, industry references, and a clear recommendation.
+Two-phase research command. Phase 1 captures internal context via Q&A + repo scan. Phase 2 (opt-in) runs external evidence-gathering on open questions.
 
 ## Usage
 
-`/research [topic]`
-
-## Output Path — MANDATORY
-
-First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read the `output_dir` field from `.shield.json` (default: `docs/shield` if not set). Then write the final document using the Write tool to:
-
 ```
-{project_root}/{output_dir}/{feature-name}-YYYYMMDD/research/{N}-{slug}/findings.md
+/research <topic>             # interactive — both phases offered
+/research --lean <topic>      # use lean depth mode (5 topics only)
+/research --deep <topic>      # use deep depth mode (~15 topics)
+/research --phase2-only       # skip Phase 1, run only external evidence-gathering (legacy behavior)
 ```
 
-Where:
-- `{output_dir}` = the `output_dir` value from `.shield.json` (default: `docs/shield`)
-- `{feature-name}` = the active feature name (from context or user input)
-- `YYYYMMDD` = the date the feature folder was created
-- `{N}` = run number, determined by counting existing folders in `{feature-name}-YYYYMMDD/research/` + 1
-- `{slug}` = slugified version of the research topic argument (kebab-case)
+## What it does
 
-Replace `{project_root}` with the absolute path to the directory containing `.shield.json`.
+### Phase 1 (new)
 
-Example: if `.shield.json` is at `/home/user/myproject/.shield.json` with `output_dir: "docs/shield"`, and the feature is `auth-flow-20260319`, write to `/home/user/myproject/docs/shield/auth-flow-20260319/research/1-oauth-token-caching/findings.md`.
+1. **Silent repo scan** — detects Stack, Integrations, Compliance markers, Deployment pattern, Recent activity, ADRs, Prior research artifacts
+2. **Confirm detected context with user** — yes / no / correct / add
+3. **Q&A walk** — asks product + tech topics, skipping any auto-answered from invocation message, repo scan, or prior transcript
+4. **Surface open questions** + offer Phase 2
 
-**Do NOT** use a relative path. **Do NOT** use the plugin directory. **Do NOT** invent custom filenames. The Write tool creates directories automatically.
+### Phase 2 (existing — opt-in after Phase 1)
 
-## Behavior
+5. **PM framing** on chosen questions
+6. **3 parallel agents** — official sources, industry voices, community experience
+7. **Synthesize** with citations
+8. **PM review** on synthesis
+9. **Write `findings.md`** with sourced evidence
 
-1. If a topic is provided as an argument, use it directly
-2. If no topic, ask the user what they'd like to research
-3. If no active feature context, ask the user: "No active feature context. What feature name should this go under?"
-4. Read `output_dir` from `.shield.json` (default: `docs/shield`)
-5. Determine the run number by counting existing folders in `{feature-name}-YYYYMMDD/research/` + 1
-6. Derive the slug from the research topic argument (kebab-case)
-7. Invoke the `shield:research` skill — it defines the full research workflow including PM integration
-8. The skill workflow runs these steps in order:
-   a. **PM framing** — dispatch `shield:product-manager-reviewer` agent in `research-framing` mode. This shapes the research questions. Do NOT skip this step.
-   b. **Parallel research agents** — 3 agents (official sources, industry voices, community experience) shaped by PM framing output
-   c. **Synthesize findings**
-   d. **PM review** — dispatch `shield:product-manager-reviewer` agent in `research-review` mode. Include output as `## Product Lens` section in the final document. Do NOT skip this step.
-9. **You MUST write the document to the path above using the Write tool** — do not just output it as text
-10. After writing, update `manifest.json` in `{output_dir}/` and regenerate `{output_dir}/index.html`
-11. Confirm the file path to the user
+## Output
+
+```
+{output_dir}/{feature}/research/{N}-{slug}/
+├── transcript.md           # always present
+└── findings.md             # only if Phase 2 ran
+```
+
+## Reference
+
+Full behavior in `shield/skills/general/research/SKILL.md`. See `repo-scan.md` for detection rules and `qa-topics.md` for the topic catalog.
+
+## See also
+
+- `/prd` — author a PRD informed by this research
+- `/prd-review` — review an existing PRD
+- `/plan` — generate a technical plan
