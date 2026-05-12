@@ -8,13 +8,13 @@
 
 ## Problem
 
-The `clickup-sprint-planner` plugin solves sprint planning for ClickUp-based teams: parse HTML/markdown plan docs, diff against the task tracker, bulk-create stories with correct naming/relationships, and track progress. Teams using **GitHub Issues + Projects v2** have no equivalent.
+Teams using GitHub Issues + Projects v2 have no way to bulk-create sprint stories from plan documents, link them to epics as sub-issues, and add them to a project board — all in one shot. Doing this manually means 40+ permission approvals and copy-pasting from a plan doc into GitHub one issue at a time.
 
 ---
 
 ## Decision
 
-Build a **separate plugin** `github-sprint-planner/` — a structural mirror of `clickup-sprint-planner/` with a GitHub backend. No shared code between plugins at this stage; clean enough to extract a shared core later (Option B future work).
+Build a Claude Code plugin `github-sprint-planner/` — a Python MCP server that reads sprint plan documents (HTML or markdown), diffs them against existing GitHub Issues, and bulk-creates stories with sub-issue linking and Projects v2 support.
 
 ---
 
@@ -24,33 +24,34 @@ Build a **separate plugin** `github-sprint-planner/` — a structural mirror of 
 
 ```
 github-sprint-planner/
-├── .claude-plugin/plugin.json
-├── .mcp.json
+├── .claude-plugin/plugin.json        # Plugin manifest
+├── .mcp.json                         # Tells Claude Code how to start the MCP server
+├── .gitignore                        # Excludes sprint-planner.json and epics/
 ├── commands/
-│   ├── sprint-sync.md
-│   ├── sprint-plan.md
-│   └── sprint-status.md
+│   ├── sprint-sync.md                # /sprint-sync command
+│   ├── sprint-plan.md                # /sprint-plan command
+│   └── sprint-status.md              # /sprint-status command
 ├── skills/sprint-planning/
-│   ├── SKILL.md
-│   └── card-format.md
+│   ├── SKILL.md                      # Auto-invoked skill
+│   └── card-format.md                # Issue body format reference
 ├── examples/sprint-planner.example.json
 ├── server/
-│   ├── main.py
-│   ├── github_client.py
-│   ├── config.py
-│   ├── action_log.py           # copied from clickup plugin
-│   ├── parsers/                # copied from clickup plugin
-│   │   ├── base.py             # Story.clickup_id renamed to Story.issue_number
-│   │   ├── html_parser.py
-│   │   └── markdown_parser.py
+│   ├── main.py                       # FastMCP entry point, registers all tools
+│   ├── github_client.py              # GitHub REST v3 + GraphQL v4 wrapper
+│   ├── config.py                     # Pydantic models for sprint-planner.json
+│   ├── action_log.py                 # Append-only JSON log of all mutations
+│   ├── parsers/
+│   │   ├── base.py                   # Story dataclass + parser interface
+│   │   ├── html_parser.py            # Parses HTML plan docs via BeautifulSoup
+│   │   └── markdown_parser.py        # Markdown stub
 │   └── tools/
-│       ├── sync.py
-│       ├── bulk_create.py
-│       ├── bulk_update.py
-│       ├── bulk_rename.py          # added post-design: epic prefix enforcement
-│       ├── sprint_status.py
-│       ├── action_log_tool.py
-│       └── _helpers.py
+│       ├── sync.py                   # sprint_sync tool
+│       ├── bulk_create.py            # sprint_bulk_create tool
+│       ├── bulk_update.py            # sprint_bulk_update tool
+│       ├── bulk_rename.py            # sprint_bulk_rename tool
+│       ├── sprint_status.py          # sprint_status tool
+│       ├── action_log_tool.py        # sprint_action_log tool
+│       └── _helpers.py               # Shared status normalisation
 ├── pyproject.toml
 └── README.md
 ```
@@ -62,9 +63,9 @@ github-sprint-planner/
 | Entry | `main.py` | Load config, create client, register tools, run MCP server |
 | Config | `config.py` | Parse `sprint-planner.json` into Pydantic models |
 | API client | `github_client.py` | GitHub REST + GraphQL calls, no business logic |
-| Parsers | `parsers/` | Read HTML/markdown plan docs → `list[Story]` — GitHub-agnostic |
-| Tools | `tools/` | Sprint logic: diff, create, update, status |
-| Logging | `action_log.py` | Append-only JSON log of all mutations |
+| Parsers | `parsers/` | Read HTML/markdown plan docs → `list[Story]` |
+| Tools | `tools/` | Sprint logic: diff, create, update, rename, status |
+| Logging | `action_log.py` | Append-only JSON log of all mutations with rollback info |
 
 ---
 
@@ -75,9 +76,9 @@ github-sprint-planner/
   "version": "1",
   "github": {
     "token_env": "GITHUB_TOKEN",
-    "owner": "infraspecdev",
-    "repo": "my-repo",
-    "project_number": 5
+    "owner": "your-org",
+    "repo": "your-repo",
+    "project_number": 49
   },
   "team": [
     { "name": "Alice", "github_login": "alice" }
@@ -87,10 +88,10 @@ github-sprint-planner/
     "base_path": "./epics",
     "epics": [
       {
-        "id": "P1",
-        "name": "Epic 1: VPC Setup",
-        "plan_doc": "01-epic/detailed-plan.html",
-        "epic_issue_number": 42
+        "id": "E26",
+        "name": "Multi account CUR data",
+        "plan_doc": "multi-account-cur/plan.html",
+        "epic_issue_number": 26
       }
     ]
   },
@@ -98,7 +99,7 @@ github-sprint-planner/
     "html": {
       "story_selector": "div.story[id^='story-']",
       "name_pattern": "Story \\d+: (.+)",
-      "github_issue_selector": "a.badge-github",
+      "issue_selector": "a.badge-github",
       "status_selector": ".badge:not(.badge-github):not(.badge-to-create)"
     }
   },
@@ -106,125 +107,60 @@ github-sprint-planner/
 }
 ```
 
-**Key differences from ClickUp config:**
-- `github` block replaces `clickup` block — `owner`, `repo`, `project_number` instead of `workspace_id`, `space`, `folder`, `lists`, `relationship_field`
-- `epic_issue_number` (GitHub issue number) instead of `epic_id` (ClickUp task ID)
-- `github_login` instead of numeric ClickUp user ID
-- No `custom_fields` — GitHub Projects v2 fields handled separately if needed
-
 ---
 
 ## GitHub API mapping
 
-| Operation | ClickUp | GitHub |
-|-----------|---------|--------|
-| Create story | `POST /list/{id}/task` | `POST /repos/{owner}/{repo}/issues` |
-| Update story | `PUT /task/{id}` | `PATCH /repos/{owner}/{repo}/issues/{number}` |
-| Fetch stories | `GET /list/{id}/task` (paginated) | `GET /repos/{owner}/{repo}/issues` (paginated) |
-| Link to epic | `POST /task/{id}/field/{field_id}` (relationship field) | `POST /repos/{owner}/{repo}/issues/{epic}/sub_issues` |
-| Add to sprint | N/A (list membership) | GraphQL: add to Projects v2 + set iteration field |
-| Status update | `PUT /task/{id}` with `status` | `PATCH /repos/{owner}/{repo}/issues/{number}` with `state` + label |
+| Operation | Endpoint |
+|-----------|----------|
+| Create issue | `POST /repos/{owner}/{repo}/issues` |
+| Update issue | `PATCH /repos/{owner}/{repo}/issues/{number}` |
+| Fetch sub-issues | `GET /repos/{owner}/{repo}/issues/{epic}/sub_issues` |
+| Link sub-issue | `POST /repos/{owner}/{repo}/issues/{epic}/sub_issues` |
+| Add to project | GraphQL: `addProjectV2ItemById` |
+| Set iteration | GraphQL: `updateProjectV2ItemFieldValue` |
 
-**Projects v2 requires GraphQL** — `add_item_to_project`, `set_field_value` (for iteration). The `github_client.py` must handle both REST and GraphQL endpoints.
+Projects v2 requires GraphQL — `github_client.py` handles both REST and GraphQL.
 
 ---
 
-## Tool: `sprint_sync`
+## Tools
 
-```
-sprint_sync(epic="P1a", apply_links=False)
+### `sprint_sync`
+1. Load config → get epic config (epic_issue_number)
+2. Parse plan doc → `list[Story]`
+3. Fetch sub-issues of the epic from GitHub
+4. Match stories ↔ issues (exact by issue number, fuzzy by name)
+5. Return diff: `match / to_create / to_update / to_link`
 
-1. Load config → get epic config for "P1a" (epic_issue_number=42)
-2. Parse plan doc → list[Story] via parsers/
-3. Fetch GitHub issues that are sub-issues of epic #42
-   GET /repos/{owner}/{repo}/issues/{epic}/sub_issues
-4. Match stories ↔ issues:
-   - Exact: story.issue_number == issue.number       → "match" or "to_update"
-   - Fuzzy: name similarity >= 0.8                   → "match"
-   - Fuzzy: name similarity >= 0.6 but not linked    → "to_link"
-   - No match                                         → "to_create"
-5. Return diff table
-```
-
-## Tool: `sprint_bulk_create`
-
-```
-sprint_bulk_create(epic_issue_number, stories, add_to_project=True, iteration_id=None)
-
+### `sprint_bulk_create`
 For each story:
-1. POST /repos/{owner}/{repo}/issues  → create issue
-2. POST /repos/{owner}/{repo}/issues/{epic}/sub_issues  → link to epic
-3. GraphQL: addProjectV2ItemById  → add to project board
-4. GraphQL: updateProjectV2ItemFieldValue  → set iteration (if iteration_id provided)
-5. action_log.log_action("bulk_create", ...)
-```
+1. `POST /repos/{owner}/{repo}/issues` → create issue
+2. `POST /repos/{owner}/{repo}/issues/{epic}/sub_issues` → link to epic
+3. GraphQL: `addProjectV2ItemById` → add to project board
+4. GraphQL: `updateProjectV2ItemFieldValue` → set iteration (if provided)
+5. Log action with rollback info
 
-## Tool: `sprint_bulk_update`
+### `sprint_bulk_update`
+For each update: `PATCH /repos/{owner}/{repo}/issues/{number}` + log action
 
-```
-sprint_bulk_update(updates=[{issue_number, assignee, labels, state}])
+### `sprint_bulk_rename`
+1. Fetch sub-issues for each epic
+2. Compare current title against `naming.story_format`
+3. Preview mode (default): return list of proposed renames
+4. Apply mode: `PATCH` each non-compliant title + log action with rollback
 
-For each update:
-  PATCH /repos/{owner}/{repo}/issues/{number}
-  action_log.log_action("bulk_update", ...)
-```
-
-## Tool: `sprint_status`
-
-```
-sprint_status(epic=None, group_by="epic")
-
-1. For each epic: GET /repos/{owner}/{repo}/issues/{epic}/sub_issues → issues linked to that epic
-2. GraphQL: get project items to enrich with iteration/status fields
-3. Compute stats: open / closed / in-progress
-4. Return table grouped by epic / status / assignee
-```
+### `sprint_status`
+1. For each epic: fetch sub-issues
+2. Normalise state + labels → status (open/in-progress/done/blocked)
+3. Return table grouped by epic/status/assignee
 
 ---
 
 ## Authentication
 
-Try `GITHUB_TOKEN` env var first, fall back to `gh auth token` output. Raise a clear error if neither is available.
+Tries `GITHUB_TOKEN` env var first, falls back to `gh auth token` output.
 
 ```python
 token = os.environ.get("GITHUB_TOKEN") or _get_gh_cli_token()
 ```
-
----
-
-## Parser changes
-
-`parsers/base.py` — rename `Story.clickup_id` → `Story.issue_number` (int | None). Update `write_clickup_id` → `write_issue_number`. This is the only change needed to the parser layer.
-
----
-
-## Commands (mirror ClickUp exactly)
-
-- `/sprint-sync [epic]` — diff plan doc vs GitHub Issues
-- `/sprint-plan` — assign, prioritize, push to GitHub
-- `/sprint-status [epic]` — project board overview
-
----
-
-## Action log
-
-Same append-only JSON format as ClickUp plugin. Actions: `bulk_create`, `bulk_update`, `sync_auto_link`.
-
----
-
-## Future: Option B (shared core)
-
-When extracting a shared core, the natural split is:
-- **Shared:** `parsers/`, `action_log.py`, `config.py` base models (`TeamMember`, `EpicConfig`, `PlanDocsConfig`, `StoryExtractionConfig`)
-- **Provider-specific:** `*_client.py`, `config.py` provider block, `tools/`
-
-The current design keeps these boundaries clean to make this extraction straightforward.
-
----
-
-## Out of scope
-
-- GitHub Milestones as sprints (chose Projects v2 Iterations instead)
-- GitHub App authentication (PAT / gh CLI token is sufficient)
-- `/sprint-retro` and `/sprint-report` (planned for ClickUp plugin, not in initial GitHub scope)
-- Markdown plan doc writeback of GitHub issue numbers (can be added later, same pattern as ClickUp)
