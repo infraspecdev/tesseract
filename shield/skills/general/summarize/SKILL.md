@@ -58,6 +58,38 @@ The orchestrator passes:
 - What the next phase will do
 ```
 
+### Plan Summary Template
+
+When `phase_name` is `plan`, replace the generic "What was done" bullets with the plan-specific template below. Read the sidecar at `{output_dir}/{feature}/plan.json` to populate the structural counts.
+
+```
+# Plan Summary
+
+**Run:** <run_id>
+**Date:** <timestamp>
+
+## What was done
+- **Plan:** <plan name> (<phase>)
+- **Milestones (N):** M1 Login core; M2 Password recovery (depends on M1); …
+  _(Omit this bullet entirely when `sidecar.milestones` is empty.)_
+  _(For each milestone: `<id> <name>`. Append ` (depends on <id1>, <id2>)` only when depends_on is non-empty.)_
+- **Epics:** N epic(s) — <Epic-1 name>, <Epic-2 name>, …
+- **Stories:** N total (N ready, N in-progress, N done)
+- Architecture doc and detailed execution plan written to <relative path>
+
+## Key decisions
+- Decision 1 (if any)
+
+## Next
+- Suggested next step (e.g., /plan-review, /pm-sync)
+```
+
+**Milestone rendering rules:**
+- If `sidecar.milestones` has ≥ 1 entry → render the Milestones bullet: `- **Milestones (N):** M1 <name>; M2 <name> (depends on M1); …`
+- If `sidecar.milestones` is empty (`[]`) → omit the Milestones bullet entirely (back-compat path, no milestones defined)
+- Count N from `sidecar.milestones.length`
+- Inline list format: `<id> <name>` separated by `; `. Append ` (depends on <ids>)` when `depends_on` is non-empty for that milestone.
+
 ## Rules
 
 - Keep summaries concise — 5-10 bullets per section max
