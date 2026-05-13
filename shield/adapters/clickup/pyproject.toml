@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8.0", "jsonschema>=4.0"]
+test = ["pytest>=9.0.3", "jsonschema>=4.0"]
 
 [build-system]
 requires = ["hatchling"]
