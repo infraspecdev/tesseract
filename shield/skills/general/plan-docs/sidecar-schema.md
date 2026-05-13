@@ -56,7 +56,7 @@
 
 ## Rules
 
-- `version` is now `"1.1"` (was `"1.0"` pre-milestones). Older sidecars (`"1.0"` or missing `version`) are treated as back-compat — see below.
+- `version` is `"1.1"` (bumped from `"1.0"` when `milestones[]` and `milestone_id` were introduced). Older sidecars (`"1.0"` or missing `version`) are treated as back-compat — see below.
 - Every epic MUST have at least 1 story.
 - Every story MUST have at least 1 acceptance criterion.
 - Acceptance criteria must be testable — not "it works" but "VPC has DNS support enabled".
@@ -78,7 +78,10 @@
 
 - Each story has a `milestone_id` field. It is either a valid `id` from `milestones[]` or `null`.
 - `null` is permitted only when `milestones[]` is empty (back-compat case below) OR when the story is intentionally scoped outside any milestone.
+- When `milestones[]` is non-empty AND a story has `milestone_id: null`, `plan-review` surfaces the uncovered story as a warning (not a failure) — null is permitted but flagged.
 
 ### Back-compat (single implicit milestone)
 
 A sidecar with `milestones: []` and every story's `milestone_id: null` is treated as a **single implicit milestone covering all stories**. `plan-review` does not flag this — it is the back-compat path for plans authored before this schema version or for explicit user opt-out.
+
+If `milestones[]` is empty but any story has a non-null `milestone_id`, the sidecar is invalid — `plan-review` flags the dangling reference (see the milestone_id validity check).
