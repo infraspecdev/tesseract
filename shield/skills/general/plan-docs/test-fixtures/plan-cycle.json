@@ -9,9 +9,10 @@
       "name": "Login core",
       "outcome": "Users can log in with email + password",
       "exit_criteria": [
-        "Login endpoint returns 200 + session token on valid credentials",
+        "Login endpoint returns 200 + JWT session token on valid credentials",
         "Login endpoint returns 401 on invalid credentials",
-        "Rate limiting active on login endpoint (10/min)"
+        "11th login attempt within 60s from the same IP returns 429 with Retry-After header",
+        "Failed-login telemetry event emitted"
       ],
       "depends_on": ["M2"]
     },
@@ -21,7 +22,8 @@
       "outcome": "Users can reset a forgotten password without contacting support",
       "exit_criteria": [
         "Recovery email delivered within 60s of request",
-        "Reset link is single-use with 15-min TTL"
+        "Reset link is single-use with 15-min TTL",
+        "Password-reset telemetry event emitted"
       ],
       "depends_on": ["M1"]
     }

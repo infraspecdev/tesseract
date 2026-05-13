@@ -39,7 +39,7 @@ The legacy `/auth/login` endpoint has no rate limiting and no self-serve passwor
 ## 6. Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
 |---|---|---|---|---|
-| M1 | Login core | Users can log in with email + password | Login endpoint returns 200 + session token on valid credentials; 401 on invalid; rate limiting (10/min) active; failed-login telemetry emitted | — |
+| M1 | Login core | Users can log in with email + password | Login endpoint returns 200 + JWT session token on valid credentials; 401 on invalid; 11th login attempt within 60s from the same IP returns 429 with Retry-After header; failed-login telemetry emitted | — |
 | M2 | Password recovery | Users can reset a forgotten password without contacting support | Recovery email delivered within 60s; reset link single-use and 15-min TTL; password-reset telemetry emitted | M1 |
 
 ## 7. Open questions
