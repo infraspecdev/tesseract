@@ -1,8 +1,8 @@
 # PRD Templates
 
-The 17-section problem-first scaffold (standard) and 7-section lean variant. Plus the HTML render template that mirrors prd.md.
+The 18-section problem-first scaffold (standard) and 8-section lean variant. Plus the HTML render template that mirrors prd.md.
 
-## Standard scaffold (17 sections)
+## Standard scaffold (18 sections)
 
 ```markdown
 # <Feature name>
