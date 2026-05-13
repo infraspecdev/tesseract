@@ -247,6 +247,13 @@ When JavaScript is disabled or the CDN is unreachable, the diagram source remain
 | `shield/scripts/render-markdown.py` | Implement TOC token-walk + `{{TOC}}` substitution. Override `fence` rule for mermaid blocks. Tolerate missing `{{TOC}}`. |
 | `shield/scripts/test_render_markdown_toc.py` | NEW — pytest tests for TOC generation, mermaid fence override, and backwards-compat. |
 | `.claude-plugin/marketplace.json` | Shield version `2.15.0` → `2.16.0`. |
+| `shield/evals/README.md` | NEW — eval format conventions; how to run; what each eval measures. |
+| `shield/evals/run-eval.sh` | NEW — runner that parses an eval file, dispatches the subagent under test, captures output, runs structural + qualitative judging. |
+| `shield/evals/prd-docs/01-terminologies-autofill.md` | NEW — measures Terminologies auto-fill quality (research-glossary merge + LLM-scan; no hallucinations). |
+| `shield/evals/prd-docs/02-architecture-flows-prompting.md` | NEW — measures whether the skill prompts for diagrams on a flow-heavy feature and allows empty on a trivial one. |
+| `shield/evals/prd-docs/03-story-types-rewrite.md` | NEW — measures correct `new` / `enhancement` / `existing` assignment for a rewrite scenario. |
+| `shield/evals/prd-docs/04-walk-order.md` | NEW — measures Terminologies deferral, Architecture & flows placement, story-coverage trigger position. |
+| `shield/evals/prd-docs/05-end-to-end-render.md` | NEW — measures the final `prd.html` has TOC + Terminologies + Architecture & flows + Type labels + rendered mermaid. |
 
 ### Testing
 
@@ -265,6 +272,78 @@ Per CLAUDE.md, RED-GREEN testing is mandatory for skill changes.
 3. **RED-GREEN skill test**:
    - **RED**: dispatch a subagent on `origin/main` (which has milestones but not this work) to author a sample PRD. Verify: no Terminologies, no Architecture & flows, no Type per story, no TOC in prd.html, mermaid blocks render as code.
    - **GREEN**: dispatch a subagent in this worktree against the same prompt. Verify: Section 2 = Terminologies (populated); Section 5 = Architecture & flows; stories have Type fields; `prd.html` contains `<nav class="toc">`; ` ```mermaid ` block renders as `<pre class="mermaid">` (mermaid.js renders it in a browser).
+
+### Evals
+
+This work establishes a lightweight eval pattern for shield skills. Evals measure *quality of skill behavior* — not "does the code run" (that's unit tests) but "does the skill make the right decisions when invoked against realistic scenarios." The user will extend this pattern to other shield skills in a separate work item.
+
+**Structure** (new):
+
+```
+shield/evals/
+├── README.md                          # Format conventions, how to run
+├── run-eval.sh                        # Dispatches subagent, captures, judges
+└── prd-docs/
+    ├── 01-terminologies-autofill.md
+    ├── 02-architecture-flows-prompting.md
+    ├── 03-story-types-rewrite.md
+    ├── 04-walk-order.md
+    └── 05-end-to-end-render.md
+```
+
+**Eval file format** (markdown with front-matter):
+
+```markdown
+---
+name: 01-terminologies-autofill
+skill_under_test: shield:prd-docs
+scenario: Authoring a PRD for a JWT-based auth service rewrite
+---
+
+## Setup
+
+Working directory: a temp folder with `.shield.json` (output_dir = `docs/shield`)
+and a fake `/research` transcript containing a `## Glossary` section with two
+domain terms ("ICP", "PLG") plus a fake project context noting the feature is
+"rewrite of legacy session-token auth to JWT".
+
+## Prompt
+
+(Dispatched to a subagent with `shield:prd-docs` skill loaded)
+
+> Author a PRD for "auth-rewrite". Walk all sections; populate each with
+> plausible content for a JWT auth rewrite. When asked for Terminologies,
+> accept defaults.
+
+## Success criteria
+
+Structural (deterministic — assert exact):
+- Output PRD has a `## 2. Terminologies` heading.
+- Terminologies table includes BOTH `ICP` and `PLG` (carried from research glossary, Source A).
+- Terminologies table includes at least 2 of: `JWT`, `Session token`, `Refresh token`, `Token rotation`, `OAuth` (proposed by LLM scan, Source B).
+- No hallucinated terms (each row's term appears at least once in the drafted body OR in the research transcript).
+
+Qualitative (judged by a second-pass LLM):
+- Definitions are one-line, factually correct for the auth domain.
+- Source A definitions take precedence over Source B for overlapping terms.
+
+## Pass threshold
+4 of 4 structural checks + 2 of 2 qualitative checks.
+```
+
+**Evals included in this work:**
+
+| # | Name | What it measures |
+|---|---|---|
+| 01 | terminologies-autofill | Terminologies merges research glossary + LLM scan; no hallucinations; one-line definitions |
+| 02 | architecture-flows-prompting | Skill prompts for Architecture & flows on a flow-heavy feature; permits empty for trivial features |
+| 03 | story-types-rewrite | For a "rewrite of existing X" prompt, stories carrying forward unchanged behavior are typed `existing`; modified flows are `enhancement`; brand-new functionality is `new` |
+| 04 | walk-order | Terminologies is deferred (placeholder at start, filled last); Architecture & flows is walked between Personas and Goals; story-coverage triggers between Sections 6 and 8 |
+| 05 | end-to-end-render | Generated `prd.html` contains the TOC nav, the Terminologies section, the Architecture & flows section, story Type labels, and a rendered mermaid diagram (`<pre class="mermaid">`) |
+
+**Runner (`shield/evals/run-eval.sh`):** thin shell wrapper that parses an eval file's frontmatter + prompt + criteria, dispatches a subagent via Claude API (or via the `claude` CLI if invoked from inside Claude Code), captures the output, runs the structural assertions, then dispatches a judge subagent for the qualitative ones. Returns pass/fail per eval and an aggregate score.
+
+**When evals run:** manually (`shield/evals/run-eval.sh prd-docs/01`); also as part of CI gates in a future work item. For now, evals are an artifact of this PR but not yet wired into CI.
 
 ### Versioning
 
