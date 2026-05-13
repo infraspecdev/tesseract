@@ -1,64 +1,89 @@
-# PRD scaffolds: Table of Contents + Terminologies section
+# PRD scaffolds: TOC, Terminologies, Architecture & flows, story-type labels, Mermaid diagrams
 
 **Date:** 2026-05-13
 **Owner:** @ashwinimanoj
-**Status:** Draft
+**Status:** Draft (v2 — scope expanded after PR #41 milestones merged)
 **Scope:** shield plugin — PRD authoring (`/prd`), PRD scaffolds, HTML renderer
 
 ## Problem
 
-Shield's PRD scaffolds (standard 18-section, lean 7-section) lack two affordances readers of long PRDs expect:
+Shield's PRD scaffolds are functional but miss five affordances that hurt review velocity and authoring quality:
 
-1. **No navigation aid** — the rendered `prd.html` is a flat scroll. Reviewers can't jump to a section without scanning, and there's no spatial cue for how long the document is.
-2. **No glossary** — PRDs introduce domain terms (acronyms, internal product names, role names) without a single place to define them. Reviewers either guess from context or scroll back to find the first usage.
+1. **No navigation aid** — `prd.html` is a flat scroll; reviewers can't jump to a section.
+2. **No glossary** — PRDs introduce acronyms and product-specific terms without a single place to define them.
+3. **No architecture surface** — system topology, user flows, and state machines are hard to convey in prose alone. There's no canonical home for diagrams.
+4. **No story provenance** — when a PRD describes a rewrite of an existing service, every story reads the same. Reviewers can't tell which stories represent net-new behavior, which are enhancements of existing flows, and which document pre-existing behavior carried forward (for regression-risk surface).
+5. **No diagram rendering** — even when authors add ascii or mermaid syntax, `prd.html` renders it as a plain code block, defeating the point.
 
-Both gaps hurt review velocity. The fix is small and self-contained: add an auto-generated Table of Contents to the HTML output and a Terminologies section to the markdown scaffold.
+The five fixes are tightly coupled to the scaffold itself, so they land together. This spec captures all five.
+
+## Context — what already exists on main
+
+The parallel PR #41 ("agent-proposed milestones to PRDs and plans") merged into `origin/main` and shipped:
+
+- Milestones table as a **sub-section of §13 (Rollout plan)** in the standard scaffold, and a separate **§6 (Milestones)** in lean. Standard stays at 18 numbered sections; lean grew from 7 to 8.
+- A new `shield:milestone-coverage` skill, invoked from `/prd` step 7a (after stories for standard, after metrics for lean) and from `/plan` as a fallback.
+- `prd.meta.json.rubric_version` bumped to `1.1` to mark scaffold-version awareness.
+- Plugin version `shield` bumped to `2.15.0`.
+
+This spec **builds on top** of that work. It does not change the Milestones placement or the milestone-coverage skill. The version bump in this work is `2.15.0 → 2.16.0`.
 
 ## Goals
 
-1. Every PRD authored via `/prd` after this change has a Terminologies section as Section 2 (right after Header) in both the standard and lean scaffolds.
-2. Every `prd.html` rendered after this change displays a Table of Contents block linking to every h2 (and nested h3) heading, sourced automatically from the markdown — no manual TOC maintenance.
-3. The Terminologies section is auto-populated when possible: pulled from any prior `/research` transcript's glossary, then enriched at the end of the walk by a Claude pass that scans the drafted PRD body for domain terms. The user confirms / edits the final table before the artifacts are written.
+1. Every PRD authored via `/prd` after this change has a **Terminologies** section as Section 2 (right after Header) in both standard and lean scaffolds.
+2. Every PRD has an **Architecture & flows** section as Section 5 (after Personas, before Goals) in both standard and lean scaffolds. Content is optional — authors leave it empty when there's nothing to diagram.
+3. Each user story in the standard scaffold's stories section carries a **Type** label: `new | enhancement | existing`. When type is `enhancement` or `existing`, the story also names the existing behavior being modified or carried forward.
+4. Every `prd.html` rendered after this change displays an auto-generated **Table of Contents** linking to every h2 (and nested h3) heading.
+5. **Mermaid code blocks** (` ```mermaid `) in `prd.md` render as actual SVG diagrams in `prd.html` (via `mermaid.js`). Image-based diagrams (PNG/SVG files alongside `prd.md`) keep working via standard markdown image syntax.
+6. The Terminologies section is auto-populated when possible (research-transcript glossary + LLM scan of drafted body), confirmed by the user before write.
 
 ## Non-goals
 
-- **No retroactive backfill** of existing `prd.md` files in this or customer repos. Existing PRDs stay as-is. Re-running `/prd` in a folder with an existing PRD creates a new `{N+1}-{slug}/` run using the new scaffold (this matches existing behavior).
-- **No re-render of existing `prd.html`** files. The TOC only appears in HTML rendered after this change lands.
-- **No new skill** for Terminologies authoring or term extraction — the behavior lives inside the existing `prd-docs` skill.
-- **No TOC inside `prd.md`.** Markdown stays clean; TOC is HTML-only and produced at render time.
-- **No sticky-sidebar / collapsible TOC.** The TOC is a static block under the meta-banner. (Future enhancement if reviewers ask.)
+- **No retroactive backfill** of existing `prd.md` files in this or customer repos. Re-running `/prd` in a folder with an existing PRD creates a new `{N+1}-{slug}/` run using the new scaffold.
+- **No re-render** of existing `prd.html` files. New affordances appear only in HTML rendered after this change.
+- **No new top-level skill** for diagrams, story-types, or terminologies — all behavior lives inside the existing `prd-docs` skill.
+- **No TOC in `prd.md`** beyond what authors write. TOC is HTML-only at render time.
+- **No sticky-sidebar TOC.** Static block under the meta-banner.
+- **No type detection for stories.** Story Type is user-authored; never auto-inferred.
+- **No new scored rubric dimension in `prd-review`** for any of these additions. (The milestone-coverage merge bumped `rubric_version` to 1.1 without a new dimension; this work bumps to 1.2 for the same reason.)
 
 ## Design
 
-### Markdown scaffold changes
+### Section ordering after this work
 
-**Standard** grows from 18 → 19 sections. **Lean** grows from 7 → 8. Everything past the new Section 2 shifts by +1.
+Standard grows 18 → 20. Lean grows 8 → 10.
 
 ```
-Standard                            Lean
-─────────                           ─────
-1. Header                           1. Header
-2. Terminologies     ← NEW          2. Terminologies   ← NEW
-3. Problem & context (was 2)        3. Problem & context (was 2)
-4. Target users / personas (was 3)  4. Target users / personas (was 3)
-5. Goals & non-goals (was 4)        5. Goals & non-goals (was 4)
-6. Success metrics (was 5)          6. Success metrics (was 5)
-7. User stories & scenarios (was 6) 7. Open questions (was 6)
-8. Functional requirements (was 7)  8. Out of scope (was 7)
-9. Non-functional requirements (was 8)
-10. RBAC & permissions matrix (was 9)
-11. Dependencies (was 10)
-12. Risks & mitigations (was 11)
-13. Assumptions (was 12)
-14. Rollout plan (was 13)
-15. Cost & resource impact (was 14)
-16. GTM & customer-comms (was 15)
-17. Support / CX impact (was 16)
-18. Open questions (was 17)
-19. Out of scope / Non-goals (was 18)
+Standard                                Lean
+─────────                               ─────
+1. Header                               1. Header
+2. Terminologies     ← NEW              2. Terminologies   ← NEW
+3. Problem & context (was 2)            3. Problem & context (was 2)
+4. Target users / personas (was 3)      4. Target users / personas (was 3)
+5. Architecture & flows   ← NEW         5. Architecture & flows   ← NEW
+6. Goals & non-goals (was 4)            6. Goals & non-goals (was 4)
+7. Success metrics (was 5)              7. Success metrics (was 5)
+8. User stories & scenarios (was 6) +   8. Milestones (was 6)
+   Type field per story                 9. Open questions (was 7)
+9. Functional requirements (was 7)      10. Out of scope / Non-goals (was 8)
+10. Non-functional requirements (was 8)
+11. RBAC & permissions matrix (was 9)
+12. Dependencies (was 10)
+13. Risks & mitigations (was 11)
+14. Assumptions (was 12)
+15. Rollout plan (was 13) — still
+    contains Milestones + Rollout
+    mechanics sub-sections
+16. Cost & resource impact (was 14)
+17. GTM & customer-comms (was 15)
+18. Support / CX impact (was 16)
+19. Open questions (was 17)
+20. Out of scope / Non-goals (was 18)
 ```
 
-**Terminologies section template** (identical in standard and lean):
+### New section templates
+
+**Section 2 — Terminologies** (identical in both scaffolds):
 
 ```markdown
 ## 2. Terminologies
@@ -67,156 +92,206 @@ Standard                            Lean
 | <term> | <one-line definition; link to deeper doc if needed> |
 ```
 
-### Walk order (in `prd-docs` SKILL.md)
+**Section 5 — Architecture & flows** (identical in both scaffolds; content optional):
 
-```
-1. Walk Header (Section 1)
-2. Defer Terminologies (Section 2) — write empty placeholder, fill at end
-3. Pre-populate Problem (3), Personas (4), Dependencies (11) from research transcript if present
-4. Walk Sections 3, 4, 5
-5. Invoke shield:story-coverage between Sections 5 and 7 (was 4 and 6)
-6. Walk Section 6 (Success metrics)
-7. Walk Section 7 (User stories, scaffolded by step 5) and 8..19 in order
-8. NEW STEP — terminologies-build:
-   a. If research transcript has a Glossary / Terminology / Terms section,
-      copy rows into the Terminologies table.
-   b. Scan the drafted PRD body (Sections 3..19) for domain terms,
-      acronyms, product / role names. Propose 5–15 rows with one-line
-      definitions. Merge with (a), deduplicating by term.
-   c. Present to user as an editable table. User can add, remove, edit,
-      or accept all. Default: accept all.
-   d. Substitute the final table into Section 2.
-9. Write prd.md, prd.html, prd.meta.json (unchanged)
+````markdown
+## 5. Architecture & flows
+
+Optional. If this feature has non-trivial system topology, user flows, or
+state machines, capture them here as Mermaid diagrams (preferred — render
+in prd.html) or linked images alongside prd.md. Leave empty if all flows
+are simple enough to describe in prose elsewhere.
+
+### System overview
+```mermaid
+flowchart LR
+  user[User] -->|action| service[Service]
+  service -->|call| dependency[Dependency]
 ```
 
-For lean PRDs, step 5 is skipped (no story-coverage); step 8 still runs.
+### Key flows
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant S as Service
+  U->>S: request
+  S-->>U: response
+```
+````
 
-### TOC generation (Approach A — server-side in `render-markdown.py`)
+### Section 8 — Story template change
 
-The renderer already enables `anchors_plugin` from `mdit-py-plugins` (see `render-markdown.py:40`). Anchor ids are already produced for every heading. The change:
+The story template (used inside Section 8 of standard; lean has no Stories section) gains a Type field and a conditional Existing-behavior field:
 
-1. **Walk the token stream after parsing.** Collect every `heading_open` token at levels 2–3 along with its rendered text and the anchor id emitted by `anchors_plugin`. Skip level 1 (the document title).
-2. **Build TOC HTML.** Top-level `<nav class="toc">` containing a `<ul>` of h2 items; each h2 `<li>` may contain a nested `<ul>` of h3s.
-3. **Substitute into the shell.** The shell file (`prd.shell.html`) gets a new `{{TOC}}` placeholder positioned directly below the meta-banner. The script replaces `{{TOC}}` with the built HTML and `{{BODY}}` with the body as today.
-4. **Backwards compat.** If the shell does not contain `{{TOC}}`, the renderer silently skips TOC substitution (no error). Non-PRD shells that use this renderer keep working unchanged.
-
-#### Why server-side and not client-side JS
-
-The HTML must be useful when emailed, printed, or opened with JS disabled. Reviewers paste PRDs into PDFs and ticket tools. A JS-driven TOC would render blank in those contexts. Anchors already exist in the rendered HTML, so the work is bounded.
-
-#### CSS for the TOC
-
-Added to the shell template in `templates.md`:
-
-```css
-.toc {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 6px;
-  padding: 16px 20px;
-  margin-bottom: 32px;
-  font-size: 0.94rem;
-}
-.toc-title { font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.toc ul { margin: 0; padding-left: 20px; list-style: decimal; }
-.toc ul ul { list-style: disc; }
-.toc li { margin: 2px 0; }
-.toc a { color: var(--accent); text-decoration: none; }
-.toc a:hover { text-decoration: underline; }
+```markdown
+### Story <ID>: <name>
+- **Type:** new | enhancement | existing
+- **Existing behavior:** <path / link / one-line description, or "N/A">
+  *(required when Type is enhancement or existing; "N/A" for new)*
+- **Persona:** <P-id>
+- **Goal:** <user-language goal>
+- **Happy path:** <numbered steps>
+- **Error / timeout / abandon paths:** <branches>
+- **Edge cases:** <enumeration>
+- **State transitions:** <if applicable>
+- **Cross-functional handoffs:** <who/when downstream teams pulled in>
+- **Acceptance criteria (Given/When/Then):**
+  - Given <pre>, When <action>, Then <outcome>
 ```
 
-The block's visual:
+**Type semantics:**
+
+| Value | Meaning | When to use |
+|---|---|---|
+| `new` | Behavior does not exist in any form today | Net-new feature, fresh codebase, brand-new endpoint |
+| `enhancement` | Modifies existing behavior in a user-visible way | Adding a field to an existing API; changing UX of an existing flow; tightening validation; performance change at user-visible threshold |
+| `existing` | Behavior already exists, documented here for context | Rewrites — carries forward unchanged flows so reviewers see the regression-risk surface. Also: stories that capture today's state before a planned change |
+
+`shield:story-coverage` scaffolds stories with `Type: new` as the default placeholder; the user overrides during the walk.
+
+### Walk order (`prd-docs/SKILL.md` step skeleton)
 
 ```
-┌─ meta-banner ────────────────────────────────────┐
-│ PRD · Feature · Standard · Owner · 2026-05-13    │
-└──────────────────────────────────────────────────┘
-┌─ Contents ───────────────────────────────────────┐
-│ 1. Header                                        │
-│ 2. Terminologies                                 │
-│ 3. Problem & context                             │
-│ 4. Target users / personas                       │
-│ 5. Goals & non-goals                             │
-│   • Goals                                        │
-│   • Non-goals                                    │
-│ …                                                │
-│ 19. Out of scope / Non-goals                     │
-└──────────────────────────────────────────────────┘
-[ rendered body starts here ]
+1. Read .shield.json
+2. Resolve feature folder
+3. Detect prior lean PRD → upgrade flow if found
+4. Ask PRD type (standard / lean)
+5. Pre-populate Problem/Personas/Dependencies from research if present
+   (section refs shift to 3, 4, 12)
+6. Walk Section 1 (Header)
+6a. NEW: Defer Section 2 (Terminologies) — insert empty placeholder; filled at step 16
+7. Walk Sections 3, 4 (Problem, Personas)
+7a. NEW: Walk Section 5 (Architecture & flows) — optional; user adds Mermaid blocks or
+    image links, or leaves empty
+8. Walk Section 6 (Goals)
+9. Invoke shield:story-coverage between Sections 6 and 8
+   (CHANGED: was between Sections 4 and 6 pre-rebase)
+10. Walk Section 7 (Success metrics)
+11. Walk Section 8 (User stories — scaffolded by step 9). NEW: each story prompts for
+    Type (new | enhancement | existing). If type is enhancement or existing, also
+    prompts for Existing-behavior reference.
+12. Walk Sections 9..14 (Functional through Assumptions)
+13. Invoke shield:milestone-coverage between Sections 8 and 15
+    (CHANGED: was between Section 6 and §13 pre-rebase)
+14. Walk Section 15 (Rollout plan — Milestones is pre-populated by step 13; walk only
+    the Rollout-mechanics sub-section)
+15. Walk Sections 16..20 (standard) — for lean, walk Sections 7 (Metrics), 8 (Milestones
+    via step 13), 9 (Open questions), 10 (Out of scope) only
+16. NEW: Build Section 2 (Terminologies) — research-glossary copy + LLM scan of drafted
+    body, user confirms before write
+17. Apply custom-template merging if .shield.json.prd_template is set
+18. Write prd.md, prd.html, prd.meta.json
+19. Update manifest, regenerate index.html
 ```
 
-### Auto-fill behavior for Terminologies (step 8 detail)
+### TOC generation (server-side in `render-markdown.py`)
 
-**Source A — research transcript glossary (deterministic).** Look in `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`) for any `## Glossary`, `## Terminology`, or `## Terms` section. If found, parse the table or bullet list and seed those rows into the Terminologies table.
+1. Walk the markdown-it token stream after parse. Collect h2/h3 `heading_open` tokens with their text and the anchor id emitted by `anchors_plugin`. Skip h1 (document title).
+2. Build `<nav class="toc">` with nested `<ul>` (h3 nests under preceding h2).
+3. Substitute into a new `{{TOC}}` placeholder in `prd.shell.html`. If the placeholder is absent, skip silently (backwards-compat).
+4. CSS for `.toc`, `.toc-title`, `.toc ul`, etc. lives in the shell template in `templates.md`.
 
-**Source B — LLM scan of drafted PRD body (proposed).** After all other sections are walked, Claude scans Sections 3..19 and proposes terms that meet at least one of:
-- ALL-CAPS acronyms used 2+ times (e.g., "SLA", "RBAC")
-- Capitalized multi-word phrases used as named concepts (e.g., "Sign-off Contact", "Kill-switch")
-- Domain nouns referenced in personas, NFRs, or dependencies without a prior definition
-- Internal product or service names referenced in Dependencies / GTM / Rollout sections
+### Mermaid rendering
 
-Claude proposes one-line definitions, prefers terminology used in the PRD's own prose, and links to source paths from the research transcript when the term originates there.
+**Renderer change (markdown-it-py fence rule override):**
 
-**Merge.** Source A rows take precedence on conflict (research-sourced definitions are usually more authoritative). Source B rows are appended after deduplicating by term (case-insensitive).
+Currently ` ```mermaid blocks ` render as `<pre><code class="language-mermaid">…</code></pre>`. Override the renderer's `fence` rule so blocks with info string `mermaid` emit `<pre class="mermaid">…</pre>` instead — no inner `<code>`, source preserved literally as text content. Mermaid v10+ recognizes `<pre class="mermaid">` for automatic rendering.
 
-**User confirmation.** Present the merged table to the user with: accept all, edit individual rows, add rows, remove rows. Default action on enter / silence: accept all.
+Non-mermaid fences (` ```python `, ` ```bash `, etc.) keep current rendering.
+
+**Shell template change:**
+
+`prd.shell.html` gains a module-script tag in `<head>` that loads mermaid.js from a CDN and renders all `<pre class="mermaid">` elements:
+
+```html
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  mermaid.run({ querySelector: "pre.mermaid" });
+</script>
+```
+
+When JavaScript is disabled or the CDN is unreachable, the diagram source remains visible as plain text inside the `<pre>` — readable but not graphical.
+
+### Auto-fill behavior for Terminologies (step 16 detail)
+
+- **Source A:** parse `## Glossary` / `## Terminology` / `## Terms` section in the research transcript if present; copy rows verbatim into the Terminologies table.
+- **Source B:** Claude scans Sections 3..20 for:
+  - ALL-CAPS acronyms used 2+ times
+  - Capitalized multi-word phrases used as named concepts
+  - Domain nouns in Personas / NFR / Dependencies without prior definition
+  - Internal product / service names in Dependencies / GTM / Rollout
+  Proposes 5–15 rows with one-line definitions.
+- Merge by lowercased term; Source A wins on conflict.
+- User confirms / edits before write; default action is accept-all.
 
 ### Files changed
 
 | File | Change |
 |---|---|
-| `shield/skills/general/prd-docs/templates.md` | Rewrite both scaffolds with new numbering; add Terminologies section template; add `{{TOC}}` placeholder + TOC CSS to the HTML shell template. Update Section-6 → Section-7 reference in the story template note. Update lean's "intentionally omits" list to new numbers. Update doc copy "17-section" → "19-section", "7-section" → "8-section". |
-| `shield/skills/general/prd-docs/SKILL.md` | Update walk order (defer Section 2, add step 8 terminologies-build, renumber walk references); update upgrade-flow multi-select to new numbers; update "Sections 1-4" → "1-5"; update story-coverage trigger references "Section 3/4/6" → "Section 4/5/7"; update Common Mistakes references; update See-Also reference counts. Update frontmatter description. |
-| `shield/skills/general/prd-docs/meta-schema.md` | Update `sections_present` example `[1..18]` → `[1..19]`; "all 17 sections" → "all 19 sections"; lean 7 → 8. |
-| `shield/skills/general/prd-docs/type-detection.md` | Add "Terminologies" to lean section list (now 8 sections); update load-bearing standard-only range — these are sections 7..17 in the new numbering (Stories through Support; Terminologies, Open questions, and Out of scope are in both lean and standard). Update the "12 of 18" threshold proportionally for the 19-section count; the implementer should pick a threshold consistent with the new load-bearing count. |
-| `shield/skills/general/prd-docs/test-fixtures/new-from-scratch-expected.md` | Regenerate fixture with new numbering + Terminologies section populated with a couple of sample rows; update expectation comments. |
-| `shield/skills/general/prd-docs/test-fixtures/with-research-transcript-expected.md` | Regenerate with new numbering; show Terminologies pre-populated from a transcript glossary section in the fixture. |
-| `shield/skills/general/prd-docs/test-fixtures/lean-upgrade-prior-prd.md` | Update note "Sections 6-15" → new range; add Terminologies to expected upgrade. |
-| `shield/skills/general/prd-review/personas.md` | "PRD's Section 6" → "PRD's Section 7" (story-coverage gap reference). |
-| `shield/commands/prd.md` | Update frontmatter description: "17-section" → "19-section", "7-section" → "8-section"; update walk order summary "Sections 1-4" → "1-5"; update story-coverage trigger reference. |
-| `shield/scripts/render-markdown.py` | Implement TOC token-walk; add `{{TOC}}` placeholder substitution; tolerate missing `{{TOC}}` in shell. |
-| `shield/scripts/test_render_markdown_toc.py` | NEW — unit test for TOC generation. |
-| `.claude-plugin/marketplace.json` | Bump shield plugin version (per CLAUDE.md: version lives ONLY here for relative-path plugins). |
+| `shield/skills/general/prd-docs/templates.md` | Rewrite both scaffolds for new 20/10 numbering. Add Terminologies (§2) and Architecture & flows (§5) templates. Update story template with Type + Existing-behavior fields. Add `{{TOC}}` placeholder + TOC CSS to HTML shell. Add mermaid.js script-tag to the shell. Update doc copy "18-section" → "20-section", "8-section" → "10-section". |
+| `shield/skills/general/prd-docs/SKILL.md` | Rewrite walk order to defer Section 2, walk Section 5 (Architecture & flows), shift all section-number references, prompt for story Type, update milestone-coverage trigger position to Sections 8↔15, add step 16 terminologies-build. Update frontmatter description. |
+| `shield/skills/general/prd-docs/meta-schema.md` | `sections_present` example `[1..18]` → `[1..20]`. `rubric_version` `1.1` → `1.2`. Add 1.2 note covering Terminologies + Architecture & flows + story Type. Counts in `type` description: 18 → 20, 8 → 10. |
+| `shield/skills/general/prd-docs/type-detection.md` | Add Terminologies + Architecture & flows to lean section list (now 10). Adjust standard threshold. Load-bearing standard-only range becomes Sections 8..18 (Stories through Support); the rest appear in both lean and standard. |
+| `shield/skills/general/prd-docs/test-fixtures/new-from-scratch-expected.md` | Regenerate with new numbering. Add Terminologies, Architecture & flows (with a small Mermaid example), and Type fields on stories. |
+| `shield/skills/general/prd-docs/test-fixtures/with-research-transcript-expected.md` | Regenerate with new numbering. Terminologies pre-populated from research-glossary; Architecture & flows populated with mermaid; Type fields on stories. |
+| `shield/skills/general/prd-docs/test-fixtures/with-research-transcript.md` | Add Glossary section to exercise the research-transcript Terminologies pre-pop path. |
+| `shield/skills/general/prd-docs/test-fixtures/lean-upgrade-prior-prd.md` | Renumber EXPECTED note. |
+| `shield/skills/general/prd-docs/test-fixtures/with-milestones-standard.md` (PR #41 fixture) | Renumber to new 20-section numbering. Add Terminologies row, empty Architecture & flows, and Type fields on stories. |
+| `shield/skills/general/prd-docs/test-fixtures/with-milestones-lean.md` (PR #41 fixture) | Renumber to new 10-section lean numbering. Same additions. |
+| `shield/skills/general/prd-docs/test-fixtures/without-milestones.md` (PR #41 fixture) | Renumber to new 20-section numbering. Same additions. |
+| `shield/skills/general/prd-review/personas.md` | Story-coverage gap reference: "Section 6" → "Section 8". |
+| `shield/skills/general/milestone-coverage/SKILL.md` | Update section-number references in the trigger description: "after Section 6 (standard) / after Section 5 (lean)" → "after Section 8 (standard) / after Section 7 (lean)". |
+| `shield/skills/general/story-coverage/SKILL.md` (if it has section refs) | Update any section-number references. Add note that scaffolded stories default to `Type: new`. |
+| `shield/commands/prd.md` | Frontmatter description: "18-section" → "20-section", "8-section" → "10-section". Update step list (Architecture & flows step, story-type step, terminologies-build step). |
+| `shield/scripts/render-markdown.py` | Implement TOC token-walk + `{{TOC}}` substitution. Override `fence` rule for mermaid blocks. Tolerate missing `{{TOC}}`. |
+| `shield/scripts/test_render_markdown_toc.py` | NEW — pytest tests for TOC generation, mermaid fence override, and backwards-compat. |
+| `.claude-plugin/marketplace.json` | Shield version `2.15.0` → `2.16.0`. |
 
 ### Testing
 
-Per CLAUDE.md, RED-GREEN testing is mandatory for skill changes:
+Per CLAUDE.md, RED-GREEN testing is mandatory for skill changes.
 
-1. **Renderer unit test** (`test_render_markdown_toc.py`):
-   - Fixture: markdown with `## 1. Header`, `## 2. Terminologies`, `## 3. Problem`, `### Sub-heading` and a shell with both `{{TOC}}` and `{{BODY}}` placeholders.
-   - Assert: rendered HTML contains `<nav class="toc">`, three top-level `<li>`s with hrefs matching anchor ids, one nested `<ul>` for the h3.
-   - Backwards-compat case: shell without `{{TOC}}` renders body without error and produces no TOC HTML.
-   - Edge case: markdown with only h1 (no h2/h3) produces an empty `<nav class="toc">` (or no TOC node — implementer's call, asserted in test).
+1. **Renderer unit tests** (`test_render_markdown_toc.py`):
+   - Basic TOC: h2 + h3 produces nav with nested ul; h1 excluded.
+   - Backwards-compat: shell without `{{TOC}}` renders body unchanged.
+   - Empty doc: no h2/h3 produces no `<nav>` block.
+   - Orphan h3 before any h2: emitted at top level.
+   - Mermaid fence: ` ```mermaid `…` ``` ` produces `<pre class="mermaid">…</pre>` (no `<code>` inner; source preserved literally).
+   - Non-mermaid fences (` ```python `, etc.) unchanged from current behavior.
 
-2. **Fixture regeneration**: refresh both `new-from-scratch-expected.md` and `with-research-transcript-expected.md` to the new numbering and include the Terminologies section. The `with-research-transcript-expected.md` fixture should also exercise the research-glossary copy path.
+2. **Fixture regeneration**: every fixture under `prd-docs/test-fixtures/` refreshed to new numbering + Terminologies + Architecture & flows + Type fields. The `with-research-transcript-expected.md` fixture exercises the research-glossary Terminologies pre-pop.
 
 3. **RED-GREEN skill test**:
-   - **RED**: dispatch a subagent with the OLD `prd-docs` skill against the prompt "author a PRD for feature X". Document: the agent writes 18 sections, no Terminologies, no TOC in prd.html.
-   - **GREEN**: dispatch a subagent with the UPDATED skill loaded against the same prompt. Verify: 19 sections, Terminologies present at position 2 with non-empty rows, prd.html contains `<nav class="toc">` with links to every section.
-   - **REFACTOR**: if GREEN reveals that the subagent skips the terminologies-build step or mis-numbers sections, tighten the SKILL.md instructions and re-test.
+   - **RED**: dispatch a subagent on `origin/main` (which has milestones but not this work) to author a sample PRD. Verify: no Terminologies, no Architecture & flows, no Type per story, no TOC in prd.html, mermaid blocks render as code.
+   - **GREEN**: dispatch a subagent in this worktree against the same prompt. Verify: Section 2 = Terminologies (populated); Section 5 = Architecture & flows; stories have Type fields; `prd.html` contains `<nav class="toc">`; ` ```mermaid ` block renders as `<pre class="mermaid">` (mermaid.js renders it in a browser).
 
 ### Versioning
 
-Per CLAUDE.md, bump the `shield` plugin version in `.claude-plugin/marketplace.json` only. There is no `pyproject.toml` for the `shield` plugin (Python lives only in `clickup-sprint-planner/`), so no second bump is needed.
+Per CLAUDE.md, bump `shield` version in `.claude-plugin/marketplace.json` only. PR #41 just bumped to `2.15.0`; this work bumps to `2.16.0`.
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
-| Renderer change breaks non-PRD callers of `render-markdown.sh` | The `{{TOC}}` placeholder is optional — shells without it render exactly as today. Tested in the renderer unit test. |
-| Subagent skips the terminologies-build step | RED-GREEN test catches it; SKILL.md walk order makes the step explicit (numbered) and mandatory. |
-| Auto-extracted terms are noisy or off-topic | User confirmation gate before write. Default is "accept all" but user can prune. If feedback shows noise, tighten the extraction criteria in step 8b. |
-| Section-number renumbering misses a reference | Inventory in "Files changed" table was built from `grep` across `shield/skills/general/prd-*` and `shield/commands/prd*.md`. The plan step that renumbers each file is bounded to that list. |
+| Renderer change breaks non-PRD callers of `render-markdown.sh` | `{{TOC}}` is optional; mermaid fence override triggers only on info string `mermaid`. Both behaviors covered by unit tests. |
+| mermaid.js CDN unavailable | Diagram source falls back to readable plain text. Acceptable. |
+| Subagent skips the new Architecture & flows / Type / Terminologies-build steps | RED-GREEN catches it; SKILL.md walk order explicitly enumerates each step. |
+| Section-number drift between this branch and other in-flight work | Project-memory note `project-shield-parallel-dev-gap` tracks the underlying gap (no automated invariants tests for shield markdown skills). Bounded mitigation in this PR: every renumber is listed in "Files changed"; the renderer unit test asserts exact TOC anchors for the 20-section scaffold so a future renumber-conflict is caught. |
+| Story Type values drift over time (people add custom values) | Document the three values + their semantics in templates.md. Type is user-authored prose — no enforcement at write time. `prd-review` could later enforce. |
+| Mermaid syntax errors in `prd.md` | Mermaid renders an error inline in the SVG; `prd.md` write succeeds regardless. |
 
 ## Open questions
 
-None at time of writing. Both design choices flagged during brainstorm (TOC position, Terminologies auto-fill source) are resolved.
+None at time of writing.
 
 ## Out of scope
 
-- Stickly-sidebar / collapsible / floating TOC variants
-- Inline link from a term's first PRD usage to its Terminologies row
-- A separate `terminologies.yaml` per feature folder (shared across PRDs in the same folder)
-- Auto-extraction of terms from `/plan` outputs or code references
-- Migrating existing `prd.md` / `prd.html` files
+- Sidebar / sticky / collapsible TOC.
+- Inline linking from a term's first PRD usage to its Terminologies row.
+- Shared `terminologies.yaml` per feature folder.
+- Mermaid rendering inside `prd.md` itself (editor preview is the editor's concern).
+- Type detection for stories (always user-authored).
+- A new scored `prd-review` rubric dimension for diagrams / story-type completeness.
+- Migrating existing `prd.md` / `prd.html` files.
+- A `/diagram` slash command or any diagram authoring helper.
