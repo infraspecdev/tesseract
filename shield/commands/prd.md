@@ -1,4 +1,5 @@
 ---
+name: prd
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
 description: Author a new PRD with Shield's 17-section problem-first scaffold (or 7-section lean variant). Supports custom team templates, lean→standard upgrade flow, and consumes prior /research transcripts as pre-population.
 ---

@@ -161,7 +161,11 @@ If `.shield.json.prd_template` is set:
 ### 10. Write artifacts
 
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.md`
-- Render and write `{output_dir}/{feature}/prd/{N}-{slug}/prd.html` (using HTML template from `templates.md`)
+- Render `prd.html` via the helper (see `templates.md` → HTML render template):
+  1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md` with a literal `{{BODY}}` placeholder where the markdown body should appear. Fill in the title and meta-banner directly (owner, status, sidecar/research links) — those are not placeholders.
+  2. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out prd.html`.
+  3. Delete `prd.shell.html` once the helper succeeds.
+  Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, and loose/tight wrapping.
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.meta.json` (per `meta-schema.md`)
 
 ### 11. Update dashboard

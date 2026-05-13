@@ -3,7 +3,8 @@ repos:
     hooks:
       - id: shield-tests
         name: Shield test suite
-        entry: shield/tests/run-all.sh
-        language: script
+        # Calls `make test`. First-time setup: run `make install` once.
+        entry: make test
+        language: system
         pass_filenames: false
         always_run: true
