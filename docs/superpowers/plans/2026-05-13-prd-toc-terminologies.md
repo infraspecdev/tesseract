@@ -24,9 +24,10 @@
 | `shield/skills/general/prd-docs/type-detection.md` | Modify — lean list, threshold, load-bearing range. |
 | `shield/skills/general/prd-docs/test-fixtures/*.md` | Modify — 6 fixtures renumbered + new sections + Type fields. |
 | `shield/skills/general/prd-review/personas.md` | Modify — Section 6 → 8. |
-| `shield/skills/general/milestone-coverage/SKILL.md` | Modify — trigger refs Section 6→8 (std), 5→7 (lean). |
+| `shield/skills/general/milestone-coverage/SKILL.md` | Modify — fix stale `after goals for lean` description bug (pre-existing); trigger refs Section 6→8 (std), 5→7 (lean). |
 | `shield/skills/general/story-coverage/SKILL.md` | Modify — note that scaffolded stories default `Type: new`. |
 | `shield/commands/prd.md` | Modify — counts and walk-order summary. |
+| `shield/skills/**/SKILL.md` | Audit (Task 11.5) — sweep for any remaining stale section/scaffold refs across all shield skills; fix as found. |
 | `shield/evals/` | Create — new directory for eval pattern. |
 | `shield/evals/README.md` | Create — format conventions + how-to-run. |
 | `shield/evals/run-eval.sh` | Create — runner that dispatches via `claude` CLI. |
@@ -1105,7 +1106,17 @@ git commit -m "feat(shield): prd-review story-coverage gap references §8"
 **Files:**
 - Modify: `shield/skills/general/milestone-coverage/SKILL.md`
 
-- [ ] **Step 1: Update the "When to Use" section**
+- [ ] **Step 1: Fix stale frontmatter description**
+
+The current frontmatter description has a pre-existing bug — it says "after goals for lean" but the body correctly states "after Section 5 (Success metrics)". Fix both the bug and the section-number update in one step.
+
+Find the description line in the frontmatter (starts `description: Use when scaffolding milestones...`). Replace with:
+
+```markdown
+description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager-reviewer and agile-coach-reviewer in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
+```
+
+- [ ] **Step 2: Update the "When to Use" section**
 
 Find: `- /prd invokes this after Section 6 (User stories) is filled in the standard scaffold, or after Section 5 (Success metrics) in the lean scaffold`. Replace with:
 
@@ -1113,28 +1124,32 @@ Find: `- /prd invokes this after Section 6 (User stories) is filled in the stand
 - `/prd` invokes this after Section 8 (User stories) is filled in the standard scaffold, or after Section 7 (Success metrics) in the lean scaffold, to scaffold the Milestones table.
 ```
 
-- [ ] **Step 2: Update Input contract refs**
+- [ ] **Step 3: Update Input contract refs**
 
 Find references in the Input contract section: `stories: list of story objects from PRD §6`. Replace with: `stories: list of story objects from PRD §8`.
 
-- [ ] **Step 3: Update any remaining section refs**
+- [ ] **Step 4: Update any remaining section refs**
 
 ```bash
 grep -n "Section [0-9]\|§[0-9]" shield/skills/general/milestone-coverage/SKILL.md
 ```
 
-For each line where the number is in the OLD numbering (pre-Terminologies+Architecture, i.e., the post-PR-#41 numbering), update to the new mapping:
+For each line where the number is in the OLD numbering (post-PR-#41 numbering, i.e., before our work), update to the new mapping:
 - §6 → §8 (Stories)
 - §5 → §7 (Metrics)
 - §3 → §4 (Personas)
 - §4 → §6 (Goals)
 - §13 → §15 (Rollout plan)
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add shield/skills/general/milestone-coverage/SKILL.md
-git commit -m "feat(shield): milestone-coverage section refs for new numbering"
+git commit -m "fix(shield): milestone-coverage frontmatter + section refs
+
+- Fix stale description bug: \"after goals for lean\" should be \"after
+  metrics for lean\" (matches the body's existing language).
+- Update all section refs to the new 20/10-section numbering."
 ```
 
 ---
@@ -1205,6 +1220,79 @@ Replace the numbered list under `## What it does` with:
 ```bash
 git add shield/commands/prd.md
 git commit -m "feat(shield): /prd command docs for 20/10-section scaffolds"
+```
+
+---
+
+## Task 11.5: Audit all shield skill frontmatter for stale references
+
+Cross-skill consistency check — fix any other stale frontmatter beyond what Tasks 5 and 9 already updated. Looks for descriptions that reference old section numbers, removed sub-skills, or behaviors that have changed.
+
+**Files:**
+- Audit + possibly modify: every `shield/skills/**/SKILL.md`
+
+- [ ] **Step 1: Dump all frontmatter descriptions**
+
+```bash
+find shield/skills -name "SKILL.md" -exec sh -c 'echo "=== $1 ==="; awk "/^---$/{c++; if(c==2) exit} c>=1" "$1" | grep "^description:"' _ {} \;
+```
+
+- [ ] **Step 2: Audit for known stale patterns**
+
+Run each of these greps and inspect every hit:
+
+```bash
+# Old PRD section numbering (anything referencing the pre-this-work numbering of 18 sections / 8 sections)
+grep -rE "(17[- ]section|18[- ]section|7[- ]section|8[- ]section)" shield/skills/
+
+# Old section refs (Section 1-6 with "Stories"/"Goals"/etc. — context check needed)
+grep -rE "(Section 4 and 6|Section 6 and 8|after stories.*Section|between Sections [0-9]+ and [0-9]+)" shield/skills/
+
+# References to skills that don't exist anymore (cross-check against `ls shield/skills/general/`)
+grep -rE "shield:[a-z-]+" shield/skills/ | awk -F: '{print $NF}' | sort -u
+
+# Stale dimension counts in prd-review references
+grep -rE "(12-dimension|14-dimension|15-dimension)" shield/skills/
+```
+
+Expected: post-Task-5 and post-Task-9 fixes, the only remaining hits should be intentional references (e.g., `## Common Mistakes` rows that reference old section numbers as a fixture for "what not to do").
+
+- [ ] **Step 3: Fix any genuine stale references**
+
+For each hit that is genuinely stale (not a mistake-pattern fixture, not unrelated to PRD work):
+
+1. Determine the correct value based on the new 20/10-section numbering.
+2. Use `Edit` to fix the specific string.
+3. Track the file path for the commit step.
+
+Common cases this audit will catch beyond Tasks 5 and 9:
+- `prd-review/SKILL.md` and its sub-files (rubric.md, personas.md, etc.) — section refs in dim descriptions
+- `plan-docs/SKILL.md` — if it references PRD sections by number (e.g., "consume §6 stories")
+- `plan-review/SKILL.md` and personas — same
+- `implement-feature/SKILL.md` — section refs to where stories live (now §8)
+- `summarize/SKILL.md` — if it summarizes PRD content
+- `execute-steps/SKILL.md` — unlikely, generic
+- `pm-analysis/SKILL.md` — unlikely, generic
+- `review/SKILL.md` — unlikely, generic
+
+For non-PRD skills (`backend/`, `kubernetes/`, `atmos/`, `terraform/`, `github-actions/`, `pm-sync/`): no PRD-section refs expected. Skip unless an audit hit appears.
+
+- [ ] **Step 4: Verify no remaining stale references**
+
+Re-run the greps from Step 2. Expected: zero hits in PRD-related files (other than `templates.md` lean omits-list which intentionally lists older section names as a reference of what lean omits — those should be the NEW standard section numbers).
+
+- [ ] **Step 5: Commit (only if any files changed)**
+
+```bash
+git status   # see if any files were modified
+# If yes:
+git add shield/skills/
+git commit -m "fix(shield): clean up stale frontmatter/refs across remaining skills
+
+Sweep beyond Tasks 5 and 9: <list which files were touched here>.
+References now consistent with 20/10-section PRD scaffold numbering."
+# If no:
+echo "No additional stale refs found — audit clean"
 ```
 
 ---
