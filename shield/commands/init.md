@@ -14,6 +14,25 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    - If old plugin config is detected (`sprint-planner.json`, `claude/infra-review/`), suggest `/shield migrate` instead
    - If `shield/plan.json` exists (old single-plan path), offer to migrate it to `{output_dir}/{feature}/plans/` — derive name from the `project` or `phase` field in the JSON
 
+1a. **Check runtime dependencies (`uv`)**
+   - Run `command -v uv` to detect uv. If found, skip this step.
+   - If missing, tell the user: "Shield uses `uv` to run two things on demand: the PRD HTML renderer (every `/prd`), and the PM adapter MCP servers (every `/pm-sync`, if configured). uv is not currently on your PATH."
+   - Offer to install it now:
+     ```
+     Install uv automatically? (y/n)
+       [y] Run: curl -LsSf https://astral.sh/uv/install.sh | sh
+       [n] Skip — Shield will still init, but /prd will fail until uv is installed
+     ```
+   - If user says yes:
+     - Run the installer via Bash: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+     - Confirm: `command -v uv` (the installer adds `~/.local/bin` to PATH for new shells; in the current shell, prefix with `export PATH="$HOME/.local/bin:$PATH"` for the verification)
+     - Tell the user: "uv installed at `~/.local/bin/uv`. New terminal sessions will pick it up automatically."
+   - If user says no, continue with init but record this — at step 8 (summary), include a clear warning:
+     ```
+     ⚠ uv not installed. /prd will fail when rendering prd.html.
+       Install when ready: curl -LsSf https://astral.sh/uv/install.sh | sh
+     ```
+
 2. **Gather project info**
    - Ask for project name (default: repo directory name)
    - Ask for output directory (default: `docs/shield`). This is where all Shield artifacts go.
@@ -63,12 +82,6 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    - Ask for workspace details (workspace_id, space_id, project_prefix)
    - Create `~/.shield/projects/<project-name>/pm.json`
    - Ask for API token and save to `~/.shield/credentials.json`
-   - If `uv` is not on PATH and PM tool requires it, offer install instructions:
-     ```
-     PM adapter requires uv (Python package manager).
-     Install: curl -LsSf https://astral.sh/uv/install.sh | sh
-     Or skip PM setup for now — you can configure it later.
-     ```
    - **Register the PM adapter MCP server:**
      - Read `${CLAUDE_PLUGIN_ROOT}/adapters/<pm-tool>/.mcp.json` to get the server entries
      - Merge those entries into `${CLAUDE_PLUGIN_ROOT}/.mcp.json` → `mcpServers` object
