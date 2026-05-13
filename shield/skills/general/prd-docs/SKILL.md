@@ -41,7 +41,7 @@ Where `{output_dir}` comes from `.shield.json`, `{feature}` is the feature folde
 | 6 | Walk Sections 1-4 (Header, Problem, Personas, Goals) | always | Yes |
 | 7 | Invoke `shield:story-coverage` skill between Sections 4 and 6; scaffold expected stories | always (standard only; skip for lean) | conditional |
 | 7a | Invoke `shield:milestone-coverage` skill once stories are filled (standard) or after Section 5 metrics (lean); user refines proposal | always; lean uses goals+personas only as input | conditional |
-| 8 | Walk Sections 5, 6 content, 7-17 | always (lean: only 5, 16, 17) | Yes |
+| 8 | Walk Sections 5, 6 content, 7-12, then §13 rollout-mechanics, then 14-17 (standard); 5, then §6 Milestones via §7a, then 7, 8 (lean) | always | Yes |
 | 9 | Apply custom-template merging if `.shield.json.prd_template` is set | only if config set | conditional |
 | 10 | Write `prd.md`, `prd.html`, `prd.meta.json` | always | Yes |
 | 11 | Update manifest, regenerate index.html | always | Yes |
@@ -170,7 +170,7 @@ Pick which to keep (defaults to all suggested), edit fields per row, or add your
 ```
 
 Selected and edited milestones are written into:
-- **Standard:** §13 Milestones table (then walk §13 rollout-mechanics fields next as today).
+- **Standard:** §13 Milestones table (then walk §13 rollout-mechanics fields next as in the standard flow).
 - **Lean:** §6 Milestones table (then proceed to §7 Open questions).
 
 If the user declines (empty selection), leave the Milestones table empty. `/plan` will re-run `shield:milestone-coverage` as a fallback if needed.
