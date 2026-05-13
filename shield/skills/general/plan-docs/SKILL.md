@@ -134,9 +134,9 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 
 Before generating stories, resolve milestones:
 
-1. **If a PRD was detected (Step 1a) and it contains milestones** (Section 13 standard, Section 6 lean): extract them. Present to the user for confirmation. Allow edits (rename, add exit criteria, change depends_on). Copy approved milestones into the sidecar `milestones[]`.
+- **If a PRD was detected (Step 1a) and it contains milestones** (Section 13 standard, Section 6 lean): extract them. Present to the user for confirmation. Allow edits (rename, add exit criteria, change depends_on). Copy approved milestones into the sidecar `milestones[]`.
 
-2. **If a PRD was detected but has no milestones** (or an empty Milestones table — back-compat case for PRDs authored against rubric_version 1.0): invoke `shield:milestone-coverage` with:
+- **If a PRD was detected but has no milestones** (or an empty Milestones table — back-compat case for PRDs authored against rubric_version 1.0): invoke `shield:milestone-coverage` with:
    - `personas`: from PRD Section 3
    - `goals`: from PRD Section 4
    - `stories`: from PRD Section 6 (if present; empty for lean)
@@ -144,9 +144,9 @@ Before generating stories, resolve milestones:
 
    Present merged proposal + `open_conflicts` to the user (same flow as `/prd` §7a). User refines. Sidecar-only — do NOT write back to the PRD.
 
-3. **If no PRD exists:** invoke `shield:milestone-coverage` with whatever inputs were gathered during requirements (Step 2). Sidecar-only.
+- **If no PRD exists:** invoke `shield:milestone-coverage` with whatever inputs were gathered during requirements (Step 2). Sidecar-only.
 
-4. **If the user explicitly opts out of milestones:** sidecar stores `milestones: []`. All subsequent stories will have `milestone_id: null`. This is the back-compat single-implicit-milestone case (see `sidecar-schema.md`).
+- **If the user explicitly opts out of milestones:** sidecar stores `milestones: []`. All subsequent stories will have `milestone_id: null`. This is the back-compat single-implicit-milestone case (see `sidecar-schema.md`).
 
 3. **Read `.shield.json`** — get project name and active domains
 4. **Generate sidecar JSON first (milestone-by-milestone)** — write `{output_dir}/{feature}/plan.json`:
