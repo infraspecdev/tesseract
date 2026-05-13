@@ -214,11 +214,11 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 .milestones { margin: 24px 0; }
 .milestone { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #1a73e8; background: #f7f9fc; }
 .milestone h3 { display: flex; justify-content: space-between; align-items: baseline; }
-.milestone .rollup { font-size: 0.85rem; color: #5a6370; font-weight: normal; }
+.milestone .rollup { font-size: 0.85rem; color: #5f6368; font-weight: normal; }
 .milestone .outcome { margin: 6px 0; }
 .milestone .exit-criteria { margin: 8px 0; }
 .milestone .exit-criteria ul { margin: 4px 0 0 20px; }
-.milestone .depends-on { font-size: 0.9rem; color: #5a6370; margin: 6px 0; }
+.milestone .depends-on { font-size: 0.9rem; color: #5f6368; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -240,21 +240,6 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
     <tr><td>Timeline</td><td>Week {X}</td></tr>
   </table>
 </div>
-
-<!-- Infrastructure -->
-<h2>Infrastructure</h2>
-
-<table>
-  <tr><th>Resource</th><th>ID / Value</th><th>Status</th></tr>
-  <tr><td>{resource}</td><td><code>{id}</code> {details}</td><td>Exists</td></tr>
-  <tr><td>{resource}</td><td>{description}</td><td><strong>To create</strong></td></tr>
-</table>
-
-<blockquote>
-<strong>{Summary insight}.</strong> {Brief context about infrastructure state.}
-</blockquote>
-
-<hr>
 
 <!-- Milestones block — render this block immediately after the Epic metadata and before the flat Stories summary table.
      Render the sidecar's `milestones` array only when sidecar.milestones has ≥ 1 entry.
@@ -300,6 +285,19 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 </section>
 
 <!-- Stories inside each milestone block are ordered by `week` ascending (sprint cadence emerges from week grouping — e.g., week 1–2 = Sprint 1). -->
+
+<!-- Infrastructure -->
+<h2>Infrastructure</h2>
+
+<table>
+  <tr><th>Resource</th><th>ID / Value</th><th>Status</th></tr>
+  <tr><td>{resource}</td><td><code>{id}</code> {details}</td><td>Exists</td></tr>
+  <tr><td>{resource}</td><td>{description}</td><td><strong>To create</strong></td></tr>
+</table>
+
+<blockquote>
+<strong>{Summary insight}.</strong> {Brief context about infrastructure state.}
+</blockquote>
 
 <hr>
 
