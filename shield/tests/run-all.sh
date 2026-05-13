@@ -295,6 +295,16 @@ else
 fi
 echo ""
 
+# --- 10. Markdown Renderer ---
+echo "10. Markdown Renderer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "render-markdown handles CommonMark nested lists" \
+    "$SHIELD_ROOT/tests/test-render-markdown.py"
+else
+  echo "  ⚠ uv not installed, skipping render-markdown test"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))

@@ -1,4 +1,5 @@
 ---
+name: prd-review
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
 description: Run multi-persona PRD review against a 13-dimension rubric. Produces scored summary with severity-tiered gaps and an enhanced PRD with suggested fixes.
 ---
