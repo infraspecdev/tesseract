@@ -111,7 +111,9 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | Step | Action | Condition | Mandatory |
 |------|--------|-----------|-----------|
 | 1 | Gather requirements | skip if spec/topic provided | No |
-| 2 | Check for prior research | skip if no research exists | No |
+| 1a | Detect prior PRD in feature folder | skip if no PRD exists | No |
+| 2 | Check for prior research / gather context | skip if no research exists | No |
+| 2a | Milestone resolution — extract from PRD §13/§6 or invoke `shield:milestone-coverage` as fallback; user refines | always | Yes |
 | 3 | Generate plan.json sidecar | always | Yes |
 | 4 | Generate architecture HTML | always | Yes |
 | 5 | Generate plan HTML | always | Yes |
@@ -127,13 +129,35 @@ At startup, call execute-steps to register these steps. Execute them in order, u
    - Append the plan's run folder path to `prd.meta.json.linked_plans` (auto-updates the bidirectional linkage)
    - Record `source_prd` (relative path to prd.md) and `prd_rubric_version_at_planning` (read from prd.meta.json.rubric_version) into the plan.json sidecar
 2. **Gather context** — ask about: problem being solved, existing infrastructure, proposed approach, dependencies, timeline
+
+### 2a. Milestone resolution
+
+Before generating stories, resolve milestones:
+
+- **If a PRD was detected (Step 1a) and it contains milestones** (Section 13 standard, Section 6 lean): extract them. Present to the user for confirmation. Allow edits (rename, add exit criteria, change depends_on). Copy approved milestones into the sidecar `milestones[]`.
+
+- **If a PRD was detected but has no milestones** (or an empty Milestones table — back-compat case for PRDs authored against rubric_version 1.0): invoke `shield:milestone-coverage` with:
+   - `personas`: from PRD Section 3
+   - `goals`: from PRD Section 4
+   - `stories`: from PRD Section 6 (if present; empty for lean)
+   - `feature_domain`: inferred or read from PRD type-detection metadata
+
+   Present merged proposal + `open_conflicts` to the user (same flow as `/prd` §7a). User refines. Sidecar-only — do NOT write back to the PRD.
+
+- **If no PRD exists:** invoke `shield:milestone-coverage` with whatever inputs were gathered during requirements (Step 2). Sidecar-only.
+
+- **If the user explicitly opts out of milestones:** sidecar stores `milestones: []`. All subsequent stories will have `milestone_id: null`. This is the back-compat single-implicit-milestone case (see `sidecar-schema.md`).
+
 3. **Read `.shield.json`** — get project name and active domains
-3. **Generate sidecar JSON first** — write `{output_dir}/{feature}/plan.json` with epics, stories, tasks, and acceptance criteria
-4. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
-5. **Generate architecture doc** (HTML) — the "thinking" document
-6. **Generate detailed plan** (HTML) — renders stories from the sidecar, includes `<meta>` sidecar reference
-7. **Invoke `shield:summarize`** — produce a plan summary for the run directory
-8. **Offer next steps:**
+4. **Generate sidecar JSON first (milestone-by-milestone)** — write `{output_dir}/{feature}/plan.json`:
+   - For each milestone in `milestones[]` (resolved in §2a), generate the epics and stories needed to satisfy that milestone's exit criteria. Each story is born with `milestone_id` set to the milestone's `id`.
+   - When `milestones: []` (opt-out case), generate stories flat with `milestone_id: null` on each — the back-compat path.
+   - Acceptance criteria per story remain the same testable standard; exit criteria on the milestone are the higher-level rollup.
+5. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
+6. **Generate architecture doc** (HTML) — the "thinking" document
+7. **Generate detailed plan** (HTML) — renders stories from the sidecar, includes `<meta>` sidecar reference
+8. **Invoke `shield:summarize`** — produce a plan summary for the run directory
+9. **Offer next steps:**
    - `/plan-review` — multi-agent review of the plan
    - `/pm-sync` — sync stories to project management tool
 

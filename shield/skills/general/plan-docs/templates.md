@@ -209,6 +209,16 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 
 /* Phase color — only use for inline accents, NOT for h1 or blockquotes */
 .phase-color { color: #1a73e8; }
+
+/* Milestones block */
+.milestones { margin: 24px 0; }
+.milestone { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #1a73e8; background: #f7f9fc; }
+.milestone h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.milestone .rollup { font-size: 0.85rem; color: #5f6368; font-weight: normal; }
+.milestone .outcome { margin: 6px 0; }
+.milestone .exit-criteria { margin: 8px 0; }
+.milestone .exit-criteria ul { margin: 4px 0 0 20px; }
+.milestone .depends-on { font-size: 0.9rem; color: #5f6368; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -230,6 +240,51 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
     <tr><td>Timeline</td><td>Week {X}</td></tr>
   </table>
 </div>
+
+<!-- Milestones block — render this block immediately after the Epic metadata and before the flat Stories summary table.
+     Render the sidecar's `milestones` array only when sidecar.milestones has ≥ 1 entry.
+     When sidecar.milestones is empty (back-compat with plans that pre-date milestone support),
+     skip this entire block and fall through to the flat Stories summary table below. -->
+<section class="milestones">
+  <h2>Milestones</h2>
+
+  <!-- For each milestone in sidecar.milestones[], in array order: -->
+  <section class="milestone" id="milestone-{milestone.id}">
+    <!-- h3: "{id} — {name}" with a right-aligned rollup span showing ready_count / total_count stories ready -->
+    <h3>{milestone.id} — {milestone.name} <span class="rollup">{ready_count}/{total_count} stories ready</span></h3>
+
+    <!-- Outcome paragraph -->
+    <p class="outcome"><strong>Outcome:</strong> {milestone.outcome}</p>
+
+    <!-- Exit criteria: always render the ul; one <li> per item in milestone.exit_criteria[] -->
+    <div class="exit-criteria">
+      <strong>Exit criteria:</strong>
+      <ul>
+        <li>{exit_criterion}</li>
+        <!-- Repeat for each item in milestone.exit_criteria[] -->
+      </ul>
+    </div>
+
+    <!-- Depends-on: render this <p> only when milestone.depends_on is non-empty;
+         join the IDs with ", " (e.g., "M1, M2") -->
+    <p class="depends-on"><strong>Depends on:</strong> {milestone.depends_on joined by ", "}</p>
+
+    <!-- Stories table: list stories where story.milestone_id == milestone.id,
+         ordered by story.week ascending (sprint cadence emerges from week grouping —
+         e.g., week 1–2 = Sprint 1). Columns: ID, Name, Week, Status. -->
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Week</th><th>Status</th></tr></thead>
+      <tbody>
+        <!-- For each story where story.milestone_id == milestone.id, sorted by week asc: -->
+        <tr><td>{story.id}</td><td><a href="#{story.anchor}">{story.name}</a></td><td>{story.week}</td><td><span class="badge badge-{story.status_class}">{story.status}</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Repeat <section class="milestone"> for each entry in sidecar.milestones[] -->
+</section>
+
+<!-- Stories inside each milestone block are ordered by `week` ascending (sprint cadence emerges from week grouping — e.g., week 1–2 = Sprint 1). -->
 
 <!-- Infrastructure -->
 <h2>Infrastructure</h2>

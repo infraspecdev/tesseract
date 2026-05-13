@@ -44,6 +44,16 @@ sprint, stories, planning, epic, task breakdown, estimation, backlog, iteration
 | AC8 | Sprint-readiness | Could this go into a sprint backlog as-is? No pre-work needed, no questions to answer first | Important |
 | AC9 | Estimation feasibility | Enough detail to estimate effort — a developer reading this could give a confident estimate | Warning |
 | AC10 | Definition of Done alignment | Stories match standard DoD: code reviewed, tests passing, deployed to staging, documented | Warning |
+| AC13 | Milestone coverage | Every milestone in `sidecar.milestones[]` has ≥1 covering story (story with `milestone_id` equal to milestone `id`). A milestone with zero stories means the plan is incomplete | Critical |
+| AC14 | Milestone reference integrity | Every story's `milestone_id` is either `null` or matches an existing milestone `id` in `sidecar.milestones[]`. Dangling references are blockers | Critical |
+| AC15 | Milestone exit criteria testability | Each `exit_criteria` item per milestone is a testable fact (same standard as story AC). Vague items like "login works" fail | Important |
+| AC16 | Milestone DAG integrity | Build a directed graph from `milestones[].depends_on`. No cycles. Cycles indicate broken sequencing | Critical |
+
+### Milestone checks — activation rules
+
+AC13–AC16 ONLY apply when `sidecar.milestones[]` is non-empty. When it is empty AND every story's `milestone_id` is `null`, the plan is using the back-compat **single-implicit-milestone** path (see `shield/skills/general/plan-docs/sidecar-schema.md` → Back-compat section). In that case, mark AC13–AC16 as **N/A** and do NOT penalize the grade.
+
+When `sidecar.milestones[]` is empty BUT some story has a non-null `milestone_id`, the sidecar is invalid (dangling reference). Surface this under AC14 as a Critical issue ("milestones[] is empty but story X references milestone_id Y").
 
 ## Story Quality Enforcement
 
@@ -80,6 +90,10 @@ Every story in the plan must have these sections. Grade harshly if any are missi
 | AC8 | Sprint-readiness | _ | ... |
 | AC9 | Estimation feasibility | _ | ... |
 | AC10 | Definition of Done alignment | _ | ... |
+| AC13 | Milestone coverage | _ | ... |
+| AC14 | Milestone reference integrity | _ | ... |
+| AC15 | Milestone exit criteria testability | _ | ... |
+| AC16 | Milestone DAG integrity | _ | ... |
 
 **Key Finding:** [One sentence summary of the most important observation]
 
@@ -88,6 +102,12 @@ Every story in the plan must have these sections. Grade harshly if any are missi
 | Story | Sizing | Has Context | Has Requirements | Has Steps | Has Criteria | Sprint-Ready? |
 |-------|--------|-------------|-----------------|-----------|-------------|--------------|
 | Story 1: ... | OK/Too large/Too small | Yes/No | Yes/Partial/No | Yes/Partial/No | Yes/Partial/No | Yes/No |
+
+#### Milestone-Level Assessment
+
+| Milestone | Has Covering Stories | Exit Criteria Testable | Depends-On Valid |
+|-----------|---------------------|------------------------|------------------|
+| M1: ... | Yes/No (N stories) | Yes/Partial/No | Yes/cycle/dangling |
 
 #### Recommendations
 
@@ -104,6 +124,8 @@ Every story in the plan must have these sections. Grade harshly if any are missi
 | Treating acceptance criteria as implementation steps | AC should be testable outcomes ("API returns 200 with valid token") not steps ("add auth middleware") |
 | Passing AC7 for vague criteria like "performance is acceptable" | Testable means a specific number: "p99 latency < 500ms" not "performance is good" |
 | Grading dependency ordering A when stories have implicit ordering | Dependencies must be explicit — if story 3 can't start before story 1, that's a blocker to document |
+| Skipping AC13–AC16 when `milestones[]` is empty + non-null `milestone_id` somewhere | This is NOT back-compat — flag as Critical under AC14 |
+| Marking AC15 Pass for "rate limiting active" or similar state assertions | Exit criteria must be testable behavior — "11th request from same IP within 60s returns 429" passes; "rate limiting active" fails |
 
 ## Mode: PRD Review
 
