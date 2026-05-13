@@ -122,6 +122,19 @@ Review findings are presented with severity levels. You pick which fixes to appl
 
 #### Installation
 
+**Requirements:**
+
+| Dependency | What uses it | Required for |
+|---|---|---|
+| Claude Code | The plugin host | All Shield commands |
+| [`uv`](https://docs.astral.sh/uv/) | Ephemerally runs the PRD HTML renderer and PM adapter MCP servers | `/prd` (renders `prd.html`), `/pm-sync` (if PM tool is configured) |
+
+`/shield init` checks for `uv` and offers to install it for you. To install manually:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 **1. Install Shield:**
 
 ```bash

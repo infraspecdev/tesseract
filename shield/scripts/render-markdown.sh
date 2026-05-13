@@ -13,7 +13,15 @@
 set -euo pipefail
 
 if ! command -v uv >/dev/null 2>&1; then
-  echo "render-markdown: uv not installed. Install: https://docs.astral.sh/uv/" >&2
+  cat >&2 <<'MSG'
+render-markdown: uv is required but not installed.
+
+To install uv (one-time, ~/.local/bin):
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+Then re-run this command. uv handles markdown-it-py / mdit-py-plugins
+ephemerally — no global pip install needed.
+MSG
   exit 127
 fi
 

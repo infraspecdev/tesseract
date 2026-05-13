@@ -161,6 +161,14 @@ If `.shield.json.prd_template` is set:
 ### 10. Write artifacts
 
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.md`
+- **Pre-flight: ensure `uv` is available.** Run `command -v uv` first. If missing, do NOT call the renderer yet — first prompt the user:
+  ```
+  prd.html rendering requires uv (one-time install, ~/.local/bin).
+  Install now? (y/n)
+    [y] Run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    [n] Skip — prd.md is written, prd.html will be missing until you re-run /prd after installing uv
+  ```
+  If user agrees, run the installer via Bash, then `export PATH="$HOME/.local/bin:$PATH"` in the same shell so the next step finds it. If user declines, write `prd.md` and `prd.meta.json` but skip `prd.html` and surface the warning in the step-12 summary.
 - Render `prd.html` via the helper (see `templates.md` → HTML render template):
   1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md` with a literal `{{BODY}}` placeholder where the markdown body should appear. Fill in the title and meta-banner directly (owner, status, sidecar/research links) — those are not placeholders.
   2. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out prd.html`.
