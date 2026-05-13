@@ -87,6 +87,14 @@ Internal services, third parties, integration contracts.
 | A1 | <assumption> | Validated / Unvalidated | <consequence> |
 
 ## 13. Rollout plan
+
+### Milestones
+| ID | Name | Outcome | Exit criteria | Depends on |
+|---|---|---|---|---|
+| M1 | <short user-language name> | <what ships, in user language> | <testable list — what facts must be true to declare done> | — |
+| M2 | … | … | … | M1 |
+
+### Rollout mechanics
 - Flag plan: <feature flag>
 - Canary: <staged rollout slices>
 - Kill-switch: <criteria>
@@ -123,7 +131,7 @@ Internal services, third parties, integration contracts.
 - <named item with one-line rationale>
 ```
 
-## Lean variant (7 sections)
+## Lean variant (8 sections)
 
 ```markdown
 # <Feature name>
@@ -144,9 +152,14 @@ What's broken, who hurts, baseline data, why now.
 ## 5. Success metrics
 | Metric | Type | Target | Counter |
 
-## 6. Open questions
+## 6. Milestones
+| ID | Name | Outcome | Exit criteria | Depends on |
+|---|---|---|---|---|
+| M1 | <name> | <outcome> | <testable list> | — |
 
-## 7. Out of scope / Non-goals
+## 7. Open questions
+
+## 8. Out of scope / Non-goals
 
 ---
 
@@ -158,7 +171,7 @@ What's broken, who hurts, baseline data, why now.
 > - Section 10 — Dependencies
 > - Section 11 — Risks & mitigations
 > - Section 12 — Assumptions
-> - Section 13 — Rollout plan
+> - Section 13 — Rollout plan (rollout mechanics; lean keeps only the Milestones half)
 > - Section 14 — Cost & resource impact
 > - Section 15 — GTM & customer-comms
 > - Section 16 — Support / CX impact
