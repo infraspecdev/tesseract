@@ -1,0 +1,113 @@
+{
+  "version": "1.1",
+  "project": "auth-service",
+  "name": "user-authentication",
+  "phase": "phase-1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Login core",
+      "outcome": "Users can log in with email + password",
+      "exit_criteria": [
+        "Login endpoint returns 200 + session token on valid credentials",
+        "Login endpoint returns 401 on invalid credentials",
+        "Rate limiting active on login endpoint (10/min)"
+      ],
+      "depends_on": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Authentication core",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement /v2/auth/login endpoint",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": 1,
+          "milestone_id": "M1",
+          "description": "Build the new login endpoint that validates credentials and returns a session token.",
+          "tasks": [
+            "Define request/response schema",
+            "Implement credential validation against user_credentials table",
+            "Return JWT session token on success"
+          ],
+          "acceptance_criteria": [
+            "POST /v2/auth/login with valid creds returns 200 + JWT",
+            "POST /v2/auth/login with invalid creds returns 401"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Add rate limiting to login endpoint",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": 2,
+          "milestone_id": "M1",
+          "description": "Enforce 10 requests/min per IP using existing rate-limit middleware.",
+          "tasks": [
+            "Configure rate-limit middleware for /v2/auth/login",
+            "Return 429 with Retry-After header on overflow"
+          ],
+          "acceptance_criteria": [
+            "11th request within 60s from same IP returns 429"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S3",
+          "name": "Build recovery email flow",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": 3,
+          "milestone_id": "M2",
+          "description": "Send password-reset email with a single-use, 15-min-TTL link.",
+          "tasks": [
+            "Generate signed token with 15-min expiry",
+            "Send email via existing transactional provider",
+            "Validate token on reset endpoint"
+          ],
+          "acceptance_criteria": [
+            "Recovery email arrives within 60s of POST /v2/auth/recover",
+            "Reset link succeeds once, then returns 410 on re-use"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S4",
+          "name": "Implement password reset endpoint",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": 4,
+          "milestone_id": "M2",
+          "description": "Accept the signed token + new password; update credentials store.",
+          "tasks": [
+            "Validate signed token",
+            "Hash new password and update user_credentials",
+            "Invalidate any existing sessions"
+          ],
+          "acceptance_criteria": [
+            "POST /v2/auth/reset with valid token + new password returns 200 and old sessions are invalidated"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-13",
+    "domains": ["backend"],
+    "reviewer_grades": {}
+  }
+}
