@@ -1,11 +1,11 @@
 ---
 name: prd-docs
-description: Use when authoring a new PRD or upgrading a lean PRD to standard. Walks user through 17-section problem-first scaffold (or 7-section lean), pre-populates from prior /research transcript if present, invokes shield:story-coverage between Sections 4 and 6, supports custom team templates via .shield.json. Triggers on /prd, write a PRD, author a PRD.
+description: Use when authoring a new PRD or upgrading a lean PRD to standard. Walks user through 18-section problem-first scaffold (or 8-section lean), pre-populates from prior /research transcript if present, invokes shield:story-coverage between Sections 4 and 6, supports custom team templates via .shield.json. Triggers on /prd, write a PRD, author a PRD.
 ---
 
 # PRD Docs
 
-Author a new PRD with the Shield 17-section problem-first scaffold (or lean variant), or upgrade an existing lean PRD to standard by adding missing sections.
+Author a new PRD with the Shield 18-section problem-first scaffold (or lean variant), or upgrade an existing lean PRD to standard by adding missing sections.
 
 ## Output Path — MANDATORY
 
@@ -40,6 +40,7 @@ Where `{output_dir}` comes from `.shield.json`, `{feature}` is the feature folde
 | 5 | Check for prior `/research` transcript; pre-populate Problem/Users/Constraints if present | only if research exists | conditional |
 | 6 | Walk Sections 1-4 (Header, Problem, Personas, Goals) | always | Yes |
 | 7 | Invoke `shield:story-coverage` skill between Sections 4 and 6; scaffold expected stories | always (standard only; skip for lean) | conditional |
+| 7a | Invoke `shield:milestone-coverage` skill once stories are filled (standard) or after Section 5 metrics (lean); user refines proposal | always; lean uses goals+personas only as input | conditional |
 | 8 | Walk Sections 5, 6 content, 7-17 | always (lean: only 5, 16, 17) | Yes |
 | 9 | Apply custom-template merging if `.shield.json.prd_template` is set | only if config set | conditional |
 | 10 | Write `prd.md`, `prd.html`, `prd.meta.json` | always | Yes |
@@ -98,8 +99,8 @@ If "Start fresh" or no prior lean PRD detected, proceed to Step 4.
 
 ```
 Which PRD type would you like?
-1. Standard — full 17-section scaffold (recommended for substantial features)
-2. Lean — 7-section variant (good for 1-pagers, small features, "stop me if this is wrong" docs)
+1. Standard — full 18-section scaffold (recommended for substantial features)
+2. Lean — 8-section variant (good for 1-pagers, small features, "stop me if this is wrong" docs)
 ```
 
 Record user choice. Type is per-invocation; not stored in `.shield.json`.
@@ -137,11 +138,48 @@ Pick which to scaffold (defaults to all suggested), or add your own.
 
 Selected stories are seeded into Section 6 with the standard story template structure (blank for the user to fill).
 
+### 7a. Milestone scaffolding (both scaffolds)
+
+After Section 6 (standard, once stories are filled) or after Section 5 (lean, once metrics are filled), invoke `shield:milestone-coverage` with:
+
+- `personas`: from Section 3
+- `goals`: from Section 4
+- `stories`: from Section 6 (standard only — pass empty for lean)
+- `feature_domain`: same inference as story-coverage
+- `success_metrics`: from Section 5 (optional)
+
+The skill returns `milestones[]` plus `open_conflicts[]`. Present them to the user:
+
+```
+Milestone proposal — refine before approving:
+
+  [x] M1 — Login core (PM + agile-coach agreed)
+       Outcome: Users can log in with email + password
+       Exit: Login endpoint returns 200 + session token...
+       Depends on: —
+
+  [x] M2 — Password recovery (PM + agile-coach disagreed on depends_on — see below)
+       Outcome: Users can reset a forgotten password without contacting support
+       Exit: Recovery email delivered within 60s; reset link single-use, 15-min TTL
+       Depends on: M1
+       ⚠ Conflict: PM proposed `depends_on: []`. Agile-coach proposed `depends_on: [M1]`.
+         Agile-coach reason: "Recovery needs the session middleware shipped in M1."
+         Decision needed: keep [M1] / clear / edit.
+
+Pick which to keep (defaults to all suggested), edit fields per row, or add your own.
+```
+
+Selected and edited milestones are written into:
+- **Standard:** §13 Milestones table (then walk §13 rollout-mechanics fields next as today).
+- **Lean:** §6 Milestones table (then proceed to §7 Open questions).
+
+If the user declines (empty selection), leave the Milestones table empty. `/plan` will re-run `shield:milestone-coverage` as a fallback if needed.
+
 ### 8. Walk remaining sections
 
-Walk Sections 5, then Section 6 (filling in content for the scaffolded stories), then 7-17 in order.
+Walk Sections 5, then Section 6 (filling in content for the scaffolded stories), then 7-12 in order. Section 13's Milestones table is already populated by §7a above — walk only the rollout-mechanics fields beneath it. Then walk 14-17.
 
-For lean PRDs, only walk the lean scaffold's sections 5 (Success metrics), 6 (Open questions), 7 (Out of scope) — these map to standard sections 5, 17, 18. Do NOT walk standard sections 6-16; lean omits them intentionally. Use the lean scaffold from `templates.md`, not the standard one.
+For lean PRDs, walk the lean scaffold's sections 5 (Success metrics), then §6 Milestones is already populated by §7a above (skip ahead), then walk 7 (Open questions), 8 (Out of scope) — these map to standard sections 5, 17, 18. Do NOT walk standard sections 6-16; lean omits them intentionally. Use the lean scaffold from `templates.md`, not the standard one.
 
 ### 9. Custom-template merging
 
@@ -196,14 +234,15 @@ PRD authored. What's next?
 |---|---|
 | Writing prd.md without prd.meta.json | Both are mandatory; meta.json holds the type + linked_plans for downstream commands |
 | Skipping story-coverage scaffolding for standard PRDs | Required step for standard; skipping leads to poor dim 4 grades downstream |
-| Walking lean PRD through all 17 sections | Lean is intentionally 7 sections (its own numbering); use the lean scaffold from templates.md, not the standard one |
+| Walking lean PRD through all 18 sections | Lean is intentionally 8 sections (its own numbering); use the lean scaffold from templates.md, not the standard one |
 | Forgetting custom-template required-section merging | Custom templates MUST have all required sections; Shield appends missing ones with markers |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
 
 ## See Also
 
-- `templates.md` — 17-section scaffold + lean variant + HTML render templates
+- `templates.md` — 18-section scaffold + lean variant + HTML render templates
 - `meta-schema.md` — prd.meta.json schema
 - `type-detection.md` — lean vs standard heuristics
 - `shield:story-coverage` skill — invoked between Sections 4 and 6 for scaffolding
+- `shield:milestone-coverage` skill — invoked after stories (standard) or after Section 5 (lean) for milestone scaffolding
