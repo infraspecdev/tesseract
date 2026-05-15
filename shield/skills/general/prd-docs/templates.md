@@ -4,7 +4,7 @@ The 20-section problem-first scaffold (standard) and 10-section lean variant. Pl
 
 ## Standard scaffold (20 sections)
 
-```markdown
+````markdown
 # <Feature name>
 
 ## 1. Header
@@ -165,7 +165,7 @@ Internal services, third parties, integration contracts.
 
 ## 20. Out of scope / Non-goals
 - <named item with one-line rationale>
-```
+````
 
 ## Lean variant (8 sections)
 
