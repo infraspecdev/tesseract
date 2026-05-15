@@ -167,56 +167,68 @@ Internal services, third parties, integration contracts.
 - <named item with one-line rationale>
 ````
 
-## Lean variant (8 sections)
+## Lean variant (10 sections)
 
-```markdown
+````markdown
 # <Feature name>
 
 ## 1. Header
 (Same Header table as standard)
 
-## 2. Problem & context
+## 2. Terminologies
+| Term | Definition |
+|---|---|
+| <term> | <one-line definition; link to deeper doc if needed> |
+
+## 3. Problem & context
 What's broken, who hurts, baseline data, why now.
 
-## 3. Target users / personas
+## 4. Target users / personas
 | ID | Persona | Goals | Frictions today |
 
-## 4. Goals & non-goals
+## 5. Architecture & flows
+
+Optional. Same content guidance as standard scaffold's §5.
+
+```mermaid
+flowchart LR
+  A --> B
+```
+
+## 6. Goals & non-goals
 ### Goals
 ### Non-goals
 
-## 5. Success metrics
+## 7. Success metrics
 | Metric | Type | Target | Counter |
 
-## 6. Milestones
+## 8. Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
-|---|---|---|---|---|
-| M1 | <name> | <outcome> | <testable list> | — |
 
-## 7. Open questions
+## 9. Open questions
 
-## 8. Out of scope / Non-goals
+## 10. Out of scope / Non-goals
 
 ---
 
 > **This is a lean PRD.** It intentionally omits the following standard sections:
-> - Section 6 — User stories & scenarios
-> - Section 7 — Functional requirements
-> - Section 8 — Non-functional requirements
-> - Section 9 — RBAC & permissions matrix
-> - Section 10 — Dependencies
-> - Section 11 — Risks & mitigations
-> - Section 12 — Assumptions
-> - Section 13 — Rollout plan (rollout mechanics; lean keeps only the Milestones half)
-> - Section 14 — Cost & resource impact
-> - Section 15 — GTM & customer-comms
-> - Section 16 — Support / CX impact
+> - Section 8 — User stories & scenarios
+> - Section 9 — Functional requirements
+> - Section 10 — Non-functional requirements
+> - Section 11 — RBAC & permissions matrix
+> - Section 12 — Dependencies
+> - Section 13 — Risks & mitigations
+> - Section 14 — Assumptions
+> - Section 15 — Rollout plan (full — lean has its own §8 Milestones)
+> - Section 16 — Cost & resource impact
+> - Section 17 — GTM & customer-comms
+> - Section 18 — Support / CX impact
 >
 > If scope grows or stakeholders need more detail, run `/prd` again — Shield
 > will offer to add specific sections or upgrade to `standard`.
-```
+````
 
-## Story template (used inside Section 6 of standard scaffold)
+## Story template (used inside Section 8 of standard scaffold)
 
 ```markdown
 ### Story <ID>: <name>
