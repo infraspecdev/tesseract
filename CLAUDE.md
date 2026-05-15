@@ -23,16 +23,6 @@ tesseract/
 │   ├── server/                       # Python MCP server (mcp[cli] + httpx)
 │   ├── skills/                       # Auto-invoked skills
 │   └── examples/                     # Example config files
-├── github-sprint-planner/            # Plugin: GitHub Issues + Projects v2 sprint planning
-│   ├── .claude-plugin/plugin.json
-│   ├── .mcp.json                     # MCP server configuration
-│   ├── .gitignore                    # Ignores sprint-planner.json and epics/
-│   ├── commands/                     # Slash commands
-│   ├── server/                       # Python MCP server (mcp[cli] + httpx)
-│   │   ├── github_client.py          # REST + GraphQL API wrapper
-│   │   └── tools/                    # sprint_sync, bulk_create, bulk_update, bulk_rename, sprint_status
-│   ├── skills/                       # Auto-invoked skills
-│   └── examples/                     # Example config files
 └── dev-workflow/                     # Plugin: Research + TDD skills
     ├── .claude-plugin/plugin.json
     └── skills/                       # Auto-invoked skills
@@ -52,7 +42,7 @@ tesseract/
 
 ## Working with the Codebase
 
-- Python code lives in `clickup-sprint-planner/server/` and `github-sprint-planner/server/`. Run with `uv run`.
+- The only Python code is in `clickup-sprint-planner/server/`. Run with `uv run`.
 - Everything else is markdown definitions (commands, skills, agents) and shell scripts (hooks).
 - Config files with real workspace data (`sprint-planner.json`) are gitignored. Only example configs are tracked.
 - Never commit `.env` files or `settings.local.json`.

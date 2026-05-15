@@ -21,13 +21,6 @@
       "category": "development"
     },
     {
-      "name": "github-sprint-planner",
-      "description": "Sprint planning tools for GitHub Issues + Projects v2 — bulk operations, sub-issue linking, plan doc sync, and action logging.",
-      "version": "1.0.0",
-      "source": "./github-sprint-planner",
-      "category": "productivity"
-    },
-    {
       "name": "clickup-sprint-planner",
       "description": "[DEPRECATED — use shield] Sprint planning tools for ClickUp. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.4.0",
