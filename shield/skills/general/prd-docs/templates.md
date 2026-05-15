@@ -1,8 +1,8 @@
 # PRD Templates
 
-The 18-section problem-first scaffold (standard) and 8-section lean variant. Plus the HTML render template that mirrors prd.md.
+The 20-section problem-first scaffold (standard) and 10-section lean variant. Plus the HTML render template that mirrors prd.md.
 
-## Standard scaffold (18 sections)
+## Standard scaffold (20 sections)
 
 ```markdown
 # <Feature name>
@@ -21,30 +21,61 @@ The 18-section problem-first scaffold (standard) and 8-section lean variant. Plu
 | Sign-off contacts | Legal: @<handle>, Security: @<handle>, Support: @<handle> |
 | Linked plans | _(auto-populated by /plan)_ |
 
-## 2. Problem & context
+## 2. Terminologies
+| Term | Definition |
+|---|---|
+| <term> | <one-line definition; link to deeper doc if needed> |
+
+## 3. Problem & context
 What's broken, who hurts, baseline data, why now (cost-of-inaction).
 
-## 3. Target users / personas
+## 4. Target users / personas
 | ID | Persona | Goals | Frictions today |
 |---|---|---|---|
 | P1 | <name> | <user-language goals> | <current pain> |
 
-## 4. Goals & non-goals
+## 5. Architecture & flows
+
+Optional. If this feature has non-trivial system topology, user flows, or
+state machines, capture them here as Mermaid diagrams (preferred — render
+in prd.html) or linked images alongside prd.md. Leave empty if all flows
+are simple enough to describe in prose elsewhere.
+
+### System overview
+```mermaid
+flowchart LR
+  user[User] -->|action| service[Service]
+  service -->|call| dependency[Dependency]
+```
+
+### Key flows
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant S as Service
+  U->>S: request
+  S-->>U: response
+```
+
+## 6. Goals & non-goals
 ### Goals
 1. <goal 1>
 2. <goal 2>
 ### Non-goals
 - <explicitly NOT trying to do>
 
-## 5. Success metrics
+## 7. Success metrics
 | Metric | Type | Target | Counter |
 |---|---|---|---|
 | <metric> | Leading / Lagging | <numeric threshold> | <counter-metric> |
 **Dashboard plan:** <where will this be tracked>
 
-## 6. User stories & scenarios
+## 8. User stories & scenarios
 
 ### Story <ID>: <name>
+- **Type:** new | enhancement | existing
+- **Existing behavior:** <path / link / one-line description, or "N/A">
+  *(required when Type is enhancement or existing; "N/A" for new)*
 - **Persona:** <P-id>
 - **Goal:** <user-language goal>
 - **Happy path:** <numbered steps>
@@ -55,10 +86,15 @@ What's broken, who hurts, baseline data, why now (cost-of-inaction).
 - **Acceptance criteria (Given/When/Then):**
   - Given <pre>, When <action>, Then <outcome>
 
-## 7. Functional requirements
-Per-story or per-feature; uses Given/When/Then. May reference Section 6 stories.
+#### Type semantics
+- **new** — behavior does not exist in any form today (net-new feature)
+- **enhancement** — modifies existing behavior in a user-visible way
+- **existing** — already exists, documented for context (regression-risk surface in rewrites)
 
-## 8. Non-functional requirements
+## 9. Functional requirements
+Per-story or per-feature; uses Given/When/Then. May reference Section 8 stories.
+
+## 10. Non-functional requirements
 | NFR | Requirement |
 |---|---|
 | Performance | <budget> |
@@ -68,25 +104,25 @@ Per-story or per-feature; uses Given/When/Then. May reference Section 6 stories.
 | Telemetry / event taxonomy | <named events> |
 | i18n / l10n | <RTL, encoding, formats, translation pipeline — or N/A> |
 
-## 9. RBAC & permissions matrix
+## 11. RBAC & permissions matrix
 | Role | Can do |
 |---|---|
 | <role> | <permissions> |
 
-## 10. Dependencies
+## 12. Dependencies
 Internal services, third parties, integration contracts.
 
-## 11. Risks & mitigations
+## 13. Risks & mitigations
 | # | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|---|
 | R1 | <risk> | L/M/H | L/M/H | <mitigation> | @<handle> |
 
-## 12. Assumptions
+## 14. Assumptions
 | # | Assumption | Status | If wrong |
 |---|---|---|---|
 | A1 | <assumption> | Validated / Unvalidated | <consequence> |
 
-## 13. Rollout plan
+## 15. Rollout plan
 
 ### Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
@@ -102,32 +138,32 @@ Internal services, third parties, integration contracts.
 - Data migration: <plan if touching existing data>
 - Backward compatibility: <commitments>
 
-## 14. Cost & resource impact
+## 16. Cost & resource impact
 | Component | Cost dimension | Estimate |
 |---|---|---|
 | Build cost | Engineering time | <estimate> |
 | Run cost | LLM / compute / storage / bandwidth | <$X/month at projected scale> |
 | Counter-metric | <should not exceed $Y/user/month> | |
 
-## 15. GTM & customer-comms
+## 17. GTM & customer-comms
 - Pricing / packaging implications: <description>
 - In-app messaging plan: <description>
 - Release notes: <description>
 - CS / sales enablement: <description>
 - Beta / early-access plan: <description or N/A>
 
-## 16. Support / CX impact
+## 18. Support / CX impact
 - Day-1 ticket owner: @<handle>
 - Runbook: <link or description>
 - Escalation path: <description>
 - Sales enablement: <description>
 - Training plan: <description>
 
-## 17. Open questions
+## 19. Open questions
 | # | Question | Owner | Target resolution |
 |---|---|---|---|
 
-## 18. Out of scope / Non-goals
+## 20. Out of scope / Non-goals
 - <named item with one-line rationale>
 ```
 
