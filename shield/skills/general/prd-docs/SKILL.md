@@ -37,7 +37,7 @@ Where `{output_dir}` comes from `.shield.json`, `{feature}` is the feature folde
 | 2 | Resolve feature folder context | always | Yes |
 | 3 | Check for prior PRD in feature folder (lean → trigger upgrade flow) | only if prior PRD exists | conditional |
 | 4 | Ask user for PRD type (standard | lean) | always | Yes |
-| 5 | Check for prior `/research` transcript; pre-populate Problem/Personas/Dependencies if present | only if research exists | conditional |
+| 5 | Check for prior `/research` transcript; pre-populate Problem/Personas/Dependencies if present; note glossary rows for §2 Terminologies (step 13) | only if research exists | conditional |
 | 6 | Walk Section 1 (Header) | always | Yes |
 | 6a | Insert empty Terminologies placeholder for §2; fill later (step 13) | always | Yes |
 | 7 | Walk Sections 3, 4 (Problem, Personas) | always | Yes |
@@ -117,6 +117,7 @@ Look for `{output_dir}/{feature}/research/*/transcript.md` (Phase C, falls back 
 - Read it
 - Extract Problem context, Target Users (personas), Constraints (Existing systems / compliance markers)
 - Pre-populate the corresponding sections in the PRD draft
+- Also **note any `## Glossary`, `## Terminology`, or `## Terms` section** — these rows will all be copied verbatim into §2 Terminologies at step 13
 - Tell user: "I pre-populated Sections 3 (Problem), 4 (Personas), 12 (Dependencies) from your research transcript. Confirm or edit before we continue."
 
 ### 6. Walk Section 1 and defer Section 2
@@ -233,7 +234,15 @@ For lean PRDs, walk lean §9 (Open questions), then §10 (Out of scope). Do NOT 
 
 Now that Sections 3-20 have content (or 3-10 for lean), populate the Terminologies placeholder inserted in step 6a.
 
-**Source A — research transcript glossary.** If a `/research` transcript exists at `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list) and seed EVERY term found into the Terminologies table. **This is mandatory — do NOT filter out or drop any Source A terms, even if they appear unrelated to the feature's technical domain.** All research-glossary rows carry business/product context essential to reviewers.
+**Source A — research transcript glossary (REQUIRED copy, zero filtering).** If a `/research` transcript exists at `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list). **Copy EVERY row verbatim into the Terminologies table.**
+
+Rules for Source A copy:
+- Include ALL rows — **including business/marketing/product terms** (e.g., "ICP", "PLG", "GTM", "CAC") that may seem unrelated to the feature's technical domain. These terms appear in the research for a reason and reviewers depend on them.
+- Preserve the exact term name and definition from the transcript row. Do not rephrase.
+- Do NOT skip a row because it seems obvious, irrelevant, or non-technical.
+- Do NOT drop a row because you have a better definition for the same concept.
+
+If the research transcript has 2 rows (e.g., ICP + PLG), the Terminologies table MUST have both of those rows plus any Source B additions. A Terminologies table with only 1 of the 2 glossary rows is an error.
 
 **Source B — LLM scan of drafted PRD body.** Scan Sections 3..20 (or 3..10 for lean) and propose 5–15 additional terms that meet at least one of:
 - ALL-CAPS acronyms used 2+ times (e.g., "SLA", "RBAC")
@@ -276,10 +285,10 @@ If `.shield.json.prd_template` is set:
   ```
   If user agrees, run the installer via Bash, then `export PATH="$HOME/.local/bin:$PATH"` in the same shell so the next step finds it. If user declines, write `prd.md` and `prd.meta.json` but skip `prd.html` and surface the warning in the step-16 summary.
 - Render `prd.html` via the helper (see `templates.md` → HTML render template):
-  1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md` with a literal `{{BODY}}` placeholder where the markdown body should appear. Fill in the title and meta-banner directly (owner, status, sidecar/research links) — those are not placeholders.
+  1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md`. The shell **MUST include both placeholders**: `{{TOC}}` (placed immediately after the meta-banner div, on its own line — the renderer replaces it with the auto-generated table of contents) AND `{{BODY}}` (placed after `{{TOC}}`, on its own line — the renderer replaces it with the rendered markdown body). Fill in the title and meta-banner content directly (owner, status, sidecar/research links) — those are NOT placeholders. Do NOT omit `{{TOC}}` — without it, the rendered prd.html will have no table of contents.
   2. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out prd.html`.
   3. Delete `prd.shell.html` once the helper succeeds.
-  Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, and loose/tight wrapping.
+  Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, mermaid fence rules, and loose/tight wrapping.
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.meta.json` (per `meta-schema.md`)
 
 ### 16. Update dashboard
@@ -310,6 +319,8 @@ PRD authored. What's next?
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
+| Omitting {{TOC}} from prd.shell.html | prd.shell.html MUST have BOTH {{TOC}} and {{BODY}}; omitting {{TOC}} produces a TOC-less prd.html |
+| Hand-rendering prd.html without render-markdown.sh | Always use render-markdown.sh; other renderers don't apply the mermaid fence rule or anchors plugin |
 
 ## See Also
 

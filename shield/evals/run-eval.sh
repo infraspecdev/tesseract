@@ -31,15 +31,21 @@ run_one() {
     (cd "$workdir" && bash setup.sh) >"$workdir/setup.log" 2>&1
   fi
 
-  # Dispatch the subagent under test
+  # Dispatch the subagent under test.
+  # Touch a sentinel file just before launching so we can distinguish
+  # setup-created files from agent-written files in the fallback search.
+  touch "$workdir/.agent_start"
   local prompt
   prompt=$(cat "$workdir/prompt.txt")
+  # Run from the plugin root so skills are visible, but add-dir the workdir so
+  # the agent resolves relative paths (docs/shield/...) there, not in the repo.
   claude --print --dangerously-skip-permissions --add-dir "$workdir" \
-    --append-system-prompt "Working directory: $workdir" \
+    --append-system-prompt "Your working directory for this task is $workdir. Resolve ALL relative file paths — both reads and writes — against $workdir. The .shield.json and all project files (docs/, research transcripts, etc.) are under $workdir. Always use absolute paths prefixed with $workdir when reading or writing any file." \
     <<<"$prompt" >"$workdir/output.txt" 2>"$workdir/output.err" || true
 
   # Run structural checks — first try output.txt, then fall back to any
-  # written files in the workdir (e.g. prd.html for render evals).
+  # files the AGENT wrote (newer than .agent_start, e.g. prd.html for render
+  # evals). Setup-created files (transcript.md etc.) are excluded.
   local struct_pass=0 struct_total=0 qual_pass=0 qual_total=0
   while IFS= read -r assertion; do
     [[ -z "$assertion" ]] && continue
@@ -47,18 +53,15 @@ run_one() {
     if grep -qE "$assertion" "$workdir/output.txt"; then
       struct_pass=$((struct_pass + 1))
     else
-      # Fallback: search all non-script written files under workdir
+      # Fallback: search only agent-written files (newer than sentinel)
       local found=0
       while IFS= read -r wf; do
         if grep -qE "$assertion" "$wf" 2>/dev/null; then
           found=1
           break
         fi
-      done < <(find "$workdir" -type f \
+      done < <(find "$workdir" -newer "$workdir/.agent_start" -type f \
                   ! -name "output.txt" ! -name "output.err" \
-                  ! -name "setup.sh" ! -name "setup.log" \
-                  ! -name "prompt.txt" ! -name "structural.txt" \
-                  ! -name "qualitative.txt" ! -name "threshold.txt" \
                   2>/dev/null)
       if [[ "$found" -eq 1 ]]; then
         struct_pass=$((struct_pass + 1))
@@ -69,7 +72,7 @@ run_one() {
   done <"$workdir/structural.txt"
 
   # Run qualitative checks via judge call.
-  # Collect all written non-script files to give the judge full context.
+  # Collect agent-written files (newer than sentinel) to give the judge context.
   local extra_content=""
   while IFS= read -r wf; do
     local rel
@@ -78,11 +81,8 @@ run_one() {
 --- FILE: $rel ---
 $(head -200 "$wf" 2>/dev/null)
 "
-  done < <(find "$workdir" -type f \
+  done < <(find "$workdir" -newer "$workdir/.agent_start" -type f \
               ! -name "output.txt" ! -name "output.err" \
-              ! -name "setup.sh" ! -name "setup.log" \
-              ! -name "prompt.txt" ! -name "structural.txt" \
-              ! -name "qualitative.txt" ! -name "threshold.txt" \
               2>/dev/null)
   if [[ -s "$workdir/qualitative.txt" ]]; then
     while IFS= read -r criterion; do
