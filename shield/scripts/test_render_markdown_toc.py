@@ -9,6 +9,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import pytest
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 RENDER_SH = SCRIPT_DIR / "render-markdown.sh"
 
@@ -93,3 +95,24 @@ def test_non_mermaid_fence_unchanged():
     # Default markdown-it behavior: <pre><code class="language-python">…
     assert 'class="language-python"' in out
     assert '<pre class="mermaid">' not in out
+
+
+def test_toc_strips_inline_formatting():
+    md = "## **Bold** heading\n\n## The `code` section\n"
+    out = _run(md, SHELL_WITH_TOC)
+    assert ">Bold heading<" in out   # not >**Bold** heading<
+    assert ">The code section<" in out
+
+
+def test_mermaid_with_html_unsafe_content_is_escaped():
+    md = '## H\n\n```mermaid\nA["<script>"] --> B\n```\n'
+    out = _run(md, SHELL_WITH_TOC)
+    assert "<script>" not in out
+    assert "&lt;script&gt;" in out
+
+
+@pytest.mark.parametrize("info", ["mermaid", "MERMAID", "Mermaid", "  mermaid  "])
+def test_mermaid_fence_case_and_whitespace(info):
+    md = f"## H\n\n```{info}\nflowchart LR\n  A --> B\n```\n"
+    out = _run(md, SHELL_WITH_TOC)
+    assert '<pre class="mermaid">' in out

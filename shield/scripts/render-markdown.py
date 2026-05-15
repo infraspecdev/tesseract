@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Render a markdown file into an HTML shell.
 
 The shell is an HTML file containing a literal `{{BODY}}` placeholder
@@ -52,7 +53,7 @@ def _override_mermaid_fence(md: MarkdownIt) -> None:
     md.renderer.rules["fence"] = fence
 
 
-def _collect_toc_entries(tokens):
+def _collect_toc_entries(tokens: list) -> list[tuple[int, str, str]]:
     """Return list of (level, text, anchor_id) for h2/h3 in document order."""
     entries = []
     for i, tok in enumerate(tokens):
@@ -64,12 +65,17 @@ def _collect_toc_entries(tokens):
         anchor_id = tok.attrGet("id") or ""
         text = ""
         if i + 1 < len(tokens) and tokens[i + 1].type == "inline":
-            text = tokens[i + 1].content
+            inline_tok = tokens[i + 1]
+            text = "".join(
+                c.content
+                for c in (inline_tok.children or [])
+                if c.type in ("text", "code_inline", "softbreak")
+            ).replace("\n", " ")
         entries.append((level, text, anchor_id))
     return entries
 
 
-def _build_toc_html(entries) -> str:
+def _build_toc_html(entries: list[tuple[int, str, str]]) -> str:
     """Build a <nav class='toc'> tree. Empty input → ''."""
     if not entries:
         return ""
@@ -89,6 +95,7 @@ def _build_toc_html(entries) -> str:
             in_h2_li = True
         else:  # level == 3
             if not in_h2_li:
+                # orphan: self-contained <li>, no open state to track
                 parts.append(f'<li><a href="{href}">{safe_text}</a></li>')
                 continue
             if not in_h3_ul:
@@ -116,9 +123,10 @@ def render(md_text: str) -> tuple[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--md", required=True, type=Path)
-    parser.add_argument("--shell", required=True, type=Path)
-    parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--md", required=True, type=Path, help="Input Markdown file")
+    parser.add_argument("--shell", required=True, type=Path,
+        help="HTML shell containing {{BODY}} (mandatory) and optional {{TOC}} placeholder")
+    parser.add_argument("--out", required=True, type=Path, help="Output HTML file")
     args = parser.parse_args()
 
     if not args.md.is_file():
