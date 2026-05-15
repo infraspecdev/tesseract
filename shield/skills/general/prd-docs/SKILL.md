@@ -39,21 +39,18 @@ Where `{output_dir}` comes from `.shield.json`, `{feature}` is the feature folde
 | 4 | Ask user for PRD type (standard | lean) | always | Yes |
 | 5 | Check for prior `/research` transcript; pre-populate Problem/Personas/Dependencies if present | only if research exists | conditional |
 | 6 | Walk Section 1 (Header) | always | Yes |
-| 6a | Insert empty Terminologies placeholder for §2; fill later (step 16) | always | Yes |
+| 6a | Insert empty Terminologies placeholder for §2; fill later (step 13) | always | Yes |
 | 7 | Walk Sections 3, 4 (Problem, Personas) | always | Yes |
 | 7a | Walk Section 5 (Architecture & flows) — optional; user adds Mermaid blocks / image links, or leaves empty | always | Yes |
 | 8 | Walk Section 6 (Goals) | always | Yes |
 | 9 | Invoke `shield:story-coverage` between Sections 6 and 8 — scaffold expected stories | standard only | conditional |
-| 10 | Walk Section 7 (Success metrics) | always | Yes |
-| 11 | Walk Section 8 (User stories — scaffolded by step 9). Prompt each story for Type (new/enhancement/existing); when type ≠ new, also prompt for Existing-behavior reference | standard only | conditional |
-| 12 | Walk Sections 9..14 | standard only | conditional |
-| 13 | Invoke `shield:milestone-coverage` between Sections 8 and 15 (standard) or after Section 7 (lean) | always | Yes |
-| 14 | Walk Section 15 (Rollout plan: Milestones is pre-populated by step 13; walk only Rollout-mechanics sub-section) | standard only | conditional |
-| 15 | Walk Sections 16..20 (standard) or Sections 9, 10 (lean) | always | Yes |
-| 16 | Build Terminologies (§2) — research-glossary copy + LLM scan of drafted body, user confirms | always | Yes |
-| 17 | Apply custom-template merging if `.shield.json.prd_template` is set | only if config set | conditional |
-| 18 | Write `prd.md`, `prd.html`, `prd.meta.json` | always | Yes |
-| 19 | Update manifest, regenerate index.html | always | Yes |
+| 10 | Walk Section 7 (Metrics) and Section 8 (Stories with Type prompt) | always (lean: only §7) | Yes |
+| 11 | Invoke `shield:milestone-coverage` between Sections 8 and 15 (standard) or after Section 7 (lean) | always | Yes |
+| 12 | Walk Section 15 rollout-mechanics; Sections 16..20 (standard) or §9, §10 (lean) | standard only for §15-§20 | conditional |
+| 13 | Build Terminologies (§2) — research-glossary copy + LLM scan of drafted body, user confirms | always | Yes |
+| 14 | Apply custom-template merging if `.shield.json.prd_template` is set | only if config set | conditional |
+| 15 | Write `prd.md`, `prd.html`, `prd.meta.json` | always | Yes |
+| 16 | Update manifest, regenerate index.html | always | Yes |
 
 ## Workflow
 
@@ -124,7 +121,7 @@ Look for `{output_dir}/{feature}/research/*/transcript.md` (Phase C, falls back 
 
 ### 6. Walk Section 1 and defer Section 2
 
-Walk Section 1 (Header) — present the template fields and ask the user for content. Then insert an empty Terminologies table as a placeholder for Section 2; do NOT walk it now. It is filled in step 16 once the rest of the PRD has content to scan.
+Walk Section 1 (Header) — present the template fields and ask the user for content. Then insert an empty Terminologies table as a placeholder for Section 2; do NOT walk it now. It is filled in step 13 once the rest of the PRD has content to scan.
 
 ### 7. Walk Sections 3, 4, then 5, then 6
 
@@ -162,9 +159,9 @@ For coverage of your personas and goals, you'll likely want these stories:
 Pick which to scaffold (defaults to all suggested), or add your own.
 ```
 
-Selected stories are seeded into Section 8 with the standard story template structure (blank for the user to fill). Each scaffolded story is created with `Type: new` as the default placeholder — the user will override during the walk in step 11.
+Selected stories are seeded into Section 8 with the standard story template structure (blank for the user to fill). Each scaffolded story is created with `Type: new` as the default placeholder — the user will override during the walk in step 10.
 
-### 9. Walk Section 8 — story content with Type prompt
+### 9. Story Type prompt protocol
 
 For each story (scaffolded by step 8 or added by the user), walk the template fields. For the Type field, prompt:
 
@@ -183,7 +180,13 @@ Briefly name the existing behavior (path, link, or one-line description):
 
 Substitute both fields into the story template before walking the remaining fields.
 
-### 10. Milestone scaffolding (both scaffolds)
+This protocol is applied during `### 10`'s §8 walk, not at this heading.
+
+### 10. Walk Sections 7 and 8
+
+Walk Section 7 (Success metrics), then Section 8 (User stories — scaffolded by step 8; apply the Type prompt protocol from step 9 to each story as you walk it).
+
+### 11. Milestone scaffolding (both scaffolds)
 
 After Section 8 (standard, once stories are filled) or after Section 7 (lean, once metrics are filled), invoke `shield:milestone-coverage` with:
 
@@ -220,13 +223,13 @@ Selected and edited milestones are written into:
 
 If the user declines (empty selection), leave the Milestones table empty. `/plan` will re-run `shield:milestone-coverage` as a fallback if needed.
 
-### 11. Walk remaining sections
+### 12. Walk Sections 9-20
 
-Walk Section 7 (Metrics), Section 8 (Stories — see step 9 above for the Type prompt during this walk), then Sections 9-14 in order. Section 15's Milestones table is already populated by step 10 above — walk only the rollout-mechanics fields beneath it. Then walk Sections 16-20.
+Walk Sections 9-14 in order. Section 15's Milestones table is pre-populated by step 11 — walk only the Rollout-mechanics fields beneath it. Then walk Sections 16-20.
 
-For lean PRDs, walk lean §7 (Success metrics), then §8 Milestones is already populated by step 10 above (skip ahead), then walk §9 (Open questions), §10 (Out of scope). Do NOT walk standard §8-§18; lean omits them intentionally. Use the lean scaffold from `templates.md`, not the standard one.
+For lean PRDs, walk lean §9 (Open questions), then §10 (Out of scope). Do NOT walk standard §8-§18; lean omits them intentionally. Use the lean scaffold from `templates.md`, not the standard one.
 
-### 12. Build Terminologies (§2)
+### 13. Build Terminologies (§2)
 
 Now that Sections 3-20 have content (or 3-10 for lean), populate the Terminologies placeholder inserted in step 6a.
 
@@ -246,7 +249,7 @@ For each term, propose a one-line definition that prefers terminology from the P
 
 Substitute the final table into Section 2.
 
-### 13. Custom-template merging
+### 14. Custom-template merging
 
 If `.shield.json.prd_template` is set:
 - Read the custom template file
@@ -261,7 +264,7 @@ If `.shield.json.prd_template` is set:
 - Report to user: "Your template was missing: <list>. I appended them at the end."
 - Walk the user through filling content for any sections they hadn't yet filled
 
-### 14. Write artifacts
+### 15. Write artifacts
 
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.md`
 - **Pre-flight: ensure `uv` is available.** Run `command -v uv` first. If missing, do NOT call the renderer yet — first prompt the user:
@@ -279,12 +282,12 @@ If `.shield.json.prd_template` is set:
   Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, and loose/tight wrapping.
 - Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.meta.json` (per `meta-schema.md`)
 
-### 15. Update dashboard
+### 16. Update dashboard
 
 - Append new entry to `{output_dir}/manifest.json`
 - Regenerate `{output_dir}/index.html`
 
-### 16. Offer next steps
+### 17. Offer next steps
 
 ```
 PRD authored. What's next?
@@ -301,7 +304,7 @@ PRD authored. What's next?
 | Skipping story-coverage scaffolding for standard PRDs | Required step for standard; skipping leads to poor dim 4 grades downstream |
 | Walking lean PRD through all 20 sections | Lean is intentionally 10 sections (its own numbering); use the lean scaffold from templates.md, not the standard one |
 | Forgetting custom-template required-section merging | Custom templates MUST have all required sections; Shield appends missing ones with markers |
-| Walking §2 (Terminologies) in order during the first pass | §2 is intentionally deferred; placeholder inserted in step 6a, content filled in step 12 after the rest of the PRD is drafted |
+| Walking §2 (Terminologies) in order during the first pass | §2 is intentionally deferred; placeholder inserted in step 6a, content filled in step 13 after the rest of the PRD is drafted |
 | Forcing diagrams in §5 (Architecture & flows) for every PRD | §5 is optional. If the feature has no notable architecture/flows, leave the section empty — don't manufacture diagrams |
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
