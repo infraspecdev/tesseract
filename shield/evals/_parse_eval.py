@@ -7,19 +7,29 @@ import sys
 from pathlib import Path
 
 def split_sections(text):
-    """Split markdown by ## headings, returning {heading-slug: body}."""
+    """Split markdown by ## headings, returning {heading-slug: body}.
+
+    Tracks fenced code blocks so that ## headings inside a fence are NOT
+    treated as section boundaries (needed for eval files whose Setup blocks
+    contain heredocs with sub-headings like '## Glossary').
+    """
     sections = {}
     current_key = None
     current_lines = []
+    in_fence = False
     for line in text.splitlines():
-        m = re.match(r"^## +(.+)$", line)
-        if m:
-            if current_key is not None:
-                sections[current_key] = "\n".join(current_lines).strip()
-            current_key = m.group(1).strip().lower()
-            current_lines = []
-        else:
-            current_lines.append(line)
+        # Toggle fence state when we see a line starting with ```
+        if re.match(r"^```", line):
+            in_fence = not in_fence
+        if not in_fence:
+            m = re.match(r"^## +(.+)$", line)
+            if m:
+                if current_key is not None:
+                    sections[current_key] = "\n".join(current_lines).strip()
+                current_key = m.group(1).strip().lower()
+                current_lines = []
+                continue
+        current_lines.append(line)
     if current_key is not None:
         sections[current_key] = "\n".join(current_lines).strip()
     return sections

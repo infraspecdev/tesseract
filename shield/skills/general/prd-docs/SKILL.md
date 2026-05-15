@@ -233,7 +233,7 @@ For lean PRDs, walk lean §9 (Open questions), then §10 (Out of scope). Do NOT 
 
 Now that Sections 3-20 have content (or 3-10 for lean), populate the Terminologies placeholder inserted in step 6a.
 
-**Source A — research transcript glossary.** If a `/research` transcript exists at `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list) and seed those terms into the Terminologies table.
+**Source A — research transcript glossary.** If a `/research` transcript exists at `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list) and seed EVERY term found into the Terminologies table. **This is mandatory — do NOT filter out or drop any Source A terms, even if they appear unrelated to the feature's technical domain.** All research-glossary rows carry business/product context essential to reviewers.
 
 **Source B — LLM scan of drafted PRD body.** Scan Sections 3..20 (or 3..10 for lean) and propose 5–15 additional terms that meet at least one of:
 - ALL-CAPS acronyms used 2+ times (e.g., "SLA", "RBAC")
@@ -306,6 +306,7 @@ PRD authored. What's next?
 | Forgetting custom-template required-section merging | Custom templates MUST have all required sections; Shield appends missing ones with markers |
 | Walking §2 (Terminologies) in order during the first pass | §2 is intentionally deferred; placeholder inserted in step 6a, content filled in step 13 after the rest of the PRD is drafted |
 | Forcing diagrams in §5 (Architecture & flows) for every PRD | §5 is optional. If the feature has no notable architecture/flows, leave the section empty — don't manufacture diagrams |
+| Dropping Source A research-glossary terms from Terminologies | ALL terms from the research transcript's glossary section MUST appear in the Terminologies table — do not filter by domain relevance |
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |

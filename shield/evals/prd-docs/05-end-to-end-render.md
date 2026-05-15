@@ -20,8 +20,8 @@ EOF
 ### Structural
 - <nav class="toc">
 - <a href="#2-terminologies">2. Terminologies
-- <a href="#5-architecture-flows">5. Architecture
-- <a href="#8-user-stories-scenarios">8. User stories
+- <a href="#5-architecture.{1,2}flows">5. Architecture
+- <a href="#8-user-stories.{1,2}scenarios">8. User stories
 - <pre class="mermaid">
 - (Type:|<strong>Type</strong>)
 

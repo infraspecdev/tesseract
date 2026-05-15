@@ -21,14 +21,14 @@ EOF
 - §1 Header
 - DEFERRED: §2 Terminologies
 - §3 Problem
-- §4.*Personas
-- §5 Architecture & flows
+- §4.*[Pp]ersona
+- §5 Architecture
 - §6 Goals
 - INVOKE: shield:story-coverage
-- §7.*Metrics
-- §8.*Stories
+- §7.*[Mm]etric
+- §8.*[Ss]tor
 - INVOKE: shield:milestone-coverage
-- §15.*Rollout
+- §15.*[Rr]ollout
 - §20
 
 ### Qualitative

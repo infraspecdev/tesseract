@@ -38,7 +38,8 @@ run_one() {
     --append-system-prompt "Working directory: $workdir" \
     <<<"$prompt" >"$workdir/output.txt" 2>"$workdir/output.err" || true
 
-  # Run structural checks
+  # Run structural checks — first try output.txt, then fall back to any
+  # written files in the workdir (e.g. prd.html for render evals).
   local struct_pass=0 struct_total=0 qual_pass=0 qual_total=0
   while IFS= read -r assertion; do
     [[ -z "$assertion" ]] && continue
@@ -46,24 +47,57 @@ run_one() {
     if grep -qE "$assertion" "$workdir/output.txt"; then
       struct_pass=$((struct_pass + 1))
     else
-      echo "  STRUCT FAIL: $assertion"
+      # Fallback: search all non-script written files under workdir
+      local found=0
+      while IFS= read -r wf; do
+        if grep -qE "$assertion" "$wf" 2>/dev/null; then
+          found=1
+          break
+        fi
+      done < <(find "$workdir" -type f \
+                  ! -name "output.txt" ! -name "output.err" \
+                  ! -name "setup.sh" ! -name "setup.log" \
+                  ! -name "prompt.txt" ! -name "structural.txt" \
+                  ! -name "qualitative.txt" ! -name "threshold.txt" \
+                  2>/dev/null)
+      if [[ "$found" -eq 1 ]]; then
+        struct_pass=$((struct_pass + 1))
+      else
+        echo "  STRUCT FAIL: $assertion"
+      fi
     fi
   done <"$workdir/structural.txt"
 
-  # Run qualitative checks via judge call
+  # Run qualitative checks via judge call.
+  # Collect all written non-script files to give the judge full context.
+  local extra_content=""
+  while IFS= read -r wf; do
+    local rel
+    rel="${wf#$workdir/}"
+    extra_content+="
+--- FILE: $rel ---
+$(head -200 "$wf" 2>/dev/null)
+"
+  done < <(find "$workdir" -type f \
+              ! -name "output.txt" ! -name "output.err" \
+              ! -name "setup.sh" ! -name "setup.log" \
+              ! -name "prompt.txt" ! -name "structural.txt" \
+              ! -name "qualitative.txt" ! -name "threshold.txt" \
+              2>/dev/null)
   if [[ -s "$workdir/qualitative.txt" ]]; then
     while IFS= read -r criterion; do
       [[ -z "$criterion" ]] && continue
       qual_total=$((qual_total + 1))
       local verdict
       verdict=$(claude --print --dangerously-skip-permissions <<EOF
-You are a strict eval judge. Given the model output below and a single criterion,
-answer ONLY "PASS" or "FAIL".
+You are a strict eval judge. Given the model output and any written files below,
+evaluate whether the criterion is met. Answer ONLY "PASS" or "FAIL".
 
 Criterion: $criterion
 
-Output:
+Agent output:
 $(cat "$workdir/output.txt")
+$extra_content
 EOF
       )
       if [[ "$verdict" == *"PASS"* ]]; then
