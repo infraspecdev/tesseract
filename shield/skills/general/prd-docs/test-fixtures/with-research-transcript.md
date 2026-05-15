@@ -53,3 +53,10 @@ Digital gift cards are a table-stakes e-commerce feature. We are losing gifting 
 - Expiry policy: 12 months? No expiry? Jurisdiction-specific?
 - Partial vs. single-use redemption codes
 - Maximum gift-card denomination ($500 cap proposed, not yet agreed)
+
+## Glossary
+
+| Term | Definition |
+|---|---|
+| ICP | Ideal Customer Profile — the company size and shape we win at most. |
+| PLG | Product-led growth — self-serve activation without a sales call. |
