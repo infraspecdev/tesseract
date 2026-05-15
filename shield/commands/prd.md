@@ -1,7 +1,7 @@
 ---
 name: prd
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
-description: Author a new PRD with Shield's 17-section problem-first scaffold (or 7-section lean variant). Supports custom team templates, lean→standard upgrade flow, and consumes prior /research transcripts as pre-population.
+description: Author a new PRD with Shield's 20-section problem-first scaffold (or 10-section lean variant). Includes Terminologies (§2, auto-filled from research+body), Architecture & flows (§5, optional Mermaid), per-story Type labels (new/enhancement/existing) in §8, and auto-generated TOC + rendered Mermaid in prd.html. Supports custom team templates, lean→standard upgrade flow.
 ---
 
 # /prd
@@ -21,13 +21,18 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 1. **Reads `.shield.json`** for `prd_template` (custom team template path, optional)
 2. **Resolves feature folder** — `--feature` flag or current context
 3. **Detects prior lean PRD** in the folder — if present, offers upgrade flow (multi-select of standard sections to add)
-4. **Asks for PRD type** — standard (17 sections) or lean (7 sections)
+4. **Asks for PRD type** — standard (20 sections) or lean (10 sections)
 5. **Pre-populates from prior `/research` transcript** if present
-6. **Walks Sections 1-4** (Header, Problem, Personas, Goals)
-7. **Invokes `shield:story-coverage`** between Sections 4 and 6 — scaffolds expected stories (persona × goal + archetypal flows) for user confirmation/skip
-8. **Walks remaining sections** (5, 6 content, 7-17 for standard; 5, 16, 17 for lean)
-9. **Merges custom template** if configured — appends missing required sections with `<!-- Shield: added required section -->` markers
-10. **Writes** `prd.md`, `prd.html` (rendered via Shield's standard CSS), `prd.meta.json` (with linked_plans field — auto-populated by `/plan` later)
+6. **Walks Section 1** (Header) — defers Section 2 (Terminologies) for now
+7. **Walks Sections 3, 4** (Problem, Personas), **then Section 5** (Architecture & flows — optional Mermaid), **then Section 6** (Goals)
+8. **Invokes `shield:story-coverage`** between Sections 6 and 8 — scaffolds expected stories
+9. **Walks Section 7** (Metrics), **then Section 8** (Stories — prompts each story for Type: new | enhancement | existing)
+10. **Walks Sections 9..14** (Functional through Assumptions)
+11. **Invokes `shield:milestone-coverage`** between Sections 8 and 15 — scaffolds Milestones into §15 (or §8 for lean)
+12. **Walks Section 15** rollout-mechanics, **then Sections 16..20**
+13. **Builds Terminologies (§2)** — copies from research-transcript glossary, proposes terms via LLM scan of drafted body, user confirms
+14. **Merges custom template** if configured
+15. **Writes** `prd.md`, `prd.html` (rendered via Shield's renderer — includes auto-TOC + Mermaid rendering), `prd.meta.json`
 
 ## Output
 
