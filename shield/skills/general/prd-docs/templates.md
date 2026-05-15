@@ -201,7 +201,7 @@ What's broken, who hurts, baseline data, why now.
 
 ### Step 1 — Write the HTML shell next to `prd.md`
 
-Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, body open, meta-banner, body close) with a single literal `{{BODY}}` placeholder where the rendered markdown will be substituted. Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
+Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, mermaid script, body open, meta-banner, body close) with two literal placeholders: `{{TOC}}` (optional — replaced by an auto-generated Table of Contents built from h2/h3 headings) and `{{BODY}}` (mandatory — replaced by the rendered markdown body). Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
 
 ```html
 <!DOCTYPE html>
@@ -259,7 +259,31 @@ Write the file `prd.shell.html` in the same directory as `prd.md`. The shell con
       color: var(--muted);
     }
     .meta-banner strong { color: var(--text); }
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      font-size: 0.94rem;
+    }
+    .toc-title { font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .toc ul { margin: 0; padding-left: 22px; }
+    .toc > ul { list-style: decimal; }
+    .toc ul ul { list-style: disc; margin-top: 4px; }
+    .toc li { margin: 2px 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    pre.mermaid { background: transparent; border: none; padding: 0; text-align: center; }
   </style>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false, theme: "default" });
+    document.addEventListener("DOMContentLoaded", () => {
+      mermaid.run({ querySelector: "pre.mermaid" });
+    });
+  </script>
 </head>
 <body>
   <div class="meta-banner">
@@ -267,6 +291,7 @@ Write the file `prd.shell.html` in the same directory as `prd.md`. The shell con
     Sidecar: <a href="prd.meta.json">prd.meta.json</a>
     <!-- Append research/product-note links here if present -->
   </div>
+{{TOC}}
 {{BODY}}
 </body>
 </html>
