@@ -8,28 +8,28 @@
   "plugins": [
     {
       "name": "shield",
-      "description": "Unified SDLC plugin — research, planning, PM integration, implementation, and continuous review with multi-domain support and specialist agents",
-      "version": "2.16.0",
+      "description": "Unified SDLC plugin \u2014 research, planning, PM integration, implementation, and continuous review with multi-domain support and specialist agents",
+      "version": "2.17.0",
       "source": "./shield",
       "category": "development"
     },
     {
       "name": "infra-review",
-      "description": "[DEPRECATED — use shield] Infrastructure review agents for Terraform/Atmos repositories. Migrate: /plugin install shield@tesseract && /shield init",
+      "description": "[DEPRECATED \u2014 use shield] Infrastructure review agents for Terraform/Atmos repositories. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.2.0",
       "source": "./infra-review",
       "category": "development"
     },
     {
       "name": "clickup-sprint-planner",
-      "description": "[DEPRECATED — use shield] Sprint planning tools for ClickUp. Migrate: /plugin install shield@tesseract && /shield init",
+      "description": "[DEPRECATED \u2014 use shield] Sprint planning tools for ClickUp. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.4.0",
       "source": "./clickup-sprint-planner",
       "category": "productivity"
     },
     {
       "name": "dev-workflow",
-      "description": "[DEPRECATED — use shield] Development workflow skills — research, TDD, planning. Migrate: /plugin install shield@tesseract && /shield init",
+      "description": "[DEPRECATED \u2014 use shield] Development workflow skills \u2014 research, TDD, planning. Migrate: /plugin install shield@tesseract && /shield init",
       "version": "1.2.0",
       "source": "./dev-workflow",
       "category": "development"

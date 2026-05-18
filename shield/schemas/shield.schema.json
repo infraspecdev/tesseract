@@ -17,6 +17,25 @@
       },
       "additionalProperties": false
     },
+    "devcontainer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "integer", "minimum": 1 },
+        "stacks_detected": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required": {
+          "enum": ["ask", "true", "false"]
+        },
+        "firewall_extra_allowlist": {
+          "type": "array",
+          "items": { "type": "string", "format": "hostname" },
+          "uniqueItems": true
+        }
+      }
+    },
     "external_skills": {
       "type": "object",
       "description": "External plugin skills mapped to phases",
