@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LLD — Bytebite: User Signup</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #222;
+    background: #ffffff;
+    line-height: 1.55;
+    max-width: 920px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  h1 {
+    font-size: 1.7rem;
+    color: #1a1a1a;
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    color: #1a73e8;
+    margin-top: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+    color: #222;
+    margin-top: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  p, li { margin-bottom: 0.4rem; }
+  ul, ol { padding-left: 1.5rem; margin-bottom: 0.6rem; }
+  code {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.9em;
+    background: #f3f3f3;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  pre {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.85rem;
+    background: #f7f7f7;
+    border: 1px solid #dddddd;
+    padding: 0.8rem 1rem;
+    overflow-x: auto;
+    margin: 0.5rem 0 0.9rem 0;
+    line-height: 1.45;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.6rem 0 0.9rem 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid #cccccc;
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f0f0f0; font-weight: 600; }
+  .meta-table th { width: 180px; background: #f7f7f7; }
+  blockquote {
+    border-left: 3px solid #1a73e8;
+    background: #f7faff;
+    margin: 0.6rem 0;
+    padding: 0.5rem 0.9rem;
+    color: #444;
+  }
+  .anchor-hint {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.78rem;
+    color: #777;
+    font-weight: normal;
+    margin-left: 0.4rem;
+  }
+  .badge {
+    display: inline-block;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    padding: 0.05em 0.45em;
+    font-size: 0.75rem;
+    background: #f7f7f7;
+    color: #444;
+  }
+  .badge-new { background: #e6f4ea; color: #137333; border-color: #b6dfc0; }
+  .badge-mod { background: #fff4e0; color: #b06000; border-color: #f0d6a3; }
+  .badge-unchanged { background: #f3f3f3; color: #666; border-color: #cccccc; }
+  .footer {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 2.5rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #cccccc;
+  }
+  .mermaid {
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 0.6rem 0 0.9rem 0;
+    text-align: center;
+  }
+  .section-note {
+    font-size: 0.85rem;
+    color: #777;
+    font-style: italic;
+    margin-top: -0.2rem;
+    margin-bottom: 0.6rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>LLD — Bytebite: User Signup</h1>
+
+<table class="meta-table">
+  <tr><th>Feature</th><td><code>user-signup-20260512</code></td></tr>
+  <tr><th>Owner</th><td>@ashwinimanoj</td></tr>
+  <tr><th>Status</th><td>active</td></tr>
+  <tr><th>Linked PRD</th><td><code>../prd/1-user-signup/prd.md</code></td></tr>
+  <tr><th>Linked plans</th><td><code>../plan/1-user-signup/</code>, <code>../plan/2-email-verification/</code></td></tr>
+  <tr><th>Version</th><td>0.4.0</td></tr>
+  <tr><th>Last updated</th><td>2026-05-18</td></tr>
+</table>
+
+<h3>Table of contents</h3>
+<ol>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#scope">Scope &amp; non-goals</a></li>
+  <li><a href="#module-layout">Module layout</a></li>
+  <li><a href="#data-model">Data model</a></li>
+  <li><a href="#api-contracts">API contracts</a></li>
+  <li><a href="#flows">Sequence flows</a></li>
+  <li><a href="#error-handling">Error handling</a></li>
+  <li><a href="#concurrency">Concurrency &amp; state</a></li>
+  <li><a href="#configuration">Configuration</a></li>
+  <li><a href="#observability">Observability</a></li>
+  <li><a href="#security-privacy">Security &amp; privacy</a></li>
+  <li><a href="#performance">Performance &amp; scaling</a></li>
+  <li><a href="#open-questions">Open questions</a></li>
+  <li><a href="#changelog">Changelog</a></li>
+</ol>
+
+<h2 id="overview">1. Overview <span class="anchor-hint">#overview</span></h2>
+<p>
+  Bytebite is a food-delivery marketplace. This LLD covers the user-signup slice: a new customer
+  creates an account with email + password, receives a one-time email verification link, and on
+  click is marked <code>active</code>. The slice owns three endpoints (<code>POST /users</code>,
+  <code>POST /users/verify</code>, <code>GET /users/me</code>) and writes to one Postgres table
+  (<code>users</code>) and one Redis namespace (<code>signup:*</code>).
+</p>
+<p>
+  This LLD is the design contract for stories in epics <strong>E1 Account Creation</strong>,
+  <strong>E2 Email Verification</strong>, and <strong>E3 Anti-abuse</strong>. It mirrors the
+  PRD's <em>Onboarding M1</em> milestone.
+</p>
+
+<h2 id="scope">2. Scope &amp; non-goals <span class="anchor-hint">#scope</span></h2>
+<h3>In scope</h3>
+<ul>
+  <li>Email + password signup with server-side validation</li>
+  <li>Single-use email verification tokens with TTL</li>
+  <li>Password storage via bcrypt</li>
+  <li>Redis-backed rate limiting on signup and OTP-verify endpoints</li>
+  <li>Email-enumeration defense (signup never reveals whether an email exists)</li>
+  <li>Structured PII handling — no logging of email, phone, or password</li>
+</ul>
+<h3>Out of scope</h3>
+<ul>
+  <li>Social login (Google / Apple) — separate epic, M2</li>
+  <li>Phone OTP signup — separate epic</li>
+  <li>Address collection (handled during first checkout)</li>
+  <li>Password reset flow (separate epic, M2)</li>
+  <li>GDPR data-export / right-to-be-forgotten endpoints (separate epic)</li>
+</ul>
+
+<h2 id="module-layout">3. Module layout <span class="anchor-hint">#module-layout</span></h2>
+<p>Files touched in this LLD.
+  <span class="badge badge-new">new</span>
+  <span class="badge badge-mod">mod</span>
+  <span class="badge badge-unchanged">unchanged</span>
+</p>
+<pre>
+src/
+├── main.py                          unchanged
+├── db.py                            mod        # add User repository
+├── cache.py                         new        # Redis client + namespaced keys
+├── errors.py                        mod        # add SignupError, OTPError
+├── models/
+│   ├── user.py                      new        # User entity, signup request/response
+│   └── verification.py              new        # EmailVerification entity
+├── services/
+│   ├── signup_service.py            new        # orchestration: validate → hash → write → enqueue mail
+│   └── verification_service.py      new        # token issue + consume
+├── routes/
+│   └── users.py                     new        # POST /users, POST /users/verify, GET /users/me
+└── workers/
+    └── email_dispatcher.py          new        # async send via SendGrid
+
+migrations/
+├── 20260512_create_users.sql        new
+└── 20260513_create_email_verif.sql  new
+
+tests/
+├── test_user_model.py               new
+├── test_signup_service.py           new
+├── test_verification_service.py     new
+└── test_users_routes.py             new
+</pre>
+
+<h2 id="data-model">4. Data model <span class="anchor-hint">#data-model</span></h2>
+<p>Two tables in Postgres; one Redis namespace for ephemeral state.</p>
+
+<h3>Postgres: <code>users</code></h3>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>PK, default <code>gen_random_uuid()</code></td><td>Public-facing identifier</td></tr>
+    <tr><td><code>email</code></td><td>citext</td><td>NOT NULL, UNIQUE</td><td>Case-insensitive; index on <code>lower(email)</code></td></tr>
+    <tr><td><code>phone</code></td><td>text</td><td>NULL</td><td>E.164 format when present</td></tr>
+    <tr><td><code>full_name</code></td><td>text</td><td>NOT NULL, length 1..120</td><td>Display name</td></tr>
+    <tr><td><code>password_hash</code></td><td>text</td><td>NOT NULL</td><td>bcrypt <code>$2b$12$...</code></td></tr>
+    <tr><td><code>status</code></td><td>enum</td><td><code>pending | active | disabled</code></td><td>Starts <code>pending</code>, flips to <code>active</code> on verify</td></tr>
+    <tr><td><code>dietary_prefs</code></td><td>text[]</td><td>default <code>'{}'</code></td><td>Tags: vegetarian, vegan, halal, …</td></tr>
+    <tr><td><code>marketing_opt_in</code></td><td>boolean</td><td>NOT NULL, default <code>false</code></td><td>Explicit consent only</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL, default <code>now()</code></td><td>—</td></tr>
+    <tr><td><code>last_login_at</code></td><td>timestamptz</td><td>NULL</td><td>Updated on successful login</td></tr>
+  </tbody>
+</table>
+
+<h3>Postgres: <code>email_verifications</code></h3>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>token</code></td><td>text</td><td>PK</td><td>256-bit random, base64url-encoded</td></tr>
+    <tr><td><code>user_id</code></td><td>uuid</td><td>FK → users.id, NOT NULL</td><td>—</td></tr>
+    <tr><td><code>expires_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>Now + <code>OTP_TTL_SECONDS</code></td></tr>
+    <tr><td><code>consumed_at</code></td><td>timestamptz</td><td>NULL</td><td>Set on first successful verify</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL, default <code>now()</code></td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h3>Redis namespaces</h3>
+<table>
+  <thead><tr><th>Key pattern</th><th>Type</th><th>TTL</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>signup:ratelimit:ip:{ip}</code></td><td>INCR counter</td><td>3600s</td><td>Cap signup attempts per IP</td></tr>
+    <tr><td><code>signup:ratelimit:email:{email_hash}</code></td><td>INCR counter</td><td>3600s</td><td>Cap signups per email (defense against burning addresses)</td></tr>
+    <tr><td><code>verify:attempts:{user_id}</code></td><td>INCR counter</td><td>3600s</td><td>Cap bad-token submissions before lockout</td></tr>
+    <tr><td><code>session:{token_jti}</code></td><td>HASH {user_id, expires_at}</td><td><code>JWT_TTL_SECONDS</code></td><td>Server-side revocation lookup for JWTs</td></tr>
+  </tbody>
+</table>
+
+<h2 id="api-contracts">5. API contracts <span class="anchor-hint">#api-contracts</span></h2>
+
+<h3 id="api-create-user">5.1 <code>POST /users</code> — create user <span class="anchor-hint">#api-create-user</span></h3>
+<p><strong>Request</strong></p>
+<pre>
+POST /users
+Content-Type: application/json
+
+{
+  "email": "alex@example.com",
+  "full_name": "Alex Patel",
+  "phone": "+919876543210",
+  "password": "hunter2!solid-rosebud",
+  "dietary_prefs": ["vegetarian"],
+  "marketing_opt_in": false
+}
+</pre>
+<p><strong>Response — 201 Created</strong></p>
+<pre>
+{
+  "id": "01HQK4G3PE7XYAS2RJ8M5VFW9P",
+  "email": "alex@example.com",
+  "full_name": "Alex Patel",
+  "phone": "+919876543210",
+  "status": "pending",
+  "dietary_prefs": ["vegetarian"],
+  "created_at": "2026-05-18T14:23:45Z",
+  "verification_required": true
+}
+</pre>
+<p><strong>Response — 200 OK (email-enumeration defense)</strong></p>
+<p>When the email is already in use, the service still returns 200 with the response above
+  (but <code>id</code> is omitted) and silently triggers a password-reset email instead of a
+  verification email. This prevents enumeration via response-time or response-code differences.</p>
+<p><strong>Response — 422 Unprocessable Entity</strong></p>
+<pre>
+{
+  "detail": [
+    { "loc": ["body", "password"], "msg": "must be at least 10 characters", "type": "value_error" },
+    { "loc": ["body", "phone"], "msg": "must be E.164 format", "type": "value_error" }
+  ]
+}
+</pre>
+<p><strong>Response — 429 Too Many Requests</strong></p>
+<pre>
+{ "detail": "Too many signup attempts. Try again in 23 minutes." }
+</pre>
+
+<h3 id="api-verify-user">5.2 <code>POST /users/verify</code> — confirm email <span class="anchor-hint">#api-verify-user</span></h3>
+<p><strong>Request</strong></p>
+<pre>
+POST /users/verify
+Content-Type: application/json
+
+{ "token": "h7v9_T2nQq1k8nUOaJ-WnH8sCxAa3gqcW-A-pT5gqz0" }
+</pre>
+<p><strong>Response — 200 OK</strong></p>
+<pre>
+{
+  "id": "01HQK4G3PE7XYAS2RJ8M5VFW9P",
+  "email": "alex@example.com",
+  "status": "active",
+  "verified_at": "2026-05-18T14:25:10Z"
+}
+</pre>
+<p><strong>Response — 410 Gone</strong> (token expired or already consumed)</p>
+<pre>
+{ "detail": "Verification link has expired. Request a new one." }
+</pre>
+
+<h3 id="api-get-me">5.3 <code>GET /users/me</code> — current user <span class="anchor-hint">#api-get-me</span></h3>
+<p>Requires <code>Authorization: Bearer &lt;jwt&gt;</code>. Returns the same shape as 5.1's 201
+  response (minus <code>verification_required</code>) plus <code>last_login_at</code>.</p>
+
+<h2 id="flows">6. Sequence flows <span class="anchor-hint">#flows</span></h2>
+
+<h3 id="flow-signup">6.1 Signup happy path <span class="anchor-hint">#flow-signup</span></h3>
+<div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as FastAPI Route
+    participant R as Redis
+    participant S as SignupService
+    participant PG as Postgres
+    participant W as Email Worker
+
+    C->>API: POST /users (email, password, ...)
+    API->>R: INCR signup:ratelimit:ip:{ip}
+    alt over limit
+      R-->>API: count > limit
+      API-->>C: 429 Too Many Requests
+    else within limit
+      API->>S: validate + create
+      S->>S: bcrypt hash (cost 12, ~250ms)
+      S->>PG: INSERT INTO users RETURNING id
+      alt duplicate email
+        PG-->>S: IntegrityError
+        S->>W: enqueue password-reset email
+        S-->>API: 200 (no id) — enumeration defense
+      else inserted
+        PG-->>S: user_id
+        S->>PG: INSERT INTO email_verifications (token, ttl)
+        S->>W: enqueue verification email
+        S-->>API: created user
+        API-->>C: 201 Created
+      end
+    end
+</div>
+
+<h3 id="flow-verify">6.2 Verify token <span class="anchor-hint">#flow-verify</span></h3>
+<div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as FastAPI Route
+    participant V as VerificationService
+    participant PG as Postgres
+    participant R as Redis
+
+    C->>API: POST /users/verify { token }
+    API->>V: consume(token)
+    V->>PG: UPDATE email_verifications SET consumed_at = now()<br/>WHERE token = $1 AND consumed_at IS NULL<br/>AND expires_at > now() RETURNING user_id
+    alt 0 rows
+      PG-->>V: no rows
+      V-->>API: VerificationExpired
+      API-->>C: 410 Gone
+    else 1 row
+      PG-->>V: user_id
+      V->>PG: UPDATE users SET status = 'active'
+      V->>R: DEL verify:attempts:{user_id}
+      V-->>API: active user
+      API-->>C: 200 OK
+    end
+</div>
+
+<h2 id="error-handling">7. Error handling <span class="anchor-hint">#error-handling</span></h2>
+<table>
+  <thead><tr><th>Error</th><th>Status</th><th>Body</th><th>Retryable</th></tr></thead>
+  <tbody>
+    <tr><td><code>RequestValidationError</code></td><td>422</td><td>FastAPI envelope</td><td>No — fix input</td></tr>
+    <tr><td><code>RateLimitExceeded</code></td><td>429</td><td><code>{detail, retry_after_seconds}</code></td><td>Yes — after backoff</td></tr>
+    <tr><td><code>VerificationExpired</code></td><td>410</td><td><code>{detail: "..."}</code></td><td>No — request new link</td></tr>
+    <tr><td><code>TooManyVerifyAttempts</code></td><td>429</td><td><code>{detail, retry_after_seconds}</code></td><td>Yes — after backoff</td></tr>
+    <tr><td><code>EmailDispatchFailed</code></td><td>—</td><td>Logged only; user signup succeeds</td><td>Yes — retried by worker</td></tr>
+    <tr><td><em>(unhandled)</em></td><td>500</td><td><code>{detail: "Internal server error"}</code></td><td>Maybe</td></tr>
+  </tbody>
+</table>
+
+<h2 id="concurrency">8. Concurrency &amp; state <span class="anchor-hint">#concurrency</span></h2>
+
+<h3>Race: two signups with the same email</h3>
+<p>Two clients send <code>POST /users</code> for <code>alex@example.com</code> within ~10ms. Both
+  pass validation. Both bcrypt-hash. Both try to <code>INSERT</code>.</p>
+<p><strong>Defense</strong>: <code>CREATE UNIQUE INDEX users_lower_email ON users (lower(email))</code>.
+  Postgres serializes the writes; the loser gets <code>IntegrityError</code>. The service catches
+  it and switches to the password-reset email path (see §6.1 step 6). Net effect: exactly one user
+  row exists; the second caller learns nothing about duplication.</p>
+<pre>
+# signup_service.py
+try:
+    user_id = db.insert_user(...)
+    enqueue_verification_email(user_id)
+except IntegrityError as e:
+    if "users_lower_email" in str(e):
+        enqueue_password_reset_email(email)
+    else:
+        raise
+</pre>
+
+<h3>Race: token consumed twice</h3>
+<p>User double-clicks the verification link, or the worker retries. Both requests arrive almost
+  simultaneously with the same token.</p>
+<p><strong>Defense</strong>: single-statement atomic consume — only one <code>UPDATE</code>
+  returns a row.</p>
+<pre>
+UPDATE email_verifications
+   SET consumed_at = now()
+ WHERE token = $1
+   AND consumed_at IS NULL
+   AND expires_at &gt; now()
+RETURNING user_id;
+</pre>
+<p>Second caller's <code>UPDATE</code> matches zero rows → 410 Gone.</p>
+
+<h3>Why not Redis-based locking</h3>
+<blockquote>
+  Redis was considered for an email-level mutex on signup. Rejected because the cache layer can
+  fail open under partition; the DB unique index is the authoritative defense and is cheaper.
+  Redis is kept for rate limiting only — where eventual loss of state is acceptable.
+</blockquote>
+
+<h2 id="configuration">9. Configuration <span class="anchor-hint">#configuration</span></h2>
+<table>
+  <thead><tr><th>Variable</th><th>Default</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>DATABASE_URL</code></td><td>— (required)</td>
+      <td>Postgres connection string; pool min 5, max 20.</td>
+    </tr>
+    <tr>
+      <td><code>REDIS_URL</code></td><td><code>redis://localhost:6379/0</code></td>
+      <td>Rate limiting + session lookups. Service degrades to "no rate limit" if Redis is unreachable.</td>
+    </tr>
+    <tr>
+      <td><code>BCRYPT_COST</code></td><td><code>12</code></td>
+      <td>OWASP guidance; raise by 1 every ~2 years. Each step ~doubles per-request CPU. Capacity-plan accordingly.</td>
+    </tr>
+    <tr>
+      <td><code>OTP_TTL_SECONDS</code></td><td><code>600</code></td>
+      <td>Verification-link lifetime. Shorter = tighter security, longer = better UX in cold inboxes.</td>
+    </tr>
+    <tr>
+      <td><code>OTP_MAX_ATTEMPTS</code></td><td><code>5</code></td>
+      <td>Per-user bad-token submissions before 1-hour lockout.</td>
+    </tr>
+    <tr>
+      <td><code>SIGNUP_RATE_LIMIT_PER_IP_HOUR</code></td><td><code>5</code></td>
+      <td>Hard cap; tune up for shared-NAT corporate networks via allowlist override.</td>
+    </tr>
+    <tr>
+      <td><code>JWT_SECRET</code></td><td>— (required)</td>
+      <td>HS256 HMAC secret; rotated quarterly. Old secret kept in <code>JWT_SECRET_PREVIOUS</code> for grace-period verification.</td>
+    </tr>
+    <tr>
+      <td><code>JWT_TTL_SECONDS</code></td><td><code>86400</code></td>
+      <td>Access token lifetime; refresh token is 30d.</td>
+    </tr>
+    <tr>
+      <td><code>EMAIL_PROVIDER</code></td><td><code>sendgrid</code></td>
+      <td>Allowed: <code>sendgrid</code>, <code>ses</code>. Plug-in resolver in <code>workers/email_dispatcher.py</code>.</td>
+    </tr>
+    <tr>
+      <td><code>EMAIL_FROM_ADDRESS</code></td><td><code>no-reply@bytebite.io</code></td>
+      <td>Must match DKIM-signed domain.</td>
+    </tr>
+    <tr>
+      <td><code>PASSWORD_MIN_LENGTH</code></td><td><code>10</code></td>
+      <td>Server-enforced. Client widget should mirror this to avoid post-submit surprises.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="observability">10. Observability <span class="anchor-hint">#observability</span></h2>
+<h3>Structured logs</h3>
+<ul>
+  <li><code>event=signup_started</code> — fields: <code>request_id, ip_hash</code></li>
+  <li><code>event=signup_completed</code> — fields: <code>request_id, user_id</code> (no email/phone)</li>
+  <li><code>event=signup_duplicate</code> — fields: <code>request_id, email_hash</code> (note: <em>not</em> raw email)</li>
+  <li><code>event=verification_sent</code> — fields: <code>request_id, user_id, provider</code></li>
+  <li><code>event=verification_consumed</code> — fields: <code>request_id, user_id</code></li>
+  <li><code>event=verification_failed</code> — fields: <code>request_id, reason</code> (expired | invalid | locked)</li>
+</ul>
+
+<h3>Metrics</h3>
+<ul>
+  <li><code>users_signup_total{result}</code> — counter; result ∈ {success, duplicate, validation_error, rate_limited}</li>
+  <li><code>users_verify_total{result}</code> — counter; result ∈ {success, expired, invalid, locked}</li>
+  <li><code>signup_bcrypt_seconds</code> — histogram</li>
+  <li><code>verification_emails_sent_total{provider, result}</code> — counter</li>
+  <li><code>redis_cache_hit_ratio{kind}</code> — gauge; kind ∈ {ratelimit, session}</li>
+</ul>
+
+<h3>Traces</h3>
+<p>One span per request named <code>signup.create</code>. Sub-spans: <code>signup.validate</code>,
+  <code>signup.bcrypt</code>, <code>signup.db_insert</code>, <code>signup.enqueue_email</code>.</p>
+
+<h2 id="security-privacy">11. Security &amp; privacy <span class="anchor-hint">#security-privacy</span></h2>
+<p class="section-note">Optional section — include when the feature handles PII, introduces new auth/access surface, or changes the threat model. Skip otherwise.</p>
+<h3>Authentication &amp; tokens</h3>
+<ul>
+  <li>Passwords: bcrypt cost 12, never logged, never returned in responses</li>
+  <li>JWT: HS256, signed with <code>JWT_SECRET</code>, includes <code>jti</code> for server-side revocation via Redis</li>
+  <li>Verification tokens: 256-bit random, base64url-encoded, single-use (see §8)</li>
+</ul>
+
+<h3>Email enumeration defense</h3>
+<ul>
+  <li><code>POST /users</code> always returns 200/201 (never 409) regardless of duplicate</li>
+  <li>Response time padded to a constant minimum to mask the bcrypt-skipped duplicate path</li>
+  <li>Duplicate signups trigger a password-reset email instead of a verification email</li>
+</ul>
+
+<h3>PII handling</h3>
+<ul>
+  <li>Email and phone: stored in Postgres with column-level encryption (pgcrypto, key in AWS KMS)</li>
+  <li>Logs: emails are hashed (SHA-256) before logging; phones are never logged</li>
+  <li>Analytics events: user identified by opaque <code>user_id</code> only</li>
+  <li>PII export endpoint deferred to the GDPR epic</li>
+</ul>
+
+<h3>Threats considered</h3>
+<table>
+  <thead><tr><th>Threat</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td>Credential stuffing</td><td>Rate limit + bcrypt cost + email-enumeration defense</td></tr>
+    <tr><td>Mass-signup spam</td><td>Per-IP and per-email-hash rate limits in Redis</td></tr>
+    <tr><td>Verification-link replay</td><td>Single-use tokens with TTL; atomic consume (see §8)</td></tr>
+    <tr><td>JWT theft</td><td>Short TTL + server-side revocation list in Redis</td></tr>
+    <tr><td>Timing attacks on duplicate-email check</td><td>Constant-time response padding (see §11 enumeration defense)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="performance">12. Performance &amp; scaling <span class="anchor-hint">#performance</span></h2>
+<p class="section-note">Each subsection below must have a concrete answer. "n/a — &lt;reason&gt;" is the only allowed escape — vague TBDs are not.</p>
+
+<h3 id="perf-load">12.1 Expected load <span class="anchor-hint">#perf-load</span></h3>
+<p><strong>Steady:</strong> 500 signups/min. <strong>Peak:</strong> 5,000/min (post-marketing burst).</p>
+
+<h3 id="perf-slo">12.2 Latency SLO <span class="anchor-hint">#perf-slo</span></h3>
+<p><strong>p95</strong> &lt; 600 ms · <strong>p99</strong> &lt; 1.2 s, measured end-to-end at the load balancer.</p>
+
+<h3 id="perf-bottleneck">12.3 Bottleneck <span class="anchor-hint">#perf-bottleneck</span></h3>
+<p>bcrypt hash (cost 12) — ~250 ms, CPU-bound. Dominates the hot path; everything else is &lt; 10 ms.</p>
+
+<h3 id="perf-latency">12.4 Latency breakdown <span class="anchor-hint">#perf-latency</span></h3>
+<p class="section-note">Every step on the happy path and its expected duration. The total must fit under §12.2's SLO with headroom. Estimates at design time; replaced by observed values once the feature ships.</p>
+<table>
+  <thead><tr><th>Step</th><th>Expected latency</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Pydantic validation</td><td>&lt; 1 ms</td><td>—</td></tr>
+    <tr><td>Redis INCR (rate limit)</td><td>~1 ms</td><td>Same-AZ Redis</td></tr>
+    <tr><td>bcrypt hash</td><td>~250 ms</td><td>Cost 12 — see §12.3</td></tr>
+    <tr><td><code>INSERT users</code></td><td>~5 ms</td><td>Unique-index lookup + insert</td></tr>
+    <tr><td><code>INSERT email_verifications</code></td><td>~3 ms</td><td>—</td></tr>
+    <tr><td>Enqueue email</td><td>~2 ms</td><td>Push to Redis queue; worker sends async</td></tr>
+    <tr><th>Total (p95)</th><th>~280 ms</th><th>Comfortably under the 600 ms SLO</th></tr>
+  </tbody>
+</table>
+
+<h3 id="perf-capacity">12.5 Capacity per unit <span class="anchor-hint">#perf-capacity</span></h3>
+<p>One pod (4 vCPU) sustains <strong>~16 signups/sec</strong>. Throughput is gated by bcrypt CPU, so capacity scales linearly with vCPU count.</p>
+
+<h3 id="perf-scaleout">12.6 Scale-out lever <span class="anchor-hint">#perf-scaleout</span></h3>
+<ul>
+  <li><strong>App pods</strong>: horizontal autoscale on CPU utilisation (target 60%).</li>
+  <li><strong>Email worker</strong>: queue-depth-based autoscale on the Redis queue.</li>
+  <li><strong>Postgres</strong>: single primary handles current load; read replicas deferred until profile-read QPS exceeds 500.</li>
+</ul>
+
+<h3 id="perf-caches">12.7 Caches <span class="anchor-hint">#perf-caches</span></h3>
+<table>
+  <thead><tr><th>Key</th><th>Store</th><th>TTL</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>signup:ratelimit:*</code></td><td>Redis</td><td>1 h</td><td>Spam / enumeration defense; degrade-open on Redis failure (acceptable)</td></tr>
+    <tr><td><code>session:{jti}</code></td><td>Redis</td><td><code>JWT_TTL_SECONDS</code></td><td>Server-side JWT revocation lookup; hit-ratio target &gt; 99%</td></tr>
+    <tr><td>User profile rows</td><td>—</td><td>—</td><td>Not cached. Read QPS too low to justify the invalidation complexity. Revisit at &gt; 500 read QPS.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="perf-degradation">12.8 Degradation behavior <span class="anchor-hint">#perf-degradation</span></h3>
+<ul>
+  <li><strong>2× load</strong>: fine. Bcrypt headroom holds without autoscale.</li>
+  <li><strong>10× load</strong>: bcrypt CPU saturates; autoscaler triggers before p95 breaches 600 ms. Validated quarterly via k6 load test (<code>tests/load/signup.js</code>).</li>
+  <li><strong>Redis outage</strong>: rate limiting degrades open (signups accepted, no per-IP cap). Logged as <code>event=redis_unavailable</code>. Mitigation: alarm + manual fallback to nginx-level limit.</li>
+  <li><strong>Postgres slow</strong>: signups queue at the connection pool; latency rises; circuit breaker trips at 2 s and returns 503 with <code>retry_after_seconds</code>.</li>
+</ul>
+
+<h2 id="open-questions">13. Open questions <span class="anchor-hint">#open-questions</span></h2>
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Options</th><th>Owner</th><th>Resolve by</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Q1</td>
+      <td>Should verification-link clicks log the user in automatically?</td>
+      <td>A) yes, return JWT; B) no, redirect to login</td>
+      <td>@productlead</td>
+      <td>before E2-S2 starts</td>
+    </tr>
+    <tr>
+      <td>Q2</td>
+      <td>Is column-level pgcrypto enough for PII, or do we need full-disk + column encryption?</td>
+      <td>A) column-only (current); B) both (CIS recommendation)</td>
+      <td>@security-team</td>
+      <td>before pre-launch security review</td>
+    </tr>
+    <tr>
+      <td>Q3</td>
+      <td>Should we permit signup from disposable-email domains?</td>
+      <td>A) allow; B) reject via maintained blocklist; C) tag-and-allow for fraud-scoring</td>
+      <td>@trust-and-safety</td>
+      <td>before public launch</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="changelog">14. Changelog <span class="anchor-hint">#changelog</span></h2>
+<table>
+  <thead><tr><th>Date</th><th>Story</th><th>Sections touched</th><th>Change</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>2026-05-08</td>
+      <td>—</td>
+      <td><code>#overview</code>, <code>#scope</code></td>
+      <td>Initial LLD scaffold from PRD</td>
+    </tr>
+    <tr>
+      <td>2026-05-10</td>
+      <td>E1-S1</td>
+      <td><code>#data-model</code>, <code>#api-create-user</code></td>
+      <td>Locked <code>users</code> schema and POST /users contract</td>
+    </tr>
+    <tr>
+      <td>2026-05-12</td>
+      <td>E1-S2</td>
+      <td><code>#concurrency</code>, <code>#security-privacy</code></td>
+      <td>Added email-enumeration defense; documented duplicate-email race</td>
+    </tr>
+    <tr>
+      <td>2026-05-15</td>
+      <td>E2-S1</td>
+      <td><code>#data-model</code>, <code>#api-verify-user</code>, <code>#flow-verify</code></td>
+      <td>Added email_verifications table and atomic consume statement</td>
+    </tr>
+    <tr>
+      <td>2026-05-17</td>
+      <td>E3-S1</td>
+      <td><code>#configuration</code>, <code>#performance</code></td>
+      <td>Added Redis rate-limit keys and per-IP/per-email caps</td>
+    </tr>
+    <tr>
+      <td>2026-05-18</td>
+      <td>E3-S2</td>
+      <td><code>#security-privacy</code>, <code>#observability</code></td>
+      <td>Hashed-email logging; added <code>users_signup_total</code> metric</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  Section anchors are stable; reference them from <code>plan.json</code> stories as
+  <code>lld_refs: ["#data-model", "#api-create-user"]</code>. Each meaningful design change must
+  add a row to §14.
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral'
+  });
+</script>
+
+</body>
+</html>
