@@ -25,11 +25,11 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 5. **Pre-populates from prior `/research` transcript** if present
 6. **Walks Section 1** (Header) — defers Section 2 (Terminologies) for now
 7. **Walks Sections 3, 4** (Problem, Personas), **then Section 5** (Architecture & flows — optional Mermaid), **then Section 6** (Goals)
-8. **Invokes `shield:story-coverage`** between Sections 6 and 8 — scaffolds expected stories
-9. **Walks Section 7** (Metrics), **then Section 8** (Stories — prompts each story for Type: new | enhancement | existing)
-10. **Walks Sections 9..14** (Functional through Assumptions)
+8. **Invokes `shield:story-coverage`** between Sections 6 and 8 — scaffolds expected stories *(standard only — lean skips story-coverage)*
+9. **Walks Section 7** (Metrics); for standard, also walks Section 8 (Stories — prompts each story for Type: new | enhancement | existing)
+10. **Walks Sections 9..14** (Functional through Assumptions) *(standard only)*
 11. **Invokes `shield:milestone-coverage`** between Sections 8 and 15 — scaffolds Milestones into §15 (or §8 for lean)
-12. **Walks Section 15** rollout-mechanics, **then Sections 16..20**
+12. **Walks Section 15** rollout-mechanics, **then Sections 16..20** *(standard only — lean walks §9 Open questions, §10 Out of scope)*
 13. **Builds Terminologies (§2)** — copies from research-transcript glossary, proposes terms via LLM scan of drafted body, user confirms
 14. **Merges custom template** if configured
 15. **Writes** `prd.md`, `prd.html` (rendered via Shield's renderer — includes auto-TOC + Mermaid rendering), `prd.meta.json`
