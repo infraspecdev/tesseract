@@ -40,8 +40,8 @@ Three composition layers with one owner each, mapped to Dev Containers spec prim
 
 | Layer | Owner | Mechanism | Contents |
 |---|---|---|---|
-| **1 — Constant** | Shield | `Dockerfile` | Claude Code CLI, git, gh, iptables, ipset, dnsutils, jq, sudo, `shield-firewall.sh`, non-root `dev` user |
-| **2 — Stack** | Upstream (Microsoft/community) | Dev Container Features pinned by digest | Python, Node, Go, Terraform, JDK, etc. — only what the detected stack needs |
+| **1 — Constant** | Shield | `Dockerfile` | git, gh, iptables, ipset, dnsutils, jq, sudo, uv, `shield-firewall.sh`, non-root `dev` user |
+| **2 — Stack** | Upstream (Microsoft/community) | Dev Container Features pinned by digest | Anthropic claude-code (always, as the constant layer); plus python, node, go, terraform, jdk, etc. — only what the detected stack needs |
 | **3 — Project** | The repo | `postCreate.sh` | `uv sync`, `npm install`, `go mod download`, etc. |
 
 Two security boundaries (per the consensus in findings.md):
@@ -61,9 +61,10 @@ Two security boundaries (per the consensus in findings.md):
      ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  DEVCONTAINER  (non-root user `dev`, cap_add NET_ADMIN/NET_RAW) │
-│  Layer 1 — Dockerfile:  claude, shield, git, gh,                │
-│                         shield-firewall.sh                      │
-│  Layer 2 — Features:    python | node | go | tf | jdk           │
+│  Layer 1 — Dockerfile:  git, gh, uv, iptables, ipset, sudo,     │
+│                         shield-firewall.sh, non-root dev user   │
+│  Layer 2 — Features:    claude-code (always) +                  │
+│                         python | node | go | tf | jdk           │
 │                         (all digest-pinned)                     │
 │  Layer 3 — postCreate:  uv sync / npm install / ...             │
 │                                                                 │
@@ -138,6 +139,8 @@ Shield-owned data file. Maps each stack tag to its Dev Container Feature referen
 
 **Strict digest pinning** is the rule, not the exception. Shield maintains digest updates (manually for v1; dependabot-style automation deferred).
 
+**Constant layer Feature.** `compose_devcontainer.py` unconditionally inserts the Anthropic `claude-code` Feature (digest-pinned) into every composed `devcontainer.json`, regardless of detected stacks. This is the new home of the "Layer 1 Constant — Claude Code" entry; it migrated from the Dockerfile to a Feature after a build-time OOM in the install.sh native-build step. The digest is hard-coded in `shield/scripts/compose_devcontainer.py` as `ANTHROPIC_CLAUDE_CODE_FEATURE`; bump it deliberately when upgrading.
+
 ### 4. Firewall script — `shield-firewall.sh`
 
 Lives at `shield/skills/devcontainer/templates/shield-firewall.sh`. **Copied** into each user's `.devcontainer/` at scaffold time (not referenced as a Shield-shipped script). This makes the script auditable per repo, survives Shield uninstall, and follows the supply-chain hygiene the research recommends.
@@ -168,7 +171,8 @@ iptables -A OUTPUT -p tcp --dport 53 -d 127.0.0.11 -j ACCEPT
 
 # Allowlist via ipset
 ipset create allowlist hash:ip -exist
-HOSTS="api.anthropic.com statsig.anthropic.com claude.ai console.anthropic.com ${EXTRA_HOSTS:-}"
+DEFAULT_HOSTS="api.anthropic.com statsig.anthropic.com claude.ai console.anthropic.com"
+HOSTS="${DEFAULT_HOSTS} ${EXTRA_HOSTS:-}"
 for host in $HOSTS; do
   for ip in $(dig +short A "$host"); do
     ipset add allowlist "$ip" -exist
@@ -177,7 +181,9 @@ done
 
 # GitHub meta CIDRs
 ipset create allowlist_cidr hash:net -exist
-curl -s https://api.github.com/meta | jq -r '.git[]' | while read cidr; do
+github_meta=$(curl -fsSL https://api.github.com/meta)
+[ -n "$github_meta" ] || { echo "shield-firewall: failed to fetch api.github.com/meta" >&2; exit 1; }
+echo "$github_meta" | jq -r '.git[]' | while read -r cidr; do
   ipset add allowlist_cidr "$cidr" -exist
 done
 
@@ -243,11 +249,15 @@ Testable in isolation: feed in synthetic `.shield.json` + env-var combinations; 
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
   "name": "shield-implement",
   "build": { "dockerfile": "Dockerfile" },
   "features": {
-    "ghcr.io/devcontainers/features/python:1@sha256:<digest>": { "version": "3.12" },
-    "ghcr.io/devcontainers/features/github-cli:1@sha256:<digest>": {}
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1@sha256:cfc2e7d3e9fd3b9b01f8d5cb158508a884c8c0ede2e23ed10f32dea5d4ffe69a": {},
+    "ghcr.io/devcontainers/features/python:1@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671": {}
   },
   "remoteUser": "dev",
   "capAdd": ["NET_ADMIN", "NET_RAW"],
@@ -256,12 +266,14 @@ Testable in isolation: feed in synthetic `.shield.json` + env-var combinations; 
   ],
   "containerEnv": {
     "SHIELD_IN_DEVCONTAINER": "true",
-    "EXTRA_HOSTS": "pypi.org files.pythonhosted.org registry.npmjs.org"
+    "EXTRA_HOSTS": "pypi.org files.pythonhosted.org astral.sh"
   },
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "postStartCommand": "sudo /usr/local/bin/shield-firewall.sh",
   "customizations": {
-    "vscode": { "extensions": ["anthropic.claude-code"] }
+    "vscode": {
+      "extensions": ["anthropic.claude-code"]
+    }
   }
 }
 ```
@@ -273,6 +285,10 @@ Testable in isolation: feed in synthetic `.shield.json` + env-var combinations; 
 ### `Dockerfile`
 
 ```dockerfile
+# .devcontainer/Dockerfile
+# Constant layer for the Shield devcontainer. Hand-written instance of the
+# template at shield/skills/devcontainer/templates/Dockerfile.tmpl (which
+# Story 5 will create as the source of truth).
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -282,25 +298,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd -m -s /bin/bash --uid $USER_UID --gid $USER_GID $USERNAME \
+# The Microsoft base image ships with a 'vscode' user at UID 1000. Remove it
+# first so our 'dev' user can claim that UID (bind-mount file ownership on
+# Linux hosts depends on matching UIDs).
+RUN ( userdel --remove vscode 2>/dev/null || true ) \
+    && ( groupdel vscode 2>/dev/null || true ) \
+    && groupadd --gid "$USER_GID" "$USERNAME" \
+    && useradd -m -s /bin/bash --uid "$USER_UID" --gid "$USER_GID" "$USERNAME" \
     && echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/shield-firewall.sh" \
-       > /etc/sudoers.d/shield-firewall
+       > /etc/sudoers.d/shield-firewall \
+    && chmod 0440 /etc/sudoers.d/shield-firewall
 
-# Pin to a concrete Claude Code version at implementation time (replace 2.x.x).
-ARG CLAUDE_CODE_VERSION=2.x.x
-RUN curl -fsSL https://claude.ai/install.sh | CLAUDE_VERSION=${CLAUDE_CODE_VERSION} bash
+# Claude Code is installed via the upstream Dev Container Feature
+# (ghcr.io/anthropics/devcontainer-features/claude-code) pinned in
+# devcontainer.json. Keeping it out of this Dockerfile avoids the
+# install.sh native-build OOM that hits inside `docker build`, and
+# delegates version management to the Feature's `version` option.
+
+# Install uv globally so /implement's Python steps work.
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.local/bin/uv /usr/local/bin/uv \
+    && chmod 0755 /usr/local/bin/uv
 
 COPY shield-firewall.sh /usr/local/bin/shield-firewall.sh
-RUN chmod 755 /usr/local/bin/shield-firewall.sh
+RUN chmod 0755 /usr/local/bin/shield-firewall.sh
 
 USER dev
 WORKDIR /workspaces
 ```
 
 - `sudoers` scoped to only the firewall script. `dev` cannot escalate for anything else.
-- Claude Code version pinned via build-arg.
+- Claude Code installed via the upstream `ghcr.io/anthropics/devcontainer-features/claude-code:1` Feature (digest-pinned in `devcontainer.json`). Moved out of the Dockerfile after a build-time OOM in the install.sh native-build step (`exit 137 Killed`) — see commit 1d9cf8e.
 - Firewall script copied at build time, not by a Feature (issue #32113 mitigation).
+- MS base image ships a `vscode` user at UID 1000; we remove it first so `dev` can claim UID 1000 (matters for bind-mount file ownership on Linux hosts).
 
 ### `postCreate.sh`
 
@@ -308,24 +338,28 @@ Composed from the `post_create_hint` of each detected stack in `feature-map.json
 
 ```bash
 #!/bin/bash
+# .devcontainer/postCreate.sh
+# Project-specific install hints. Idempotent.
 set -euo pipefail
-cd /workspaces/*
+workspace=$(find /workspaces -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1)
+[ -n "$workspace" ] || { echo "postCreate: no workspace mounted at /workspaces" >&2; exit 1; }
+cd "$workspace"
 
-# python
-if [ -f pyproject.toml ]; then
-  uv sync
-elif [ -f requirements.txt ]; then
-  pip install -r requirements.txt
+# Python (shield adapters use uv)
+if [ -f shield/adapters/clickup/pyproject.toml ]; then
+  (cd shield/adapters/clickup && uv sync)
+fi
+if [ -f shield/adapters/sast/sonarqube/pyproject.toml ]; then
+  (cd shield/adapters/sast/sonarqube && uv sync)
+fi
+if [ -f shield/adapters/sast/semgrep/pyproject.toml ]; then
+  (cd shield/adapters/sast/semgrep && uv sync)
 fi
 
-# node
-if [ -f package.json ]; then
-  if [ -f pnpm-lock.yaml ]; then pnpm install
-  elif [ -f yarn.lock ]; then yarn install
-  else npm install; fi
-fi
+# Top-level test deps (uv-managed, system-Python target — no host pollution since we're in a container)
+uv pip install --system --quiet jsonschema pyyaml
 
-# (etc., per detected stacks)
+echo "postCreate complete."
 ```
 
 ### `.shield.json` update
