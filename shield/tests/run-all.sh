@@ -340,6 +340,16 @@ else
 fi
 echo ""
 
+# --- 15. Devcontainer Gate ---
+echo "15. Devcontainer Gate"
+if command -v uv &>/dev/null; then
+  run_test_verbose "devcontainer_gate tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_devcontainer_gate.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping gate tests"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
