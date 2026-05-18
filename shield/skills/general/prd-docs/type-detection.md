@@ -8,14 +8,17 @@ Parse the PRD's top-level `## <N>. <section name>` headings:
 
 1. **Lean** — only these headings present:
    - Header
+   - Terminologies
    - Problem & context
    - Target users / personas
+   - Architecture & flows
    - Goals & non-goals
    - Success metrics
+   - Milestones
    - Open questions
    - Out of scope / Non-goals
 
-2. **Standard** — at least 12 of the 18 numbered standard sections present (sections 6 through 17 are the load-bearing standard-only sections; presence of any 4+ implies standard intent)
+2. **Standard** — at least 12 of the 20 numbered standard sections present. The load-bearing standard-only sections are 8-14 and 16-18 (User stories through Assumptions, plus Cost / GTM / Support); presence of any 4+ of these implies standard intent regardless of total count. (Sections 1, 2, 3, 4, 5, 6, 7, 15, 19, 20 appear in both lean and standard — §15 in lean is just the Milestones sub-section as standalone §8.)
 
 3. **Custom** — heading set doesn't match either pattern. Treat as standard for grading purposes; user can override.
 

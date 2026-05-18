@@ -113,7 +113,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 1 | Gather requirements | skip if spec/topic provided | No |
 | 1a | Detect prior PRD in feature folder | skip if no PRD exists | No |
 | 2 | Check for prior research / gather context | skip if no research exists | No |
-| 2a | Milestone resolution — extract from PRD §13/§6 or invoke `shield:milestone-coverage` as fallback; user refines | always | Yes |
+| 2a | Milestone resolution — extract from PRD §15/§8 or invoke `shield:milestone-coverage` as fallback; user refines | always | Yes |
 | 3 | Generate plan.json sidecar | always | Yes |
 | 4 | Generate architecture HTML | always | Yes |
 | 5 | Generate plan HTML | always | Yes |
@@ -134,12 +134,12 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 
 Before generating stories, resolve milestones:
 
-- **If a PRD was detected (Step 1a) and it contains milestones** (Section 13 standard, Section 6 lean): extract them. Present to the user for confirmation. Allow edits (rename, add exit criteria, change depends_on). Copy approved milestones into the sidecar `milestones[]`.
+- **If a PRD was detected (Step 1a) and it contains milestones** (Section 15 standard, Section 8 lean): extract them. Present to the user for confirmation. Allow edits (rename, add exit criteria, change depends_on). Copy approved milestones into the sidecar `milestones[]`.
 
 - **If a PRD was detected but has no milestones** (or an empty Milestones table — back-compat case for PRDs authored against rubric_version 1.0): invoke `shield:milestone-coverage` with:
-   - `personas`: from PRD Section 3
-   - `goals`: from PRD Section 4
-   - `stories`: from PRD Section 6 (if present; empty for lean)
+   - `personas`: from PRD Section 4
+   - `goals`: from PRD Section 6
+   - `stories`: from PRD Section 8 (if present; empty for lean)
    - `feature_domain`: inferred or read from PRD type-detection metadata
 
    Present merged proposal + `open_conflicts` to the user (same flow as `/prd` §7a). User refines. Sidecar-only — do NOT write back to the PRD.

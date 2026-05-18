@@ -14,15 +14,39 @@
 | Sign-off contacts | Legal: @legal, Security: @sec-review, Support: @cx-lead |
 | Linked plans | _(auto-populated by /plan)_ |
 
-## 2. Problem & context
+## 2. Terminologies
+| Term | Definition |
+|---|---|
+| JWT | JSON Web Token — a compact, self-contained token used to transmit authentication state between client and server. |
+| Credential stuffing | An automated attack that uses leaked username/password pairs from other breaches against this service. |
+| Rate limiting | Restricting the number of requests a client can make in a time window; used here to block brute-force login attempts. |
+| bcrypt | A password-hashing function with a configurable cost factor; used to store passwords safely. |
+
+## 3. Problem & context
 Users cannot log in with email + password via the legacy `/auth/login` route without hitting frequent session-loss bugs. The endpoint has no rate limiting, allowing credential-stuffing attacks that have triggered 3 security incidents in the last 90 days. Support handles ~200 "locked out" tickets/week because there is no self-serve password-reset flow. Cost of inaction: continued reputational risk and ~40 eng-hours/month spent on manual account unlocks.
 
-## 3. Target users / personas
+## 4. Target users / personas
 | ID | Persona | Goals | Frictions today |
 |---|---|---|---|
 | P1 | Anika — security-conscious user | Sign in quickly and recover access without contacting support | Session drops after a few hours; no self-serve reset; receives no warning before lockout |
 
-## 4. Goals & non-goals
+## 5. Architecture & flows
+
+### System overview
+```mermaid
+flowchart LR
+  user[User] -->|POST /v2/auth/login| loginSvc[Auth Service v2]
+  loginSvc -->|validate hash| db[(user_credentials)]
+  loginSvc -->|rate check| ratelimiter[Rate Limiter]
+  loginSvc -->|return JWT| user
+  user -->|POST /v2/auth/recover| loginSvc
+  loginSvc -->|send link| email[Email / SendGrid]
+  email -->|reset link| user
+  user -->|POST /v2/auth/reset| loginSvc
+  loginSvc -->|invalidate sessions| sessions[(Sessions)]
+```
+
+## 6. Goals & non-goals
 ### Goals
 1. Replace the legacy login endpoint with a hardened v2 endpoint that enforces rate limiting.
 2. Provide a fully self-serve password-reset flow via email.
@@ -33,7 +57,7 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
 - Social login (OAuth with Google/GitHub) — out of scope this cycle.
 - Admin-side forced password reset for enterprise accounts.
 
-## 5. Success metrics
+## 7. Success metrics
 | Metric | Type | Target | Counter |
 |---|---|---|---|
 | Support tickets tagged "locked out" | Lagging | < 50/week within 4 weeks of full rollout | — |
@@ -42,9 +66,11 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
 
 **Dashboard plan:** DataDog dashboard `auth-v2-health` — login success rate, 401 rate, 429 rate, recovery email latency p99.
 
-## 6. User stories & scenarios
+## 8. User stories & scenarios
 
 ### Story US-1: Happy-path login
+- **Type:** enhancement
+- **Existing behavior:** Legacy `/auth/login` endpoint — accepts email + password, returns session cookie; no rate limiting; subject to session-loss bugs.
 - **Persona:** P1
 - **Goal:** Sign in with email + password and land on the dashboard within 3 seconds.
 - **Happy path:**
@@ -61,6 +87,8 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
   - Given a registered user with an incorrect password, When they POST to `/v2/auth/login`, Then the response is 401.
 
 ### Story US-2: Password reset
+- **Type:** new
+- **Existing behavior:** N/A
 - **Persona:** P1
 - **Goal:** Regain access to the account without calling support.
 - **Happy path:**
@@ -80,6 +108,8 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
   - Given a used reset token, When submitted again, Then the response is 410.
 
 ### Story US-3: Rate limiting on login
+- **Type:** enhancement
+- **Existing behavior:** Legacy `/auth/login` endpoint — no rate limiting; allowed unlimited attempts per IP.
 - **Persona:** P1 (and malicious actors as negative case)
 - **Goal:** Ensure brute-force attempts are blocked while P1 is not disrupted.
 - **Happy path:** P1 makes up to 10 login attempts/min without hitting rate limit.
@@ -90,14 +120,14 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
 - **Acceptance criteria (Given/When/Then):**
   - Given 10 consecutive login attempts from the same IP within 60 s, When the 11th attempt is made, Then the response is 429 with a `Retry-After` header.
 
-## 7. Functional requirements
+## 9. Functional requirements
 - FR-1 (US-1): `POST /v2/auth/login` validates credentials against `user_credentials` table and returns a signed JWT on success.
 - FR-2 (US-3): Rate limiter rejects requests exceeding 10/min per source IP on the login endpoint.
 - FR-3 (US-2): `POST /v2/auth/recover` sends a reset email; token is stored with 15-min TTL and single-use flag.
 - FR-4 (US-2): `POST /v2/auth/reset` validates token, hashes new password, updates `user_credentials`, and invalidates all existing sessions.
 - FR-5: Legacy `/auth/login` returns 301 to `/v2/auth/login` for 90 days.
 
-## 8. Non-functional requirements
+## 10. Non-functional requirements
 | NFR | Requirement |
 |---|---|
 | Performance | `POST /v2/auth/login` p99 < 200 ms at 500 req/s |
@@ -107,32 +137,32 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
 | Telemetry / event taxonomy | `auth.login.success`, `auth.login.failure`, `auth.recover.requested`, `auth.reset.completed` |
 | i18n / l10n | N/A for v2 (en-only); string externalisation deferred |
 
-## 9. RBAC & permissions matrix
+## 11. RBAC & permissions matrix
 | Role | Can do |
 |---|---|
 | Unauthenticated user | POST /v2/auth/login, POST /v2/auth/recover, POST /v2/auth/reset |
 | Authenticated user | Access protected routes; cannot call /recover or /reset while logged in |
 | Admin | No special auth endpoints; admin console uses separate SAML flow |
 
-## 10. Dependencies
+## 12. Dependencies
 - **user_credentials table** — must be backfilled from `users.password_hash` before M1 ships.
 - **Transactional email provider** (SendGrid) — existing contract; need template approval for reset email.
 - **Rate-limit middleware** — already in the service; needs to be wired to the new endpoint.
 - **DataDog** — existing APM; new dashboard to be created.
 
-## 11. Risks & mitigations
+## 13. Risks & mitigations
 | # | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|---|
 | R1 | Backfill of `user_credentials` misses some legacy rows | M | H | Dry-run backfill in staging; add reconciliation query in post-deploy runbook | @db-team |
 | R2 | Rate limiting too aggressive for shared-IP corporate users | L | M | Monitor 429 rate; raise threshold or add IP-allowlist if needed | @sec-review |
 
-## 12. Assumptions
+## 14. Assumptions
 | # | Assumption | Status | If wrong |
 |---|---|---|---|
 | A1 | SendGrid can deliver transactional email within 60 s under normal load | Validated | Evaluate Postmark as fallback |
 | A2 | All legacy users have a password hash in `users.password_hash` | Unvalidated | Extend backfill script to handle nulls; surface to user at first login |
 
-## 13. Rollout plan
+## 15. Rollout plan
 
 ### Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
@@ -148,34 +178,34 @@ Users cannot log in with email + password via the legacy `/auth/login` route wit
 - Data migration: backfill user_credentials table from legacy `users.password_hash`
 - Backward compatibility: legacy `/auth/login` route 301s to `/v2/auth/login` for 90 days
 
-## 14. Cost & resource impact
+## 16. Cost & resource impact
 | Component | Cost dimension | Estimate |
 |---|---|---|
 | Build cost | Engineering time | 3 engineers × 4 weeks |
 | Run cost | Compute (no LLM) | < $50/month at current user volume |
 | Counter-metric | Cost per login | Should not exceed $0.001 per request |
 
-## 15. GTM & customer-comms
+## 17. GTM & customer-comms
 - Pricing / packaging implications: none — auth is not billable.
 - In-app messaging plan: toast notification on first login via new endpoint ("We've upgraded your sign-in for better security").
 - Release notes: changelog entry on general availability.
 - CS / sales enablement: one-pager for CS explaining rate-limiting to handle "I got locked out" tickets.
 - Beta / early-access plan: internal dogfood for 2 weeks, then canary rollout.
 
-## 16. Support / CX impact
+## 18. Support / CX impact
 - Day-1 ticket owner: @cx-lead
 - Runbook: `docs/runbooks/auth-v2.md` — covers 401 spikes, 429 spikes, backfill verification.
 - Escalation path: CX → @eng-on-call → @anika.dev.
 - Sales enablement: N/A.
 - Training plan: CX team briefed via Loom before GA.
 
-## 17. Open questions
+## 19. Open questions
 | # | Question | Owner | Target resolution |
 |---|---|---|---|
 | OQ-1 | Should rate limiting be per-IP, per-account, or both? | @sec-review | 2026-05-20 |
 | OQ-2 | Do we need account-lockout (vs. just rate-limiting)? | @eng-lead | 2026-05-20 |
 
-## 18. Out of scope / Non-goals
+## 20. Out of scope / Non-goals
 - SSO / SAML integration — separate quarter.
 - OAuth social login (Google, GitHub) — not in this cycle.
 - Admin-initiated password reset — requires admin console work outside this scope.

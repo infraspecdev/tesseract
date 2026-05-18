@@ -61,7 +61,7 @@ You are reviewing a PRD in PRD-Review mode. Mode: Standalone.
 - Apply your existing AC1-AC10 evaluation framework to eval points 4a-4e
 - Apply NEW AC11 (Persona-goal coverage) and AC12 (Archetypal flow coverage):
   - Invoke the `shield:story-coverage` skill, passing personas + goals + detected feature domain
-  - For each `expected_story` the skill returns that has NO matching story in the PRD's Section 6, count as a gap
+  - For each `expected_story` the skill returns that has NO matching story in the PRD's Section 8, count as a gap
   - Severity: per the skill's returned `severity` field
 
 **Tech-lead reviewer (architecture-reviewer):** When grading dim 5 NFRs, treat 5b (security + threat model) and 5e (privacy) as Critical for any feature with user data; treat them as Important for purely internal infrastructure features.

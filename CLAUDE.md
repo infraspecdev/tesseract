@@ -42,7 +42,7 @@ tesseract/
 
 ## Working with the Codebase
 
-- The only Python code is in `clickup-sprint-planner/server/`. Run with `uv run`.
+- Python runs through `uv` only: `pyproject.toml`-packaged (`clickup-sprint-planner/server/`, `shield/adapters/*/`) for shipped components, and `uv run --with <deps>` for standalone scripts (`shield/scripts/`, `shield/evals/`). No system pip, no `requirements.txt`.
 - Everything else is markdown definitions (commands, skills, agents) and shell scripts (hooks).
 - Config files with real workspace data (`sprint-planner.json`) are gitignored. Only example configs are tracked.
 - Never commit `.env` files or `settings.local.json`.

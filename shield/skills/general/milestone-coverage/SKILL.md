@@ -1,6 +1,6 @@
 ---
 name: milestone-coverage
-description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager-reviewer and agile-coach-reviewer in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories for standard, after goals for lean) and /plan (as fallback when PRD has no milestones).
+description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager-reviewer and agile-coach-reviewer in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
 ---
 
 # Milestone Coverage
@@ -9,7 +9,7 @@ Propose a milestone scaffold for a feature by dispatching `shield:product-manage
 
 ## When to Use
 
-- `/prd` invokes this after Section 6 (User stories) is filled in the standard scaffold, or after Section 5 (Success metrics) in the lean scaffold, to scaffold the Milestones table.
+- `/prd` invokes this after Section 8 (User stories) is filled in the standard scaffold, or after Section 7 (Success metrics) in the lean scaffold, to scaffold the Milestones table.
 - `/plan` invokes this as a fallback when the linked PRD has no milestones (or no PRD exists), to populate the sidecar `milestones[]`.
 
 ## Input contract
@@ -17,7 +17,7 @@ Propose a milestone scaffold for a feature by dispatching `shield:product-manage
 The caller provides:
 - `personas`: list of {id, name, goals[]} (always required)
 - `goals`: list of {id, description} (always required)
-- `stories`: list of story objects from PRD §6 (required for standard; absent for lean — skill falls back to coarser proposals from goals+personas)
+- `stories`: list of story objects from PRD §8 (required for standard; absent for lean — skill falls back to coarser proposals from goals+personas)
 - `feature_domain`: best-effort domain hint (same set as `shield:story-coverage`)
 - `success_metrics`: optional; used by PM agent to anchor outcomes to metrics
 

@@ -774,7 +774,7 @@ Before generating stories, resolve milestones:
    - `goals`: from PRD Section 4
    - `stories`: from PRD Section 6 (if present; empty for lean)
    - `feature_domain`: inferred or read from PRD type-detection metadata
-   
+
    Present merged proposal + `open_conflicts` to the user (same flow as `/prd` §7a). User refines. Sidecar-only — do NOT write back to the PRD.
 
 3. **If no PRD exists:** invoke `shield:milestone-coverage` with whatever inputs were gathered during requirements (Step 2). Sidecar-only.

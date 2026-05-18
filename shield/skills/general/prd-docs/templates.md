@@ -1,10 +1,10 @@
 # PRD Templates
 
-The 18-section problem-first scaffold (standard) and 8-section lean variant. Plus the HTML render template that mirrors prd.md.
+The 20-section problem-first scaffold (standard) and 10-section lean variant. Plus the HTML render template that mirrors prd.md.
 
-## Standard scaffold (18 sections)
+## Standard scaffold (20 sections)
 
-```markdown
+````markdown
 # <Feature name>
 
 ## 1. Header
@@ -21,30 +21,61 @@ The 18-section problem-first scaffold (standard) and 8-section lean variant. Plu
 | Sign-off contacts | Legal: @<handle>, Security: @<handle>, Support: @<handle> |
 | Linked plans | _(auto-populated by /plan)_ |
 
-## 2. Problem & context
+## 2. Terminologies
+| Term | Definition |
+|---|---|
+| <term> | <one-line definition; link to deeper doc if needed> |
+
+## 3. Problem & context
 What's broken, who hurts, baseline data, why now (cost-of-inaction).
 
-## 3. Target users / personas
+## 4. Target users / personas
 | ID | Persona | Goals | Frictions today |
 |---|---|---|---|
 | P1 | <name> | <user-language goals> | <current pain> |
 
-## 4. Goals & non-goals
+## 5. Architecture & flows
+
+Optional. If this feature has non-trivial system topology, user flows, or
+state machines, capture them here as Mermaid diagrams (preferred — render
+in prd.html) or linked images alongside prd.md. Leave empty if all flows
+are simple enough to describe in prose elsewhere.
+
+### System overview
+```mermaid
+flowchart LR
+  user[User] -->|action| service[Service]
+  service -->|call| dependency[Dependency]
+```
+
+### Key flows
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant S as Service
+  U->>S: request
+  S-->>U: response
+```
+
+## 6. Goals & non-goals
 ### Goals
 1. <goal 1>
 2. <goal 2>
 ### Non-goals
 - <explicitly NOT trying to do>
 
-## 5. Success metrics
+## 7. Success metrics
 | Metric | Type | Target | Counter |
 |---|---|---|---|
 | <metric> | Leading / Lagging | <numeric threshold> | <counter-metric> |
 **Dashboard plan:** <where will this be tracked>
 
-## 6. User stories & scenarios
+## 8. User stories & scenarios
 
 ### Story <ID>: <name>
+- **Type:** new | enhancement | existing
+- **Existing behavior:** <path / link / one-line description, or "N/A">
+  *(required when Type is enhancement or existing; "N/A" for new)*
 - **Persona:** <P-id>
 - **Goal:** <user-language goal>
 - **Happy path:** <numbered steps>
@@ -55,10 +86,15 @@ What's broken, who hurts, baseline data, why now (cost-of-inaction).
 - **Acceptance criteria (Given/When/Then):**
   - Given <pre>, When <action>, Then <outcome>
 
-## 7. Functional requirements
-Per-story or per-feature; uses Given/When/Then. May reference Section 6 stories.
+#### Type semantics
+- **new** — behavior does not exist in any form today (net-new feature)
+- **enhancement** — modifies existing behavior in a user-visible way
+- **existing** — already exists, documented for context (regression-risk surface in rewrites)
 
-## 8. Non-functional requirements
+## 9. Functional requirements
+Per-story or per-feature; uses Given/When/Then. May reference Section 8 stories.
+
+## 10. Non-functional requirements
 | NFR | Requirement |
 |---|---|
 | Performance | <budget> |
@@ -68,25 +104,25 @@ Per-story or per-feature; uses Given/When/Then. May reference Section 6 stories.
 | Telemetry / event taxonomy | <named events> |
 | i18n / l10n | <RTL, encoding, formats, translation pipeline — or N/A> |
 
-## 9. RBAC & permissions matrix
+## 11. RBAC & permissions matrix
 | Role | Can do |
 |---|---|
 | <role> | <permissions> |
 
-## 10. Dependencies
+## 12. Dependencies
 Internal services, third parties, integration contracts.
 
-## 11. Risks & mitigations
+## 13. Risks & mitigations
 | # | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|---|
 | R1 | <risk> | L/M/H | L/M/H | <mitigation> | @<handle> |
 
-## 12. Assumptions
+## 14. Assumptions
 | # | Assumption | Status | If wrong |
 |---|---|---|---|
 | A1 | <assumption> | Validated / Unvalidated | <consequence> |
 
-## 13. Rollout plan
+## 15. Rollout plan
 
 ### Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
@@ -102,88 +138,103 @@ Internal services, third parties, integration contracts.
 - Data migration: <plan if touching existing data>
 - Backward compatibility: <commitments>
 
-## 14. Cost & resource impact
+## 16. Cost & resource impact
 | Component | Cost dimension | Estimate |
 |---|---|---|
 | Build cost | Engineering time | <estimate> |
 | Run cost | LLM / compute / storage / bandwidth | <$X/month at projected scale> |
 | Counter-metric | <should not exceed $Y/user/month> | |
 
-## 15. GTM & customer-comms
+## 17. GTM & customer-comms
 - Pricing / packaging implications: <description>
 - In-app messaging plan: <description>
 - Release notes: <description>
 - CS / sales enablement: <description>
 - Beta / early-access plan: <description or N/A>
 
-## 16. Support / CX impact
+## 18. Support / CX impact
 - Day-1 ticket owner: @<handle>
 - Runbook: <link or description>
 - Escalation path: <description>
 - Sales enablement: <description>
 - Training plan: <description>
 
-## 17. Open questions
+## 19. Open questions
 | # | Question | Owner | Target resolution |
 |---|---|---|---|
 
-## 18. Out of scope / Non-goals
+## 20. Out of scope / Non-goals
 - <named item with one-line rationale>
-```
+````
 
-## Lean variant (8 sections)
+## Lean variant (10 sections)
 
-```markdown
+````markdown
 # <Feature name>
 
 ## 1. Header
 (Same Header table as standard)
 
-## 2. Problem & context
+## 2. Terminologies
+| Term | Definition |
+|---|---|
+| <term> | <one-line definition; link to deeper doc if needed> |
+
+## 3. Problem & context
 What's broken, who hurts, baseline data, why now.
 
-## 3. Target users / personas
+## 4. Target users / personas
 | ID | Persona | Goals | Frictions today |
 
-## 4. Goals & non-goals
+## 5. Architecture & flows
+
+Optional. Same content guidance as standard scaffold's §5.
+
+```mermaid
+flowchart LR
+  A --> B
+```
+
+## 6. Goals & non-goals
 ### Goals
 ### Non-goals
 
-## 5. Success metrics
+## 7. Success metrics
 | Metric | Type | Target | Counter |
 
-## 6. Milestones
+## 8. Milestones
 | ID | Name | Outcome | Exit criteria | Depends on |
-|---|---|---|---|---|
-| M1 | <name> | <outcome> | <testable list> | — |
 
-## 7. Open questions
+## 9. Open questions
 
-## 8. Out of scope / Non-goals
+## 10. Out of scope / Non-goals
 
 ---
 
 > **This is a lean PRD.** It intentionally omits the following standard sections:
-> - Section 6 — User stories & scenarios
-> - Section 7 — Functional requirements
-> - Section 8 — Non-functional requirements
-> - Section 9 — RBAC & permissions matrix
-> - Section 10 — Dependencies
-> - Section 11 — Risks & mitigations
-> - Section 12 — Assumptions
-> - Section 13 — Rollout plan (rollout mechanics; lean keeps only the Milestones half)
-> - Section 14 — Cost & resource impact
-> - Section 15 — GTM & customer-comms
-> - Section 16 — Support / CX impact
+> - Section 8 — User stories & scenarios
+> - Section 9 — Functional requirements
+> - Section 10 — Non-functional requirements
+> - Section 11 — RBAC & permissions matrix
+> - Section 12 — Dependencies
+> - Section 13 — Risks & mitigations
+> - Section 14 — Assumptions
+> - Section 15 — Rollout plan (full — lean has its own §8 Milestones)
+> - Section 16 — Cost & resource impact
+> - Section 17 — GTM & customer-comms
+> - Section 18 — Support / CX impact
 >
 > If scope grows or stakeholders need more detail, run `/prd` again — Shield
 > will offer to add specific sections or upgrade to `standard`.
-```
+````
 
-## Story template (used inside Section 6 of standard scaffold)
+## Story template (used inside Section 8 of standard scaffold)
 
 ```markdown
 ### Story <ID>: <name>
+- **Type:** new | enhancement | existing
+- **Existing behavior:** <path / link / one-line description, or "N/A">
+  *(required when Type is enhancement or existing; "N/A" for new)*
 - **Persona:** <P-id>
 - **Goal:** <user-language goal>
 - **Happy path:** <numbered steps>
@@ -201,7 +252,7 @@ What's broken, who hurts, baseline data, why now.
 
 ### Step 1 — Write the HTML shell next to `prd.md`
 
-Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, body open, meta-banner, body close) with a single literal `{{BODY}}` placeholder where the rendered markdown will be substituted. Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
+Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, mermaid script, body open, meta-banner, body close) with two literal placeholders: `{{TOC}}` (mandatory for PRD shells — replaced by an auto-generated Table of Contents built from h2/h3 headings; the renderer also accepts shells without `{{TOC}}` for non-PRD callers) and `{{BODY}}` (mandatory — replaced by the rendered markdown body). Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
 
 ```html
 <!DOCTYPE html>
@@ -259,7 +310,31 @@ Write the file `prd.shell.html` in the same directory as `prd.md`. The shell con
       color: var(--muted);
     }
     .meta-banner strong { color: var(--text); }
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      font-size: 0.94rem;
+    }
+    .toc-title { font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .toc ul { margin: 0; padding-left: 22px; }
+    .toc > ul { list-style: decimal; }
+    .toc ul ul { list-style: disc; margin-top: 4px; }
+    .toc li { margin: 2px 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    pre.mermaid { background: transparent; border: none; padding: 0; text-align: center; }
   </style>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false, theme: "default" });
+    document.addEventListener("DOMContentLoaded", () => {
+      mermaid.run({ querySelector: "pre.mermaid" });
+    });
+  </script>
 </head>
 <body>
   <div class="meta-banner">
@@ -267,6 +342,7 @@ Write the file `prd.shell.html` in the same directory as `prd.md`. The shell con
     Sidecar: <a href="prd.meta.json">prd.meta.json</a>
     <!-- Append research/product-note links here if present -->
   </div>
+{{TOC}}
 {{BODY}}
 </body>
 </html>
