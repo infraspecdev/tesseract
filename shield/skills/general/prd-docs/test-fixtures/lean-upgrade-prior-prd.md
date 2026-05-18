@@ -42,5 +42,5 @@ Gift cards sold / month: target 1000 in first 90 days.
 - Gift cards purchased outside the app
 
 <!--
-EXPECTED: When /prd runs in the same feature folder, offer multi-select to add Sections 8-18 (the standard-only sections). Existing lean §2 Terminologies, §5 Architecture & flows, and §8 Milestones carry forward.
+EXPECTED: When /prd runs in the same feature folder, offer multi-select to add Sections 8-18 (the standard-only sections). Existing lean §2 Terminologies and §5 Architecture & flows carry forward unchanged. The lean §8 Milestones content migrates into standard §15's Milestones sub-table during the upgrade — NOT preserved as standalone §8 (which is Stories in standard).
 -->

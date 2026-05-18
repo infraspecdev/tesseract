@@ -78,6 +78,10 @@ Offer the user a multi-select:
 I found a lean PRD in this feature folder. What would you like to do?
 
   [ ] Add sections (a new run is created with your existing content + new sections)
+       Note: lean §2 Terminologies and §5 Architecture & flows carry forward unchanged.
+       Note: lean §8 Milestones content migrates into standard §15's Milestones
+             sub-table — the standard scaffold doesn't have a standalone §8 Milestones
+             (§8 in standard is User stories).
        [x] Section 8 — User stories & scenarios
        [x] Section 9 — Functional requirements
        [x] Section 10 — Non-functional requirements
@@ -321,6 +325,7 @@ PRD authored. What's next?
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
 | Omitting {{TOC}} from prd.shell.html | prd.shell.html MUST have BOTH {{TOC}} and {{BODY}}; omitting {{TOC}} produces a TOC-less prd.html |
 | Hand-rendering prd.html without render-markdown.sh | Always use render-markdown.sh; other renderers don't apply the mermaid fence rule or anchors plugin |
+| Dropping or duplicating lean §8 Milestones during upgrade to standard | The lean §8 Milestones table MUST migrate into standard §15's Milestones sub-table. Do NOT keep it as standalone §8 (that's Stories in standard) and do NOT duplicate it. The upgrade flow's Note line explicitly calls this out — agents that miss it produce corrupted PRDs. |
 
 ## See Also
 
