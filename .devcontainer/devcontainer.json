@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "shield-implement",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/python:1@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671": {}
+  },
+  "remoteUser": "dev",
+  "capAdd": ["NET_ADMIN", "NET_RAW"],
+  "mounts": [
+    "source=claude-config-${devcontainerId},target=/home/dev/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "SHIELD_IN_DEVCONTAINER": "true",
+    "EXTRA_HOSTS": "pypi.org files.pythonhosted.org astral.sh"
+  },
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postStartCommand": "sudo /usr/local/bin/shield-firewall.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["anthropic.claude-code"]
+    }
+  }
+}
