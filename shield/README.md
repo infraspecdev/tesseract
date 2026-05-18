@@ -23,13 +23,73 @@ Unified SDLC plugin for Claude Code — research, planning, PM integration, impl
 
 ## Devcontainer for `/implement`
 
-`/implement` runs autonomously — it writes tests, runs builds, makes commits. To contain that blast radius and protect your Claude credentials, scaffold a project-local devcontainer:
+`/implement` runs autonomously — it writes tests, runs builds, makes commits. To contain that blast radius and protect your Claude credentials, scaffold a project-local devcontainer.
+
+### Prerequisites
+
+You need two things on your host machine: a container runtime and a launcher.
+
+**1. Container runtime (one of):**
+
+| Platform | Runtime | Install |
+|---|---|---|
+| macOS | Docker Desktop | https://www.docker.com/products/docker-desktop — or `brew install --cask docker` |
+| macOS (alternative, lighter) | Colima + Docker CLI | `brew install colima docker` then `colima start` |
+| Linux | Docker Engine | https://docs.docker.com/engine/install/ |
+| Linux (rootless alternative) | Podman | `apt install podman` / `dnf install podman` |
+| Windows | Docker Desktop (WSL2 backend) | https://www.docker.com/products/docker-desktop |
+
+Verify it's running: `docker info` should print engine info without errors.
+
+**2. Launcher (one of):**
+
+| Launcher | Best for | Install |
+|---|---|---|
+| **VS Code + Dev Containers extension** | Daily use; "Reopen in Container" UI flow | Install [VS Code](https://code.visualstudio.com/), then add the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (`ms-vscode-remote.remote-containers`). No separate CLI needed — the extension bundles its own. |
+| **`@devcontainers/cli`** | Headless / scripted / CI use | Requires Node.js. Install: `npm install -g @devcontainers/cli`. Verify: `devcontainer --version`. |
+
+You can install both — they coexist.
+
+### First run
 
 ```bash
+# 1. Scaffold .devcontainer/ for this repo
 /shield init-devcontainer
 ```
 
-This produces `.devcontainer/{devcontainer.json,Dockerfile,shield-firewall.sh,postCreate.sh}` tuned to your detected stack. Reopen in VS Code ("Reopen in Container") or `devcontainer up --workspace-folder .` from the CLI. Run `claude /login` once inside the container — credentials persist in a named Docker volume keyed by `${devcontainerId}` and never touch your host's `~/.claude/`.
+Shield detects your stack (Python, Node, Go, Java, Terraform — polyglot is fine) and writes four files: `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile`, `.devcontainer/shield-firewall.sh`, `.devcontainer/postCreate.sh`. It also adds a `devcontainer` block to `.shield.json`.
+
+```bash
+# 2. Open the project in the container
+```
+
+- **VS Code:** Command Palette (Cmd/Ctrl + Shift + P) → "Dev Containers: Reopen in Container". First build takes ~3–5 minutes (image build + Features install + project deps). Subsequent opens are fast.
+- **CLI:** `devcontainer up --workspace-folder .` then `devcontainer exec --workspace-folder . bash` to enter.
+
+```bash
+# 3. Inside the container, log into Claude (one-time per project)
+claude /login
+```
+
+This stores OAuth credentials in a named Docker volume (`claude-config-${devcontainerId}`) that's scoped to this project. The host's `~/.claude/` is never touched. The volume persists across container rebuilds — you won't be asked to log in again unless the volume is deleted.
+
+```bash
+# 4. Run /implement as usual
+/implement EPIC-1-S1   # or any story / feature description
+```
+
+The container's firewall is active (default-deny outbound + allowlist), `claude` is installed via the Anthropic Dev Container Feature, and the workspace is bind-mounted so commits land on your host repo.
+
+### Troubleshooting first run
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Cannot connect to the Docker daemon` | Runtime not started | Start Docker Desktop / Colima / Podman service. Verify with `docker info`. |
+| `devcontainer: command not found` | CLI not installed (only matters if you're using the CLI flow) | `npm install -g @devcontainers/cli`. VS Code users don't need this. |
+| Build fails on Anthropic Feature pull | GHCR rate-limit or network issue | Retry. If persistent, log into ghcr.io: `docker login ghcr.io`. |
+| `groupadd: GID '1000' already exists` | Base image changed and the `userdel vscode` mitigation regressed | Rebuild image from scratch: VS Code → "Rebuild Container Without Cache"; CLI → `devcontainer up --remove-existing-container`. |
+| `claude --version` fails inside container | The Anthropic Feature didn't install; check `postStartCommand` logs in VS Code's "Dev Containers" output panel |
+| Firewall blocks a legitimate hostname (e.g., a private package mirror) | Hostname not in the allowlist | See [Customizing the allowlist](#customizing-the-allowlist) below. |
 
 ### What's contained
 
