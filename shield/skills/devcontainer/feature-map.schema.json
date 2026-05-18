@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shield devcontainer feature map",
+  "type": "object",
+  "patternProperties": {
+    "^[a-z][a-z0-9-]*$": {
+      "type": "object",
+      "required": ["feature", "default_options", "post_create_hint", "firewall_allowlist"],
+      "additionalProperties": false,
+      "properties": {
+        "feature": {
+          "type": "string",
+          "pattern": "^ghcr\\.io/[a-z0-9-/]+:[a-z0-9.]+@sha256:[a-f0-9]{64}$",
+          "description": "Dev Container Feature OCI ref, pinned by @sha256 digest."
+        },
+        "default_options": { "type": "object" },
+        "post_create_hint": {
+          "type": "string",
+          "description": "Bash snippet appended to postCreate.sh when this stack is detected."
+        },
+        "firewall_allowlist": {
+          "type": "array",
+          "items": { "type": "string", "format": "hostname" },
+          "uniqueItems": true,
+          "description": "Hostnames added to EXTRA_HOSTS when this stack is detected."
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

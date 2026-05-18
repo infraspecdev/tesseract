@@ -320,6 +320,16 @@ else
 fi
 echo ""
 
+# --- 13. Devcontainer Feature Map ---
+echo "13. Devcontainer Feature Map"
+if command -v uv &>/dev/null; then
+  run_test_verbose "feature-map.json validates" bash -c \
+    "cd '$SHIELD_ROOT/skills/devcontainer' && uv run --with jsonschema --with pytest pytest -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping feature-map tests"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
