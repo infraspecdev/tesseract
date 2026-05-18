@@ -34,7 +34,7 @@ Scaffold a per-repo `.devcontainer/` that runs `/implement` and other agent comm
 ### 1. Detect
 
 ```bash
-uv run --with-no-deps python3 -c \
+uv run python3 -c \
   "from pathlib import Path; \
    import sys; sys.path.insert(0, 'shield/scripts'); \
    from detect_stack import detect_stack; \
@@ -57,7 +57,7 @@ Detected: python, node
 ### 3. Compose devcontainer.json
 
 ```bash
-uv run --with-no-deps python3 -c \
+uv run python3 -c \
   "from pathlib import Path; \
    import sys, json; \
    sys.path.insert(0, 'shield/scripts'); \
