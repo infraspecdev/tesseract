@@ -310,6 +310,16 @@ echo "11. Devcontainer Static Checks"
 run_test_verbose "devcontainer files valid" "$SHIELD_ROOT/tests/test-devcontainer-files.sh"
 echo ""
 
+# --- 12. Stack Detection ---
+echo "12. Stack Detection"
+if command -v uv &>/dev/null; then
+  run_test_verbose "detect_stack tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_detect_stack.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping detect_stack tests"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
