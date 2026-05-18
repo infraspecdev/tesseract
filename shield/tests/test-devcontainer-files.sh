@@ -40,6 +40,14 @@ assert "grep -q '^#!/bin/bash' .devcontainer/shield-firewall.sh" \
 assert "grep -q '127.0.0.11' .devcontainer/shield-firewall.sh" \
   "shield-firewall.sh locks DNS to Docker's resolver (#36907)"
 
+assert "[ -f shield/skills/devcontainer/templates/shield-firewall.sh ]" "template: shield-firewall.sh exists"
+assert "[ -f shield/skills/devcontainer/templates/Dockerfile.tmpl ]" "template: Dockerfile.tmpl exists"
+assert "[ -f shield/skills/devcontainer/templates/postCreate.sh.tmpl ]" "template: postCreate.sh.tmpl exists"
+assert "diff -q .devcontainer/shield-firewall.sh shield/skills/devcontainer/templates/shield-firewall.sh" \
+  "template: shield-firewall.sh matches .devcontainer/ instance"
+assert "diff -q .devcontainer/Dockerfile shield/skills/devcontainer/templates/Dockerfile.tmpl" \
+  "template: Dockerfile.tmpl matches .devcontainer/ instance"
+
 if [ $fail -gt 0 ]; then
   echo "FAILED: $fail check(s)"
   exit 1
