@@ -1,10 +1,38 @@
 repos:
+  # ── 1. Standard file hygiene ─────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        files: '^shield/evals/expected/.*\.yaml$'
+      - id: check-json
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+
+  # ── 2–4. Local hooks ─────────────────────────────────────────────────────
   - repo: local
     hooks:
-      - id: shield-tests
-        name: Shield test suite
-        # Calls `make test`. First-time setup: run `make install` once.
-        entry: make test
+      # ── 2. Bash syntax ────────────────────────────────────────────────────
+      - id: bash-syntax
+        name: bash syntax check
+        entry: bash -n
         language: system
+        files: '\.sh$'
+
+      # ── 3. End-to-end eval format check ──────────────────────────────────
+      - id: eval-format
+        name: end-to-end eval format check
+        entry: python3 shield/evals/_parse_eval.py --check
+        language: system
+        files: '^shield/evals/.*\.md$'
+        exclude: '^shield/evals/(README\.md|inputs/)'
+
+      # ── 4. render-markdown pytest (only when relevant files change) ───────
+      - id: render-markdown-tests
+        name: render-markdown pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest --with "markdown-it-py>=3,<4" --with "mdit-py-plugins>=0.4,<1" pytest test_render_markdown_toc.py'
+        language: system
+        files: '^shield/scripts/(render-markdown\.py|test_render_markdown_toc\.py)$'
         pass_filenames: false
-        always_run: true

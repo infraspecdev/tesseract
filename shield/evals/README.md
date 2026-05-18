@@ -2,6 +2,24 @@
 
 Two eval systems live here. They test different things and have different cost profiles. **Pick the one that matches what you're testing.**
 
+## Pre-commit hooks
+
+This repo uses [pre-commit](https://pre-commit.com) to gate fast static checks on every commit. Install once after cloning:
+
+```bash
+pre-commit install
+```
+
+Hooks run automatically on `git commit`. To run them manually:
+
+```bash
+pre-commit run --all-files
+```
+
+Hooks included: whitespace hygiene, YAML/JSON validity, bash syntax, end-to-end eval format check, and `render-markdown` pytest (only when render-markdown files change). End-to-end and snapshot evals themselves are NOT run in the hook — those belong in CI (see "When to run evals" below if relevant).
+
+---
+
 ## Two eval systems: snapshot and end-to-end
 
 | | Snapshot eval | End-to-end eval |

@@ -42,7 +42,48 @@ def extract_code_block(body, fence_lang=""):
     return m.group(1) if m else ""
 
 
+def check_eval_format(eval_file: Path) -> None:
+    """Validate eval file format and frontmatter. Exit 0 on success, 1 on failure."""
+    text = eval_file.read_text()
+    sections = split_sections(text)
+
+    required_sections = ["setup", "prompt", "success criteria", "pass threshold"]
+    missing = [s for s in required_sections if s not in sections]
+    if missing:
+        print(f"{eval_file}: missing required sections: {missing}", file=sys.stderr)
+        sys.exit(1)
+
+    # Frontmatter check
+    if not text.startswith("---\n"):
+        print(f"{eval_file}: missing frontmatter", file=sys.stderr)
+        sys.exit(1)
+    fm_end = text.find("\n---\n", 4)
+    fm = text[4:fm_end] if fm_end > 0 else ""
+    for key in ("name:", "skill_under_test:", "scenario:"):
+        if key not in fm:
+            print(f"{eval_file}: missing frontmatter key '{key.rstrip(':')}'", file=sys.stderr)
+            sys.exit(1)
+
+    # Success criteria substructure check
+    crit_body = sections.get("success criteria", "")
+    if "### Structural" not in crit_body:
+        print(f"{eval_file}: success criteria missing '### Structural' subsection", file=sys.stderr)
+        sys.exit(1)
+    if "### Qualitative" not in crit_body:
+        print(f"{eval_file}: success criteria missing '### Qualitative' subsection", file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)
+
+
 def main():
+    # --check mode: validate format only, write nothing
+    if "--check" in sys.argv:
+        sys.argv.remove("--check")
+        eval_file = Path(sys.argv[1])
+        check_eval_format(eval_file)
+        return  # check_eval_format calls sys.exit; this is unreachable
+
     eval_file = Path(sys.argv[1])
     out_dir = Path(sys.argv[2])
     text = eval_file.read_text()

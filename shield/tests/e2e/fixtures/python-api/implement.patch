@@ -8,12 +8,12 @@ index b756625..c84744a 100644
 +from fastapi import APIRouter, HTTPException
 +
 +from src.models import Task
- 
+
  router = APIRouter()
- 
+
 @@ -9,12 +11,11 @@ _counter = 0
- 
- 
+
+
  @router.post("/")
 -async def create_task(task: dict):
 -    # No input validation — security reviewer should flag
@@ -24,26 +24,26 @@ index b756625..c84744a 100644
 -    tasks[task_id] = {**task, "id": task_id, "status": "open"}
 +    tasks[task_id] = {**task.model_dump(), "id": task_id}
      return tasks[task_id]
- 
- 
+
+
 @@ -25,7 +26,8 @@ async def list_tasks():
- 
+
  @router.get("/{task_id}")
  async def get_task(task_id: str):
 -    # No 404 handling — operations reviewer should flag
 +    if task_id not in tasks:
 +        raise HTTPException(status_code=404, detail="Task not found")
      return tasks[task_id]
- 
- 
+
+
 diff --git a/tests/test_tasks.py b/tests/test_tasks.py
 index 7bbef78..bbfbe1d 100644
 --- a/tests/test_tasks.py
 +++ b/tests/test_tasks.py
 @@ -16,4 +16,13 @@ def test_create_task():
      assert response.json()["title"] == "Test task"
- 
- 
+
+
 -# Missing: tests for 404, invalid input, update, delete, auth
 +
 +
