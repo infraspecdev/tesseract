@@ -57,7 +57,7 @@ If your project needs an additional hostname (private mirror, internal API), add
 }
 ```
 
-Then **rebuild** the container (VS Code: "Rebuild Container"; CLI: `devcontainer up --remove-existing-container`). Changes don't take effect until the container is rebuilt.
+Then re-run `/shield init-devcontainer` to regenerate `.devcontainer/devcontainer.json` with the new host in `EXTRA_HOSTS`, and **rebuild** the container (VS Code: "Rebuild Container"; CLI: `devcontainer up --remove-existing-container`). The new hostname is read from `.shield.json` only at scaffold time — a plain rebuild reuses the existing `EXTRA_HOSTS` value.
 
 ### Disabling the gate
 

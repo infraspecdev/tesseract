@@ -42,7 +42,7 @@ phase_assertions() {
   fi
 
   # 1. Scaffold .devcontainer/ in the fixture (replicates the skill flow)
-  uv run --with-no-deps python3 - <<PY
+  uv run python3 - <<PY
 import json, shutil
 from pathlib import Path
 import sys
