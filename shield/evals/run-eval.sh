@@ -16,6 +16,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:?Usage: run-eval.sh <folder-or-eval-path>}"
 
+OVERALL_EXIT=0
+EVAL_PASS=0
+EVAL_TOTAL=0
+
 run_one() {
   local eval_file="$1"
   local name
@@ -115,7 +119,20 @@ EOF
   local threshold
   threshold=$(cat "$workdir/threshold.txt")
   echo "  THRESHOLD: $threshold"
-  echo "  WORKDIR: $workdir"
+
+  local req_struct req_qual
+  req_struct=$(grep -oE "[0-9]+ of [0-9]+ structural" "$workdir/threshold.txt" | grep -oE "^[0-9]+" || true)
+  req_qual=$(grep -oE "[0-9]+ of [0-9]+ qualitative" "$workdir/threshold.txt" | grep -oE "^[0-9]+" || echo 0)
+  if [[ -z "$req_struct" ]]; then req_struct=$struct_total; fi
+
+  EVAL_TOTAL=$((EVAL_TOTAL + 1))
+  if [[ "$struct_pass" -lt "$req_struct" ]] || [[ "$qual_pass" -lt "$req_qual" ]]; then
+    echo "  RESULT: FAIL $name"
+    OVERALL_EXIT=1
+  else
+    echo "  RESULT: PASS $name"
+    EVAL_PASS=$((EVAL_PASS + 1))
+  fi
   echo
 }
 
@@ -133,3 +150,6 @@ else
   echo "Eval not found: $TARGET" >&2
   exit 1
 fi
+
+echo "=== Aggregate: $EVAL_PASS/$EVAL_TOTAL evals passed ==="
+exit $OVERALL_EXIT

@@ -232,6 +232,9 @@ flowchart LR
 
 ```markdown
 ### Story <ID>: <name>
+- **Type:** new | enhancement | existing
+- **Existing behavior:** <path / link / one-line description, or "N/A">
+  *(required when Type is enhancement or existing; "N/A" for new)*
 - **Persona:** <P-id>
 - **Goal:** <user-language goal>
 - **Happy path:** <numbered steps>
@@ -249,7 +252,7 @@ flowchart LR
 
 ### Step 1 — Write the HTML shell next to `prd.md`
 
-Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, mermaid script, body open, meta-banner, body close) with two literal placeholders: `{{TOC}}` (optional — replaced by an auto-generated Table of Contents built from h2/h3 headings) and `{{BODY}}` (mandatory — replaced by the rendered markdown body). Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
+Write the file `prd.shell.html` in the same directory as `prd.md`. The shell contains the full document scaffold (DOCTYPE, head, CSS, mermaid script, body open, meta-banner, body close) with two literal placeholders: `{{TOC}}` (mandatory for PRD shells — replaced by an auto-generated Table of Contents built from h2/h3 headings; the renderer also accepts shells without `{{TOC}}` for non-PRD callers) and `{{BODY}}` (mandatory — replaced by the rendered markdown body). Fill in `<title>`, the meta-banner content (owner, status, sidecar/research links), and any feature-specific metadata directly when writing the shell — those are not placeholders.
 
 ```html
 <!DOCTYPE html>
