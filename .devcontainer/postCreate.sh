@@ -2,7 +2,9 @@
 # .devcontainer/postCreate.sh
 # Project-specific install hints. Idempotent.
 set -euo pipefail
-cd /workspaces/* 2>/dev/null || cd "$(ls -d /workspaces/* | head -n1)"
+workspace=$(find /workspaces -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1)
+[ -n "$workspace" ] || { echo "postCreate: no workspace mounted at /workspaces" >&2; exit 1; }
+cd "$workspace"
 
 # Python (shield adapters use uv)
 if [ -f shield/adapters/clickup/pyproject.toml ]; then
@@ -15,8 +17,7 @@ if [ -f shield/adapters/sast/semgrep/pyproject.toml ]; then
   (cd shield/adapters/sast/semgrep && uv sync)
 fi
 
-# Top-level deps used by tests
-python3 -m pip install --user --quiet jsonschema pyyaml 2>/dev/null \
-  || python3 -m pip install --user --break-system-packages --quiet jsonschema pyyaml
+# Top-level test deps (uv-managed, system-Python target — no host pollution since we're in a container)
+uv pip install --system --quiet jsonschema pyyaml
 
 echo "postCreate complete."

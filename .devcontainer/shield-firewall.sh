@@ -36,11 +36,11 @@ done
 
 # GitHub meta CIDRs
 ipset create allowlist_cidr hash:net -exist
-curl -fsSL https://api.github.com/meta \
-  | jq -r '.git[]' \
-  | while read -r cidr; do
-      ipset add allowlist_cidr "$cidr" -exist
-    done
+github_meta=$(curl -fsSL https://api.github.com/meta)
+[ -n "$github_meta" ] || { echo "shield-firewall: failed to fetch api.github.com/meta" >&2; exit 1; }
+echo "$github_meta" | jq -r '.git[]' | while read -r cidr; do
+  ipset add allowlist_cidr "$cidr" -exist
+done
 
 iptables -A OUTPUT -m set --match-set allowlist      dst -j ACCEPT
 iptables -A OUTPUT -m set --match-set allowlist_cidr dst -j ACCEPT
