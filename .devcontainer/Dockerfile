@@ -11,16 +11,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN groupadd --gid "$USER_GID" "$USERNAME" \
+# The Microsoft base image ships with a 'vscode' user at UID 1000. Remove it
+# first so our 'dev' user can claim that UID (bind-mount file ownership on
+# Linux hosts depends on matching UIDs).
+RUN ( userdel --remove vscode 2>/dev/null || true ) \
+    && ( groupdel vscode 2>/dev/null || true ) \
+    && groupadd --gid "$USER_GID" "$USERNAME" \
     && useradd -m -s /bin/bash --uid "$USER_UID" --gid "$USER_GID" "$USERNAME" \
     && echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/shield-firewall.sh" \
        > /etc/sudoers.d/shield-firewall \
     && chmod 0440 /etc/sudoers.d/shield-firewall
 
-# Pin Claude Code to a concrete version. Bump deliberately.
-ARG CLAUDE_CODE_VERSION=2.0.0
-RUN curl -fsSL https://claude.ai/install.sh \
-      | CLAUDE_VERSION="${CLAUDE_CODE_VERSION}" bash
+# Claude Code is installed via the upstream Dev Container Feature
+# (ghcr.io/anthropics/devcontainer-features/claude-code) pinned in
+# devcontainer.json. Keeping it out of this Dockerfile avoids the
+# install.sh native-build OOM that hits inside `docker build`, and
+# delegates version management to the Feature's `version` option.
 
 # Install uv globally so /implement's Python steps work.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
