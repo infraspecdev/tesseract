@@ -350,6 +350,16 @@ else
 fi
 echo ""
 
+# --- 16. Init Devcontainer Integration ---
+echo "16. Init Devcontainer Integration"
+if command -v uv &>/dev/null; then
+  run_test_verbose "init-devcontainer scaffolds fixtures correctly" \
+    "$SHIELD_ROOT/tests/test-init-devcontainer.sh"
+else
+  echo "  ⚠ uv not installed, skipping init-devcontainer integration"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
