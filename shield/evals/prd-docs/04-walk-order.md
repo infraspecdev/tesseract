@@ -27,12 +27,22 @@ EOF
 - INVOKE: shield:story-coverage
 - §7.*[Mm]etric
 - §8.*[Ss]tor
+- §9.*[Ff]unctional
+- §10.*([Nn]on-functional|NFR)
+- §11.*(RBAC|[Pp]ermissions)
+- §12.*[Dd]ependencies
+- §13.*[Rr]isks
+- §14.*[Aa]ssumptions
 - INVOKE: shield:milestone-coverage
 - §15.*[Rr]ollout
+- §16.*[Cc]ost
+- §17.*(GTM|[Cc]ustomer)
+- §18.*[Ss]upport
+- §19.*[Oo]pen
 - §20
 
 ### Qualitative
 - §2 Terminologies announcement appears AFTER §20 announcement (filled last).
 
 ## Pass threshold
-12 of 12 structural + 1 of 1 qualitative.
+22 of 22 structural + 1 of 1 qualitative.
