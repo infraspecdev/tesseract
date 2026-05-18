@@ -330,6 +330,16 @@ else
 fi
 echo ""
 
+# --- 14. Devcontainer Composer ---
+echo "14. Devcontainer Composer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "compose_devcontainer tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_compose_devcontainer.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping composer tests"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
