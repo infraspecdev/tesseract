@@ -305,6 +305,11 @@ else
 fi
 echo ""
 
+# --- 11. Devcontainer Static Checks ---
+echo "11. Devcontainer Static Checks"
+run_test_verbose "devcontainer files valid" "$SHIELD_ROOT/tests/test-devcontainer-files.sh"
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
