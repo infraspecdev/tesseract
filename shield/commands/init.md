@@ -57,12 +57,29 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
    mkdir -p ~/.shield/projects/<project-name>/runs
    ```
 
-6. **Ask for PM tool preference** (clickup / jira / none / skip for now)
+6. **Ask for PM tool preference** (clickup / github / jira / none / skip for now)
 
 7. **If PM tool selected:**
-   - Ask for workspace details (workspace_id, space_id, project_prefix)
-   - Create `~/.shield/projects/<project-name>/pm.json`
-   - Ask for API token and save to `~/.shield/credentials.json`
+   - If `clickup` selected:
+     - Ask for workspace details (workspace_id, space_id, project_prefix)
+     - Create `~/.shield/projects/<project-name>/pm.json`
+     - Ask for API token and save to `~/.shield/credentials.json`
+   - If `github` selected:
+     - Ask: repo owner (e.g. "infraspecdev"), repo name, GitHub Projects v2 project number
+     - Create `~/.shield/projects/<project>/pm.json`:
+       ```json
+       {
+         "adapter": "github",
+         "adapter_mode": "hybrid",
+         "owner": "<owner>",
+         "repo": "<repo>",
+         "project_number": <number>,
+         "naming": { "story_format": "[{epic_id}] {name}" }
+       }
+       ```
+     - Ask: "Do you have a GitHub token, or should we use `gh` CLI auth?"
+       - If token provided: save to `~/.shield/credentials.json` under `github.api_token`
+       - If gh CLI: no token needed — adapter calls `gh auth token` automatically
    - If `uv` is not on PATH and PM tool requires it, offer install instructions:
      ```
      PM adapter requires uv (Python package manager).
