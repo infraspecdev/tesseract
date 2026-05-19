@@ -36,3 +36,14 @@ repos:
         language: system
         files: '^shield/scripts/(render-markdown\.py|test_render_markdown_toc\.py)$'
         pass_filenames: false
+
+      # ── 5. devcontainer Feature ref parse check ──────────────────────────
+      # Catches the 'name:tag@sha256:digest' combined form which the Dev
+      # Containers CLI rejects (its path regex disallows ':'). Pure Python,
+      # no network or Node required — runs in milliseconds.
+      - id: devcontainer-refs
+        name: devcontainer Feature ref parse check
+        entry: python3 shield/scripts/check_devcontainer_refs.py
+        language: system
+        files: '^(\.devcontainer/devcontainer\.json|shield/scripts/(compose_devcontainer|check_devcontainer_refs)\.py|shield/skills/devcontainer/feature-map\.json)$'
+        pass_filenames: false
