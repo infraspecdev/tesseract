@@ -23,10 +23,11 @@ def test_python_only_compose() -> None:
     assert cfg["remoteUser"] == "dev"
     assert "NET_ADMIN" in cfg["capAdd"]
     assert "NET_RAW" in cfg["capAdd"]
-    # exactly one python feature, digest-pinned
-    py_features = [k for k in cfg["features"] if "/python:" in k]
+    # exactly one python feature, digest-pinned (NO :tag — Dev Containers
+    # CLI rejects 'name:tag@sha256:...')
+    py_features = [k for k in cfg["features"] if "/python@sha256:" in k]
     assert len(py_features) == 1
-    assert "@sha256:" in py_features[0]
+    assert ":1@sha256:" not in py_features[0]
     # EXTRA_HOSTS contains python's allowlist
     extra = cfg["containerEnv"]["EXTRA_HOSTS"].split()
     assert "pypi.org" in extra
@@ -36,8 +37,8 @@ def test_python_only_compose() -> None:
 def test_polyglot_compose_python_node() -> None:
     cfg = compose_devcontainer(stacks=["python", "node"], feature_map_path=FEATURE_MAP_PATH)
     feature_keys = list(cfg["features"].keys())
-    assert any("/python:" in k for k in feature_keys)
-    assert any("/node:" in k for k in feature_keys)
+    assert any("/python@sha256:" in k for k in feature_keys)
+    assert any("/node@sha256:" in k for k in feature_keys)
     extra = cfg["containerEnv"]["EXTRA_HOSTS"].split()
     assert "pypi.org" in extra
     assert "registry.npmjs.org" in extra

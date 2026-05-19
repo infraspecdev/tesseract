@@ -85,7 +85,7 @@ echo "[project]" > "$PY_FIX/pyproject.toml"
 run_scaffolder "$PY_FIX" python
 
 assert "[ -f '$PY_FIX/.devcontainer/devcontainer.json' ]" "python-only: devcontainer.json created"
-assert "grep -q '/python:' '$PY_FIX/.devcontainer/devcontainer.json'" "python-only: includes python feature"
+assert "grep -q '/python@sha256:' '$PY_FIX/.devcontainer/devcontainer.json'" "python-only: includes python feature"
 assert "grep -q 'pypi.org' '$PY_FIX/.devcontainer/devcontainer.json'" "python-only: EXTRA_HOSTS includes pypi.org"
 assert "grep -q 'uv sync' '$PY_FIX/.devcontainer/postCreate.sh'" "python-only: postCreate has uv sync hint"
 assert "grep -q 'anthropics/devcontainer-features/claude-code' '$PY_FIX/.devcontainer/devcontainer.json'" \
@@ -98,8 +98,8 @@ echo "[project]" > "$POLY/pyproject.toml"
 echo "{}" > "$POLY/package.json"
 run_scaffolder "$POLY" python node
 
-assert "grep -q '/python:' '$POLY/.devcontainer/devcontainer.json'" "polyglot: python feature present"
-assert "grep -q '/node:' '$POLY/.devcontainer/devcontainer.json'" "polyglot: node feature present"
+assert "grep -q '/python@sha256:' '$POLY/.devcontainer/devcontainer.json'" "polyglot: python feature present"
+assert "grep -q '/node@sha256:' '$POLY/.devcontainer/devcontainer.json'" "polyglot: node feature present"
 assert "grep -q 'registry.npmjs.org' '$POLY/.devcontainer/devcontainer.json'" "polyglot: EXTRA_HOSTS includes npm"
 assert "grep -q 'anthropics/devcontainer-features/claude-code' '$POLY/.devcontainer/devcontainer.json'" \
   "polyglot: claude-code constant-layer feature present"
@@ -110,7 +110,7 @@ mkdir -p "$TF"
 echo "resource \"aws_vpc\" \"x\" {}" > "$TF/main.tf"
 run_scaffolder "$TF" terraform
 
-assert "grep -q '/terraform:' '$TF/.devcontainer/devcontainer.json'" "terraform-only: tf feature present"
+assert "grep -q '/terraform@sha256:' '$TF/.devcontainer/devcontainer.json'" "terraform-only: tf feature present"
 assert "grep -q 'registry.terraform.io' '$TF/.devcontainer/devcontainer.json'" "terraform-only: EXTRA_HOSTS includes tf registry"
 assert "grep -q 'anthropics/devcontainer-features/claude-code' '$TF/.devcontainer/devcontainer.json'" \
   "terraform-only: claude-code constant-layer feature present"

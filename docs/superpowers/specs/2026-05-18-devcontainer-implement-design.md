@@ -114,22 +114,24 @@ Multi-stack repos return multiple tags by design.
 
 Shield-owned data file. Maps each stack tag to its Dev Container Feature reference (pinned by `@sha256:` digest), default options, `postCreate` hint, and firewall allowlist entries.
 
+> **Important — Feature reference format.** Use `ghcr.io/owner/feature@sha256:<digest>` with the digest **alone**, NOT `ghcr.io/owner/feature:1@sha256:<digest>`. The Dev Containers CLI's path-validation regex (`/^[a-z0-9]+([._-][a-z0-9]+)*(\/[a-z0-9]+([._-][a-z0-9]+)*)*$/`) rejects the colon in a `name:tag@sha256:...` combined ref, so the build fails before any registry call. The digest alone uniquely identifies the manifest.
+
 ```json
 {
   "python": {
-    "feature": "ghcr.io/devcontainers/features/python:1@sha256:<digest>",
+    "feature": "ghcr.io/devcontainers/features/python@sha256:<digest>",
     "default_options": { "version": "3.12" },
     "post_create_hint": "if [ -f pyproject.toml ]; then uv sync; elif [ -f requirements.txt ]; then pip install -r requirements.txt; fi",
     "firewall_allowlist": ["pypi.org", "files.pythonhosted.org"]
   },
   "node": {
-    "feature": "ghcr.io/devcontainers/features/node:1@sha256:<digest>",
+    "feature": "ghcr.io/devcontainers/features/node@sha256:<digest>",
     "default_options": { "version": "lts" },
     "post_create_hint": "if [ -f pnpm-lock.yaml ]; then pnpm install; elif [ -f yarn.lock ]; then yarn install; else npm install; fi",
     "firewall_allowlist": ["registry.npmjs.org"]
   },
   "terraform": {
-    "feature": "ghcr.io/devcontainers/features/terraform:1@sha256:<digest>",
+    "feature": "ghcr.io/devcontainers/features/terraform@sha256:<digest>",
     "default_options": {},
     "post_create_hint": "terraform init -input=false || true",
     "firewall_allowlist": ["registry.terraform.io", "releases.hashicorp.com"]
@@ -253,11 +255,11 @@ Testable in isolation: feed in synthetic `.shield.json` + env-var combinations; 
   "name": "shield-implement",
   "build": { "dockerfile": "Dockerfile" },
   "features": {
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1@sha256:cfc2e7d3e9fd3b9b01f8d5cb158508a884c8c0ede2e23ed10f32dea5d4ffe69a": {},
-    "ghcr.io/devcontainers/features/python:1@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code@sha256:cfc2e7d3e9fd3b9b01f8d5cb158508a884c8c0ede2e23ed10f32dea5d4ffe69a": {},
+    "ghcr.io/devcontainers/features/python@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511": {
       "version": "3.12"
     },
-    "ghcr.io/devcontainers/features/github-cli:1@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671": {}
+    "ghcr.io/devcontainers/features/github-cli@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671": {}
   },
   "remoteUser": "dev",
   "capAdd": ["NET_ADMIN", "NET_RAW"],

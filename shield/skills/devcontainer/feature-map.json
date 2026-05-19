@@ -1,32 +1,56 @@
 {
   "python": {
-    "feature": "ghcr.io/devcontainers/features/python:1@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511",
-    "default_options": { "version": "3.12" },
+    "feature": "ghcr.io/devcontainers/features/python@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511",
+    "default_options": {
+      "version": "3.12"
+    },
     "post_create_hint": "if [ -f pyproject.toml ]; then uv sync; elif [ -f requirements.txt ]; then pip install -r requirements.txt; fi",
-    "firewall_allowlist": ["pypi.org", "files.pythonhosted.org", "astral.sh"]
+    "firewall_allowlist": [
+      "pypi.org",
+      "files.pythonhosted.org",
+      "astral.sh"
+    ]
   },
   "node": {
-    "feature": "ghcr.io/devcontainers/features/node:1@sha256:8c0de46939b61958041700ee89e3493f3b2e4131a06dc46b4d9423427d06e5f6",
-    "default_options": { "version": "lts" },
+    "feature": "ghcr.io/devcontainers/features/node@sha256:8c0de46939b61958041700ee89e3493f3b2e4131a06dc46b4d9423427d06e5f6",
+    "default_options": {
+      "version": "lts"
+    },
     "post_create_hint": "if [ -f pnpm-lock.yaml ]; then pnpm install; elif [ -f yarn.lock ]; then yarn install; else npm install; fi",
-    "firewall_allowlist": ["registry.npmjs.org"]
+    "firewall_allowlist": [
+      "registry.npmjs.org"
+    ]
   },
   "go": {
-    "feature": "ghcr.io/devcontainers/features/go:1@sha256:d85e921f91b41340055bb12b325d9d551170ed04b3b832e33530bf42f167c032",
-    "default_options": { "version": "1.22" },
+    "feature": "ghcr.io/devcontainers/features/go@sha256:d85e921f91b41340055bb12b325d9d551170ed04b3b832e33530bf42f167c032",
+    "default_options": {
+      "version": "1.22"
+    },
     "post_create_hint": "if [ -f go.mod ]; then go mod download; fi",
-    "firewall_allowlist": ["proxy.golang.org", "sum.golang.org"]
+    "firewall_allowlist": [
+      "proxy.golang.org",
+      "sum.golang.org"
+    ]
   },
   "java": {
-    "feature": "ghcr.io/devcontainers/features/java:1@sha256:9663ce0219ff85786e87901ce5f0a59f488edd5f99b46015192cda48468b233a",
-    "default_options": { "version": "21" },
+    "feature": "ghcr.io/devcontainers/features/java@sha256:9663ce0219ff85786e87901ce5f0a59f488edd5f99b46015192cda48468b233a",
+    "default_options": {
+      "version": "21"
+    },
     "post_create_hint": "if [ -f pom.xml ]; then mvn -q dependency:resolve; elif [ -f build.gradle ] || [ -f build.gradle.kts ]; then gradle --no-daemon dependencies; fi",
-    "firewall_allowlist": ["repo.maven.apache.org", "plugins.gradle.org", "services.gradle.org"]
+    "firewall_allowlist": [
+      "repo.maven.apache.org",
+      "plugins.gradle.org",
+      "services.gradle.org"
+    ]
   },
   "terraform": {
-    "feature": "ghcr.io/devcontainers/features/terraform:1@sha256:250d08e39c99d9e959e091e74527c22c04eeae728b424da99f002423c7902f82",
+    "feature": "ghcr.io/devcontainers/features/terraform@sha256:250d08e39c99d9e959e091e74527c22c04eeae728b424da99f002423c7902f82",
     "default_options": {},
     "post_create_hint": "terraform -chdir=$(dirname $(find . -name '*.tf' -not -path '*/.terraform/*' | head -n1)) init -input=false || true",
-    "firewall_allowlist": ["registry.terraform.io", "releases.hashicorp.com"]
+    "firewall_allowlist": [
+      "registry.terraform.io",
+      "releases.hashicorp.com"
+    ]
   }
 }

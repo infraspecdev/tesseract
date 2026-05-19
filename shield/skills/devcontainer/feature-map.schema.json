@@ -10,8 +10,8 @@
       "properties": {
         "feature": {
           "type": "string",
-          "pattern": "^ghcr\\.io/[a-z0-9-/]+:[a-z0-9.]+@sha256:[a-f0-9]{64}$",
-          "description": "Dev Container Feature OCI ref, pinned by @sha256 digest."
+          "pattern": "^ghcr\\.io/[a-z0-9-/]+@sha256:[a-f0-9]{64}$",
+          "description": "Dev Container Feature OCI ref, pinned by @sha256 digest. NO :tag is permitted alongside the digest — the Dev Containers CLI's path-validation regex rejects 'name:tag@sha256:...'; use 'name@sha256:...' alone."
         },
         "default_options": { "type": "object" },
         "post_create_hint": {

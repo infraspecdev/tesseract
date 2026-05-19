@@ -85,6 +85,7 @@ The container's firewall is active (default-deny outbound + allowlist), `claude`
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Cannot connect to the Docker daemon` | Runtime not started | Start Docker Desktop / Colima / Podman service. Verify with `docker info`. |
+| `Path '<owner>/<feature>:1' ... failed validation` / `Could not resolve Feature manifest` | Feature ref uses `name:tag@sha256:digest` (rejected by Dev Containers CLI) | Use the digest alone — `name@sha256:digest`, no `:tag`. Shield's scaffolder emits this format; if you've hand-edited `.devcontainer/devcontainer.json`, strip the `:1` (or other tag) from each `features` key. |
 | `devcontainer: command not found` | CLI not installed (only matters if you're using the CLI flow) | `npm install -g @devcontainers/cli`. VS Code users don't need this. |
 | Build fails on Anthropic Feature pull | GHCR rate-limit or network issue | Retry. If persistent, log into ghcr.io: `docker login ghcr.io`. |
 | `groupadd: GID '1000' already exists` | Base image changed and the `userdel vscode` mitigation regressed | Rebuild image from scratch: VS Code → "Rebuild Container Without Cache"; CLI → `devcontainer up --remove-existing-container`. |

@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Iterable
 
 ANTHROPIC_CLAUDE_CODE_FEATURE = (
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1"
+    # NB: NO :tag alongside @sha256:digest. The Dev Containers CLI rejects
+    # 'name:tag@sha256:...' (path-validation regex rejects the colon).
+    "ghcr.io/anthropics/devcontainer-features/claude-code"
     "@sha256:cfc2e7d3e9fd3b9b01f8d5cb158508a884c8c0ede2e23ed10f32dea5d4ffe69a"
 )
 
