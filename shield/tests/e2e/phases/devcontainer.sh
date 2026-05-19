@@ -118,3 +118,47 @@ PY
   devcontainer exec --workspace-folder "$project_dir" \
     bash -c 'sudo docker stop $(hostname) 2>/dev/null' >/dev/null 2>&1 || true
 }
+
+# When invoked directly (`bash devcontainer.sh`), set up a temp python-api
+# project and run the assertions. The framework runner sources this file
+# and calls phase_assertions itself, so this main block only fires for
+# ad-hoc invocations like `RUN_DEVCONTAINER_E2E=1 ./devcontainer.sh`.
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+  set -euo pipefail
+
+  if [ "${RUN_DEVCONTAINER_E2E:-0}" != "1" ]; then
+    echo "skipped: set RUN_DEVCONTAINER_E2E=1 to run this slow Docker-dependent phase"
+    exit 0
+  fi
+
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  SHIELD_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  PASS=0
+  FAIL=0
+
+  TMPDIR="$(mktemp -d -t shield-devcontainer-e2e.XXXXXX)"
+  trap 'rm -rf "$TMPDIR"' EXIT
+
+  PROJECT_DIR="$TMPDIR/python-api"
+  if [ -d "$SHIELD_ROOT/examples/python-api" ]; then
+    cp -R "$SHIELD_ROOT/examples/python-api" "$PROJECT_DIR"
+  else
+    mkdir -p "$PROJECT_DIR"
+    printf '[project]\nname = "shield-devcontainer-e2e"\nversion = "0.0.1"\n' \
+      > "$PROJECT_DIR/pyproject.toml"
+  fi
+  (
+    cd "$PROJECT_DIR"
+    git init -q
+    git add -A
+    git -c user.email=e2e@example.com -c user.name=e2e \
+      commit -q -m "init" --allow-empty --no-gpg-sign
+  )
+
+  echo "=== devcontainer e2e (project=$PROJECT_DIR) ==="
+  phase_assertions "$PROJECT_DIR" "" "python-api"
+  echo ""
+  TOTAL=$((PASS + FAIL))
+  echo "Results: $PASS/$TOTAL passed"
+  [ "$FAIL" -gt 0 ] && exit 1 || exit 0
+fi
