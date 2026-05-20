@@ -91,6 +91,7 @@ The container's firewall is active (default-deny outbound + allowlist), `claude`
 | `groupadd: GID '1000' already exists` | Base image changed and the `userdel vscode` mitigation regressed | Rebuild image from scratch: VS Code → "Rebuild Container Without Cache"; CLI → `devcontainer up --remove-existing-container`. |
 | `claude --version` fails inside container | The Anthropic Feature didn't install; check `postStartCommand` logs in VS Code's "Dev Containers" output panel |
 | Firewall blocks a legitimate hostname (e.g., a private package mirror) | Hostname not in the allowlist | See [Customizing the allowlist](#customizing-the-allowlist) below. |
+| `fatal: not a git repository: .../.git/worktrees/<name>` inside the container | You scaffolded the devcontainer **inside a git worktree** (not a normal checkout). The worktree's `.git` file points to metadata at a host path that isn't bind-mounted. | Use VS Code's "Reopen in Container" — its Dev Containers extension passes `--mount-workspace-git-root` automatically, which handles this. With the bare CLI, pass the flag yourself: `devcontainer up --workspace-folder . --mount-workspace-git-root`. Or, simplest: scaffold the devcontainer in the main repo checkout, not inside a worktree — devcontainers and worktrees serve overlapping isolation goals and rarely need to be combined. |
 
 ### What's contained
 
