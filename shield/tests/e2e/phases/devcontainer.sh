@@ -89,23 +89,43 @@ PY
     FAIL=$((FAIL + 1))
   fi
 
-  # 4. Verify firewall is active
-  if devcontainer exec --workspace-folder "$project_dir" \
-       bash -c "sudo iptables -L OUTPUT -n 2>/dev/null | grep -q DROP"; then
-    echo "  [PASS] firewall is active (OUTPUT policy DROP)"
+  # 4. Verify firewall behaves correctly (behavior probe, not iptables
+  # introspection — the dev user can only sudo the firewall script, not
+  # iptables directly, so we check OUTCOMES instead of state).
+  # Behavior probe: 'connection establishes' = firewall allowed; 'http_code=000'
+  # or curl error = firewall blocked. Don't use curl -f — endpoints like
+  # api.anthropic.com return 401 to unauthenticated GET, which is still
+  # proof the connection got through.
+  http_allowed=$(devcontainer exec --workspace-folder "$project_dir" \
+    bash -c 'curl -sS --max-time 8 --connect-timeout 5 https://api.anthropic.com/ -o /dev/null -w "%{http_code}" 2>/dev/null' \
+    || true)
+  if [ -n "$http_allowed" ] && [ "$http_allowed" != "000" ]; then
+    echo "  [PASS] firewall allows api.anthropic.com (allowlisted, HTTP $http_allowed)"
     PASS=$((PASS + 1))
   else
-    echo "  [FAIL] firewall not active or iptables -L returned wrong policy"
+    echo "  [FAIL] firewall blocked allowlisted host api.anthropic.com (no response)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  http_blocked=$(devcontainer exec --workspace-folder "$project_dir" \
+    bash -c 'curl -sS --max-time 4 --connect-timeout 3 https://example.com/ -o /dev/null -w "%{http_code}" 2>/dev/null' \
+    || true)
+  if [ -z "$http_blocked" ] || [ "$http_blocked" = "000" ]; then
+    echo "  [PASS] firewall blocks non-allowlisted host (example.com, no response)"
+    PASS=$((PASS + 1))
+  else
+    echo "  [FAIL] firewall did NOT block non-allowlisted example.com (got HTTP $http_blocked)"
     FAIL=$((FAIL + 1))
   fi
 
   # 5. Verify a commit on the bind-mounted workspace works
   devcontainer exec --workspace-folder "$project_dir" bash -c \
-    "cd /workspaces/* && git config user.email dev@example.com \
-     && git config user.name dev \
+    "cd /workspaces/* \
+     && git config --global user.email dev@example.com \
+     && git config --global user.name dev \
      && echo 'devcontainer-e2e' > .e2e-marker \
      && git add .e2e-marker \
-     && git commit -m 'e2e: marker from devcontainer' >/dev/null"
+     && git commit -m 'e2e: marker from devcontainer' --no-gpg-sign >/dev/null"
   if [ -f "$project_dir/.e2e-marker" ]; then
     echo "  [PASS] container commit lands on bind-mounted workspace"
     PASS=$((PASS + 1))
@@ -136,7 +156,13 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   PASS=0
   FAIL=0
 
-  TMPDIR="$(mktemp -d -t shield-devcontainer-e2e.XXXXXX)"
+  # Use $HOME-based tmpdir, not /var/folders/. Podman's macOS VM doesn't
+  # share /var/folders by default, so a bind mount points at an empty
+  # directory inside the container. $HOME is shared on every supported
+  # macOS container runtime (Docker Desktop, Colima, Podman machine).
+  E2E_CACHE_DIR="${E2E_CACHE_DIR:-$HOME/.cache/shield/devcontainer-e2e}"
+  mkdir -p "$E2E_CACHE_DIR"
+  TMPDIR="$(mktemp -d -p "$E2E_CACHE_DIR" run.XXXXXX)"
   trap 'rm -rf "$TMPDIR"' EXIT
 
   PROJECT_DIR="$TMPDIR/python-api"
