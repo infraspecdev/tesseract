@@ -66,13 +66,23 @@ class SprintPlannerConfig(BaseModel):
 
 
 def _find_shield_marker() -> Path | None:
-    """Walk up from cwd to find .shield.json."""
-    current = Path.cwd()
-    while current != current.parent:
-        marker = current / ".shield.json"
-        if marker.exists():
-            return marker
-        current = current.parent
+    """Walk up from cwd to find .shield.json.
+
+    Also checks CLAUDE_PROJECT_ROOT env var — Claude Code sets this when
+    launching MCP servers so the server's cwd may differ from the project root.
+    """
+    search_roots = []
+    if project_root := os.environ.get("CLAUDE_PROJECT_ROOT"):
+        search_roots.append(Path(project_root))
+    search_roots.append(Path.cwd())
+
+    for start in search_roots:
+        current = start
+        while current != current.parent:
+            marker = current / ".shield.json"
+            if marker.exists():
+                return marker
+            current = current.parent
     return None
 
 
