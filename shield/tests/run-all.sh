@@ -305,6 +305,61 @@ else
 fi
 echo ""
 
+# --- 11. Devcontainer Static Checks ---
+echo "11. Devcontainer Static Checks"
+run_test_verbose "devcontainer files valid" "$SHIELD_ROOT/tests/test-devcontainer-files.sh"
+echo ""
+
+# --- 12. Stack Detection ---
+echo "12. Stack Detection"
+if command -v uv &>/dev/null; then
+  run_test_verbose "detect_stack tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_detect_stack.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping detect_stack tests"
+fi
+echo ""
+
+# --- 13. Devcontainer Feature Map ---
+echo "13. Devcontainer Feature Map"
+if command -v uv &>/dev/null; then
+  run_test_verbose "feature-map.json validates" bash -c \
+    "cd '$SHIELD_ROOT/skills/devcontainer' && uv run --with jsonschema --with pytest pytest -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping feature-map tests"
+fi
+echo ""
+
+# --- 14. Devcontainer Composer ---
+echo "14. Devcontainer Composer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "compose_devcontainer tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_compose_devcontainer.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping composer tests"
+fi
+echo ""
+
+# --- 15. Devcontainer Gate ---
+echo "15. Devcontainer Gate"
+if command -v uv &>/dev/null; then
+  run_test_verbose "devcontainer_gate tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_devcontainer_gate.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping gate tests"
+fi
+echo ""
+
+# --- 16. Init Devcontainer Integration ---
+echo "16. Init Devcontainer Integration"
+if command -v uv &>/dev/null; then
+  run_test_verbose "init-devcontainer scaffolds fixtures correctly" \
+    "$SHIELD_ROOT/tests/test-init-devcontainer.sh"
+else
+  echo "  ⚠ uv not installed, skipping init-devcontainer integration"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))
