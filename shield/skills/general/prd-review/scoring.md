@@ -16,9 +16,25 @@ Plus two non-numeric states:
 - **N/A** — excluded from composite (reasoning required; bare N/A grades F)
 - **Informational** — excluded from composite (lean-PRD structural exemption)
 
+## Envelope shapes accepted
+
+After the pm-restructure-v0 cutover, the orchestrator (`SKILL.md` Step 5) consumes two
+envelope shapes from `/prd-review` dispatch and treats them identically downstream:
+
+- **Per-dim envelope (new — skill-internal PM prompts):** a single dim-block at the top level:
+  `{ "id": <int>, "name": "...", "grade": "A|B|C|D|F|N/A|informational", "na_reasoning": "...",
+  "evaluation_points": [...] }`. The 9 PM prompts in `prompts/` return this shape.
+- **Per-persona envelope (legacy — agile-coach, architect, dx-engineer, finops-analyst):**
+  `{ "persona": "...", "persona_grade": "A|B|C|D|F", "dimensions": [<dim-block>, ...],
+  "anti_patterns": [...] }`. Unwrap `dimensions[]` to obtain dim-blocks.
+
+Both produce the same dim-block list for the scoring math below. `anti_patterns[]` from the
+DX persona is routed to `summary.md` separately and is not used in numeric scoring.
+
 ## Per-evaluation-point grade
 
-Each evaluation point in `rubric.md` is graded A-F by the owning persona's reviewer agent.
+Each evaluation point in `rubric.md` is graded A-F by the owning persona's reviewer agent
+(skill-internal prompt for PM dims, legacy persona for the rest).
 
 ## Per-dimension grade
 

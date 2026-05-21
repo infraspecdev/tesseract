@@ -227,7 +227,7 @@
         {
           "id": "EPIC-1-S10",
           "name": "Rewrite prd-review skill: dimensions.md + SKILL.md + scoring.md",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Replace personas.md with dimensions.md (registry of 14 dim entries with persona tags). Update SKILL.md to dispatch mixed: 9 PM prompts via general-purpose Agent + 4 legacy persona dispatches (architect, agile-coach, dx-engineer, finops-analyst). Update scoring.md for per-dim envelope shape with backward-compat.",
