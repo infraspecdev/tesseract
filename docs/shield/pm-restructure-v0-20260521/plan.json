@@ -94,7 +94,7 @@
         {
           "id": "EPIC-1-S3",
           "name": "Author measurable-success prompt (dim 3)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/measurable-success.md grading PRD §7 against eval points 3a-3d.",
