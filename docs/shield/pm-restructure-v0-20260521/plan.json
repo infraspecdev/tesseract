@@ -274,7 +274,7 @@
         {
           "id": "EPIC-2-S1",
           "name": "Author research-framer global subagent",
-          "status": "ready",
+          "status": "completed",
           "priority": "high",
           "milestone_id": "M2",
           "description": "Author shield/agents/research-framer.md — focused authoring subagent that produces the 8-section structured framing brief PM currently produces in Research-Framing mode. Returns markdown brief (NOT JSON scorecard).",
