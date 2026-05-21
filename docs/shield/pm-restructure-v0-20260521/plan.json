@@ -191,7 +191,7 @@
         {
           "id": "EPIC-1-S8",
           "name": "Author why-now-cost-of-inaction prompt (dim 11)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/why-now-cost-of-inaction.md grading PRD against eval points 11a-11c.",
