@@ -51,7 +51,7 @@
         {
           "id": "EPIC-1-S1",
           "name": "Author problem-clarity prompt (dim 1)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author shield/skills/general/prd-review/prompts/problem-clarity.md. Focused prompt for grading PRD §3/§4/§11 against eval points 1a-1d (named persona, baseline data, why-now, first-person evidence). Returns JSON with per-check grade + evidence + gap + suggestion.",
