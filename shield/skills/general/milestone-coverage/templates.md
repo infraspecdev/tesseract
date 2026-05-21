@@ -4,9 +4,14 @@
 
 ### Product Manager prompt
 
-Pass to `shield:product-manager` with subagent_type `shield:product-manager`:
+Pass to a `general-purpose` Agent with `subagent_type: "general-purpose"` (post pm-restructure-v0
+the omnibus `shield:product-manager` agent has been decomposed; milestone-scaffolding does not
+fit any single PM dim subagent, so this dispatch uses general-purpose with the PM-lens preamble
+inline):
 
-> You are reviewing a feature for milestone-grouping from a product/user-outcome perspective.
+> You are a Technical Product Manager focused on user-outcome cohesion when grouping work into
+> milestones. You are reviewing a feature for milestone-grouping from a product/user-outcome
+> perspective.
 >
 > **Personas:** {personas-json}
 > **Goals:** {goals-json}

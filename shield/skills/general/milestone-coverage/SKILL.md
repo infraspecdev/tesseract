@@ -5,7 +5,7 @@ description: Use when scaffolding milestones for a PRD or for a plan when no PRD
 
 # Milestone Coverage
 
-Propose a milestone scaffold for a feature by dispatching `shield:product-manager` and `shield:agile-coach` in parallel and merging their outputs into a single user-editable proposal.
+Propose a milestone scaffold for a feature by dispatching a PM-lens `general-purpose` Agent and `shield:agile-coach` in parallel and merging their outputs into a single user-editable proposal. The PM-lens prompt lives inline in `templates.md` (post pm-restructure-v0; previously this dispatched the omnibus `shield:product-manager` agent which has been decomposed).
 
 ## When to Use
 
@@ -61,7 +61,7 @@ Return a single merged milestone proposal:
 | Step | Action | Mandatory |
 |---|---|---|
 | 1 | Validate input — personas + goals required; stories required for standard mode | Yes |
-| 2 | Dispatch `shield:product-manager` and `shield:agile-coach` in parallel with the prompts in `templates.md` | Yes |
+| 2 | Dispatch the PM-lens prompt (via `general-purpose`) and `shield:agile-coach` in parallel with the prompts in `templates.md` | Yes |
 | 3 | Parse each agent's milestone proposal (validate JSON shape) | Yes |
 | 4 | Merge proposals using the rules in `templates.md` → Merge rules section | Yes |
 | 5 | Return merged proposal + `open_conflicts` | Yes |
@@ -98,5 +98,5 @@ The caller (`/prd` or `/plan`) MUST:
 
 - `templates.md` — agent prompts + merge rules
 - `shield:story-coverage` — sibling skill, invoked before this one in `/prd` standard flow
-- `shield:product-manager` agent
+- `general-purpose` Agent with the PM-lens preamble (replaces the legacy `shield:product-manager` dispatch post pm-restructure-v0)
 - `shield:agile-coach` agent

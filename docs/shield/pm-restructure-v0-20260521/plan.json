@@ -382,7 +382,7 @@
         {
           "id": "EPIC-3-S1",
           "name": "Delete product-manager.md and personas.md",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M3",
           "description": "Once all PM modes are redistributed and verified working, delete the legacy persona agent and replaced helper files.",
