@@ -131,7 +131,7 @@
         {
           "id": "EPIC-1-S5",
           "name": "Author legal-privacy-compliance prompt (dim 8)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/legal-privacy-compliance.md grading PRD against eval points 8a-8d. Includes the rubric's N/A treatment for internal-only features (which already exists in baseline as N/A for internal-tool fixture).",
