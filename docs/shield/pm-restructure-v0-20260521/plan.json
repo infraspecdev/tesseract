@@ -113,7 +113,7 @@
         {
           "id": "EPIC-1-S4",
           "name": "Author raci-and-approvals prompt (dim 7)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/raci-and-approvals.md grading PRD §1 header + §11 sign-off path against eval points 7a-7d.",
