@@ -92,7 +92,11 @@ If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If n
 
 #### Step 5: PM framing on the chosen questions
 
-(Existing PM-framing logic. Dispatches `shield:product-manager` in research-framing mode.)
+Dispatch `shield:research-framer` with the chosen research questions as input. Returns the
+8-section PF1-PF8 markdown framing brief that shapes the parallel research streams in Step 6.
+
+(Post pm-restructure-v0: this replaces the legacy `shield:product-manager` Research-Framing
+dispatch. The output shape is unchanged — markdown brief with PF1-PF8 sections.)
 
 #### Step 6: Three parallel research agents
 
@@ -102,9 +106,34 @@ If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If n
 
 (Existing synthesis logic.)
 
-#### Step 8: PM review on findings
+#### Step 8: PM review on findings (parallel dispatch)
 
-(Existing PM-review mode.)
+Dispatch the following in parallel, all with the synthesized findings document (and the
+framing brief from Step 5) as input:
+
+- `shield:research-reviewer-narrative` — produces the 4-section markdown narrative review
+  (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary).
+- `shield:user-impact-clarity` (PM1)
+- `shield:problem-solution-fit` (PM2)
+- `shield:scope-discipline-of-plan` (PM3)
+- `shield:prioritization-rationale` (PM4)
+- `shield:stakeholder-communicability` (PM5)
+- `shield:market-competitive-awareness` (PM6)
+- `shield:adoption-rollout-risk` (PM7)
+- `shield:success-metrics-defined` (PM8)
+- `shield:reversibility-exit-cost` (PM9)
+- `shield:business-value-alignment` (PM10)
+- `shield:framing-coverage-honored` (PM11) — passes BOTH `findings_path` AND
+  `framing_brief_path`. PM11 returns `N/A` if no framing brief exists; the orchestrator
+  excludes N/A from the composite.
+
+The orchestrator collects the 10 single-check JSON returns + PM11 + the narrative markdown
+into the legacy `## Product Lens` section shape (narrative + scorecard) so downstream
+findings.md templates keep working.
+
+(Post pm-restructure-v0: replaces the omnibus `shield:product-manager` Research-Review
+dispatch with one narrative authoring subagent + 10 PM dim grading subagents + 1 PM11
+framing-coverage subagent — 12 parallel calls.)
 
 #### Step 9: Write findings.md
 
@@ -130,11 +159,18 @@ Skip if the user already provided enough context. Otherwise ask:
 
 ## PM Framing
 
-Dispatch the PM agent in **research-framing** mode with the research topic as input. Use the Agent tool with `subagent_type: "shield:product-manager"`.
+Dispatch `shield:research-framer` with the research topic as input. Use the Agent tool with
+`subagent_type: "shield:research-framer"`.
 
-The agent returns a structured brief with: stakeholders, decision(s) to make, success criteria, prioritized research questions, scope boundaries, and timeline constraints.
+The agent returns the 8-section PF1-PF8 markdown framing brief: stakeholders, decision(s) to
+make, must-cite definitional/origin voices (PF7), source-type coverage matrix (PF8), success
+criteria, prioritized research questions, scope boundaries, and timeline & constraints.
 
-This output shapes the research agent prompts in the next step. If PM framing fails or times out, proceed with research without framing context — do not block the workflow.
+This output shapes the research agent prompts in the next step. If framing fails or times
+out, proceed with research without framing context — do not block the workflow.
+
+(Post pm-restructure-v0: replaces the legacy `shield:product-manager` Research-Framing
+dispatch with the focused `shield:research-framer` subagent.)
 
 ## Research (Parallel Agents)
 
@@ -188,11 +224,24 @@ If PM framing was skipped, use the original prompt: `Research [topic] from [sour
 
 ## PM Review
 
-After synthesizing findings, dispatch the PM agent in **research-review** mode with the synthesized findings as input. Use the Agent tool with `subagent_type: "shield:product-manager"`.
+After synthesizing findings, dispatch the following IN PARALLEL with the findings doc (and
+the Step 5 framing brief) as input:
 
-The agent returns a hybrid output: narrative sections (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary) plus a graded scorecard (PM1-PM10).
+- `shield:research-reviewer-narrative` — markdown narrative (4 sections).
+- `shield:user-impact-clarity` ... `shield:business-value-alignment` (PM1-PM10) — single-check
+  JSON, one per dim.
+- `shield:framing-coverage-honored` (PM11) — receives both findings + framing brief paths.
+  Returns `N/A` if no framing brief was produced upstream.
 
-Include this output as a `## Product Lens` section in the final document, placed after `## Summary` and before `## References`.
+The orchestrator merges the narrative markdown with a scorecard synthesized from the 10 PM
+dim returns (plus PM11) into the legacy `## Product Lens` section shape: narrative + PM1-PM11
+scorecard table. Include this output as a `## Product Lens` section in the final document,
+placed after `## Summary` and before `## References`.
+
+(Post pm-restructure-v0: replaces the omnibus `shield:product-manager` Research-Review
+dispatch with one narrative authoring subagent + 11 focused PM dim grading subagents — 12
+parallel calls. Output shape preserved for backward compatibility with findings.md
+templates.)
 
 ## Write Document
 

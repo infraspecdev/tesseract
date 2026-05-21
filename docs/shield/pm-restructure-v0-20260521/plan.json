@@ -358,7 +358,7 @@
         {
           "id": "EPIC-2-S5",
           "name": "Update research skill to dispatch new authoring + PM1-PM11 subagents",
-          "status": "ready",
+          "status": "completed",
           "priority": "high",
           "milestone_id": "M2",
           "description": "/research Phase 2 framing: dispatch shield:research-framer (replaces PM Research-Framing). Phase 2 review: dispatch shield:research-reviewer-narrative + PM1-PM10 + PM11 (replaces PM Research-Review).",
