@@ -151,7 +151,7 @@
         {
           "id": "EPIC-1-S6",
           "name": "Author gtm-customer-comms prompt (dim 9)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/gtm-customer-comms.md grading PRD §16 against eval points 9a-9d.",
