@@ -209,7 +209,7 @@
         {
           "id": "EPIC-1-S9",
           "name": "Author risks-and-assumptions prompt (dim 12)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/risks-and-assumptions.md grading PRD §13/§14 against eval points 12a-12c.",
