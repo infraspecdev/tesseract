@@ -321,6 +321,7 @@ PRD authored. What's next?
 | Forcing diagrams in §5 (Architecture & flows) for every PRD | §5 is optional. If the feature has no notable architecture/flows, leave the section empty — don't manufacture diagrams |
 | Dropping Source A research-glossary terms from Terminologies | ALL terms from the research transcript's glossary section MUST appear in the Terminologies table — do not filter by domain relevance |
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
+| Mirroring §8 story AC as G/W/T FRs in §9 | §9 should only contain rules §8 doesn't capture (cross-story invariants, architectural commitments, negative "shall not" requirements, background/operational behaviors, data-handling rules, inter-service contracts). If an FR has a 1:1 back-pointer to a single story and says nothing the story doesn't, drop it. |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
 | Omitting {{TOC}} from prd.shell.html | prd.shell.html MUST have BOTH {{TOC}} and {{BODY}}; omitting {{TOC}} produces a TOC-less prd.html |
