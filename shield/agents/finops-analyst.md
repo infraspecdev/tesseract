@@ -1,5 +1,5 @@
 ---
-name: cost-reviewer
+name: finops-analyst
 description: |
   Use this agent when reviewing cost optimization — resource right-sizing,
   environment tiering, NAT gateway patterns, expensive resource toggles,

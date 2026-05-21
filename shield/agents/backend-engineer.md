@@ -1,5 +1,5 @@
 ---
-name: backend-reviewer
+name: backend-engineer
 description: |
   Use this agent when reviewing backend application code (Java, Kotlin, Python, Node/TypeScript, Go).
   Detects the stack from repo markers (pom.xml, build.gradle*, pyproject.toml, package.json, go.mod),
@@ -191,14 +191,14 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 | Specialist | When to dispatch | Notes |
 |---|---|---|
-| `security-reviewer` | Always when backend code is in scope | Cross-cutting security beyond any framework-specific skill |
-| `architecture-reviewer` | Always | Codebase-level architecture (boundaries, module design); skills handle per-file concerns |
-| `agile-coach-reviewer` | When the review is tied to a story (plan.json or PM card present) | Story sizing, AC testability |
-| `operations-reviewer` | Always | Operational concerns at the code level |
-| `dx-engineer-reviewer` | Always | DX, code clarity, maintainability |
-| `product-manager-reviewer` | Only when story context (plan.json) is present | AC verification |
+| `security-engineer` | Always when backend code is in scope | Cross-cutting security beyond any framework-specific skill |
+| `architect` | Always | Codebase-level architecture (boundaries, module design); skills handle per-file concerns |
+| `agile-coach` | When the review is tied to a story (plan.json or PM card present) | Story sizing, AC testability |
+| `sre` | Always | Operational concerns at the code level |
+| `dx-engineer` | Always | DX, code clarity, maintainability |
+| `product-manager` | Only when story context (plan.json) is present | AC verification |
 
-**Do NOT dispatch:** `cost-reviewer` (infra-flavored), `well-architected-reviewer` (AWS-specific), `kubernetes-reviewer` (different domain).
+**Do NOT dispatch:** `finops-analyst` (infra-flavored), `cloud-architect` (AWS-specific), `platform-engineer` (different domain).
 
 ---
 
@@ -257,10 +257,10 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 
 ### Specialist Findings
 
-#### security-reviewer
+#### security-engineer
 ...
 
-#### architecture-reviewer
+#### architect
 ...
 
 ### Summary
@@ -295,7 +295,7 @@ For cross-cutting concerns, dispatch to existing specialist agents in parallel (
 | Mistake | Fix |
 |---|---|
 | Treating any YAML as a backend marker | Backend markers are language/dependency files. Generic YAML (CI configs, K8s manifests) does NOT activate this agent |
-| Dispatching `cost-reviewer` on backend code | `cost-reviewer` is infra-flavored — backend cost concerns (connection pools, executor sizing) are deferred |
+| Dispatching `finops-analyst` on backend code | `finops-analyst` is infra-flavored — backend cost concerns (connection pools, executor sizing) are deferred |
 | Failing to scope monorepo output by module | Findings without module grouping are unreadable in a 5-service repo. Always group |
 | Persisting greenfield stack choice | The user re-confirms each greenfield run unless they manually pin via `.shield.json` |
 | Loading all Spring skills regardless of detected starters | Sub-detect — `spring-security` only loads when `spring-boot-starter-security` is in the dependencies. Avoids false positives on Spring apps that don't use Security |

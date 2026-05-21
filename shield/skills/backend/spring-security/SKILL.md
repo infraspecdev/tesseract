@@ -10,7 +10,7 @@ spring_boot_versions: ["3.x"]
 
 Review Spring Security configuration for safe defaults: strong password hashing, CSRF protection on browser flows, deliberate authorization rules, appropriate session policy, and explicit choices on every relaxation.
 
-Triggers when `spring-boot-starter-security` is detected and Spring Security config classes are in scope. Pairs with the `security-reviewer` agent for cross-cutting security concerns beyond Spring Security framework wiring.
+Triggers when `spring-boot-starter-security` is detected and Spring Security config classes are in scope. Pairs with the `security-engineer` agent for cross-cutting security concerns beyond Spring Security framework wiring.
 
 ## Version Compatibility
 
@@ -89,6 +89,6 @@ Spring Security 5 uses `WebSecurityConfigurerAdapter` and a different DSL. The S
 
 ## Related Skills
 
-- For cross-cutting security beyond Spring Security wiring → `security-reviewer` agent
+- For cross-cutting security beyond Spring Security wiring → `security-engineer` agent
 - For input validation as a defensive layer → `backend-api-design-review` (A9)
 - For secrets handling in config → `backend-spring-config` (G6)

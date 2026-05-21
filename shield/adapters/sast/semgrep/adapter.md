@@ -4,7 +4,7 @@ LLM-readable contract for the Semgrep adapter. The Python runtime that executes 
 
 ## What this adapter does
 
-Runs Semgrep against the target codebase using shield's bundled Spring 3.x rule pack (or a user-overridden config), parses the `--json` output, and returns normalized findings to `backend-reviewer`.
+Runs Semgrep against the target codebase using shield's bundled Spring 3.x rule pack (or a user-overridden config), parses the `--json` output, and returns normalized findings to `backend-engineer`.
 
 ## Configuration
 

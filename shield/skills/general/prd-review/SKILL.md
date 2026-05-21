@@ -19,10 +19,10 @@ All review output goes into the feature's prd-review directory:
 ├── review-comments.json                    ← canonical structured per-section gaps
 └── detailed/
     ├── pm-reviewer.md
-    ├── agile-coach-reviewer.md
+    ├── agile-coach.md
     ├── tech-lead-reviewer.md
     ├── dx-reviewer.md
-    └── cost-reviewer.md
+    └── finops-analyst.md
 ```
 
 Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder (`{feature-name}-YYYYMMDD`), `{N}` is sequential, `{slug}` is a kebab-case descriptor. **Do NOT** use any other path. The Write tool creates directories automatically.
@@ -110,10 +110,10 @@ Write the result to `enhanced-prd.md`.
 | `enhanced-prd.md` | (Step 6 output) |
 | `review-comments.json` | Aggregated JSON conforming to the schema in spec's "Enhanced PRD output and comments export" section |
 | `detailed/pm-reviewer.md` | PM persona's full report (markdown rendering of their JSON, kept for skeptics) |
-| `detailed/agile-coach-reviewer.md` | Agile-coach persona's full report |
+| `detailed/agile-coach.md` | Agile-coach persona's full report |
 | `detailed/tech-lead-reviewer.md` | Tech-lead persona's full report |
 | `detailed/dx-reviewer.md` | DX persona's anti-pattern findings + clarity notes |
-| `detailed/cost-reviewer.md` | Cost persona's full report |
+| `detailed/finops-analyst.md` | Cost persona's full report |
 
 ### 8. Update manifest + dashboard
 

@@ -10,7 +10,7 @@ Run a targeted security review using the Shield security reviewer agent.
 ## Behavior
 
 1. Detect the review context:
-   - If Terraform files are present → dispatch `shield:security-reviewer` in **infra-code** mode
+   - If Terraform files are present → dispatch `shield:security-engineer` in **infra-code** mode
    - If reviewing a plan document → dispatch in **plan** mode
 2. Also invoke `shield:terraform:security-audit` skill if terraform domain is active
 3. Present findings sorted by severity

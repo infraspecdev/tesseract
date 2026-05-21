@@ -1,5 +1,5 @@
 ---
-name: architecture-reviewer
+name: architect
 description: |
   Use this agent when reviewing service topology, scalability, high availability,
   network design, Terraform component structure, or Atmos integration patterns.

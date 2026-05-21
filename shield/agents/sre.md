@@ -1,5 +1,5 @@
 ---
-name: operations-reviewer
+name: sre
 description: |
   Use this agent when reviewing operational readiness — monitoring, logging,
   failure modes, backup strategy, capacity planning, tagging, blast radius,

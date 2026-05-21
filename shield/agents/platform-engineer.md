@@ -1,5 +1,5 @@
 ---
-name: kubernetes-reviewer
+name: platform-engineer
 description: |
   Use this agent when reviewing Kubernetes manifests, Helm charts, or Kustomize
   overlays for security, cost, or operational concerns. Dispatch for K8s-specific

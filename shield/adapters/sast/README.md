@@ -1,6 +1,6 @@
 # Shield SAST Adapters
 
-This directory holds adapters that integrate Static Application Security Testing (SAST) tools into shield's `backend-reviewer` agent.
+This directory holds adapters that integrate Static Application Security Testing (SAST) tools into shield's `backend-engineer` agent.
 
 ## Why SAST adapters
 
@@ -19,7 +19,7 @@ Each adapter lives in `<tool>/` (e.g., `semgrep/`, `sonarqube/`) and provides:
 - `tests/fixtures/` — captured tool output samples for deterministic parser tests
 - `tests/test_adapter.py` — pytest tests over the parser + dispatch logic
 
-When `backend-reviewer` runs, it iterates the `sast.adapters` list from `.shield.json` and calls each adapter's `run()` function in parallel with the skill review.
+When `backend-engineer` runs, it iterates the `sast.adapters` list from `.shield.json` and calls each adapter's `run()` function in parallel with the skill review.
 
 ## Layered fallback
 
@@ -36,7 +36,7 @@ Stale output (mtime older than HEAD commit) is treated as missing — fall throu
 1. Create `shield/adapters/sast/<tool>/` with `adapter.md`, `adapter.py`, `tests/`
 2. Implement `run(target_path: str, config: dict, head_commit_time: float | None) -> AdapterResult`
 3. Add fixture-based parser tests under `tests/`
-4. Update `shield/agents/backend-reviewer.md` Skill Loading and Configuration sections to mention the new adapter
+4. Update `shield/agents/backend-engineer.md` Skill Loading and Configuration sections to mention the new adapter
 5. Document configuration knobs in `adapter.md`
 
 ## Adapters

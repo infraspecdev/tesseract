@@ -1,11 +1,11 @@
 ---
 name: milestone-coverage
-description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager-reviewer and agile-coach-reviewer in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
+description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager and agile-coach in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
 ---
 
 # Milestone Coverage
 
-Propose a milestone scaffold for a feature by dispatching `shield:product-manager-reviewer` and `shield:agile-coach-reviewer` in parallel and merging their outputs into a single user-editable proposal.
+Propose a milestone scaffold for a feature by dispatching `shield:product-manager` and `shield:agile-coach` in parallel and merging their outputs into a single user-editable proposal.
 
 ## When to Use
 
@@ -37,7 +37,7 @@ Return a single merged milestone proposal:
         "Rate limiting active on login endpoint"
       ],
       "depends_on": [],
-      "source_agents": ["product-manager-reviewer", "agile-coach-reviewer"],
+      "source_agents": ["product-manager", "agile-coach"],
       "conflicts": []
     }
   ],
@@ -61,7 +61,7 @@ Return a single merged milestone proposal:
 | Step | Action | Mandatory |
 |---|---|---|
 | 1 | Validate input — personas + goals required; stories required for standard mode | Yes |
-| 2 | Dispatch `shield:product-manager-reviewer` and `shield:agile-coach-reviewer` in parallel with the prompts in `templates.md` | Yes |
+| 2 | Dispatch `shield:product-manager` and `shield:agile-coach` in parallel with the prompts in `templates.md` | Yes |
 | 3 | Parse each agent's milestone proposal (validate JSON shape) | Yes |
 | 4 | Merge proposals using the rules in `templates.md` → Merge rules section | Yes |
 | 5 | Return merged proposal + `open_conflicts` | Yes |
@@ -70,8 +70,8 @@ Return a single merged milestone proposal:
 
 See `templates.md` → Merge rules for the full ruleset. Summary:
 - **Same milestone name (or strong semantic overlap):** merge into one row. Take union of exit criteria, intersection of depends_on (with conflict raised on disagreement).
-- **PM-only milestone:** keep, mark `source_agents: ["product-manager-reviewer"]`.
-- **Agile-coach-only milestone:** keep, mark `source_agents: ["agile-coach-reviewer"]`. Common for purely-technical milestones (e.g., "Auth module hardening").
+- **PM-only milestone:** keep, mark `source_agents: ["product-manager"]`.
+- **Agile-coach-only milestone:** keep, mark `source_agents: ["agile-coach"]`. Common for purely-technical milestones (e.g., "Auth module hardening").
 - **Field conflict (depends_on, exit_criteria):** record under `open_conflicts` rather than silently picking one.
 
 ## Lean fallback
@@ -98,5 +98,5 @@ The caller (`/prd` or `/plan`) MUST:
 
 - `templates.md` — agent prompts + merge rules
 - `shield:story-coverage` — sibling skill, invoked before this one in `/prd` standard flow
-- `shield:product-manager-reviewer` agent
-- `shield:agile-coach-reviewer` agent
+- `shield:product-manager` agent
+- `shield:agile-coach` agent

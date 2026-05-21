@@ -1,5 +1,5 @@
 ---
-name: product-manager-reviewer
+name: product-manager
 description: |
   Use this agent when evaluating user impact, scope discipline, prioritization,
   business value alignment, or stakeholder communicability. Dispatch for research

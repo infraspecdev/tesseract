@@ -1,5 +1,5 @@
 ---
-name: security-reviewer
+name: security-engineer
 description: |
   Use this agent when reviewing security posture — IAM policies, encryption,
   network exposure, threat modeling, access control, and compliance alignment.

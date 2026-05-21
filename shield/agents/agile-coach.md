@@ -1,5 +1,5 @@
 ---
-name: agile-coach-reviewer
+name: agile-coach
 description: |
   Use this agent when evaluating sprint-readiness, story quality, sizing,
   dependency ordering, or acceptance criteria testability. Always dispatch

@@ -6,11 +6,11 @@ Five reviewer agents dispatched in parallel against a PRD. Each receives the PRD
 
 | Persona | Agent ID | Weight | Dimensions owned | Mode hint |
 |---|---|---|---|---|
-| PM reviewer | `shield:product-manager-reviewer` | 1.0 | 1, 2, 3, 7, 8, 9, 10, 11, 12 | Standalone |
-| Agile-coach reviewer | `shield:agile-coach-reviewer` | 1.0 | 4 (incl. AC11/AC12 via story-coverage skill) | Standalone |
-| Tech-lead reviewer | `shield:architecture-reviewer` | 1.0 | 5, 6 | Standalone |
-| DX reviewer | `shield:dx-engineer-reviewer` | 0.7 | Anti-patterns + cross-cutting clarity | Standalone |
-| Cost reviewer | `shield:cost-reviewer` | 0.7 | 13 | Standalone |
+| PM reviewer | `shield:product-manager` | 1.0 | 1, 2, 3, 7, 8, 9, 10, 11, 12 | Standalone |
+| Agile-coach reviewer | `shield:agile-coach` | 1.0 | 4 (incl. AC11/AC12 via story-coverage skill) | Standalone |
+| Tech-lead reviewer | `shield:architect` | 1.0 | 5, 6 | Standalone |
+| DX reviewer | `shield:dx-engineer` | 0.7 | Anti-patterns + cross-cutting clarity | Standalone |
+| Cost reviewer | `shield:finops-analyst` | 0.7 | 13 | Standalone |
 
 ## Dispatch prompts
 
@@ -64,7 +64,7 @@ You are reviewing a PRD in PRD-Review mode. Mode: Standalone.
   - For each `expected_story` the skill returns that has NO matching story in the PRD's Section 8, count as a gap
   - Severity: per the skill's returned `severity` field
 
-**Tech-lead reviewer (architecture-reviewer):** When grading dim 5 NFRs, treat 5b (security + threat model) and 5e (privacy) as Critical for any feature with user data; treat them as Important for purely internal infrastructure features.
+**Tech-lead reviewer (architect):** When grading dim 5 NFRs, treat 5b (security + threat model) and 5e (privacy) as Critical for any feature with user data; treat them as Important for purely internal infrastructure features.
 
 **DX reviewer:** Your primary output is the `anti_patterns` array. You don't own a dimension column in the composite; you contribute via flagging cross-cutting issues that show up in `summary.md`'s "Anti-patterns" section.
 

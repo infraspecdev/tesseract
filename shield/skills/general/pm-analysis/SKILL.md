@@ -8,7 +8,7 @@ description: |
 
 # PM Analysis Skill
 
-Thin orchestrator that dispatches the `product-manager-reviewer` agent with the right mode and context. The domain knowledge lives entirely in the agent — this skill only determines the mode, gathers input, and dispatches.
+Thin orchestrator that dispatches the `product-manager` agent with the right mode and context. The domain knowledge lives entirely in the agent — this skill only determines the mode, gathers input, and dispatches.
 
 ## When to Use
 
@@ -37,7 +37,7 @@ The calling skill passes the mode explicitly. Standalone is the default when no 
 
 1. **Determine mode** — use the explicit parameter from the calling skill, or default to `standalone`
 2. **Gather input material** — raw topic (for framing), research doc (for research-review), plan doc (for plan-review), or caller-provided input (for standalone)
-3. **Dispatch the PM agent** — use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`. The agent definition is loaded automatically by the Agent tool — do NOT manually read the agent file.
+3. **Dispatch the PM agent** — use the Agent tool with `subagent_type: "shield:product-manager"`. The agent definition is loaded automatically by the Agent tool — do NOT manually read the agent file.
 4. **Return output** — pass the agent's output back to the calling workflow unchanged
 
 ### Dispatch Prompt

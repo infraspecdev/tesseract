@@ -1,5 +1,5 @@
 ---
-name: well-architected-reviewer
+name: cloud-architect
 description: |
   Use this agent for a holistic infra-code review using the AWS Well-Architected Framework across all 6 pillars: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability. Dispatch for architecture decision reviews, production readiness gates, or when evaluating overall infrastructure code quality against AWS best practices.
 model: inherit
@@ -217,4 +217,4 @@ Flag these common cross-pillar trade-offs and ensure they're handled intentional
 | Missing cross-pillar trade-offs | Always check the Cross-Pillar Interactions table — cost optimizations that weaken security are the most common blind spot |
 | Scoring a pillar based on what's outside the component's scope | Only grade what the component controls — don't penalize a VPC component for missing application-level monitoring |
 | Giving "Needs Improvement" without a prioritized remediation plan | The remediation table (P1-P3) is mandatory — findings without actionable next steps are not useful |
-| Duplicating findings already covered by specialized reviewers | WAF review is holistic — if security-reviewer flagged missing encryption, reference it, don't re-grade it |
+| Duplicating findings already covered by specialized reviewers | WAF review is holistic — if security-engineer flagged missing encryption, reference it, don't re-grade it |

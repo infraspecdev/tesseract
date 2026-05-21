@@ -46,11 +46,11 @@ Weighted average of all activated personas' grades.
 
 | Persona | Weight | Role |
 |---|---|---|
-| `shield:product-manager-reviewer` | 1.0 | Core |
-| `shield:agile-coach-reviewer` | 1.0 | Core |
-| `shield:architecture-reviewer` (tech-lead) | 1.0 | Core |
-| `shield:dx-engineer-reviewer` | 0.7 | Supporting |
-| `shield:cost-reviewer` | 0.7 | Supporting |
+| `shield:product-manager` | 1.0 | Core |
+| `shield:agile-coach` | 1.0 | Core |
+| `shield:architect` (tech-lead) | 1.0 | Core |
+| `shield:dx-engineer` | 0.7 | Supporting |
+| `shield:finops-analyst` | 0.7 | Supporting |
 
 **Formula:**
 

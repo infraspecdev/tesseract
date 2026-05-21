@@ -1,5 +1,5 @@
 ---
-name: dx-engineer-reviewer
+name: dx-engineer
 description: |
   Use this agent when evaluating plan clarity, actionability, software
   architecture quality, or developer experience. Always dispatch for

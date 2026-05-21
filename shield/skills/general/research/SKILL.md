@@ -92,7 +92,7 @@ If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If n
 
 #### Step 5: PM framing on the chosen questions
 
-(Existing PM-framing logic. Dispatches `shield:product-manager-reviewer` in research-framing mode.)
+(Existing PM-framing logic. Dispatches `shield:product-manager` in research-framing mode.)
 
 #### Step 6: Three parallel research agents
 
@@ -130,7 +130,7 @@ Skip if the user already provided enough context. Otherwise ask:
 
 ## PM Framing
 
-Dispatch the PM agent in **research-framing** mode with the research topic as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+Dispatch the PM agent in **research-framing** mode with the research topic as input. Use the Agent tool with `subagent_type: "shield:product-manager"`.
 
 The agent returns a structured brief with: stakeholders, decision(s) to make, success criteria, prioritized research questions, scope boundaries, and timeline constraints.
 
@@ -188,7 +188,7 @@ If PM framing was skipped, use the original prompt: `Research [topic] from [sour
 
 ## PM Review
 
-After synthesizing findings, dispatch the PM agent in **research-review** mode with the synthesized findings as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+After synthesizing findings, dispatch the PM agent in **research-review** mode with the synthesized findings as input. Use the Agent tool with `subagent_type: "shield:product-manager"`.
 
 The agent returns a hybrid output: narrative sections (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary) plus a graded scorecard (PM1-PM10).
 

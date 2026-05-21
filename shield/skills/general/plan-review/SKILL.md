@@ -72,7 +72,7 @@ See `personas.md` for the full catalog, weights, and dynamic selection flowchart
 
 Read each selected agent's markdown file from `agents/` and `scoring.md`, then launch all agents in parallel using the Agent tool. See `templates.md` for the dispatch prompt structure.
 
-Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer`) when available, otherwise `general-purpose`.
+Use `subagent_type` matching the agent name (e.g., `shield:architect`) when available, otherwise `general-purpose`.
 
 After all agents return, write each agent's full raw output to `plan-review/{N}-{slug}/detailed/<agent-name>.md` with a header and back-link:
 

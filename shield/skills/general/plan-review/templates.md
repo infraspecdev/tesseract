@@ -28,7 +28,7 @@ Important:
 - Recommendations must be actionable — not "improve this" but "add X to section Y"
 ```
 
-Use `subagent_type` matching the agent name (e.g., `shield:architecture-reviewer`) when available, otherwise use `general-purpose`.
+Use `subagent_type` matching the agent name (e.g., `shield:architect`) when available, otherwise use `general-purpose`.
 
 ## plan-review-summary.md Format
 
