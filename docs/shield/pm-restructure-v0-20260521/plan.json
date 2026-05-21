@@ -171,7 +171,7 @@
         {
           "id": "EPIC-1-S7",
           "name": "Author support-cx-impact prompt (dim 10)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/support-cx-impact.md grading PRD §17 against eval points 10a-10d.",
