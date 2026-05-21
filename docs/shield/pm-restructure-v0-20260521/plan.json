@@ -73,7 +73,7 @@
         {
           "id": "EPIC-1-S2",
           "name": "Author scope-discipline prompt (dim 2)",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Author prompts/scope-discipline.md grading PRD §2 non-goals + §6 goals against eval points 2a-2c. Includes the N/A exception clause for single-purpose internal tools.",
