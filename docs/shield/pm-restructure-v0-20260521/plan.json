@@ -294,7 +294,7 @@
         {
           "id": "EPIC-2-S2",
           "name": "Author research-reviewer-narrative global subagent",
-          "status": "ready",
+          "status": "completed",
           "priority": "high",
           "milestone_id": "M2",
           "description": "Author shield/agents/research-reviewer-narrative.md — focused authoring subagent producing the narrative portion of Research-Review (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary). The scorecard portion uses PM1-PM11 dim subagents (EPIC-2-S3 et al.).",
