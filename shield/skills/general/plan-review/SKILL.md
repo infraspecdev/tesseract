@@ -66,13 +66,31 @@ The skill reads plan data from (in priority order):
 
 ## Persona Selection
 
-See `personas.md` for the full catalog, weights, and dynamic selection flowchart.
+See `personas.md` for the dynamic selection flowchart and trigger keywords.
+See `dimensions.md` for the post-restructure dispatch registry (PM1-PM10 dim subagents +
+legacy persona dispatches).
 
 ## Dispatch
 
-Read each selected agent's markdown file from `agents/` and `scoring.md`, then launch all agents in parallel using the Agent tool. See `templates.md` for the dispatch prompt structure.
+When a persona is selected, dispatch per its row in `dimensions.md`:
 
-Use `subagent_type` matching the agent name (e.g., `shield:architect`) when available, otherwise `general-purpose`.
+- **PM persona selected (Pattern A — decomposed):** dispatch ALL 10 PM dim subagents in
+  parallel (`shield:user-impact-clarity`, `shield:problem-solution-fit`,
+  `shield:scope-discipline-of-plan`, `shield:prioritization-rationale`,
+  `shield:stakeholder-communicability`, `shield:market-competitive-awareness`,
+  `shield:adoption-rollout-risk`, `shield:success-metrics-defined`,
+  `shield:reversibility-exit-cost`, `shield:business-value-alignment`). Each takes the plan
+  doc path as input and returns a single-check JSON object.
+- **Legacy persona selected:** dispatch the single named subagent (e.g., `shield:architect`,
+  `shield:agile-coach`, `shield:dx-engineer`, `shield:finops-analyst`, `shield:sre`,
+  `shield:platform-engineer`, `shield:backend-engineer`, `shield:security-engineer`) with
+  the dispatch prompt skeleton from `templates.md`.
+
+Launch all selected dispatches in parallel — that may be 10 PM dim calls + up to 8 legacy
+persona calls in a single response. Aggregating sequentially throws away the depth gains.
+
+Use `subagent_type` matching the agent name (e.g., `shield:architect`), or `general-purpose`
+as fallback.
 
 After all agents return, write each agent's full raw output to `plan-review/{N}-{slug}/detailed/<agent-name>.md` with a header and back-link:
 
@@ -88,10 +106,19 @@ After all agents return, write each agent's full raw output to `plan-review/{N}-
 
 After all agents return:
 
-1. **Parse grades** — extract grade per evaluation point from each agent's output
-2. **Per-persona grade** — average numeric grades (A=4, B=3, C=2, D=1, F=0), round using ranges in `scoring.md`
-3. **Composite score** — weighted average using persona weights, convert to verdict per `scoring.md` thresholds
-4. **Classify recommendations** — P0/P1/P2 per severity rules in `scoring.md`
+1. **Parse grades** — extract grade per evaluation point from each agent's output. PM dim
+   subagents return single-check JSON; legacy personas return a multi-check scorecard.
+2. **Group PM dim results under the PM persona** — collect all 10 PM single-check returns
+   (filter on `persona: product-manager` in each result), then synthesize a PM persona block
+   with the 10 dim grades and a computed `persona_grade` (numeric average rounded per
+   `scoring.md`). This recreates the pre-restructure PM persona shape that downstream summary
+   templates expect.
+3. **Per-persona grade** — average numeric grades (A=4, B=3, C=2, D=1, F=0) within each
+   persona, round using ranges in `scoring.md`.
+4. **Composite score** — weighted average using persona weights from `dimensions.md` (PM
+   persona is 0.7, applied to the aggregated PM grade), convert to verdict per `scoring.md`
+   thresholds.
+5. **Classify recommendations** — P0/P1/P2 per severity rules in `scoring.md`.
 
 ## Output
 

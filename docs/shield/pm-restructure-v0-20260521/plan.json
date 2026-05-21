@@ -340,7 +340,7 @@
         {
           "id": "EPIC-2-S4",
           "name": "Update plan-review skill to dispatch PM1-PM10 globals",
-          "status": "ready",
+          "status": "completed",
           "priority": "high",
           "milestone_id": "M2",
           "description": "Replace plan-review's PM persona dispatch with parallel dispatch of PM1-PM10 globals. Legacy architect and agile-coach persona dispatches remain as today.",

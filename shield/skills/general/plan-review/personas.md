@@ -10,7 +10,7 @@ All agents are dispatched in **plan review mode** — lightweight checks focused
 | `shield:finops-analyst` | 0.7 | Cost awareness, right-sizing, environment tiering |
 | `shield:agile-coach` | 0.7 | Sprint-readiness, story quality, dependencies |
 | `shield:sre` | 0.7 | Monitoring, failure modes, backup, on-call readiness |
-| `shield:product-manager` | 0.7 | User impact, scope discipline, prioritization, business value |
+| product-manager (PM1-PM10 decomposition; see `dimensions.md`) | 0.7 | User impact, scope discipline, prioritization, business value — dispatched as 10 parallel global subagents post-pm-restructure-v0 |
 | `shield:platform-engineer` | 1.0 | K8s manifests, Helm/Kustomize, RBAC, security, cost, operational readiness |
 | `shield:backend-engineer` | 1.0 | Backend application code (Java/Kotlin/Python/Node/Go), API design, database, testing, framework patterns |
 
