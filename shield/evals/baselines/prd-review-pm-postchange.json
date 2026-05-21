@@ -1,0 +1,90 @@
+{
+  "purpose": "Post-restructure PM finding counts across the 4 PRD-review test fixtures. Compared to shield/evals/baselines/prd-review-pm.json to enforce the M1 merge gate from EPIC-1-S11.",
+  "captured_at": "2026-05-21",
+  "branch": "refactor/rename-reviewer-agents-to-roles",
+  "agent_dispatched": "general-purpose Agent with the 9 PM dim prompts from shield/skills/general/prd-review/prompts/",
+  "methodology": "Each PM dim prompt dispatched once per fixture (9 dims x 4 fixtures = 36 dispatches; lean fixture skips dims 9, 10 via informational exemption; internal-tool fixture returns N/A on dims 2, 8, 9, 10). A 'finding' = an evaluation point with grade != A and grade != N/A.",
+  "fixtures": {
+    "well-formed-standard": {
+      "findings_count": 4,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 1,
+        "dim_2_scope_boundaries": 0,
+        "dim_3_measurable_success": 0,
+        "dim_7_raci_approvals": 0,
+        "dim_8_legal_privacy": 0,
+        "dim_9_gtm_comms": 0,
+        "dim_10_support_cx": 1,
+        "dim_11_why_now": 1,
+        "dim_12_risks_assumptions": 1
+      }
+    },
+    "standard-with-gaps": {
+      "findings_count": 29,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 3,
+        "dim_2_scope_boundaries": 3,
+        "dim_3_measurable_success": 3,
+        "dim_7_raci_approvals": 2,
+        "dim_8_legal_privacy": 4,
+        "dim_9_gtm_comms": 4,
+        "dim_10_support_cx": 4,
+        "dim_11_why_now": 3,
+        "dim_12_risks_assumptions": 3
+      }
+    },
+    "lean-with-gaps": {
+      "findings_count": 25,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 4,
+        "dim_2_scope_boundaries": 3,
+        "dim_3_measurable_success": 4,
+        "dim_7_raci_approvals": 4,
+        "dim_8_legal_privacy": 4,
+        "dim_9_gtm_comms_informational": 0,
+        "dim_10_support_cx_informational": 0,
+        "dim_11_why_now": 3,
+        "dim_12_risks_assumptions": 3
+      },
+      "informational_dims": [9, 10],
+      "informational_reason": "Lean PRD — dims 9, 10 informational per rubric lean-mode exemptions (returned empty evaluation_points)."
+    },
+    "internal-tool": {
+      "findings_count": 7,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 1,
+        "dim_2_scope_boundaries_NA": 0,
+        "dim_3_measurable_success": 3,
+        "dim_7_raci_approvals": 1,
+        "dim_8_legal_privacy_NA": 0,
+        "dim_9_gtm_comms_NA": 0,
+        "dim_10_support_cx_NA": 0,
+        "dim_11_why_now": 1,
+        "dim_12_risks_assumptions": 1
+      },
+      "na_dims": [2, 8, 9, 10],
+      "na_reason": "Internal-only cron job — dim 2 N/A (scope bounded by problem statement); dims 8, 9, 10 N/A (no PII, no customer-facing surface, no external support)."
+    }
+  },
+  "pm_total_findings": 65,
+  "merge_gate_result": {
+    "baseline_total": 62,
+    "postchange_total": 65,
+    "merge_blocking_check": "PASS (65 >= 62)",
+    "per_fixture_regression_check": "PASS (no fixture regresses more than 10%; deltas: well-formed-standard 0, standard-with-gaps 0, lean-with-gaps +1, internal-tool +2)",
+    "stretch_goal_check": "NOT MET (65 < 81; informational)",
+    "overall": "PASS"
+  },
+  "per_fixture_deltas": {
+    "well-formed-standard": "4 -> 4 (no change)",
+    "standard-with-gaps": "29 -> 29 (no change)",
+    "lean-with-gaps": "24 -> 25 (+1; dim 2 found 3 vs baseline 2)",
+    "internal-tool": "5 -> 7 (+2; dim 3 found 3 vs baseline 1; dim 7 found 1 vs baseline 0; dim 12 found 1 vs baseline 2 — net +2)"
+  },
+  "notes": [
+    "All 9 PM prompts return per-dim envelope JSON (id, name, grade, evaluation_points). dim-2 and dim-5/6/8/9/10 prompts include the N/A path when the rubric exception clause applies.",
+    "dim-9 and dim-10 prompts handle the lean-mode exemption FIRST and return grade 'informational' with empty evaluation_points; these contribute 0 findings and are excluded from the composite per scoring.md.",
+    "Post-change distribution differs slightly from the baseline at the per-dim level (e.g., well-formed-standard shifts dim_3 finding to dim_11/dim_12; internal-tool finds more in dim_3 and dim_7). Aggregate per-fixture and persona totals are within the 10% regression threshold.",
+    "Composite + P0-gate verdict was not recomputed here — that is the orchestrator's job in scoring.md and is unaffected by the per-dim envelope change."
+  ]
+}

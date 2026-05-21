@@ -247,7 +247,7 @@
         {
           "id": "EPIC-1-S11",
           "name": "Run merge gate against PRD-Review path",
-          "status": "ready",
+          "status": "completed",
           "priority": "critical",
           "milestone_id": "M1",
           "description": "Full merge-gate verification: dispatch all 9 PM dim prompts in parallel against each of the 4 fixtures. Aggregate findings. Compare total to baseline (62). Verify no fixture regresses >10%.",
