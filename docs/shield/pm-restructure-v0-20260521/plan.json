@@ -312,7 +312,7 @@
         {
           "id": "EPIC-2-S3",
           "name": "Author PM1-PM10 + PM11 global dim subagents (batched)",
-          "status": "ready",
+          "status": "completed",
           "priority": "high",
           "milestone_id": "M2",
           "description": "Author 11 global dim subagent files for Plan-Review and Research-Review grading work. Batched because no Plan-Review test fixtures exist; validation is qualitative against ad-hoc plan + research-findings docs.",
