@@ -92,7 +92,7 @@ sequenceDiagram
 - **existing** — already exists, documented for context (regression-risk surface in rewrites)
 
 ## 9. Functional requirements
-Per-story or per-feature; uses Given/When/Then. May reference Section 8 stories.
+System-level + cross-cutting rules NOT captured in §8 story AC. Default syntax: EARS or "shall" statements. Avoid Given/When/Then in §9 — that syntax belongs in §8 AC and encourages story-mirroring. Each FR must say something §8 doesn't.
 
 ## 10. Non-functional requirements
 | NFR | Requirement |
