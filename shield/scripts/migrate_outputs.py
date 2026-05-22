@@ -39,6 +39,9 @@ KNOWN_ROOT_FILES = {
     "plan-architecture.md", ".session-transcript.md",
 }
 
+# Subdirectories that are valid in the new schema (no warning if files are here).
+KNOWN_SUBDIRS = {"outputs"}
+
 
 def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
     """Walk a feature directory and return (moves, warnings).
@@ -63,8 +66,12 @@ def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
                 warnings.append(f"{rel}: unrecognized file at feature root, left in place")
             # else: file is already at its correct location
         else:
-            # Nested file that's not a legacy pattern — warn.
-            warnings.append(f"{rel}: unrecognized nested file, left in place")
+            # Nested file. Check if it's in a known subdirectory (already migrated).
+            top_dir = rel.split("/")[0]
+            if top_dir not in KNOWN_SUBDIRS:
+                # Not in a known subdir — warn.
+                warnings.append(f"{rel}: unrecognized nested file, left in place")
+            # else: file is already in a migrated location
 
     return moves, warnings
 

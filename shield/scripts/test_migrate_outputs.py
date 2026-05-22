@@ -99,3 +99,18 @@ def test_apply_moves_removes_empty_dirs(tmp_path: Path) -> None:
 
     # The numbered-run folder and its parent should be cleaned up if empty
     assert not (feature / "research").exists() or not any((feature / "research").iterdir())
+
+
+def test_apply_then_plan_is_noop(tmp_path: Path) -> None:
+    feature = tmp_path / "vpc-20260322"
+    _make_tree(feature, [
+        "research/1-claude-isolation/findings.md",
+        "plan/1-foo/architecture.html",
+    ])
+    moves1, _ = plan_moves(feature)
+    apply_moves(moves1)
+
+    # Second pass: nothing to migrate
+    moves2, warnings2 = plan_moves(feature)
+    assert moves2 == []
+    assert warnings2 == []
