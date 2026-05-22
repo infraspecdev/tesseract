@@ -105,6 +105,44 @@ def test_prd_review_folder_migrates_to_dated_dir(tmp_path: Path) -> None:
     assert expected.issubset(dst_paths)
 
 
+def test_plan_review_folder_migrates_to_dated_dir(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    rev = feature / "plan-review" / "1-foo"
+    rev.mkdir(parents=True)
+    (rev / "summary.md").write_text("s")
+    (rev / "enhanced-plan.md").write_text("e")
+    detailed = rev / "detailed"
+    detailed.mkdir()
+    (detailed / "backend-engineer.md").write_text("b")
+
+    ts = datetime(2026, 5, 21, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(rev, (ts, ts))
+
+    moves, _ = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _src, dst in moves}
+    expected = {
+        "reviews/plan/2026-05-21/summary.md",
+        "reviews/plan/2026-05-21/enhanced-plan.md",
+        "reviews/plan/2026-05-21/detailed/backend-engineer.md",
+    }
+    assert expected.issubset(dst_paths)
+
+
+def test_same_day_review_folders_get_counter(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    for i, slug in enumerate(["1-first", "2-second"]):
+        d = feature / "prd-review" / slug
+        d.mkdir(parents=True)
+        (d / "summary.md").write_text(f"r{i}")
+        ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+        os.utime(d, (ts, ts))
+
+    moves, _ = plan_moves(feature)
+    dst_dirs = {dst.parent.relative_to(feature).as_posix() for _, dst in moves}
+    assert "reviews/prd/2026-04-30" in dst_dirs
+    assert "reviews/prd/2026-04-30_2" in dst_dirs
+
+
 def _make_tree(root: Path, files: list[str]) -> None:
     for f in files:
         path = root / f
