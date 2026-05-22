@@ -8,3 +8,4 @@ variables:
 
 paths:
   feature_dir: "{output_dir}/{feature}"
+  research:    "{feature_dir}/research.md"

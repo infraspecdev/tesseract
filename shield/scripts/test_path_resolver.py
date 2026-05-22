@@ -19,3 +19,9 @@ from path_resolver import resolve  # type: ignore[import-not-found]
 def test_resolve_simple_template() -> None:
     result = resolve("feature_dir", output_dir="docs/shield", feature="vpc-20260522")
     assert result == "docs/shield/vpc-20260522"
+
+
+def test_resolve_nested_template() -> None:
+    # `research` template = "{feature_dir}/research.md", and `feature_dir` is itself a template
+    result = resolve("research", output_dir="docs/shield", feature="vpc-20260522")
+    assert result == "docs/shield/vpc-20260522/research.md"
