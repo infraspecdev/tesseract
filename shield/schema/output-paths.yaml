@@ -1,0 +1,10 @@
+# shield/schema/output-paths.yaml
+# Plugin-owned contract. Consumers should NOT edit.
+# See docs/superpowers/specs/2026-05-22-shield-output-structure-design.md §5.
+
+variables:
+  output_dir: "Set by consumer in .shield.json"
+  feature:    "Auto-derived from command (e.g. 'vpc-module-20260319')"
+
+paths:
+  feature_dir: "{output_dir}/{feature}"
