@@ -3,6 +3,8 @@ name: scope-discipline-of-plan
 description: Grade PM3 — is this an MVP or a kitchen sink? What can be cut without losing core value? DISTINCT from the PRD-Review dim 2 scope-discipline prompt (which grades a PRD's Non-Goals section). Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Scope Discipline of Plan (PM3)

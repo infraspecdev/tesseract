@@ -3,6 +3,8 @@ name: framing-coverage-honored
 description: Grade PM11 — does the research synthesis honor the framing brief's PF7 must-cite voices and PF8 source-type coverage matrix? Each PF7 voice must appear with a direct quote in the body; each PF8 required source type must have at least one direct quote in the body. Research-Review only. Dispatched by `/research` Phase 2 review.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Framing Coverage Honored (PM11)
