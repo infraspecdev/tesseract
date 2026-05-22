@@ -13,7 +13,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lint_output_paths import discover_assets, parse_outputs_block, validate_asset  # type: ignore[import-not-found]
+from lint_output_paths import discover_assets, parse_outputs_block, validate_asset, validate_registry  # type: ignore[import-not-found]
 
 
 def _write_asset(path: Path, frontmatter: str, body: str = "Body.\n") -> None:
@@ -63,3 +63,27 @@ def test_validate_asset_no_outputs_is_ok(tmp_path: Path) -> None:
     _write_asset(asset, "name: plan\n")
     errors = validate_asset(asset, registry_names={"plan_md"})
     assert errors == []
+
+
+def test_validate_registry_passes_clean_registry() -> None:
+    registry = {
+        "variables": {"output_dir": "", "feature": ""},
+        "paths": {
+            "feature_dir": "{output_dir}/{feature}",
+            "research":    "{feature_dir}/research.md",
+        },
+    }
+    assert validate_registry(registry) == []
+
+
+def test_validate_registry_flags_unknown_variable() -> None:
+    registry = {
+        "variables": {"output_dir": ""},
+        "paths": {
+            "research": "{output_dir}/{nonexistent}/research.md",
+        },
+    }
+    errors = validate_registry(registry)
+    assert len(errors) == 1
+    assert "nonexistent" in errors[0]
+    assert "research" in errors[0]

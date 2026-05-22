@@ -17,6 +17,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 ASSET_DIRS = ("commands", "skills", "agents")
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+PLACEHOLDER_RE = re.compile(r"\{([^{}]+)\}")
 
 
 def discover_assets(root: Path) -> list[Path]:
@@ -56,4 +57,22 @@ def validate_asset(asset_path: Path, registry_names: set[str]) -> list[str]:
             errors.append(
                 f"{asset_path.name}: declared output '{name}' is not in the path registry"
             )
+    return errors
+
+
+def validate_registry(registry: dict) -> list[str]:
+    """Check that every placeholder in a template is either a declared variable
+    or another registered path name. Returns a list of human-readable errors.
+    """
+    errors: list[str] = []
+    declared_vars = set(registry.get("variables", {}).keys())
+    path_names = set(registry.get("paths", {}).keys())
+    known = declared_vars | path_names
+
+    for path_name, template in registry.get("paths", {}).items():
+        for placeholder in PLACEHOLDER_RE.findall(template):
+            if placeholder not in known:
+                errors.append(
+                    f"registry path '{path_name}' references undeclared variable '{placeholder}'"
+                )
     return errors
