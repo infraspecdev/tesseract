@@ -24,7 +24,7 @@ Dispatch parallel reviewer agents against a PRD and produce a scored gap analysi
 2. **Resolves URLs** via runtime MCP discovery (Notion MCP if present for `notion.so/*`, Atlassian MCP for `*.atlassian.net/wiki/*`, etc.) with WebFetch fallback and universal paste fallback
 3. **Snapshots** the source to `source-prd.md` (immutable)
 4. **Detects PRD type** (lean vs standard) and confirms with user
-5. **Dispatches 5 reviewer agents** in parallel: PM (`shield:product-manager-reviewer`), Agile-coach (`shield:agile-coach-reviewer`), Tech-lead (`shield:architecture-reviewer`), DX (`shield:dx-engineer-reviewer`), Cost (`shield:cost-reviewer`)
+5. **Dispatches 13 reviewer invocations** in parallel per `dimensions.md`: 9 PM dim prompts via `general-purpose` Agents (`problem-clarity`, `scope-discipline`, `measurable-success`, `raci-and-approvals`, `legal-privacy-compliance`, `gtm-customer-comms`, `support-cx-impact`, `why-now-cost-of-inaction`, `risks-and-assumptions`) + 4 legacy persona dispatches (Agile-coach `shield:agile-coach`, Tech-lead `shield:architect` for dims 5+6, DX `shield:dx-engineer`, Cost `shield:finops-analyst`)
 6. **Aggregates** grades into a composite verdict (A-F per dimension → per-persona → weighted composite); applies P0-gate
 7. **Writes 5 output artifacts** to `{output_dir}/{feature}/prd-review/{N}-{slug}/`:
    - `summary.md` — scored gap analysis

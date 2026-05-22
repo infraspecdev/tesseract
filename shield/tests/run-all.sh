@@ -183,7 +183,6 @@ for f in glob.glob('$SHIELD_ROOT/evals/expected/*.yaml'):
     with open(f) as fh:
         data = yaml.safe_load(fh)
     assert 'agent' in data, f'{f}: missing agent'
-    assert 'mode' in data, f'{f}: missing mode'
     assert 'must_find' in data, f'{f}: missing must_find'
     for item in data['must_find']:
         assert 'id' in item, f'{f}: must_find missing id'

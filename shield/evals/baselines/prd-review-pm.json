@@ -1,0 +1,80 @@
+{
+  "purpose": "Pre-restructure baseline of PM agent's finding count against PRD-review test fixtures. Used as the merge-gate threshold for the v0 restructure (PM persona agent → focused subagents).",
+  "captured_at": "2026-05-21",
+  "commit_sha_at_capture": "9726ff5",
+  "branch": "refactor/rename-reviewer-agents-to-roles",
+  "agent_dispatched": "shield:product-manager-reviewer",
+  "agent_dispatched_note": "Old name; session has pre-rename agents cached. Behavior is today's PM (unaffected by rename).",
+  "methodology": "Each fixture dispatched once. PM graded its 9 assigned dims (1, 2, 3, 7, 8, 9, 10, 11, 12). A 'finding' = an evaluation point with grade != A and grade != N/A (i.e., a real gap identified). See shield/scripts/capture-pm-baseline.sh for the capture script.",
+  "fixtures": {
+    "well-formed-standard": {
+      "persona_grade": "A",
+      "findings_count": 4,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 1,
+        "dim_2_scope_boundaries": 0,
+        "dim_3_measurable_success": 1,
+        "dim_7_raci_approvals": 0,
+        "dim_8_legal_privacy": 0,
+        "dim_9_gtm_comms": 0,
+        "dim_10_support_cx": 1,
+        "dim_11_why_now": 0,
+        "dim_12_risks_assumptions": 1
+      }
+    },
+    "standard-with-gaps": {
+      "persona_grade": "D",
+      "findings_count": 29,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 3,
+        "dim_2_scope_boundaries": 3,
+        "dim_3_measurable_success": 3,
+        "dim_7_raci_approvals": 2,
+        "dim_8_legal_privacy": 4,
+        "dim_9_gtm_comms": 4,
+        "dim_10_support_cx": 4,
+        "dim_11_why_now": 3,
+        "dim_12_risks_assumptions": 3
+      }
+    },
+    "lean-with-gaps": {
+      "persona_grade": "D",
+      "findings_count": 24,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 4,
+        "dim_2_scope_boundaries": 2,
+        "dim_3_measurable_success": 4,
+        "dim_7_raci_approvals": 4,
+        "dim_8_legal_privacy": 4,
+        "dim_9_gtm_comms_NA": 0,
+        "dim_10_support_cx_NA": 0,
+        "dim_11_why_now": 3,
+        "dim_12_risks_assumptions": 3
+      },
+      "na_dims": [9, 10],
+      "na_reason": "Lean PRD — dims 9, 10 informational per rubric lean-mode exemptions"
+    },
+    "internal-tool": {
+      "persona_grade": "A",
+      "findings_count": 5,
+      "findings_breakdown": {
+        "dim_1_problem_clarity": 1,
+        "dim_2_scope_boundaries_NA": 0,
+        "dim_3_measurable_success": 1,
+        "dim_7_raci_approvals": 0,
+        "dim_8_legal_privacy_NA": 0,
+        "dim_9_gtm_comms_NA": 0,
+        "dim_10_support_cx_NA": 0,
+        "dim_11_why_now": 1,
+        "dim_12_risks_assumptions": 2
+      },
+      "na_dims": [2, 8, 9, 10],
+      "na_reason": "Internal-only engineering tool — dim 2 N/A per rubric scope-bounded exception; dims 8, 9, 10 N/A because no external users"
+    }
+  },
+  "pm_total_findings": 62,
+  "gate_criteria": {
+    "merge_blocking": "new PM total findings >= 62 (the pm_total_findings above) AND no individual fixture regresses by more than 10%",
+    "stretch_goal": "new PM total findings >= 81 (1.3x baseline)"
+  }
+}

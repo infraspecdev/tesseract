@@ -1,0 +1,40 @@
+# user-impact-clarity (PM1) snapshot eval — single-check JSON shape
+# Captured against shield/skills/general/prd-review/test-fixtures/standard-with-gaps.md.
+# Added in pm-restructure-v0 follow-up (2026-05-22) to give the new PM dim
+# subagents direct eval coverage beyond the merge-gate aggregate.
+
+agent: user-impact-clarity
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm1-id-field
+    description: "Output contains the correct PM1 id field"
+    match: '"id":\s*"PM1"'
+  - id: pm1-name-field
+    description: "Output contains the user-impact-clarity name field"
+    match: '"name":\s*"User impact clarity"'
+  - id: pm1-persona-tag
+    description: "Output carries persona: product-manager (for downstream aggregation)"
+    match: '"persona":\s*"product-manager"'
+  - id: pm1-severity-correct
+    description: "Severity is Critical per the rubric"
+    match: '"severity":\s*"Critical"'
+  - id: pm1-grade-valid-letter
+    description: "Grade is a valid A-F letter (no informational, no N/A for this dim)"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm1-evidence-quote-field
+    description: "evidence_quote field is present in the output"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm1-anya-evidence
+    description: "Evidence quote references Anya, the only quantified persona in this fixture"
+    match: "Anya|30.45 minutes|growth team"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'
+  - id: not-narrative-sections
+    description: "Single-check subagent must NOT emit narrative sections from the legacy PM persona"
+    match_absence_in: '## User Impact Analysis|## Stakeholder Summary|## Scope Recommendation'

@@ -1,0 +1,36 @@
+# reversibility-exit-cost (PM9) snapshot eval — single-check JSON shape
+agent: reversibility-exit-cost
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm9-id-field
+    description: "Output contains the correct PM9 id field"
+    match: '"id":\s*"PM9"'
+  - id: pm9-name-field
+    description: "Output contains the reversibility-exit-cost name field"
+    match: '"name":\s*"Reversibility . exit cost"'
+  - id: pm9-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm9-severity-correct
+    description: "Severity is Warning per the rubric"
+    match: '"severity":\s*"Warning"'
+  - id: pm9-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm9-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm9-non-a-grade
+    description: "Fixture never assesses reversibility — expect non-A grade (typically F)"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm9-cites-reversibility-or-exit
+    description: "Gap/suggestion should reference reversibility, exit cost, or migration"
+    match: "[Rr]eversibilit|[Ee]xit.?cost|[Mm]igrat|[Rr]ollback"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

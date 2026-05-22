@@ -1,0 +1,97 @@
+## Research Framing
+
+### Stakeholders
+
+- **Payments platform engineers (backend, India + EU teams)** maintaining transaction ledger services — care about implementation complexity, replay semantics, schema evolution, and on-call burden when projections drift.
+- **Principal/staff engineers and architects** owning the multi-year persistence strategy — care about reversibility of the architectural commitment, vendor lock-in (EventStoreDB vs. Kafka-as-log vs. roll-your-own on Postgres), and how ES interacts with existing CDC/outbox patterns.
+- **Compliance and regulatory affairs leads (India RBI, EU MiFID II, global GDPR)** — care about whether the architecture provably satisfies the RBI 24-hour transaction reporting / NPCI reconciliation rules, MiFID II Article 25 transaction-reconstruction obligations, and GDPR Article 17 right-to-erasure on an append-only store.
+- **Risk and internal audit** — care about non-repudiation, tamper-evidence of the ledger, and whether replay can reproduce a state-as-of any past timestamp for dispute investigation.
+- **SREs / platform reliability** — care about recovery semantics (replay time vs. snapshot cadence), storage growth, and operational complexity of running an event store in production.
+- **Data engineering / analytics** — care about downstream projection consumers, schema versioning of events, and the cost of building read models for finance/regulatory dashboards.
+- **Product engineering managers** committing roadmap — care about delivery velocity impact and ramp time for new hires onto a CQRS+ES codebase.
+- **CTO / VP Engineering (sponsor)** — owns the build-vs-buy and adopt-vs-defer decision; needs a defensible position to present to the board and to regulators.
+
+### Decision(s) to Make
+
+1. **Adopt / partially adopt / defer**: Should the financial transaction core be re-platformed onto an event-sourced architecture, or should we instead adopt a narrower pattern (transactional outbox, append-only audit log alongside a CRUD system of record, or change data capture into an event log)?
+2. **If adopting, what is the scope boundary**: Which bounded contexts (e.g., ledger postings, payment authorization, reconciliation, dispute) are event-sourced, and which remain state-stored?
+3. **Storage substrate**: EventStoreDB, Kafka-as-event-store, Axon Server, or a Postgres-based hand-rolled event store — which trade-off profile fits our reliability, regulatory, and team-skill envelope?
+4. **GDPR-vs-append-only resolution strategy**: Crypto-shredding, tokenization with external PII vault, or event-level redaction with a documented compensating control — which is defensible to a Data Protection Authority?
+5. **Replay & recovery SLOs**: What snapshot cadence and replay-time budget are we committing to, and what does that imply for storage and compute sizing?
+
+### Must-Cite Definitional / Origin Voices (PF7)
+
+| # | Voice | Canonical artifact | Why they belong on this list |
+|---|---|---|---|
+| 1 | **Greg Young** | "CQRS and Event Sourcing" — Code on the Beach 2014 keynote (youtu.be/JHGkaShoyNs); also the self-published *CQRS Documents* (2010) and the *Versioning in an Event Sourced System* book (Leanpub, 2017) | Coined and popularized the modern event-sourcing pattern alongside CQRS; founder of EventStoreDB; the definitive practitioner voice on schema versioning of events — directly load-bearing for the fintech long-horizon retention question. |
+| 2 | **Martin Fowler** | "Event Sourcing" — martinfowler.com (2005, refreshed 2017), https://martinfowler.com/eaaDev/EventSourcing.html | The most-cited canonical reference; defined the vocabulary (event store, snapshot, replay, parallel model) that every subsequent vendor and paper builds on. Any synthesis that omits a direct Fowler quote will read as unmoored from the field. |
+| 3 | **Vaughn Vernon** | *Implementing Domain-Driven Design* (Addison-Wesley, 2013), Chapter 8 "Domain Events"; and *Reactive Messaging Patterns with the Actor Model* (2015) | Carries the DDD practitioner canon for how event sourcing fits aggregates and bounded contexts — directly relevant when deciding which fintech bounded contexts to event-source vs. leave CRUD. |
+| 4 | **Udi Dahan** (supporting, optional) | "Clarified CQRS" (udidahan.com, 2009), https://udidahan.com/2009/12/09/clarified-cqrs/ | Counter-balancing voice — has publicly warned against over-applying ES; useful for the "when NOT to adopt" angle that the decision context demands. |
+
+These four MUST appear with a direct quote in the synthesized findings, not only in references. If a research stream cannot place them naturally, the framing has failed.
+
+### Source-Type Coverage Matrix (PF8)
+
+Per-topic tuning: this is **fintech-weighted**, so regulatory/standards is load-bearing and required-heavy; vendor docs are required because storage-substrate selection is one of the decisions; practitioner failure stories are required because the topic-context flags "teams that regretted ES" as a known signal.
+
+| Source type | Required? | Owning stream | Notes |
+|---|---|---|---|
+| Peer-reviewed empirical | **Yes (medium weight)** | official | Log-structured storage (O'Neil et al., LSM-tree), Kafka design paper (Kreps et al., NetDB 2011), Calvin/Spanner ordering literature, Aeron / replicated-log research. Needed to ground claims about replay throughput and ordering guarantees. |
+| Whitepaper / analyst report | **Yes (medium weight)** | official / industry | Gartner / Forrester on event-driven architecture adoption in financial services; ThoughtWorks Tech Radar entries on ES and CQRS; McKinsey/BCG on core banking modernization. Useful for adoption-curve and risk-framing leadership wants. |
+| **Regulatory / standards body** | **Yes — HEAVY weight, mandatory** | official | RBI Master Direction on Digital Payment Security Controls and the 24-hour reporting / reconciliation requirements; NPCI UPI reconciliation specs; MiFID II Article 25 + ESMA RTS 22 transaction-reconstruction rules; GDPR Articles 5(1)(e) storage-limitation and 17 right-to-erasure, plus ICO/CNIL guidance on append-only systems and crypto-shredding; PCI-DSS v4.0 logging requirements. The brief fails if these are not cited primary-source. |
+| Vendor docs & specs | **Yes (high weight)** | industry | EventStoreDB docs (projections, scavenge, retention), Apache Kafka (log compaction, tiered storage), Axon Server, AWS EventBridge + Kinesis, Confluent Schema Registry, Debezium for CDC-as-events. Required because storage-substrate is an explicit decision. |
+| Definitional / origin voices | **Yes — mandatory** | community / industry | Greg Young, Martin Fowler, Vaughn Vernon, Udi Dahan per PF7. Must appear in body with direct quotes. |
+| Practitioner experience & incidents | **Yes (high weight)** | community | Public post-mortems and "we regretted event sourcing" write-ups (e.g., Arkency, Mathias Verraes, Oskar Dudycz blogs; team retrospectives from Monzo, Wise, Nubank where available); HN / lobsters discussion threads; failure-mode catalogs. Required because the decision is two-way-door-or-not. |
+| Conference talks & podcasts | **Yes (medium-high weight)** | community | DDD Europe, KafkaSummit, QCon, GOTO; Software Engineering Daily and Software Engineering Radio episodes on event-driven and core-banking; InfoQ recorded talks. These often carry the most candid trade-off discussion absent from vendor whitepapers. |
+
+### Success Criteria
+
+Research is considered successful when the synthesis enables the sponsor to:
+
+1. State, in one paragraph each, the **adopt / partial-adopt / defer** recommendation with named trade-offs, defensible to a technical board.
+2. Produce a **regulatory-fit table** mapping each obligation (RBI 24h reconciliation, MiFID II Article 25 reconstruction, GDPR Article 17 erasure, PCI-DSS logging) to a concrete architectural mechanism (snapshot policy, projection rebuild, crypto-shredding, tokenization, etc.) with at least one primary-source citation per row.
+3. Name **at least three failure modes** observed by other teams (with citations) and our proposed mitigation for each.
+4. Quantify, even roughly, **replay time and storage growth** at 1x, 5x, and 25x current daily transaction volume, with sources for the assumed throughput numbers.
+5. Identify **at least one credible dissenting voice** (Udi Dahan style "don't do this unless…") and engage their argument rather than dismiss it.
+6. Surface **direct quotes from Young, Fowler, and Vernon** integrated into the body — not only in references.
+
+### Prioritized Research Questions
+
+1. **(Highest impact — regulatory-fit)** How does an append-only event store reconcile with GDPR Article 17 right-to-erasure, and what is the current ICO/CNIL/DPA enforcement posture on crypto-shredding and tokenization as compensating controls? — *This is the question most likely to kill or reshape the architecture; if the answer is "DPAs reject crypto-shredding for PII," adoption scope shrinks dramatically.*
+2. **(Regulatory-fit, India-specific)** Does event sourcing demonstrably satisfy RBI's 24-hour reporting/reconciliation rules and NPCI UPI reconciliation requirements better, worse, or equivalently to a CRUD + outbox pattern? — *Drives the partial-adopt scope: ledger-postings yes, customer-data no.*
+3. **(Reconstruction obligation)** What does MiFID II Article 25 + ESMA RTS 22 demand for transaction reconstruction, and is event-sourced replay a superior evidentiary substrate compared to traditional audit logs? — *Determines whether ES is a compliance asset or a compliance-neutral cost.*
+4. **(Two-way-door check)** What patterns and concrete failure modes do teams that adopted and later regretted event sourcing in fintech report, and what early signals predicted those regrets? — *Decides whether this is a reversible bet.*
+5. **(Storage-substrate)** Comparing EventStoreDB, Kafka-as-event-store, Axon Server, and Postgres-hand-rolled on (a) ordering guarantees, (b) replay throughput, (c) operational maturity in regulated environments, (d) team-skill availability in India and EU markets — which substrate fits? — *Directly informs build-vs-buy.*
+6. **(Replay & recovery SLOs)** What snapshot cadences and projection-rebuild times do production fintech systems report at our scale tier, and what does that imply for our recovery SLOs? — *Operationalizes the adoption.*
+7. **(Event schema evolution)** How do practitioners (per Young's *Versioning in an Event Sourced System*) handle schema evolution of financial events over a 7–10 year regulatory retention horizon? — *Long-horizon retention is non-negotiable in fintech and is where naive ES adoptions break.*
+8. **(Interaction with double-entry accounting)** How does event sourcing compose with double-entry ledger semantics — is it complementary (events as the journal) or duplicative? — *Architectural clarity question for the ledger context specifically.*
+
+### Scope Boundaries
+
+- **In scope**
+  - Event sourcing as applied to financial transaction systems (payments, ledger postings, reconciliation, dispute, regulatory reporting).
+  - Regulatory regimes: RBI (Master Directions, NPCI reconciliation), GDPR (Articles 5, 17, 25, 32), MiFID II (Article 25, ESMA RTS 22), PCI-DSS v4.0 logging.
+  - Storage substrates evaluated: EventStoreDB, Apache Kafka (incl. tiered storage), Axon Server, Postgres-hand-rolled.
+  - Patterns adjacent and frequently confused with ES: transactional outbox, CDC-as-events, append-only audit log alongside CRUD.
+  - Replay semantics, snapshotting strategies, event schema versioning, GDPR-compatible erasure techniques (crypto-shredding, tokenization).
+  - Practitioner failure stories and dissenting voices.
+- **Out of scope**
+  - Event sourcing for non-financial domains (consumer social, gaming, IoT telemetry) — referenced only when the lesson generalizes.
+  - General CQRS as a UI/read-model pattern divorced from event sourcing.
+  - Full vendor procurement / TCO modeling — the synthesis informs the decision, it does not replace a sourcing exercise.
+  - Specific cloud-provider lock-in analysis beyond the substrate comparison.
+  - US-specific regimes (SOX, Reg SCI, FINRA CAT) unless the team confirms US scope is in play — current framing assumes India + EU.
+
+### Timeline & Constraints
+
+- **Decision window**: 2–3 weeks from kickoff (default, since urgency was not explicitly specified). The architectural commitment is high-blast-radius and reversible only at significant cost, so the framing favors **depth over speed**: better to spend the full window than ship a thin synthesis that the compliance team rejects on first read.
+- **Implied depth-vs-speed calibration**:
+  - Primary-source regulatory citations are non-negotiable (no second-hand summaries of GDPR or RBI rules).
+  - Direct quotes from Young / Fowler / Vernon must be sourced from their canonical artifacts, not paraphrased.
+  - At least one practitioner failure story per major failure-mode category should be a primary post-mortem, not an aggregator summary.
+- **Hard constraints**:
+  - Regulatory citations must be current as of 2026 — confirm GDPR + MiFID II + RBI haven't shifted under recent guidance updates.
+  - The synthesis must be readable at leadership level (CTO + Compliance Head + VP Engineering) — i.e., the regulatory-fit table and the adopt/partial-adopt/defer paragraph must stand alone without requiring the reader to know what CQRS is.
+- **Soft constraints**:
+  - Prefer sources with named authors and dates over anonymized vendor marketing.
+  - Where Indian-context primary sources are thin (a known gap for RBI/NPCI in English-language technical literature), explicitly flag the gap rather than substitute EU/US sources silently.

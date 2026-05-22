@@ -37,8 +37,8 @@ Replace `{project_root}` with the absolute path to the directory containing `.sh
 ## Behavior
 
 1. Resolve scope per the usage rules above
-2. Invoke the `backend-reviewer` agent with the resolved scope
-3. The agent runs stack detection, loads skills, dispatches specialists, and aggregates findings — see `shield/agents/backend-reviewer.md` for full agent behavior
+2. Invoke the `backend-engineer` agent with the resolved scope
+3. The agent runs stack detection, loads skills, dispatches specialists, and aggregates findings — see `shield/agents/backend-engineer.md` for full agent behavior
 4. Per-agent detailed findings written to `{output_dir}/{feature}/code-review/{N}-{slug}/detailed/<agent>.md`
 5. Applied fixes logged to `{output_dir}/{feature}/code-review/{N}-{slug}/changes.md`
 6. **Write review summary, detailed findings, and changes log to the paths above**

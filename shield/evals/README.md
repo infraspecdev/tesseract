@@ -28,13 +28,13 @@ Hooks included: whitespace hygiene, YAML/JSON validity, bash syntax, end-to-end 
 | **Eval files** | `expected/*.yaml` | `<skill>/*.md` (e.g. `prd-docs/*.md`) |
 | **What's tested** | A captured agent output (a saved review report) | A skill's effect on subagent behavior, end-to-end |
 | **Iteration cost** | Capture once (slow), grade many times (fast) | Every run pays the full subagent-dispatch cost |
-| **When to use** | Validating specialist agents (cost-reviewer, security-reviewer, product-manager-reviewer) — where each agent run is expensive and you want to iterate on grading criteria without re-running | Validating skill behavior (`shield:prd-docs`, future skills) — where the thing being tested IS how the skill drives a subagent |
+| **When to use** | Validating specialist agents (finops-analyst, security-engineer, product-manager) — where each agent run is expensive and you want to iterate on grading criteria without re-running | Validating skill behavior (`shield:prd-docs`, future skills) — where the thing being tested IS how the skill drives a subagent |
 | **Inputs** | Pre-existing fixture directory under `inputs/` | Inline bash heredoc in the eval's Setup section |
 | **Output capture** | Human-driven (run agent separately, save to `results/<name>.txt`) | Automated (runner dispatches subagent via `claude --print` and captures output) |
 | **Assertions** | YAML regex with `must_find` / `should_find` / `must_not_false_positive` | Structural regex + qualitative LLM-judge |
 | **Severity tiers** | `must_find` (FAIL) / `should_find` (WARN) / `must_not_false_positive` (FAIL) | Pass threshold per bucket (e.g. `4 of 4 structural + 2 of 3 qualitative`) |
 
-**Why both exist:** specialist agents (cost-reviewer, etc.) produce long reports against complex inputs; re-running them every time you tweak a regex is wasteful. Skills (prd-docs) are tested by *what the subagent does*, which isn't a static artifact — every behavior change needs a re-run.
+**Why both exist:** specialist agents (finops-analyst, etc.) produce long reports against complex inputs; re-running them every time you tweak a regex is wasteful. Skills (prd-docs) are tested by *what the subagent does*, which isn't a static artifact — every behavior change needs a re-run.
 
 Mental shortcut:
 - Snapshot = "given this captured output, does it satisfy these properties?"
@@ -116,7 +116,7 @@ For specialist-agent output validation. The agent is run separately (typically b
 ./shield/evals/run-evals.sh
 
 # One criteria file
-./shield/evals/run-evals.sh expected/cost-reviewer-terraform.yaml
+./shield/evals/run-evals.sh expected/finops-analyst-terraform.yaml
 ```
 
 If a `results/<name>.txt` is missing, the runner reports `SKIP` and tells you how to populate it. It does NOT invoke the agent itself.
@@ -124,17 +124,17 @@ If a `results/<name>.txt` is missing, the runner reports `SKIP` and tells you ho
 ### Workflow
 
 ```
-1. Pick an eval criteria file:      expected/cost-reviewer-terraform.yaml
+1. Pick an eval criteria file:      expected/finops-analyst-terraform.yaml
 2. Look up the input fixture:       inputs/insecure-vpc-module/
 3. Run the agent (separately):      e.g., /shield:review against the fixture
-4. Save the agent's report:         results/cost-reviewer-terraform.txt
-5. Grade:                           ./run-evals.sh expected/cost-reviewer-terraform.yaml
+4. Save the agent's report:         results/finops-analyst-terraform.txt
+5. Grade:                           ./run-evals.sh expected/finops-analyst-terraform.yaml
 ```
 
 ### Criteria file format (YAML)
 
 ```yaml
-agent: cost-reviewer
+agent: finops-analyst
 mode: infra-code
 input: insecure-vpc-module
 

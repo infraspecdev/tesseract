@@ -1,0 +1,36 @@
+# problem-solution-fit (PM2) snapshot eval — single-check JSON shape
+agent: problem-solution-fit
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm2-id-field
+    description: "Output contains the correct PM2 id field"
+    match: '"id":\s*"PM2"'
+  - id: pm2-name-field
+    description: "Output contains the problem-solution-fit name field"
+    match: '"name":\s*"Problem-solution fit"'
+  - id: pm2-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm2-severity-correct
+    description: "Severity is Critical per the rubric"
+    match: '"severity":\s*"Critical"'
+  - id: pm2-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm2-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm2-non-a-grade
+    description: "Fixture has solution-first ordering (planted anti-pattern) — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm2-cites-solution-first-or-ordering
+    description: "Gap/suggestion should reference solution-first ordering or causal traceability"
+    match: "solution.?first|ordering|traceabilit|causal"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

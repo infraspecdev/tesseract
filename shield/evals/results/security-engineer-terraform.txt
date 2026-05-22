@@ -1,0 +1,93 @@
+## Security Review Findings
+
+### Summary
+
+| Area | Findings | Severity |
+|------|----------|----------|
+| IAM | 2 issues | Critical |
+| Network | 1 issue | Critical |
+| Encryption | 3 issues | Important / Warning |
+| Detective Controls | 0 issues | — |
+| Secrets Management | 2 issues | Critical / Important |
+| Data Protection | 1 issue | Critical |
+| Incident Response | 0 issues | — |
+| Checkov | 0 issues | — |
+
+### Detailed Findings
+
+#### [S1] Wildcard IAM action in `admin-policy`
+- **Severity:** Critical
+- **Location:** `main.tf:36`
+- **Issue:** `aws_iam_role_policy.admin_policy` grants `Action = "*"` — the role attached to EC2 can perform any AWS API call. This is a textbook privilege-escalation vector: any compromise of an EC2 instance assuming this role results in full account takeover (create IAM users, exfiltrate from S3, disable CloudTrail, etc.).
+- **Recommendation:** Replace `"*"` with the specific API actions the workload actually needs (e.g., `s3:GetObject`, `logs:PutLogEvents`). Start from an empty policy and add permissions iteratively based on `CloudTrail` denials. Use IAM Access Analyzer to generate a least-privilege policy from observed activity.
+- **Reference:** CIS AWS Foundations 1.16 (no full "*:*" admin privileges on roles), AWS Well-Architected SEC03-BP02 (grant least privilege access).
+
+#### [S2] Wildcard IAM resource in `admin-policy`
+- **Severity:** Critical
+- **Location:** `main.tf:37`
+- **Issue:** `Resource = "*"` paired with `Action = "*"` removes all resource-scoping. Even if the action list were narrowed later, `Resource = "*"` would allow the action against every ARN in the account.
+- **Recommendation:** Scope `Resource` to the specific ARNs/ARN patterns this role legitimately needs (e.g., the specific S3 bucket ARN, the specific log group ARN). Where an action genuinely supports only `"*"` (e.g., `logs:CreateLogGroup` in some regions), document the exception inline.
+- **Reference:** AWS Well-Architected SEC03-BP02, IAM best practices — scope resources explicitly.
+
+#### [S6] Security group allows 0.0.0.0/0 on port 22 (SSH)
+- **Severity:** Critical
+- **Location:** `main.tf:48-53`
+- **Issue:** `aws_security_group.web` ingress rule exposes SSH (TCP/22) to the entire internet. SSH is one of the most aggressively scanned ports on the public internet — credential-stuffing and key-brute-forcing bots will find this within minutes. Combined with the wildcard IAM role above, an SSH compromise = full account compromise.
+- **Recommendation:** Remove the SSH ingress rule entirely and use AWS Systems Manager Session Manager for shell access (no inbound ports, IAM-authenticated, fully audited). If SSH is genuinely required, scope `cidr_blocks` to the corporate VPN CIDR or a bastion host security group, and require a key + MFA. Port 443 ingress to 0.0.0.0/0 is acceptable for a public ALB and is not flagged.
+- **Reference:** CIS AWS Foundations 5.2 (no SG allows ingress from 0.0.0.0/0 to port 22), AWS Well-Architected SEC05-BP01.
+
+#### [S4 / S20] Hardcoded API secret in variable default
+- **Severity:** Critical
+- **Location:** `main.tf:91-94` (variable `api_secret` with `default = "sk-1234567890abcdef"`)
+- **Issue:** A live-looking API key (`sk-...` format) is committed to the Terraform source as a variable default. This secret is now in git history forever, visible to anyone with repo read access, will be logged by `terraform plan`/`apply` output, and ends up in Terraform state files. The same value is then used as the RDS master password (see S21), so a single git leak compromises both the upstream API and the database.
+- **Recommendation:** Remove the `default` value. Source the secret from `aws_secretsmanager_secret_version` (or `aws_ssm_parameter` with `type = "SecureString"`) and pass it via `data` source at apply time. Rotate this key immediately — assume it is already compromised since it has been committed to the repo. Add a pre-commit hook (gitleaks, trufflehog) to prevent regressions.
+- **Reference:** CIS AWS Foundations 1.14, AWS Well-Architected SEC02-BP03 (store and use secrets securely).
+
+#### [S21] RDS master password sourced from `var.api_secret`
+- **Severity:** Important
+- **Location:** `main.tf:108` (`password = var.api_secret`)
+- **Issue:** The RDS master password is taken from a static Terraform variable (the same variable that holds the hardcoded API key above). This means: (a) the DB password is a static, non-rotating value, (b) it lives in Terraform state in plaintext-equivalent form, and (c) reusing a key that's also used as an API secret violates secret-segregation — one leak compromises two systems.
+- **Recommendation:** Use `aws_secretsmanager_secret` + `aws_secretsmanager_secret_rotation` with the RDS-managed rotation Lambda. Reference the rotated secret via `manage_master_user_password = true` (AWS Secrets Manager-integrated RDS), and remove the `password` argument entirely. Ensure DB and API secrets are independent.
+- **Reference:** AWS Well-Architected SEC02-BP02 (use automated rotation), RDS Secrets Manager integration docs.
+
+#### [S11] S3 bucket missing server-side encryption
+- **Severity:** Important
+- **Location:** `main.tf:115-117` (`aws_s3_bucket.data`)
+- **Issue:** `aws_s3_bucket.data` has no `aws_s3_bucket_server_side_encryption_configuration` resource attached. While S3 enables SSE-S3 by default for new buckets as of Jan 2023, explicit configuration is required for compliance evidence, for choosing a customer-managed KMS key (CMK), and for protection against future AWS default changes. Without a CMK, you also lose cross-account access control and per-key audit trails in CloudTrail.
+- **Recommendation:** Add an `aws_s3_bucket_server_side_encryption_configuration` resource referencing a customer-managed `aws_kms_key`. Set `bucket_key_enabled = true` to reduce KMS API costs. Explicit CMK encryption is required for most compliance regimes (PCI-DSS, HIPAA, SOC2 controlled environments).
+- **Reference:** CIS AWS Foundations 2.1.1, AWS Well-Architected SEC08-BP02.
+
+#### [S23] S3 bucket missing public access block
+- **Severity:** Critical
+- **Location:** `main.tf:115-117` (`aws_s3_bucket.data`)
+- **Issue:** No `aws_s3_bucket_public_access_block` resource exists for `aws_s3_bucket.data`. This is the single most common cause of S3 data breaches — without the public access block, a future bucket policy or ACL change can silently make the bucket world-readable. Defense-in-depth requires the block to be set even if the current bucket policy is private.
+- **Recommendation:** Add an `aws_s3_bucket_public_access_block` resource for this bucket with all four flags set to `true`:
+  - `block_public_acls = true`
+  - `block_public_policy = true`
+  - `ignore_public_acls = true`
+  - `restrict_public_buckets = true`
+  Consider also enabling the account-level S3 Block Public Access setting via `aws_s3_account_public_access_block` for belt-and-suspenders protection.
+- **Reference:** CIS AWS Foundations 2.1.5, AWS Well-Architected SEC08-BP04.
+
+#### [S14] CloudWatch log group not encrypted with KMS
+- **Severity:** Warning
+- **Location:** `main.tf:97-99` (`aws_cloudwatch_log_group.flow_logs`)
+- **Issue:** `aws_cloudwatch_log_group.flow_logs` has no `kms_key_id`. VPC flow logs can contain sensitive metadata (source/destination IPs, ports, packet counts that fingerprint internal services). At rest in CloudWatch, the logs are encrypted with AWS-managed keys by default, but a customer-managed CMK is required to (a) restrict log decryption to specific roles via key policy, (b) generate per-decryption CloudTrail events, and (c) meet most compliance requirements for log integrity.
+- **Recommendation:** Create an `aws_kms_key` for log encryption with a key policy that grants `logs.<region>.amazonaws.com` the `kms:Encrypt*`/`kms:Decrypt*`/`kms:ReEncrypt*`/`kms:GenerateDataKey*`/`kms:Describe*` permissions, and reference it via `kms_key_id` on the log group. Also set an explicit `retention_in_days` to avoid indefinite (and expensive) retention.
+- **Reference:** AWS Well-Architected SEC08-BP02, CloudWatch Logs encryption docs.
+
+### Checkov Skip Audit
+
+| Skip ID | Reason Given | Justified? |
+|---------|-------------|-----------|
+| (none) | — | No `#checkov:skip=` annotations present in fixture; nothing to audit. |
+
+## Security Posture: Critical Gaps
+
+**Justification:**
+- Two **Critical** IAM findings (`Action = "*"`, `Resource = "*"`) combine to grant full administrative access to anything that assumes `admin-role` — this is account-takeover-on-compromise.
+- SSH (port 22) open to `0.0.0.0/0` is internet-facing remote shell with no network filter; combined with the wildcard IAM role above, the blast radius of a single SSH key leak is the entire AWS account.
+- A live-looking API secret (`sk-...`) is committed to the repository as a variable default *and* re-used as the RDS master password — assume compromised, rotate immediately, and split the two secrets.
+- The S3 data bucket has neither encryption configuration nor a public access block — the two most common contributors to S3 data-breach headlines.
+- The CloudWatch log group for VPC flow logs lacks customer-managed KMS encryption and retention configuration, weakening forensic/audit posture.
+- This module must not be applied to any environment (including dev) in its current state. The IAM, network, and secrets findings are individually merge-blocking; together they are a worked example of how breaches happen.

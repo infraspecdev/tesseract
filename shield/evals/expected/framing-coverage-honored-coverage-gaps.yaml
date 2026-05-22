@@ -1,0 +1,52 @@
+# framing-coverage-honored (PM11) snapshot eval — Research-Review single-check
+# Fixture: shield/evals/inputs/framing-coverage-gaps/ — a findings doc that
+# deliberately omits direct body quotes for 2 PF7 voices (Fowler, Vernon — only
+# in References) and 2 PF8 required source types (regulatory, vendor docs).
+agent: framing-coverage-honored
+mode: research-review
+input: framing-coverage-gaps
+
+must_find:
+  - id: pm11-id-field
+    description: "Output contains the correct PM11 id field"
+    match: '"id":\s*"PM11"'
+  - id: pm11-name-field
+    description: "Output contains the framing-coverage-honored name field"
+    match: '"name":\s*"Framing coverage honored"'
+  - id: pm11-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm11-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm11-grade-valid-letter
+    description: "Grade is a valid A-F letter (no N/A expected for this fixture)"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm11-missing-pf7-field
+    description: "missing_pf7_voices field is present"
+    match: '"missing_pf7_voices":'
+  - id: pm11-missing-pf8-field
+    description: "missing_pf8_source_types field is present"
+    match: '"missing_pf8_source_types":'
+  - id: pm11-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm11-non-a-grade
+    description: "Fixture omits 2 PF7 voices + 2 PF8 source types — expect C/D/F"
+    match: '"grade":\s*"[CDF]"'
+  - id: pm11-flags-fowler-or-vernon
+    description: "Should flag Fowler or Vernon as a missing PF7 voice (both omitted from body)"
+    match: "Fowler|Vernon"
+  - id: pm11-flags-regulatory-or-vendor
+    description: "Should flag regulatory or vendor-docs as a missing PF8 source type"
+    match: "[Rr]egulatory|[Vv]endor|[Ss]tandards"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'
+  - id: not-flag-greg-young
+    description: "Greg Young IS quoted in the body — must not appear in missing_pf7_voices"
+    match_absence_in: '"missing_pf7_voices":\s*\[[^\]]*Greg Young'

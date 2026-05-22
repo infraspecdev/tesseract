@@ -79,7 +79,7 @@ Read `.shield.json` to get active domains. For each active domain, check if a do
 - `terraform` → invoke `shield:terraform:review`
 - `atmos` → invoke `shield:atmos:review`
 - `github-actions` → invoke `shield:github-actions:review`
-- `kubernetes` → invoke `shield:kubernetes:review` (security-audit + cost-review + operational-review). Also dispatch `shield:kubernetes-reviewer` agent. Only if K8s manifests detected (YAML files with K8s `apiVersion`/`kind` fields, `Chart.yaml`, or `kustomization.yaml`).
+- `kubernetes` → invoke `shield:kubernetes:review` (security-audit + cost-review + operational-review). Also dispatch `shield:platform-engineer` agent. Only if K8s manifests detected (YAML files with K8s `apiVersion`/`kind` fields, `Chart.yaml`, or `kustomization.yaml`).
 
 Domain skills run in parallel. Their findings are collected and merged.
 
@@ -180,7 +180,7 @@ code-review/{N}-{slug}/
 
 | # | Severity | Source | Location | Finding | Recommendation |
 |---|----------|--------|----------|---------|---------------|
-| 1 | Critical | security-reviewer | main.tf:42 | Wildcard IAM policy | Scope to specific ARNs |
+| 1 | Critical | security-engineer | main.tf:42 | Wildcard IAM policy | Scope to specific ARNs |
 | 2 | Important | terraform/review | variables.tf:15 | Missing validation block | Add CIDR validation |
 
 ### Acceptance Criteria Report (if applicable)
@@ -215,4 +215,4 @@ Which fixes would you like to apply?
 | Applying fixes without user confirmation | Always present findings and ask which to apply — never auto-fix, especially for `NEEDS_DISCUSSION` items |
 | Writing detailed agent findings to summary.md instead of separate files | Each agent gets its own file in `detailed/<agent>.md` — summary.md only has the merged table |
 | Skipping AC verification because no plan sidecar exists | If there's no `plan.json`, skip AC verification silently — don't error or ask the user to create one |
-| Not deduplicating findings from multiple sources | If security-reviewer and terraform/security-audit flag the same issue, keep the most detailed one |
+| Not deduplicating findings from multiple sources | If security-engineer and terraform/security-audit flag the same issue, keep the most detailed one |

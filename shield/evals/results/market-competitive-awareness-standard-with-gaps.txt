@@ -1,0 +1,16 @@
+Applying the agent verbatim. Scanning the doc for any mention of alternatives (commercial products, OSS libraries, manual processes, internal incumbents).
+
+The doc references the current manual workarounds being replaced: "exporting CSVs and attaching them to Slack messages", "screenshots them to share in Slack", and "receives CSVs from the analytics team by email every Monday". These name manual/existing-process alternatives. However, the doc does not explicitly articulate why the proposed approach is preferred over them beyond implicit pain (time loss, stale data). No commercial/OSS competitors (e.g., Looker, Tableau, Metabase, Mode) are considered. No buy-vs-build discussion.
+
+```json
+{
+  "id": "PM6",
+  "name": "Market / competitive awareness",
+  "persona": "product-manager",
+  "grade": "C",
+  "severity": "Warning",
+  "evidence_quote": "Analytics users want to share insights with teammates without resorting to exporting CSVs and attaching them to Slack messages.",
+  "gap": "Doc names manual incumbents (CSV export, Slack screenshots, emailed CSVs) but omits any buy-vs-build analysis against commercial/OSS dashboard-sharing tools (e.g., Looker, Tableau, Metabase, Mode) and does not articulate why building is preferred over adopting them.",
+  "suggestion": "Add a short Alternatives Considered section comparing at least one commercial/OSS option and the manual status quo, with explicit rationale for why building in-product wins."
+}
+```

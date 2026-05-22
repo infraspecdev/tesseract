@@ -35,7 +35,7 @@
           "slug": "master",
           "summary": "code-review/1-master/summary.md",
           "detailed": [
-            "code-review/1-master/detailed/security-reviewer.md",
+            "code-review/1-master/detailed/security-engineer.md",
             "code-review/1-master/detailed/code-correctness.md"
           ],
           "findings": { "critical": 3, "high": 7, "medium": 11, "low": 7 }

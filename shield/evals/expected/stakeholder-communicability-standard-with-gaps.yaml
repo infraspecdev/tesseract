@@ -1,0 +1,36 @@
+# stakeholder-communicability (PM5) snapshot eval — single-check JSON shape
+agent: stakeholder-communicability
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm5-id-field
+    description: "Output contains the correct PM5 id field"
+    match: '"id":\s*"PM5"'
+  - id: pm5-name-field
+    description: "Output contains the stakeholder-communicability name field"
+    match: '"name":\s*"Stakeholder communicability"'
+  - id: pm5-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm5-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm5-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm5-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm5-non-a-grade
+    description: "Fixture mixes plain prose with unexplained jargon — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm5-cites-jargon-or-summary
+    description: "Gap/suggestion should reference jargon, summary, or non-technical readability"
+    match: "jargon|summary|non.?technical|executive|plain.?language"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

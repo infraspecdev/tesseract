@@ -4,9 +4,14 @@
 
 ### Product Manager prompt
 
-Pass to `shield:product-manager-reviewer` with subagent_type `shield:product-manager-reviewer`:
+Pass to a `general-purpose` Agent with `subagent_type: "general-purpose"` (post pm-restructure-v0
+the omnibus `shield:product-manager` agent has been decomposed; milestone-scaffolding does not
+fit any single PM dim subagent, so this dispatch uses general-purpose with the PM-lens preamble
+inline):
 
-> You are reviewing a feature for milestone-grouping from a product/user-outcome perspective.
+> You are a Technical Product Manager focused on user-outcome cohesion when grouping work into
+> milestones. You are reviewing a feature for milestone-grouping from a product/user-outcome
+> perspective.
 >
 > **Personas:** {personas-json}
 > **Goals:** {goals-json}
@@ -27,7 +32,7 @@ Pass to `shield:product-manager-reviewer` with subagent_type `shield:product-man
 
 ### Agile Coach prompt
 
-Pass to `shield:agile-coach-reviewer` with subagent_type `shield:agile-coach-reviewer`:
+Pass to `shield:agile-coach` with subagent_type `shield:agile-coach`:
 
 > You are reviewing a feature for milestone-grouping from a sprint-readiness / dependency / sizing perspective.
 >
@@ -68,13 +73,13 @@ When matched, merge into one row.
 - `exit_criteria`: **union** of both lists. Deduplicate by semantic similarity (drop near-duplicates).
 - `depends_on`: **intersection** of both lists. If the two lists differ, record the disagreement in `open_conflicts` (see §3 below) AND set the merged `depends_on` to the intersection (conservative — fewer dependencies).
 - `covered_story_ids`: union.
-- `source_agents`: `["product-manager-reviewer", "agile-coach-reviewer"]`.
+- `source_agents`: `["product-manager", "agile-coach"]`.
 - `conflicts`: list of fields where the two agents disagreed (e.g., `["depends_on"]`).
 
 ### 3. Unmatched milestones
 
-- PM-only milestone → keep, `source_agents: ["product-manager-reviewer"]`.
-- Agile-coach-only milestone → keep, `source_agents: ["agile-coach-reviewer"]`. Note for the user: this often signals a technical milestone (e.g., infrastructure hardening) that doesn't map to a user-visible outcome.
+- PM-only milestone → keep, `source_agents: ["product-manager"]`.
+- Agile-coach-only milestone → keep, `source_agents: ["agile-coach"]`. Note for the user: this often signals a technical milestone (e.g., infrastructure hardening) that doesn't map to a user-visible outcome.
 
 ### 4. Open conflicts
 

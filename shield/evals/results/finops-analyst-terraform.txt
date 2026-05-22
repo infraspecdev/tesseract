@@ -1,0 +1,110 @@
+## Cost Review Findings
+
+Module under review: `shield/evals/inputs/insecure-vpc-module/` — a VPC + ancillary-resources module defaulting to `environment = "dev"`. This review covers cost only; security and operational findings are out of scope and left to security-engineer / operations-engineer.
+
+### Resource Cost Inventory
+
+| Resource Type | Count | Key Cost Driver | Est. Monthly Cost |
+|--------------|-------|-----------------|-------------------|
+| NAT Gateway | 3 | $0.045/hr per NAT + $0.045/GB processed | ~$98/mo baseline + data |
+| Elastic IP | 3 (attached to NATs) | Free while attached, $0.005/hr if released | ~$0/mo attached |
+| CloudWatch Log Group | 1 (`/vpc/flow-logs`) | Ingestion ($0.50/GB) + storage, **infinite retention** | Grows unbounded — $5-500/mo at scale |
+| RDS Instance | 1 (`db.t3.micro`, 20 GB gp2-default) | ~$12.50/mo instance + ~$2.30/mo storage | ~$15/mo |
+| S3 Bucket | 1 | Storage + requests, **no lifecycle policy** | Grows unbounded |
+| VPC + Subnets | 1 VPC, 3 public /24 subnets | Free | $0 |
+
+**Baseline non-prod cost (NAT + RDS alone): ~$113/mo, before any data transfer or log ingestion.**
+
+### Configuration Analysis
+
+| Check | Status | Impact | Notes |
+|-------|--------|--------|-------|
+| C1 NAT gateway count controllable | FAIL | Critical | Three `aws_nat_gateway` resources hardcoded (`az1`, `az2`, `az3`). No `count`, no `for_each`, no variable. Dev pays full prod NAT bill. |
+| C2 NAT gateway disable option | FAIL | Important | No `enable_nat_gateway` variable. Cannot turn NAT off for a dev environment that may not need outbound internet at all. |
+| C3 Conditional EIPs | FAIL | Important | Three `aws_eip` resources hardcoded with no `count = var.enable_nat_gateway ? ... : 0`. EIPs are billed if NAT is ever detached. |
+| C4 Egress-only IGW for IPv6 | N/A | — | Module is IPv4-only; no IPv6 CIDR on VPC. Worth noting as a future cost lever (egress-only IGW is free vs NAT). |
+| C5 Right-sized subnets | PARTIAL | Important | /24 subnets are reasonable, but CIDRs are hardcoded strings (`10.0.1.0/24` etc.). No IPAM, no `netmask_length` variable — not right-sizeable per environment. |
+| C6 Configurable AZ count | FAIL | Important | Three subnets + three NATs + three EIPs all hardcoded to `us-east-1a/b/c`. Dev cannot collapse to 1 AZ. |
+| C7 Cost allocation tags | FAIL | Important | `var.tags` exists in `variables.tf` but is **never applied to any resource**. Only `aws_vpc.main` has a static `Name` tag. No `CostCenter`, no `Project`, no `Environment` tag — bill cannot be sliced. |
+| C8 Toggleable expensive resources | FAIL | Important | NAT gateways, RDS, S3 bucket, CloudWatch log group all unconditional. No `enable_*` flags anywhere. |
+| C9 Bounded log retention | FAIL | Important | `aws_cloudwatch_log_group.flow_logs` has **no `retention_in_days`** → defaults to "Never Expire". At any non-trivial VPC flow log volume this grows the bill monotonically forever. |
+| C10 Right-sized defaults | FAIL | Warning | `var.environment` defaults to `"dev"`, but the module emits 3 NATs, 3 EIPs, 3 AZs, and an RDS instance regardless. Defaults do not match the smallest viable deployment they claim to target. |
+| C11 VPC endpoints consideration | FAIL | Warning | Module emits no S3 / DynamoDB gateway endpoints (which are **free** and would offload S3 traffic from the $0.045/GB NAT path). Easy quick win for any S3-heavy workload. |
+| C12 IPv6 for public traffic | FAIL | Warning | No IPv6 support. IPv6 egress via egress-only IGW would bypass NAT data-processing charges entirely. |
+| C13 Reserved capacity readiness | PARTIAL | Warning | `aws_db_instance.main` has `instance_class = "db.t3.micro"` hardcoded. Not a variable, so the module can't be right-sized for prod (and can't easily target a Savings Plan / Reserved Instance commitment). |
+| C14 S3 lifecycle policies | FAIL | Important | `aws_s3_bucket.data` has no `aws_s3_bucket_lifecycle_configuration`. Data accumulates in Standard tier forever. |
+| C15 S3 Intelligent-Tiering | FAIL | Warning | No storage class configuration; bucket will use Standard for all objects. |
+| C16 EBS volume type optimization | FAIL | Important | `aws_db_instance.main` omits `storage_type`, defaulting to `gp2`. `gp3` is ~20% cheaper with better baseline IOPS — should be explicit. |
+| C17 DynamoDB capacity mode | N/A | — | No DynamoDB in module. |
+| C18 Graviton/ARM instances | FAIL | Important | `db.t3.micro` is x86. `db.t4g.micro` (Graviton) is ~10% cheaper for the same performance envelope and is a one-line change. |
+| C19 Spot instance readiness | N/A | — | No EC2 / ASG / batch compute in module. |
+| C20 Auto-scaling configuration | N/A | — | No ASG / EKS node groups in module. |
+| C21 Lambda right-sizing | N/A | — | No Lambda in module. |
+| C22 Cross-AZ data transfer awareness | FAIL | Warning | Three NATs in three AZs is the *right* pattern for prod cross-AZ avoidance, but with no env tiering, dev pays for HA it does not need. |
+| C23 NAT gateway data processing | FAIL | Important | No VPC endpoints, no IPv6, no S3 gateway endpoint — every byte to S3 / ECR / SSM today rides NAT at $0.045/GB on top of the per-hour charge. |
+| C24 CloudFront for S3 distribution | N/A | — | Bucket access pattern not specified; flag for downstream consumers. |
+
+### Environment-Specific Recommendations
+
+#### Development
+| Variable | Recommended Value | Cost Savings |
+|----------|------------------|-------------|
+| `enable_nat_gateway` (new) | `false` | ~$98/mo (3 NATs eliminated) |
+| `nat_gateway_count` (new) | `0` | Plus EIP + cross-AZ data transfer savings |
+| `az_count` (new) | `1` | Reduces subnets/NAT/EIP per-AZ multipliers |
+| `flow_log_retention_days` (new) | `7` | Caps CloudWatch log spend at small constant |
+| `db_instance_class` (new) | `db.t4g.micro` (Graviton) | ~10% on RDS, ~$1.50/mo |
+| `db_storage_type` (new) | `gp3` | ~20% on EBS, ~$0.50/mo |
+
+**Dev total est. savings: ~$100/mo per dev VPC, plus capped log growth.**
+
+#### Staging
+| Variable | Recommended Value | Cost Savings |
+|----------|------------------|-------------|
+| `nat_gateway_count` | `1` | ~$65/mo vs 3 NATs |
+| `az_count` | `2` | Moderate per-AZ savings |
+| `flow_log_retention_days` | `30` | Bounded growth |
+| `enable_s3_gateway_endpoint` (new) | `true` | Offloads S3 traffic from NAT — $0.045/GB saved |
+
+**Staging total est. savings: ~$65/mo plus NAT data-processing reductions.**
+
+#### Production
+| Variable | Recommended Value | Notes |
+|----------|------------------|-------|
+| `nat_gateway_count` | `3` (one per AZ) | High availability — keep |
+| `az_count` | `3` | HA — keep |
+| `flow_log_retention_days` | `90` | Compliance-bounded |
+| `enable_s3_gateway_endpoint` | `true` | Free, cuts NAT data-processing for S3 |
+| `enable_dynamodb_gateway_endpoint` | `true` | Free, same logic |
+| `db_instance_class` | Sized to workload, Graviton (`db.r6g.*` / `db.m6g.*`) | ~20% cheaper than x86 equivalents, RI/SP-eligible |
+| `db_storage_type` | `gp3` | Cheaper + better baseline IOPS than gp2 |
+| `tags` | Populated with `CostCenter`, `Project`, `Environment` | Required for chargeback |
+
+### Recommendations
+
+| Priority | Check | Recommendation | Est. Impact |
+|----------|-------|---------------|-------------|
+| P0 | C1, C2, C8 | Introduce `enable_nat_gateway` (bool) and `nat_gateway_count` (number) variables; convert the three `aws_nat_gateway` and three `aws_eip` resources to a single resource with `count = var.enable_nat_gateway ? var.nat_gateway_count : 0`. Default `enable_nat_gateway = false`, `nat_gateway_count = 1`. | ~$98/mo per dev env (3 NATs eliminated) |
+| P0 | C9 | Add `retention_in_days` to `aws_cloudwatch_log_group.flow_logs`, parameterized by `var.flow_log_retention_days` (default 7 for dev, 90 for prod). Infinite retention is the single largest silent cost trap in this module. | $5-500/mo depending on flow log volume |
+| P0 | C6, C10 | Drive subnet/NAT/AZ count from `var.az_count` (default 1 for dev). Today every consumer pays 3-AZ cost regardless of `var.environment`. | Compounds with NAT savings |
+| P1 | C7 | Apply `var.tags` to every resource via `tags = merge(var.tags, { Name = "..." })`. Without `CostCenter`/`Project` tags the bill cannot be allocated and waste cannot be attributed. | Enables future savings, no direct $ |
+| P1 | C11, C23 | Add `aws_vpc_endpoint` (gateway type) for S3 and DynamoDB behind an `enable_s3_gateway_endpoint` flag. Gateway endpoints are free; they remove $0.045/GB NAT processing for those services. | $10-200+/mo depending on S3 egress |
+| P1 | C16 | Set `storage_type = "gp3"` explicitly on `aws_db_instance.main` (default today is `gp2`). | ~20% on RDS EBS, scales with volume |
+| P1 | C18, C13 | Make `db_instance_class` a variable; default to `db.t4g.micro` (Graviton) for dev. | ~10% on RDS compute, ~$1.50/mo at micro tier |
+| P2 | C14, C15 | Add `aws_s3_bucket_lifecycle_configuration` to `aws_s3_bucket.data` — transition to IA after 30 days, Glacier IR after 90, expire / Intelligent-Tiering as appropriate. Configure from day one. | Compounds over months; 30-70% on aged S3 |
+| P2 | C5 | Parameterize subnet CIDRs (or adopt IPAM with `netmask_length`) so non-prod environments aren't locked to `10.0.x.0/24` strings. | No direct $; unblocks right-sizing |
+| P2 | C12, C4 | Plan a path to dual-stack with egress-only IGW for IPv6 traffic — long-term lever to bypass NAT data-processing entirely. | Workload-dependent |
+
+### Cost Efficiency: Missing Controls
+
+**Justification:**
+- The module ships **zero cost toggles**: NAT gateways, EIPs, RDS, S3, CloudWatch log group are all unconditional resources. `var.environment` exists but has no effect on what gets created — defaults are production-shaped (3 AZs, 3 NATs, 3 EIPs) even when `environment = "dev"`.
+- `var.tags` is declared but never applied → the resulting bill is unattributable.
+- CloudWatch flow-log retention is unset (infinite) — the single highest-risk silent cost driver in the module.
+- No VPC endpoints, no IPv6 path, no S3 lifecycle, no gp3, no Graviton — every standard non-prod cost lever is missing.
+
+**Estimated Monthly Savings if Recommendations Applied:**
+- Dev: ~$100/mo per VPC (NAT elimination dominates) + bounded log growth
+- Staging: ~$65/mo per VPC + NAT data-processing reduction via gateway endpoints
+- Production: ~10-20% on RDS via Graviton + gp3; double-digit % on NAT data-processing via S3/DynamoDB gateway endpoints
+- **Total across one dev + one staging environment: ~$165/mo baseline, before any data-transfer and log-volume savings.**

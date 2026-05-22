@@ -22,7 +22,7 @@ Run a comprehensive review of Kubernetes manifests covering security, cost optim
    - `shield:kubernetes:security-audit`
    - `shield:kubernetes:cost-review`
    - `shield:kubernetes:operational-review`
-3. Dispatch `shield:kubernetes-reviewer` agent in all three modes (security, cost, operational) in parallel
+3. Dispatch `shield:platform-engineer` agent in all three modes (security, cost, operational) in parallel
 4. If deprecated APIs found by any skill, recommend running `/review-k8s-deprecation`
 5. Aggregate findings, deduplicate, sort by severity
 6. Present unified findings to the user
@@ -51,7 +51,7 @@ After writing, update `{output_dir}/manifest.json` with the new review entry and
 
 ## Single-Agent Shortcuts
 
-- `/review-k8s-security` — security audit only (invoke `shield:kubernetes:security-audit` + `shield:kubernetes-reviewer` in security mode)
-- `/review-k8s-cost` — cost review only (invoke `shield:kubernetes:cost-review` + `shield:kubernetes-reviewer` in cost mode)
-- `/review-k8s-ops` — operational review only (invoke `shield:kubernetes:operational-review` + `shield:kubernetes-reviewer` in operational mode)
+- `/review-k8s-security` — security audit only (invoke `shield:kubernetes:security-audit` + `shield:platform-engineer` in security mode)
+- `/review-k8s-cost` — cost review only (invoke `shield:kubernetes:cost-review` + `shield:platform-engineer` in cost mode)
+- `/review-k8s-ops` — operational review only (invoke `shield:kubernetes:operational-review` + `shield:platform-engineer` in operational mode)
 - `/review-k8s-deprecation` — deprecation check only (invoke `shield:kubernetes:deprecation-check-and-upgrade`)

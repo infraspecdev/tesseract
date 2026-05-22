@@ -21,7 +21,7 @@ Only triggers when there is clear evidence of Kubernetes usage. When ambiguous, 
 
 ## When NOT to Use
 
-- For Terraform operational review — use the operations-reviewer agent in infra-code mode
+- For Terraform operational review — use the sre agent in infra-code mode
 - For security concerns — use `kubernetes-security-audit`
 - For cost concerns — use `kubernetes-cost-review`
 - When no K8s evidence is detected and user hasn't mentioned K8s

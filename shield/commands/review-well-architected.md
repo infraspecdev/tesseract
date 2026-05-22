@@ -26,7 +26,7 @@ Write findings to the config-driven feature directory:
 
 ## Behavior
 
-1. Dispatch `shield:well-architected-reviewer` agent in **infra-code** mode
+1. Dispatch `shield:cloud-architect` agent in **infra-code** mode
 2. The agent evaluates across all 6 pillars:
    - Operational Excellence
    - Security

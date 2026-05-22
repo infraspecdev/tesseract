@@ -1,0 +1,36 @@
+# prioritization-rationale (PM4) snapshot eval — single-check JSON shape
+agent: prioritization-rationale
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm4-id-field
+    description: "Output contains the correct PM4 id field"
+    match: '"id":\s*"PM4"'
+  - id: pm4-name-field
+    description: "Output contains the prioritization-rationale name field"
+    match: '"name":\s*"Prioritization rationale"'
+  - id: pm4-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm4-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm4-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm4-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm4-non-a-grade
+    description: "Fixture has phases without sequencing rationale — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm4-cites-phase-or-sequencing
+    description: "Gap/suggestion should reference phases, sequencing, or dependencies"
+    match: "[Pp]hase|sequenc|dependenc|rationale"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

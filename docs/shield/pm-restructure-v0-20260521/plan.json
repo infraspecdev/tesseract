@@ -1,0 +1,422 @@
+{
+  "version": "1.1",
+  "project": "shield",
+  "name": "pm-restructure-v0",
+  "phase": "Restructure PM persona agent into focused subagents (v0; PRD-Review + Plan-Review + Research modes)",
+  "source_research": "git history — see commits on refactor/rename-reviewer-agents-to-roles branch + design conversation in PR description",
+  "source_baseline": "shield/evals/baselines/prd-review-pm.json",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "PRD-Review path migrated to per-dim prompts",
+      "outcome": "/prd-review dispatches 9 PM dim prompts (skill-internal in prd-review/prompts/) instead of one PM persona agent. Merge gate (>= baseline finding count) passes.",
+      "exit_criteria": [
+        "9 PM dim prompt files exist at shield/skills/general/prd-review/prompts/",
+        "shield/skills/general/prd-review/dimensions.md replaces personas.md, registering the 9 prompts with persona tags",
+        "shield/skills/general/prd-review/SKILL.md dispatches mixed: 9 PM prompts + 4 legacy persona dispatches (architect, agile-coach, dx-engineer, finops-analyst)",
+        "Merge gate passes: PM finding count >= 62 across the 4 PRD-review test fixtures; no fixture regresses more than 10%"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "M2",
+      "name": "Plan-Review and Research paths migrated to global subagents",
+      "outcome": "PM1-PM10 (Plan-Review) and PM11 (Research-Review) live as global subagents in shield/agents/. research-framer and research-reviewer-narrative authoring subagents replace PM's Research-Framing and Research-Review narrative modes.",
+      "exit_criteria": [
+        "11 global subagent files exist at shield/agents/ (PM1-PM10 + PM11)",
+        "2 authoring subagent files exist at shield/agents/ (research-framer, research-reviewer-narrative)",
+        "shield/skills/general/plan-review/ dispatches PM1-PM10 + legacy architect/agile-coach personas",
+        "shield/skills/general/research/ dispatches research-framer (Phase 2 framing) + research-reviewer-narrative + PM1-PM10 + PM11 (Phase 2 review)"
+      ],
+      "depends_on": ["M1"]
+    },
+    {
+      "id": "M3",
+      "name": "Legacy PM persona agent retired",
+      "outcome": "shield/agents/product-manager.md and shield/skills/general/prd-review/personas.md deleted. All PM work redistributed.",
+      "exit_criteria": [
+        "shield/agents/product-manager.md no longer exists",
+        "shield/skills/general/prd-review/personas.md no longer exists",
+        "No stale references in any shield/ or CLAUDE.md file (grep returns zero hits for 'shield:product-manager' as a dispatch target)",
+        "Full /prd-review run on each test fixture produces expected output structure"
+      ],
+      "depends_on": ["M2"]
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "PRD-Review per-dim prompts (M1)",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Author problem-clarity prompt (dim 1)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author shield/skills/general/prd-review/prompts/problem-clarity.md. Focused prompt for grading PRD §3/§4/§11 against eval points 1a-1d (named persona, baseline data, why-now, first-person evidence). Returns JSON with per-check grade + evidence + gap + suggestion.",
+          "tasks": [
+            "Read shield/skills/general/prd-review/rubric.md dim 1 section for criteria",
+            "Author shield/skills/general/prd-review/prompts/problem-clarity.md (~40-60 lines): frontmatter (name only), description, inputs, checks-with-severity, exception clause, output_shape JSON spec",
+            "Dispatch general-purpose Agent with the new prompt content against standard-with-gaps.md fixture; count dim-1 findings",
+            "Verify finding count >= 3 (baseline for dim 1 on standard-with-gaps per prd-review-pm.json)",
+            "Refactor prompt if any baseline finding missed; re-test"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/problem-clarity.md",
+            "Dispatching the prompt against standard-with-gaps.md identifies AT LEAST the baseline findings (1b, 1c, 1d gaps with their severities)",
+            "Dispatching against well-formed-standard.md identifies the 1d gap (warning) and grades 1a-1c as A",
+            "Output is valid JSON matching the dim-block schema",
+            "Per-check evidence_quote field contains a verbatim quote from the PRD"
+          ]
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Author scope-discipline prompt (dim 2)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/scope-discipline.md grading PRD §2 non-goals + §6 goals against eval points 2a-2c. Includes the N/A exception clause for single-purpose internal tools.",
+          "tasks": [
+            "Read rubric.md dim 2 section + the N/A exception clause",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 3 dim-2 findings (2a, 2b, 2c)",
+            "Dispatch against internal-tool.md; verify dim 2 grades N/A with reasoning (rubric exception)",
+            "Refactor if needed"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/scope-discipline.md",
+            "Standard-with-gaps fixture: identifies at least 3 dim-2 findings",
+            "Internal-tool fixture: dim 2 returns grade 'N/A' with non-empty na_reasoning field",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S3",
+          "name": "Author measurable-success prompt (dim 3)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/measurable-success.md grading PRD §7 against eval points 3a-3d.",
+          "tasks": [
+            "Read rubric.md dim 3 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 3 dim-3 findings (3b, 3c, 3d)",
+            "Refactor if needed"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/measurable-success.md",
+            "Standard-with-gaps fixture: identifies at least 3 dim-3 findings",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S4",
+          "name": "Author raci-and-approvals prompt (dim 7)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/raci-and-approvals.md grading PRD §1 header + §11 sign-off path against eval points 7a-7d.",
+          "tasks": [
+            "Read rubric.md dim 7 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 2 dim-7 findings"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/raci-and-approvals.md",
+            "Standard-with-gaps fixture: identifies at least 2 dim-7 findings (e.g., owner missing, sign-off path missing)",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S5",
+          "name": "Author legal-privacy-compliance prompt (dim 8)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/legal-privacy-compliance.md grading PRD against eval points 8a-8d. Includes the rubric's N/A treatment for internal-only features (which already exists in baseline as N/A for internal-tool fixture).",
+          "tasks": [
+            "Read rubric.md dim 8 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 4 dim-8 findings (8a, 8b, 8c, 8d)",
+            "Dispatch against internal-tool.md; verify dim 8 returns N/A"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/legal-privacy-compliance.md",
+            "Standard-with-gaps fixture: identifies at least 4 dim-8 findings",
+            "Internal-tool fixture: dim 8 returns N/A with reasoning",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S6",
+          "name": "Author gtm-customer-comms prompt (dim 9)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/gtm-customer-comms.md grading PRD §16 against eval points 9a-9d.",
+          "tasks": [
+            "Read rubric.md dim 9 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 4 dim-9 findings",
+            "Dispatch against lean-with-gaps.md; verify dim 9 returns 'informational' grade (lean rubric exemption)"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/gtm-customer-comms.md",
+            "Standard-with-gaps fixture: identifies at least 4 dim-9 findings",
+            "Lean fixture: dim 9 returns grade 'informational' (not graded for lean per rubric)",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S7",
+          "name": "Author support-cx-impact prompt (dim 10)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/support-cx-impact.md grading PRD §17 against eval points 10a-10d.",
+          "tasks": [
+            "Read rubric.md dim 10 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 4 dim-10 findings",
+            "Dispatch against lean-with-gaps.md; verify dim 10 returns 'informational' (lean exemption)"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/support-cx-impact.md",
+            "Standard-with-gaps fixture: at least 4 dim-10 findings",
+            "Lean fixture: dim 10 returns 'informational'",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S8",
+          "name": "Author why-now-cost-of-inaction prompt (dim 11)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/why-now-cost-of-inaction.md grading PRD against eval points 11a-11c.",
+          "tasks": [
+            "Read rubric.md dim 11 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 3 dim-11 findings"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/why-now-cost-of-inaction.md",
+            "Standard-with-gaps fixture: at least 3 dim-11 findings",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S9",
+          "name": "Author risks-and-assumptions prompt (dim 12)",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Author prompts/risks-and-assumptions.md grading PRD §13/§14 against eval points 12a-12c.",
+          "tasks": [
+            "Read rubric.md dim 12 section",
+            "Author the prompt file",
+            "Dispatch against standard-with-gaps.md; verify >= 3 dim-12 findings"
+          ],
+          "acceptance_criteria": [
+            "File exists at shield/skills/general/prd-review/prompts/risks-and-assumptions.md",
+            "Standard-with-gaps fixture: at least 3 dim-12 findings",
+            "Output is valid JSON matching the dim-block schema"
+          ]
+        },
+        {
+          "id": "EPIC-1-S10",
+          "name": "Rewrite prd-review skill: dimensions.md + SKILL.md + scoring.md",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Replace personas.md with dimensions.md (registry of 14 dim entries with persona tags). Update SKILL.md to dispatch mixed: 9 PM prompts via general-purpose Agent + 4 legacy persona dispatches (architect, agile-coach, dx-engineer, finops-analyst). Update scoring.md for per-dim envelope shape with backward-compat.",
+          "tasks": [
+            "Create shield/skills/general/prd-review/dimensions.md with 14-row registry table",
+            "Update shield/skills/general/prd-review/SKILL.md dispatch logic",
+            "Update shield/skills/general/prd-review/scoring.md to accept both old and new envelope shapes",
+            "Run full /prd-review end-to-end against well-formed-standard.md (manual simulation since live skill needs reload)"
+          ],
+          "acceptance_criteria": [
+            "dimensions.md exists; lists 14 entries (9 PM dim prompts + 5 legacy persona dispatches)",
+            "SKILL.md references dimensions.md as dispatch source",
+            "scoring.md accepts both per-persona (old) and per-dim (new) envelopes",
+            "Full /prd-review simulation against well-formed-standard produces a complete summary.md-equivalent (manual verification)"
+          ]
+        },
+        {
+          "id": "EPIC-1-S11",
+          "name": "Run merge gate against PRD-Review path",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M1",
+          "description": "Full merge-gate verification: dispatch all 9 PM dim prompts in parallel against each of the 4 fixtures. Aggregate findings. Compare total to baseline (62). Verify no fixture regresses >10%.",
+          "tasks": [
+            "For each of 4 fixtures: dispatch 9 prompts in parallel; collect dim-level JSON",
+            "Compute per-fixture PM finding count (count of evaluation_points where grade not in (A, N/A))",
+            "Compute PM total across fixtures",
+            "Compare to shield/evals/baselines/prd-review-pm.json: total >= 62 (PASS/FAIL); each fixture not regressed >10% (PASS/FAIL); stretch 1.3x = 81 (informational)",
+            "Write results to shield/evals/baselines/prd-review-pm-postchange.json"
+          ],
+          "acceptance_criteria": [
+            "Post-change result file exists at shield/evals/baselines/prd-review-pm-postchange.json",
+            "PM total post-change >= 62",
+            "No fixture regresses more than 10% from baseline",
+            "Stretch noted in result (informational)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EPIC-2",
+      "name": "Global authoring + Plan-Review/Research-Review subagents (M2)",
+      "stories": [
+        {
+          "id": "EPIC-2-S1",
+          "name": "Author research-framer global subagent",
+          "status": "completed",
+          "priority": "high",
+          "milestone_id": "M2",
+          "description": "Author shield/agents/research-framer.md — focused authoring subagent that produces the 8-section structured framing brief PM currently produces in Research-Framing mode. Returns markdown brief (NOT JSON scorecard).",
+          "tasks": [
+            "Extract Research-Framing content from existing shield/agents/product-manager.md",
+            "Author shield/agents/research-framer.md with frontmatter (name: research-framer, description) and body covering PF1-PF8 sections",
+            "Dispatch against an ad-hoc research topic; verify all 8 PF sections appear in output",
+            "Verify PF7 (must-cite voices) and PF8 (source-type coverage matrix) sections are non-empty"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/research-framer.md exists",
+            "Dispatched against an ad-hoc topic, produces output with all 8 PF sections",
+            "Output is markdown (not JSON)",
+            "PF7 and PF8 sections contain populated content (not stub placeholders)"
+          ]
+        },
+        {
+          "id": "EPIC-2-S2",
+          "name": "Author research-reviewer-narrative global subagent",
+          "status": "completed",
+          "priority": "high",
+          "milestone_id": "M2",
+          "description": "Author shield/agents/research-reviewer-narrative.md — focused authoring subagent producing the narrative portion of Research-Review (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary). The scorecard portion uses PM1-PM11 dim subagents (EPIC-2-S3 et al.).",
+          "tasks": [
+            "Extract Research-Review narrative content from existing shield/agents/product-manager.md",
+            "Author shield/agents/research-reviewer-narrative.md",
+            "Dispatch against an ad-hoc findings doc; verify all 4 narrative sections present"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/research-reviewer-narrative.md exists",
+            "Dispatched against findings doc, produces all 4 narrative sections",
+            "Output is markdown narrative"
+          ]
+        },
+        {
+          "id": "EPIC-2-S3",
+          "name": "Author PM1-PM10 + PM11 global dim subagents (batched)",
+          "status": "completed",
+          "priority": "high",
+          "milestone_id": "M2",
+          "description": "Author 11 global dim subagent files for Plan-Review and Research-Review grading work. Batched because no Plan-Review test fixtures exist; validation is qualitative against ad-hoc plan + research-findings docs.",
+          "tasks": [
+            "Author shield/agents/user-impact-clarity.md (PM1)",
+            "Author shield/agents/problem-solution-fit.md (PM2)",
+            "Author shield/agents/scope-discipline-of-plan.md (PM3 — distinct from PRD dim 2 prompt)",
+            "Author shield/agents/prioritization-rationale.md (PM4)",
+            "Author shield/agents/stakeholder-communicability.md (PM5)",
+            "Author shield/agents/market-competitive-awareness.md (PM6)",
+            "Author shield/agents/adoption-rollout-risk.md (PM7)",
+            "Author shield/agents/success-metrics-defined.md (PM8)",
+            "Author shield/agents/reversibility-exit-cost.md (PM9)",
+            "Author shield/agents/business-value-alignment.md (PM10)",
+            "Author shield/agents/framing-coverage-honored.md (PM11 — Research-Review only)",
+            "Dispatch each against an ad-hoc plan or research-findings doc; verify JSON output"
+          ],
+          "acceptance_criteria": [
+            "All 11 subagent files exist in shield/agents/",
+            "Each file has frontmatter (name, description) + body (inputs, checks, output_shape)",
+            "Each dispatched against an ad-hoc doc produces valid JSON conforming to dim-block schema",
+            "All 11 grade reasonable severities (not all A, not all F on a fixture with gaps)"
+          ]
+        },
+        {
+          "id": "EPIC-2-S4",
+          "name": "Update plan-review skill to dispatch PM1-PM10 globals",
+          "status": "completed",
+          "priority": "high",
+          "milestone_id": "M2",
+          "description": "Replace plan-review's PM persona dispatch with parallel dispatch of PM1-PM10 globals. Legacy architect and agile-coach persona dispatches remain as today.",
+          "tasks": [
+            "Add shield/skills/general/plan-review/dimensions.md with PM1-PM10 entries + persona tags + architect/agile-coach legacy entries",
+            "Update shield/skills/general/plan-review/SKILL.md dispatch logic",
+            "Update shield/skills/general/plan-review/personas.md (or replace with dimensions.md per same convention as prd-review)"
+          ],
+          "acceptance_criteria": [
+            "dimensions.md exists in plan-review/",
+            "SKILL.md dispatches PM1-PM10 + architect + agile-coach",
+            "End-to-end simulation against an ad-hoc plan produces aggregated output with PM rolled up via tags"
+          ]
+        },
+        {
+          "id": "EPIC-2-S5",
+          "name": "Update research skill to dispatch new authoring + PM1-PM11 subagents",
+          "status": "completed",
+          "priority": "high",
+          "milestone_id": "M2",
+          "description": "/research Phase 2 framing: dispatch shield:research-framer (replaces PM Research-Framing). Phase 2 review: dispatch shield:research-reviewer-narrative + PM1-PM10 + PM11 (replaces PM Research-Review).",
+          "tasks": [
+            "Update shield/skills/general/research/SKILL.md Phase 2 framing step",
+            "Update shield/skills/general/research/SKILL.md Phase 2 review step",
+            "Simulate Phase 2 against an ad-hoc topic; verify framing + review outputs"
+          ],
+          "acceptance_criteria": [
+            "SKILL.md references shield:research-framer in framing step",
+            "SKILL.md references shield:research-reviewer-narrative + PM1-PM10 + PM11 in review step",
+            "Simulation produces a coherent framing brief AND a coherent review (narrative + scorecard)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EPIC-3",
+      "name": "Retire legacy PM persona agent (M3)",
+      "stories": [
+        {
+          "id": "EPIC-3-S1",
+          "name": "Delete product-manager.md and personas.md",
+          "status": "completed",
+          "priority": "critical",
+          "milestone_id": "M3",
+          "description": "Once all PM modes are redistributed and verified working, delete the legacy persona agent and replaced helper files.",
+          "tasks": [
+            "Confirm all 9 PRD-Review prompts + 11 PM1-PM11 global subagents + 2 authoring subagents exist",
+            "Confirm all 3 skill orchestrators are updated",
+            "Confirm merge gate passes (EPIC-1-S11)",
+            "git rm shield/agents/product-manager.md",
+            "git rm shield/skills/general/prd-review/personas.md",
+            "Sweep for stale references: grep -r 'shield:product-manager' (should return zero hits as dispatch target)"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/product-manager.md does not exist",
+            "shield/skills/general/prd-review/personas.md does not exist",
+            "grep -r 'subagent_type.*product-manager' shield/ returns zero hits",
+            "All 3 skill orchestrators have been updated and verified"
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-21",
+    "domains": [
+      "general"
+    ],
+    "reviewer_grades": {},
+    "merge_gate": {
+      "metric": "distinct PM finding count across 4 PRD-review test fixtures",
+      "baseline_file": "shield/evals/baselines/prd-review-pm.json",
+      "baseline_total": 62,
+      "gate_criteria": "post-change PM total >= 62 AND no fixture regresses >10%",
+      "stretch_goal": "post-change PM total >= 81 (1.3x baseline)"
+    },
+    "design_notes": "See docs/shield/pm-restructure-v0-20260521/handoff.md for the architectural rationale and design decisions reached during the planning conversation."
+  }
+}

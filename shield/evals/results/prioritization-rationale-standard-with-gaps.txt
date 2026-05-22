@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM4",
+  "name": "Prioritization rationale",
+  "persona": "product-manager",
+  "grade": "D",
+  "severity": "Important",
+  "evidence_quote": "### Phase 1 — Internal Beta (Week 1–2)\nDeploy to internal employees only behind feature flag `team_dashboards_enabled`. Gather feedback via survey.\n\n### Phase 2 — Limited GA (Week 3–5)\nEnable for 10% of Enterprise tier accounts. Monitor error rates and support tickets.\n\n### Phase 3 — Full GA (Week 6+)\nRoll out to all Enterprise accounts.",
+  "gap": "The Rollout Plan lists three sequential phases with timeframes but provides no effort-vs-impact reasoning, no named dependencies between phases, and no justification for why each phase precedes the next beyond implicit risk-ramping; there is no prioritization rationale tying functional requirements (FR1–FR10) to sequencing.",
+  "suggestion": "Add per-phase entry/exit criteria and rationale (e.g., what FR scope each phase covers, which dependencies — audit log, ACL middleware, org-directory API — must land before each gate, and effort/impact estimates justifying why internal beta precedes 10% GA precedes full GA)."
+}
+```
