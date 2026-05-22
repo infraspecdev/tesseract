@@ -1,98 +1,82 @@
 # Manifest & Index Schema
 
-All Shield skills MUST update `manifest.json` and regenerate `index.html` after writing any output.
+All Shield skills MUST update `{manifest}` = `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html` (the `global_index_html` registry entry) after writing any output.
 
-## manifest.json
+## manifest.json (v2)
 
-Lives at `{output_dir}/manifest.json`. This is the source of truth for which features exist and where their latest artifacts are.
+Lives at `{output_dir}/manifest.json`. This is the source of truth for which features exist and which artifacts are present per feature. Built deterministically by `shield/scripts/migrate_outputs.py:build_manifest()`; any agent regeneration MUST produce the same shape.
 
 ```json
 {
-  "version": "1.0",
-  "output_dir": "docs/shield",
-  "features": {
-    "vpc-module-20260319": {
-      "name": "vpc-module",
-      "created": "2026-03-19",
-      "status": "active",
-      "plan_json": "vpc-module-20260319/plan.json",
-      "latest": {
-        "research": "vpc-module-20260319/research/2-regulatory-requirements/",
-        "plan": "vpc-module-20260319/plan/1-vpc-module/",
-        "plan_review": "vpc-module-20260319/plan-review/1-vpc-module-review/",
-        "code_review": "vpc-module-20260319/code-review/2-epic1-s2-vpc-core/",
-        "summary": null
+  "schema_version": 2,
+  "features": [
+    {
+      "name": "vpc-module-20260319",
+      "artifacts": {
+        "research":     true,
+        "prd":          true,
+        "plan_json":    true,
+        "plan_md":      true,
+        "plan_arch_md": true
       },
-      "runs": {
-        "research": [
-          {"run": 1, "slug": "aws-ipam-patterns", "path": "vpc-module-20260319/research/1-aws-ipam-patterns/"},
-          {"run": 2, "slug": "regulatory-requirements", "path": "vpc-module-20260319/research/2-regulatory-requirements/"}
-        ],
-        "plan": [
-          {"run": 1, "slug": "vpc-module", "path": "vpc-module-20260319/plan/1-vpc-module/"}
-        ],
-        "plan_review": [
-          {"run": 1, "slug": "vpc-module-review", "path": "vpc-module-20260319/plan-review/1-vpc-module-review/"}
-        ],
-        "code_review": [
-          {"run": 1, "slug": "epic1-s1-ipam-pools", "path": "vpc-module-20260319/code-review/1-epic1-s1-ipam-pools/"},
-          {"run": 2, "slug": "epic1-s2-vpc-core", "path": "vpc-module-20260319/code-review/2-epic1-s2-vpc-core/"}
-        ],
-        "summary": []
-      }
+      "reviews": {
+        "prd":  { "latest": "2026-03-19",      "count": 1 },
+        "plan": { "latest": "2026-03-21_2",    "count": 2 },
+        "code": { "latest": "2026-03-22",      "count": 1 }
+      },
+      "updated": "2026-03-22T14:30:00+00:00"
     }
-  }
+  ]
 }
 ```
 
-## Schema Rules
+### Field semantics
 
-- `latest` always points to the highest-numbered run for each phase
-- `latest` value is `null` if no runs exist for that phase
-- `runs` is the complete history per phase, ordered by run number
-- `status` is `"active"` or `"completed"`
-- Feature key format: `{kebab-case-name}-YYYYMMDD`
-- Run number = count existing entries in `runs[phase]` + 1
-- All paths are relative to `{output_dir}/`
+- **`schema_version`** — always `2` post-cutover. Tooling that sees `1` should treat the manifest as legacy and either run `/shield migrate` or rebuild via `migrate_outputs.py`.
+- **`features[].name`** — the feature folder name (`{kebab-case-name}-YYYYMMDD`).
+- **`features[].artifacts`** — booleans for each per-feature source file:
+  - `research` → `{research}` = `{feature_dir}/research.md`
+  - `prd` → `{prd}` = `{feature_dir}/prd.md`
+  - `plan_json` → `{plan_json}` = `{feature_dir}/plan.json`
+  - `plan_md` → `{plan_md}` = `{feature_dir}/plan.md`
+  - `plan_arch_md` → `{plan_arch_md}` = `{feature_dir}/plan-architecture.md`
+  Each is `true` if the file exists, `false` if not. Rendered HTML siblings under `{feature_dir}/outputs/` are implied by the source presence and not tracked separately.
+- **`features[].reviews`** — one entry per review type (`prd`, `plan`, `code`). Each:
+  - `latest`: the highest-sorted date-keyed run folder name (e.g. `2026-03-21_2`)
+  - `count`: number of run folders under `{feature_dir}/reviews/<type>/`
+  - If no runs exist, the entry is `{ "count": 0 }` (no `latest` key).
+- **`features[].updated`** — ISO 8601 UTC timestamp of the last manifest rebuild.
 
-## Slug Derivation
-
-| Phase | Slug source |
-|-------|------------|
-| Research | Topic argument from `/research` command |
-| Plan | Plan name (user confirms during `/plan`) |
-| Plan Review | Name of the plan being reviewed (from `plan.json`) + `-review` |
-| Code Review | Story ID if available, else branch name |
-| Summary | Plan name + `-complete` |
-
-**Slug rules:**
-- Lowercase, hyphens only (no spaces, underscores, special chars)
-- Truncate at 50 characters
-- If no slug source available, use just the run number (e.g., folder name is `1/` not `1-/`)
+Numbered-run subfolders (`plan/{N}-{slug}/`, `plan-review/{N}-{slug}/`, etc.) are gone. Per-run history for source artifacts is in git, not the manifest. Per-run history for reviews is the file-system listing under `reviews/<type>/`.
 
 ## How Skills Update manifest.json
 
 Every skill that writes output MUST follow this sequence:
 
-1. Read `{output_dir}/manifest.json` (create empty manifest if not exists: `{"version": "1.0", "output_dir": "<from .shield.json>", "features": {}}`)
-2. Find or create the feature entry
-3. Add the new run to `runs[phase]`
-4. Update `latest[phase]` to point to the new run
-5. Write updated `manifest.json`
-6. Regenerate `index.html`
+1. Write the artifact(s) to their registry-declared paths
+2. Run the deterministic builder: `uv run --with pyyaml shield/scripts/migrate_outputs.py --root {output_dir}` (or equivalent in-process) to produce the v2 manifest from the file system
+3. Write the updated `{manifest}`
+4. Regenerate `{output_dir}/index.html` per the section below
+
+The builder is the source of truth — agents SHOULD prefer running it over hand-constructing entries.
 
 ## index.html
 
-Lives at `{output_dir}/index.html`. Reads `manifest.json` to render a dashboard.
+Lives at `{output_dir}/index.html` (registry entry `global_index_html`). Reads `manifest.json` to render a dashboard.
 
 ### Content
 
-- All features sorted by date (newest first)
+- All features sorted by date (newest first, derived from the trailing `-YYYYMMDD` in `name`)
 - Per feature card:
-  - Feature name, date, status badge
-  - **Latest** links (highlighted): research, plan, plan review, code review, summary
-  - Story progress from `plan.json` (if exists)
-  - Expandable run history per phase
+  - Feature name + date
+  - Artifact links (only show links for `artifacts.<key> == true`):
+    - Research → `{feature}/research.md`
+    - PRD → `{feature}/prd.md` and `{feature}/outputs/prd.html`
+    - Plan → `{feature}/plan.md`, `{feature}/plan-architecture.md`, and `{feature}/outputs/plan.html` + `{feature}/outputs/plan-architecture.html`
+  - Review counts per type with link to the latest date-keyed folder:
+    - PRD review → `{feature}/reviews/prd/{latest}/summary.md` (when `reviews.prd.count > 0`)
+    - Plan review → `{feature}/reviews/plan/{latest}/summary.md`
+    - Code review → `{feature}/reviews/code/{latest}/summary.md`
 - Embedded `manifest.json` reference via `<script>`:
   ```html
   <script>
@@ -102,20 +86,38 @@ Lives at `{output_dir}/index.html`. Reads `manifest.json` to render a dashboard.
 
 ### Navigation Header
 
-All generated HTML files (architecture.html, plan.html, review summaries) MUST include this nav header:
+All generated HTML files (rendered prd.html, plan.html, plan-architecture.html, review summaries) MUST include this nav header. The relative-path depth depends on where the file lives:
 
 ```html
 <nav class="shield-nav" style="background:#f8f9fa;padding:8px 16px;border-bottom:1px solid #dee2e6;font-family:system-ui;font-size:14px;">
   <a href="{relative-path-to-index}">← All Features</a> |
   <strong>{feature-name}</strong> |
-  <a href="{relative-path-to-research}">Research</a> ·
+  <a href="{relative-path-to-prd}">PRD</a> ·
   <a href="{relative-path-to-plan}">Plan</a> ·
   <a href="{relative-path-to-reviews}">Reviews</a>
 </nav>
 ```
 
-Where `{relative-path-to-index}` is the relative path from the current file back to `{output_dir}/index.html` (e.g., `../../index.html` from a plan subfolder).
+Relative-path depth table (post-cutover flat layout):
+
+| Rendered file | Path to index.html |
+|---|---|
+| `{feature}/outputs/prd.html` | `../../index.html` |
+| `{feature}/outputs/plan.html` | `../../index.html` |
+| `{feature}/outputs/plan-architecture.html` | `../../index.html` |
+| `{feature}/outputs/reviews/{type}/{date}/summary.html` | `../../../../../index.html` |
+| `{feature}/outputs/reviews/{type}/{date}/detailed/<agent>.html` | `../../../../../../index.html` |
+
+### Sidecar references in plan.html
+
+The detailed plan HTML (`{plan_html}`) MUST include a meta tag referencing the sidecar at its post-cutover location:
+
+```html
+<meta name="sidecar" content="../plan.json">
+```
+
+(`../plan.json` because `plan.html` lives in `{feature}/outputs/` and `plan.json` is at `{feature}/plan.json`.)
 
 ### Regeneration
 
-`index.html` is regenerated every time `manifest.json` is updated. The HTML is self-contained — no external CSS/JS dependencies.
+`index.html` is regenerated every time `manifest.json` is updated. The HTML is self-contained — no external CSS/JS dependencies beyond what's inlined.
