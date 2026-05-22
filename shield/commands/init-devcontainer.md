@@ -1,6 +1,9 @@
 ---
 name: init-devcontainer
 description: Scaffold .devcontainer/ for running /implement in isolation (filesystem + network egress)
+# No outputs declared: init-devcontainer writes .devcontainer/ files at the
+# repo root and updates .shield.json — all outside the shield output_dir
+# registry scope.
 ---
 
 # Init Devcontainer

@@ -1,6 +1,8 @@
 ---
 name: devcontainer-init
 description: Use when scaffolding a .devcontainer/ for Shield. Triggers on /shield init-devcontainer, "set up devcontainer", "isolate /implement".
+# No outputs declared: writes .devcontainer/ files and updates .shield.json
+# at the repo root — outside the shield output_dir registry scope.
 ---
 
 # Devcontainer Init
