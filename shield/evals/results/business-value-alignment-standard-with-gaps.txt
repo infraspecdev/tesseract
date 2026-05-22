@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM10",
+  "name": "Business value alignment",
+  "persona": "product-manager",
+  "grade": "F",
+  "severity": "Critical",
+  "evidence_quote": "",
+  "gap": "The PRD contains no linkage to a named business goal, OKR, strategic priority, contractual obligation, revenue driver, security/compliance mandate, or cited customer escalation — Goals are stated as user-facing capabilities (enable sharing, reduce manual work, maintain access controls) rather than tied to a business outcome, and no revenue, retention, expansion, contract, or compliance driver is named.",
+  "suggestion": "Add a 'Business Value' or 'Strategic Alignment' section that ties Team Dashboards to a specific FY26 OKR (e.g., Enterprise expansion/NRR), a named contract or customer escalation, or a quantified operational savings target, with the named owner and metric link."
+}
+```

@@ -1,0 +1,36 @@
+# market-competitive-awareness (PM6) snapshot eval — single-check JSON shape
+agent: market-competitive-awareness
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm6-id-field
+    description: "Output contains the correct PM6 id field"
+    match: '"id":\s*"PM6"'
+  - id: pm6-name-field
+    description: "Output contains the market-competitive-awareness name field"
+    match: '"name":\s*"Market . competitive awareness"'
+  - id: pm6-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm6-severity-correct
+    description: "Severity is Warning per the rubric"
+    match: '"severity":\s*"Warning"'
+  - id: pm6-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm6-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm6-non-a-grade
+    description: "Fixture omits buy-vs-build analysis — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm6-cites-alternatives-or-buy-vs-build
+    description: "Gap/suggestion should reference alternatives, competitors, or buy-vs-build"
+    match: "[Aa]lternative|[Cc]ommercial|OSS|buy.vs.build|[Cc]ompetit|Looker|Tableau|Metabase|Mode"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM5",
+  "name": "Stakeholder communicability",
+  "persona": "product-manager",
+  "grade": "B",
+  "severity": "Important",
+  "evidence_quote": "We will build a Team Dashboards feature that allows users to create, share, and collaboratively view analytics dashboards within their organization.",
+  "gap": "The doc opens with a plain-language Solution Overview and readable Personas/User Stories, but the Non-Functional Requirements and Functional Requirements sections lean on unexplained jargon (RBAC, ACL middleware, p95/p99, `owner_team_id`, `dashboard_shares` junction table, render-time permission evaluation) without a stakeholder-facing summary that explains what is being built and why in business terms up front.",
+  "suggestion": "Add a brief Executive Summary at the top (2–4 sentences) stating the user problem, the proposed change, and the expected business outcome in plain language, so non-technical stakeholders need not parse the technical sections."
+}
+```

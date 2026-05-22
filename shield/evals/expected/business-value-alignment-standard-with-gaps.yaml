@@ -1,0 +1,36 @@
+# business-value-alignment (PM10) snapshot eval — single-check JSON shape
+agent: business-value-alignment
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm10-id-field
+    description: "Output contains the correct PM10 id field"
+    match: '"id":\s*"PM10"'
+  - id: pm10-name-field
+    description: "Output contains the business-value-alignment name field"
+    match: '"name":\s*"Business value alignment"'
+  - id: pm10-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm10-severity-correct
+    description: "Severity is Critical per the rubric"
+    match: '"severity":\s*"Critical"'
+  - id: pm10-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm10-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm10-non-a-grade
+    description: "Fixture lacks business-goal linkage — expect non-A grade (typically F)"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm10-cites-okr-or-business-goal
+    description: "Gap/suggestion should reference OKR, business goal, revenue, retention, contract, or compliance"
+    match: "OKR|[Bb]usiness.?goal|revenue|retention|expansion|contract|compliance|strategic"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

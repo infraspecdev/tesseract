@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM8",
+  "name": "Success metrics",
+  "persona": "product-manager",
+  "grade": "B",
+  "severity": "Important",
+  "evidence_quote": "**Primary metric**: % of active dashboards that are shared with at least one other user, target ≥ 30% within 90 days of GA.",
+  "gap": "A single measurable primary metric is defined, but no counter-metric, leading indicator, or lagging indicator is specified to guard against gaming or confirm sustained success.",
+  "suggestion": "Add at least one counter-metric (e.g., share-revocation rate or shared-dashboard 30-day viewer retention) and a leading indicator (e.g., share-modal opens per WAU) with target thresholds and a monitoring cadence."
+}
+```

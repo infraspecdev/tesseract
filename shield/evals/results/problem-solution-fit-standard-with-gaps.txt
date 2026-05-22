@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM2",
+  "name": "Problem-solution fit",
+  "persona": "product-manager",
+  "grade": "B",
+  "severity": "Critical",
+  "evidence_quote": "Analytics users want to share insights with teammates without resorting to exporting CSVs and attaching them to Slack messages. Currently, dashboards are personal and non-transferable.",
+  "gap": "The solution components (shared library, Share modal, Viewer/Editor roles, email notifications) trace clearly to the stated problem of teammates being unable to share dashboards, but solution-first ordering and the absence of an explicit causal mapping (e.g., which solution component addresses which pain) weaken the traceability.",
+  "suggestion": "Reorder so the Problem Statement precedes the Solution Overview, and add an explicit problem-to-solution mapping (e.g., 'stale screenshots -> live shared dashboards; CSV email workflow -> Shared with Me library; cross-org leakage risk -> render-time ACL')."
+}
+```

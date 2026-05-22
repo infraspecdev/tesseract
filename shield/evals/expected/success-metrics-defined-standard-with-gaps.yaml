@@ -1,0 +1,38 @@
+# success-metrics-defined (PM8) snapshot eval — single-check JSON shape
+# NOTE: distinct from the PRD-Review dim 3 prompt (which grades the PRD's metrics section structurally).
+# This PM8 subagent grades whether a plan-level success criterion is measurable.
+agent: success-metrics-defined
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm8-id-field
+    description: "Output contains the correct PM8 id field"
+    match: '"id":\s*"PM8"'
+  - id: pm8-name-field
+    description: "Output contains the success-metrics name field"
+    match: '"name":\s*"Success metrics"'
+  - id: pm8-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm8-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm8-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm8-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm8-non-a-grade
+    description: "Fixture has single metric without counter — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm8-cites-counter-or-leading
+    description: "Gap/suggestion should reference counter-metric, leading indicator, or cadence"
+    match: "counter.?metric|leading.?indicator|lagging|cadence|monitor"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

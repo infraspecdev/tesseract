@@ -1,0 +1,38 @@
+# scope-discipline-of-plan (PM3) snapshot eval — single-check JSON shape
+# NOTE: distinct from the PRD-Review dim 2 prompt (which grades PRD Non-Goals structurally).
+# This PM3 subagent grades whether a plan has a defensible MVP cut vs kitchen-sink.
+agent: scope-discipline-of-plan
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm3-id-field
+    description: "Output contains the correct PM3 id field"
+    match: '"id":\s*"PM3"'
+  - id: pm3-name-field
+    description: "Output contains the scope-discipline name field"
+    match: '"name":\s*"Scope discipline'
+  - id: pm3-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm3-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm3-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm3-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm3-non-a-grade
+    description: "Fixture has no MVP cut (all 10 FRs are v1) — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm3-cites-mvp-or-cut
+    description: "Gap/suggestion should reference MVP, cut, or deferred"
+    match: "MVP|cut|defer|kitchen.sink"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

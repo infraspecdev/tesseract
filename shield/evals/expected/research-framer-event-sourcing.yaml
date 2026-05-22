@@ -1,4 +1,4 @@
-# PM reviewer eval criteria — research-framing mode with broader-coverage discipline
+# research-framer eval criteria — broader-coverage discipline (PF7 + PF8)
 # Evaluated against: shield/evals/inputs/research-framing-event-sourcing/
 #
 # Test scenario: a topic with clear definitional voices (Greg Young / Martin Fowler
@@ -6,8 +6,13 @@
 # vendor docs, practitioner experience). The framing output must explicitly carve
 # out a place for both definitional voices (PF7) and source-type coverage (PF8) —
 # otherwise these slip through the official/industry/community stream model.
+#
+# Post pm-restructure-v0 (2026-05): renamed from product-manager-reviewer-research-
+# framing to research-framer-event-sourcing. The grading criteria are unchanged —
+# they were already PF7/PF8 framing-output-shape assertions and the new
+# `shield:research-framer` agent produces the same output shape.
 
-agent: product-manager-reviewer
+agent: research-framer
 mode: research-framing
 input: research-framing-event-sourcing
 
