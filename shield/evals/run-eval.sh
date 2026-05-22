@@ -70,9 +70,19 @@ run_one() {
     if grep -qE "$assertion" "$workdir/output.txt"; then
       struct_pass=$((struct_pass + 1))
     else
-      # Fallback: search only agent-written files (newer than sentinel)
+      # Fallback: search agent-written files (newer than sentinel). A structural
+      # assertion is typically a path fragment (e.g. `feature-name/prd.md`), so
+      # match against both the FILE PATH and the file CONTENTS — agents are not
+      # always reliable narrators of every path they wrote.
       local found=0
       while IFS= read -r wf; do
+        # Path match (strip workdir prefix for a cleaner relative-path match)
+        local rel="${wf#$workdir/}"
+        if echo "$rel" | grep -qE "$assertion" 2>/dev/null; then
+          found=1
+          break
+        fi
+        # Content match (legacy behavior; some assertions look for narrated paths)
         if grep -qE "$assertion" "$wf" 2>/dev/null; then
           found=1
           break
