@@ -134,7 +134,7 @@ Plus the agile-coach's existing AC1-AC10 framework applies; the agile-coach merg
 | ID | Eval point | Severity |
 |---|---|---|
 | 9a | Pricing / packaging implications addressed | Important |
-| 9b | In-app messaging / release notes plan | Important |
+| 9b | In-app messaging / release notes plan | Critical |
 | 9c | CS / sales enablement (who tells customers) | Warning |
 | 9d | Beta / early-access plan (if applicable) | Warning |
 

@@ -1,0 +1,41 @@
+```json
+{
+  "id": 9,
+  "name": "GTM / customer-comms",
+  "grade": "F",
+  "evaluation_points": [
+    {
+      "id": "9a",
+      "grade": "F",
+      "severity": "Important",
+      "evidence_quote": "",
+      "gap": "PRD does not name the tier/SKU the feature lives in, any price change, or the packaging decision (bundled, add-on, no change).",
+      "suggestion": "Add a Pricing & Packaging subsection stating the target tier (e.g., Enterprise-only), whether it is bundled or an add-on, and whether list price changes; cite the GTM/Pricing owner who signed off."
+    },
+    {
+      "id": "9b",
+      "grade": "F",
+      "severity": "Critical",
+      "evidence_quote": "",
+      "gap": "No in-app announcement or release-notes plan is documented — no owner, draft cadence, or channel for communicating the feature to customers at launch.",
+      "suggestion": "Add a Launch Communications subsection naming the in-app announcement surface (e.g., Pendo guide, what's-new modal), the release-notes owner and draft date, and the publication channel for each GA stage."
+    },
+    {
+      "id": "9c",
+      "grade": "F",
+      "severity": "Warning",
+      "evidence_quote": "",
+      "gap": "No CS or Sales enablement plan is documented — no named enablement owner, no runbook link, no training or one-pager artifact.",
+      "suggestion": "Add a CS/Sales enablement subsection with a named enablement owner, a link to the (planned) one-pager or training deck, and a date by which CS and AEs are trained before GA."
+    },
+    {
+      "id": "9d",
+      "grade": "D",
+      "severity": "Warning",
+      "evidence_quote": "Deploy to internal employees only behind feature flag `team_dashboards_enabled`. Gather feedback via survey.",
+      "gap": "An internal beta is mentioned but no design-partner or customer beta cohort is named, the feedback loop is only \"a survey\" with no owner or cadence, and there is no explicit graduation criterion from beta to Limited GA.",
+      "suggestion": "Name a design-partner or customer beta cohort, specify the feedback mechanism (owner, cadence, channel beyond a one-off survey), and define a measurable graduation criterion (e.g., zero P0 bugs + ≥ N successful shares per cohort) before Limited GA."
+    }
+  ]
+}
+```
