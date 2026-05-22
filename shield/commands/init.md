@@ -1,6 +1,10 @@
 ---
 name: init
 description: Set up Shield for a new project — creates .shield.json and ~/.shield/ config structure
+# No outputs declared: init writes .shield.json, .gitignore patterns, and
+# ~/.shield/<project>/ at the repo and user-home roots — all outside the
+# shield output_dir registry scope. The {output_dir}/{feature}/... files
+# are produced by /research, /prd, /plan, etc., not by init.
 ---
 
 # Shield Init
@@ -63,13 +67,18 @@ Set up Shield for this project. If this is a fresh setup, create configuration f
 
 4. **Add gitignore patterns** to the project's `.gitignore`:
    ```gitignore
-   # Shield ephemeral review output
-   **/docs/shield/*/plan-review/
-   **/docs/shield/*/code-review/
+   # Shield transient session artifacts (research workflow leftovers)
+   **/docs/shield/*/.session-transcript.md
+
+   # Shield render build artifacts (intermediate shell HTML, deleted after render)
+   **/docs/shield/*/*.shell.html
    ```
    - If the user specified a custom `output_dir`, use that instead of `docs/shield` in the patterns
    - If `.gitignore` doesn't exist, create it
    - If the patterns already exist, skip
+   - The new layout commits source files (`prd.md`, `plan.md`, `plan-architecture.md`, `research.md`) and rendered HTML under `outputs/` — these should be tracked, not ignored
+   - Reviews under `reviews/{prd,plan,code}/{date}/` are per-run snapshots; users may opt to gitignore them depending on their workflow (not gitignored by default)
+   - Legacy `plan-review/{N}-{slug}/` and `code-review/{N}-{slug}/` patterns are gone — do NOT add them
 
 5. **Create `~/.shield/` directory structure**:
    ```bash
