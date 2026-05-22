@@ -49,3 +49,16 @@ def test_resolve_review_dir_same_day_rerun() -> None:
         _counter="_2",
     )
     assert result == "docs/shield/vpc-20260522/reviews/plan/2026-05-21_2"
+
+
+def test_resolve_unknown_name_raises() -> None:
+    with pytest.raises(KeyError) as excinfo:
+        resolve("not_a_registered_name", output_dir="docs/shield", feature="x")
+    assert "not_a_registered_name" in str(excinfo.value)
+
+
+def test_resolve_missing_variable_raises() -> None:
+    # `research` needs `output_dir` and `feature`; omit `feature`.
+    with pytest.raises(KeyError) as excinfo:
+        resolve("research", output_dir="docs/shield")
+    assert "feature" in str(excinfo.value)
