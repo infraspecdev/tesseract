@@ -13,7 +13,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lint_output_paths import discover_assets, parse_outputs_block  # type: ignore[import-not-found]
+from lint_output_paths import discover_assets, parse_outputs_block, validate_asset  # type: ignore[import-not-found]
 
 
 def _write_asset(path: Path, frontmatter: str, body: str = "Body.\n") -> None:
@@ -40,3 +40,26 @@ def test_parse_outputs_block_absent(tmp_path: Path) -> None:
     asset = tmp_path / "commands" / "plan.md"
     _write_asset(asset, "name: plan\n")
     assert parse_outputs_block(asset) == []
+
+
+def test_validate_asset_passes_when_outputs_in_registry(tmp_path: Path) -> None:
+    asset = tmp_path / "commands" / "plan.md"
+    _write_asset(asset, "name: plan\noutputs:\n  - plan_md\n  - plan_json\n")
+    errors = validate_asset(asset, registry_names={"plan_md", "plan_json", "research"})
+    assert errors == []
+
+
+def test_validate_asset_fails_on_unknown_name(tmp_path: Path) -> None:
+    asset = tmp_path / "commands" / "plan.md"
+    _write_asset(asset, "name: plan\noutputs:\n  - plan_md\n  - not_in_registry\n")
+    errors = validate_asset(asset, registry_names={"plan_md"})
+    assert len(errors) == 1
+    assert "not_in_registry" in errors[0]
+    assert asset.name in errors[0]
+
+
+def test_validate_asset_no_outputs_is_ok(tmp_path: Path) -> None:
+    asset = tmp_path / "commands" / "plan.md"
+    _write_asset(asset, "name: plan\n")
+    errors = validate_asset(asset, registry_names={"plan_md"})
+    assert errors == []

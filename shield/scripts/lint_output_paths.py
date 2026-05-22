@@ -43,3 +43,17 @@ def parse_outputs_block(asset_path: Path) -> list[str]:
     if not isinstance(raw, list):
         return []
     return [str(x) for x in raw]
+
+
+def validate_asset(asset_path: Path, registry_names: set[str]) -> list[str]:
+    """Return a list of human-readable error messages for an asset's outputs declarations.
+
+    Empty list means the asset is clean (including the case where it declares no outputs).
+    """
+    errors: list[str] = []
+    for name in parse_outputs_block(asset_path):
+        if name not in registry_names:
+            errors.append(
+                f"{asset_path.name}: declared output '{name}' is not in the path registry"
+            )
+    return errors
