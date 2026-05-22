@@ -13,6 +13,12 @@ if ! command -v claude >/dev/null 2>&1; then
   exit 127
 fi
 
+# Per-dispatch timeout (seconds). Override with EVAL_TIMEOUT / EVAL_JUDGE_TIMEOUT.
+# An eval that overruns the timeout is recorded as a FAIL with `TIMEOUT` in the
+# output, rather than blocking the rest of the batch.
+EVAL_TIMEOUT="${EVAL_TIMEOUT:-300}"
+EVAL_JUDGE_TIMEOUT="${EVAL_JUDGE_TIMEOUT:-90}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:?Usage: run-eval.sh <folder-or-eval-path>}"
 
@@ -43,9 +49,16 @@ run_one() {
   prompt=$(cat "$workdir/prompt.txt")
   # Run from the plugin root so skills are visible, but add-dir the workdir so
   # the agent resolves relative paths (docs/shield/...) there, not in the repo.
-  claude --print --dangerously-skip-permissions --add-dir "$workdir" \
+  # Wrap in `timeout` so a hung dispatch can't block the rest of the batch.
+  local dispatch_rc=0
+  timeout --kill-after=10 "$EVAL_TIMEOUT" \
+    claude --print --dangerously-skip-permissions --add-dir "$workdir" \
     --append-system-prompt "Your working directory for this task is $workdir. Resolve ALL relative file paths — both reads and writes — against $workdir. The .shield.json and all project files (docs/, research transcripts, etc.) are under $workdir. Always use absolute paths prefixed with $workdir when reading or writing any file." \
-    <<<"$prompt" >"$workdir/output.txt" 2>"$workdir/output.err" || true
+    <<<"$prompt" >"$workdir/output.txt" 2>"$workdir/output.err" || dispatch_rc=$?
+  if [[ "$dispatch_rc" -eq 124 ]] || [[ "$dispatch_rc" -eq 137 ]]; then
+    echo "  TIMEOUT: dispatch exceeded ${EVAL_TIMEOUT}s (rc=$dispatch_rc)" >&2
+    echo "[TIMEOUT after ${EVAL_TIMEOUT}s]" >>"$workdir/output.txt"
+  fi
 
   # Run structural checks — first try output.txt, then fall back to any
   # files the AGENT wrote (newer than .agent_start, e.g. prd.html for render
@@ -93,7 +106,8 @@ $(head -200 "$wf" 2>/dev/null)
       [[ -z "$criterion" ]] && continue
       qual_total=$((qual_total + 1))
       local verdict
-      verdict=$(claude --print --dangerously-skip-permissions <<EOF
+      verdict=$(timeout --kill-after=10 "$EVAL_JUDGE_TIMEOUT" \
+        claude --print --dangerously-skip-permissions <<EOF
 You are a strict eval judge. Given the model output and any written files below,
 evaluate whether the criterion is met. Answer ONLY "PASS" or "FAIL".
 
@@ -104,6 +118,11 @@ $(cat "$workdir/output.txt")
 $extra_content
 EOF
       )
+      local judge_rc=$?
+      if [[ "$judge_rc" -eq 124 ]] || [[ "$judge_rc" -eq 137 ]]; then
+        echo "  QUAL TIMEOUT (judged FAIL): $criterion"
+        verdict="FAIL"
+      fi
       if [[ "$verdict" == *"PASS"* ]]; then
         qual_pass=$((qual_pass + 1))
       else
