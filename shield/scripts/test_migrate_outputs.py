@@ -75,6 +75,36 @@ def test_derive_review_date_from_dir_mtime(tmp_path: Path) -> None:
     assert derive_review_date(d) == "2026-04-30"
 
 
+def test_prd_review_folder_migrates_to_dated_dir(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    rev = feature / "prd-review" / "1-myslug"
+    rev.mkdir(parents=True)
+    (rev / "summary.md").write_text("s")
+    (rev / "enhanced-prd.md").write_text("e")
+    (rev / "source-prd.md").write_text("src")
+    (rev / "review-comments.json").write_text("{}")
+    detailed = rev / "detailed"
+    detailed.mkdir()
+    (detailed / "agile-coach.md").write_text("a")
+    (detailed / "tech-lead-reviewer.md").write_text("t")
+
+    ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(rev, (ts, ts))
+
+    moves, _warnings = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _src, dst in moves}
+
+    expected = {
+        "reviews/prd/2026-04-30/summary.md",
+        "reviews/prd/2026-04-30/enhanced-prd.md",
+        "reviews/prd/2026-04-30/source-prd.md",
+        "reviews/prd/2026-04-30/review-comments.json",
+        "reviews/prd/2026-04-30/detailed/agile-coach.md",
+        "reviews/prd/2026-04-30/detailed/tech-lead-reviewer.md",
+    }
+    assert expected.issubset(dst_paths)
+
+
 def _make_tree(root: Path, files: list[str]) -> None:
     for f in files:
         path = root / f

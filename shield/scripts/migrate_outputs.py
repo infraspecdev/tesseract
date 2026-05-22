@@ -62,6 +62,32 @@ KNOWN_ROOT_FILES = {
 # Subdirectories that are valid in the new schema (no warning if files are here).
 KNOWN_SUBDIRS = {"outputs", "reviews"}
 
+# Legacy review-folder directory names handled by _plan_review_folder_moves.
+_LEGACY_REVIEW_DIRS = {"prd-review", "plan-review"}
+
+
+def _plan_review_folder_moves(
+    feature_dir: Path, review_type: str, legacy_dir_name: str
+) -> list[tuple[Path, Path]]:
+    legacy_root = feature_dir / legacy_dir_name
+    if not legacy_root.is_dir():
+        return []
+    seen_dates: dict[str, int] = {}
+    out: list[tuple[Path, Path]] = []
+    for run_dir in sorted(p for p in legacy_root.iterdir() if p.is_dir()):
+        if not re.match(r"^\d+-", run_dir.name):
+            continue
+        date = derive_review_date(run_dir)
+        seen_dates[date] = seen_dates.get(date, 0) + 1
+        counter = "" if seen_dates[date] == 1 else f"_{seen_dates[date]}"
+        new_run = feature_dir / "reviews" / review_type / f"{date}{counter}"
+        for src in run_dir.rglob("*"):
+            if not src.is_file():
+                continue
+            rel_inside = src.relative_to(run_dir).as_posix()
+            out.append((src, new_run / rel_inside))
+    return out
+
 
 def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
     """Walk a feature directory and return (moves, warnings).
@@ -77,6 +103,10 @@ def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
         if not path.is_file():
             continue
         rel = path.relative_to(feature_dir).as_posix()
+        # Files inside legacy review folders are handled by _plan_review_folder_moves below.
+        top_dir = rel.split("/")[0] if "/" in rel else ""
+        if top_dir in _LEGACY_REVIEW_DIRS:
+            continue
         target = map_legacy_path(rel)
         if target is not None:
             raw_moves.append((path, feature_dir / target))
@@ -85,9 +115,11 @@ def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
             if rel not in KNOWN_ROOT_FILES:
                 warnings.append(f"{rel}: unrecognized file at feature root, left in place")
         else:
-            top_dir = rel.split("/")[0]
             if top_dir not in KNOWN_SUBDIRS:
                 warnings.append(f"{rel}: unrecognized nested file, left in place")
+
+    for review_type, legacy_dir_name in [("prd", "prd-review"), ("plan", "plan-review")]:
+        raw_moves.extend(_plan_review_folder_moves(feature_dir, review_type, legacy_dir_name))
 
     by_dst: dict[Path, list[Path]] = {}
     for src, dst in raw_moves:
