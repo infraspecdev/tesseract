@@ -11,6 +11,10 @@ Every plugin-asset change in `tesseract/` must ship with an executable eval that
 
 Authoritative reference: `shield/evals/README.md`.
 
+## Related skills
+
+**REQUIRED SUB-SKILL when editing a `SKILL.md`:** Use `superpowers:writing-skills` for skill-content quality (CSO, frontmatter, structure, pressure-test methodology). This skill and `writing-skills` are complementary, not alternatives — `writing-skills` covers *how to write a good skill*; this skill covers *how to ship the change in this repo*. Load both.
+
 ## When to use
 
 Trigger this skill whenever you are about to write or edit:
