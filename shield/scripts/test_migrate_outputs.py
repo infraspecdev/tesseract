@@ -143,6 +143,63 @@ def test_same_day_review_folders_get_counter(tmp_path: Path) -> None:
     assert "reviews/prd/2026-04-30_2" in dst_dirs
 
 
+def _make_realistic_tree(root: Path) -> Path:
+    """Build a synthetic feature tree shaped like a real shield-managed project."""
+    feature = root / "bill-payments-platform-20260430"
+    files = {
+        "plan.json": '{"epics": []}',
+        "research/1-platform-foundations/findings.md": "platform foundations findings",
+        "research/2-multi-geo-data-and-execution-residency/findings.md": "multi-geo findings",
+        "prd/1-bill-payments-platform-v2/prd.md": "# PRD body",
+        "prd/1-bill-payments-platform-v2/prd.html": "<html>PRD</html>",
+        "prd/1-bill-payments-platform-v2/prd.meta.json": '{"version": 2}',
+        "prd-review/1-bill-payments-platform-v2/summary.md": "# Summary",
+        "prd-review/1-bill-payments-platform-v2/enhanced-prd.md": "# Enhanced PRD",
+        "prd-review/1-bill-payments-platform-v2/source-prd.md": "# Source snapshot",
+        "prd-review/1-bill-payments-platform-v2/review-comments.json": '{"comments": []}',
+        "prd-review/1-bill-payments-platform-v2/detailed/agile-coach.md": "agile findings",
+        "prd-review/1-bill-payments-platform-v2/detailed/tech-lead-reviewer.md": "tech findings",
+        "plan/1-prd-v2-foundation/architecture.html": "<html>arch</html>",
+        "plan/1-prd-v2-foundation/plan.html": "<html>plan</html>",
+        "plan-review/1-bill-payments-platform/detailed/architecture-reviewer.md": "arch reviewer",
+        "plans/product-note.md": "side note",
+    }
+    for relpath, content in files.items():
+        p = feature / relpath
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+    return feature
+
+
+def test_realistic_tree_full_migration(tmp_path: Path) -> None:
+    feature = _make_realistic_tree(tmp_path)
+
+    # Force the older research folder to be older than the newer one for collision resolution.
+    older = feature / "research/1-platform-foundations/findings.md"
+    newer = feature / "research/2-multi-geo-data-and-execution-residency/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    moves, warnings = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _, dst in moves}
+
+    assert "prd.md" in dst_paths
+    assert "outputs/prd.html" in dst_paths
+    assert "prd.meta.json" in dst_paths
+    assert "outputs/plan-architecture.html" in dst_paths
+    assert "outputs/plan.html" in dst_paths
+
+    review_dirs = {p for p in dst_paths if p.startswith("reviews/")}
+    assert any("reviews/prd/" in p and "/summary.md" in p for p in review_dirs)
+    assert any("reviews/plan/" in p and "/detailed/architecture-reviewer.md" in p for p in review_dirs)
+
+    research_targets = [p for p in dst_paths if p == "research.md"]
+    assert len(research_targets) == 1
+    assert any("discarded on collision" in w for w in warnings)
+
+    assert any("plans/product-note.md" in w for w in warnings)
+
+
 def _make_tree(root: Path, files: list[str]) -> None:
     for f in files:
         path = root / f
