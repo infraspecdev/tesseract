@@ -5,6 +5,7 @@ Runnable: `cd shield/scripts && uv run --with pyyaml --with pytest pytest test_m
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -13,7 +14,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from migrate_outputs import apply_moves, map_legacy_path, plan_moves  # type: ignore[import-not-found]
+from migrate_outputs import apply_moves, build_manifest, map_legacy_path, plan_moves  # type: ignore[import-not-found]
 
 
 @pytest.mark.parametrize("old,new", [
@@ -114,3 +115,28 @@ def test_apply_then_plan_is_noop(tmp_path: Path) -> None:
     moves2, warnings2 = plan_moves(feature)
     assert moves2 == []
     assert warnings2 == []
+
+
+def test_build_manifest_v2_structure(tmp_path: Path) -> None:
+    output_dir = tmp_path / "docs" / "shield"
+    feature = output_dir / "vpc-20260322"
+    _make_tree(feature, [
+        "research.md",
+        "plan.json",
+        "reviews/plan/2026-05-21/summary.md",
+        "reviews/plan/2026-05-21_2/summary.md",
+        "reviews/code/2026-05-22/summary.md",
+    ])
+
+    manifest = build_manifest(output_dir)
+
+    assert manifest["schema_version"] == 2
+    assert len(manifest["features"]) == 1
+    feat = manifest["features"][0]
+    assert feat["name"] == "vpc-20260322"
+    assert feat["artifacts"]["research"] is True
+    assert feat["artifacts"]["plan_json"] is True
+    assert feat["artifacts"]["prd"] is False
+    assert feat["reviews"]["plan"] == {"latest": "2026-05-21_2", "count": 2}
+    assert feat["reviews"]["code"] == {"latest": "2026-05-22", "count": 1}
+    assert "prd" not in feat["reviews"] or feat["reviews"]["prd"]["count"] == 0

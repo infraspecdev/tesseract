@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -90,3 +91,47 @@ def apply_moves(moves: list[tuple[Path, Path]]) -> None:
             p.rmdir()
             if p.parent.exists() and not any(p.parent.iterdir()):
                 p.parent.rmdir()
+
+
+# Artifact filenames the manifest tracks per feature (matches design §6.1).
+TRACKED_ARTIFACTS = {
+    "research":     "research.md",
+    "prd":          "prd.md",
+    "plan_json":    "plan.json",
+    "plan_md":      "plan.md",
+    "plan_arch_md": "plan-architecture.md",
+    "readme":       "README.md",
+}
+
+
+def _summarize_reviews(feature_dir: Path, review_type: str) -> dict[str, str | int]:
+    review_root = feature_dir / "reviews" / review_type
+    if not review_root.exists():
+        return {"count": 0}
+    runs = sorted(d.name for d in review_root.iterdir() if d.is_dir())
+    if not runs:
+        return {"count": 0}
+    return {"latest": runs[-1], "count": len(runs)}
+
+
+def build_manifest(output_dir: Path) -> dict:
+    """Walk {output_dir} and return a v2 manifest dict."""
+    features: list[dict] = []
+    for feature_dir in sorted(p for p in output_dir.iterdir() if p.is_dir()):
+        if feature_dir.name == "outputs":
+            continue  # global rendered output, not a feature
+        artifacts = {
+            key: (feature_dir / fname).exists()
+            for key, fname in TRACKED_ARTIFACTS.items()
+        }
+        reviews = {
+            rt: _summarize_reviews(feature_dir, rt)
+            for rt in ("prd", "plan", "code")
+        }
+        features.append({
+            "name": feature_dir.name,
+            "artifacts": artifacts,
+            "reviews": reviews,
+            "updated": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+        })
+    return {"schema_version": 2, "features": features}
