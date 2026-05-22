@@ -13,6 +13,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+import path_resolver  # type: ignore[import-not-found]
 from path_resolver import resolve  # type: ignore[import-not-found]
 
 
@@ -117,3 +118,16 @@ def test_legacy_paths_resolve() -> None:
     for name, bindings in legacy_paths:
         result = resolve(name, **bindings)
         assert result.startswith("docs/shield"), f"{name} did not resolve: {result!r}"
+
+
+def test_resolve_circular_reference_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_registry = {
+        "variables": {},
+        "paths": {
+            "a": "{b}/x",
+            "b": "{a}/y",
+        },
+    }
+    monkeypatch.setattr(path_resolver, "_load_registry", lambda: fake_registry)
+    with pytest.raises(ValueError, match="[Cc]ircular"):
+        path_resolver.resolve("a")

@@ -41,7 +41,7 @@ KNOWN_ROOT_FILES = {
 }
 
 # Subdirectories that are valid in the new schema (no warning if files are here).
-KNOWN_SUBDIRS = {"outputs"}
+KNOWN_SUBDIRS = {"outputs", "reviews"}
 
 
 def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:

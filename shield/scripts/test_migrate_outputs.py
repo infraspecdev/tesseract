@@ -159,6 +159,19 @@ def test_cli_dry_run_does_not_move(tmp_path: Path) -> None:
     assert "dry-run" in result.stdout.lower() or "would move" in result.stdout.lower()
 
 
+def test_plan_moves_reviews_subdir_no_warning(tmp_path: Path) -> None:
+    """Files under reviews/ should not produce unrecognized-nested-file warnings."""
+    feature = tmp_path / "vpc-20260322"
+    _make_tree(feature, [
+        "research.md",
+        "plan.json",
+        "reviews/plan/2026-05-21/summary.md",
+    ])
+    moves, warnings = plan_moves(feature)
+    assert moves == []
+    assert warnings == [], f"Expected no warnings but got: {warnings}"
+
+
 def test_cli_apply_moves_and_writes_manifest(tmp_path: Path) -> None:
     output_dir = tmp_path / "docs" / "shield"
     feature = output_dir / "vpc-20260322"

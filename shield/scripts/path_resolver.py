@@ -39,7 +39,7 @@ def resolve(name: str, **bindings: str) -> str:
         merged: dict[str, str] = dict(bindings)
         for nested_name in list(paths.keys()):
             placeholder = "{" + nested_name + "}"
-            if placeholder in template and nested_name not in seen:
+            if placeholder in template:
                 merged[nested_name] = expand(nested_name, seen | {name_})
         try:
             return template.format(**merged)

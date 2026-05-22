@@ -1,14 +1,13 @@
 # shield/scripts/lint_output_paths.py
 """Lint shield assets and the path registry for consistency.
 
-Runnable: `uv run --with pyyaml shield/scripts/lint_output_paths.py [--root .] [--strict]`
+Runnable: `uv run --with pyyaml shield/scripts/lint_output_paths.py [--root .]`
 """
 from __future__ import annotations
 
 import re
 import sys
 from pathlib import Path
-from typing import Iterator
 
 import yaml
 
@@ -97,7 +96,8 @@ def main(argv: list[str] | None = None) -> int:
     errors: list[str] = []
     errors.extend(validate_registry(registry))
     registry_names = set(registry.get("paths", {}).keys())
-    for asset in discover_assets(root / "shield"):
+    assets = discover_assets(root / "shield")
+    for asset in assets:
         errors.extend(validate_asset(asset, registry_names))
 
     if errors:
@@ -105,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
         for err in errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
-    print(f"Lint clean: registry + {len(discover_assets(root / 'shield'))} assets")
+    print(f"Lint clean: registry + {len(assets)} assets")
     return 0
 
 
