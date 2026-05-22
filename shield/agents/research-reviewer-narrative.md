@@ -3,6 +3,10 @@ name: research-reviewer-narrative
 description: Use AFTER research synthesis to produce the narrative portion of Research-Review (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary). The graded PM1-PM11 scorecard is handled by separate dim subagents, not by this one. Dispatched by `/research` Phase 2 review.
 persona: product-manager
 model: inherit
+# No outputs declared: research-reviewer-narrative contributes the narrative
+# four-section review back to the orchestrating /research command, which
+# folds it into the {research} document. This agent does not write its
+# own file.
 ---
 
 # Research Reviewer (Narrative)

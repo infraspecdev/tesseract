@@ -3,6 +3,9 @@ name: research-framer
 description: Use to frame a research topic BEFORE parallel research streams run. Produces an 8-section structured brief (PF1-PF8) that shapes downstream agent prompts — stakeholders, decisions, success criteria, must-cite voices, source-type coverage matrix. Dispatched by `/research` Phase 2 framing.
 persona: product-manager
 model: inherit
+# No outputs declared: research-framer contributes to the main {research}
+# document owned by /research; it does not write its own file. The framing
+# brief is embedded as a section inside {research}, not as a separate file.
 ---
 
 # Research Framer
