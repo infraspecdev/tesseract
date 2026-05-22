@@ -24,6 +24,12 @@ _PRD_META_JSON = re.compile(r"^prd/\d+-[^/]+/prd\.meta\.json$")
 _PLAN_HTML = re.compile(r"^plan/\d+-[^/]+/plan\.html$")
 
 
+def derive_review_date(legacy_review_dir: Path) -> str:
+    """Return YYYY-MM-DD derived from the directory's mtime (UTC)."""
+    ts = legacy_review_dir.stat().st_mtime
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+
+
 def map_legacy_path(relpath: str) -> Optional[str]:
     """Map a path under {output_dir}/{feature}/ to its new location.
 

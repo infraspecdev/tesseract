@@ -17,7 +17,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from migrate_outputs import apply_moves, build_manifest, git_dirty_paths, map_legacy_path, plan_moves  # type: ignore[import-not-found]
+from migrate_outputs import apply_moves, build_manifest, derive_review_date, git_dirty_paths, map_legacy_path, plan_moves  # type: ignore[import-not-found]
 
 
 @pytest.mark.parametrize("old,new", [
@@ -64,6 +64,15 @@ def test_map_prd_meta_json(old: str, new: str) -> None:
 ])
 def test_map_plan_html(old: str, new: str) -> None:
     assert map_legacy_path(old) == new
+
+
+def test_derive_review_date_from_dir_mtime(tmp_path: Path) -> None:
+    d = tmp_path / "prd-review" / "1-foo"
+    d.mkdir(parents=True)
+    (d / "summary.md").write_text("x")
+    ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(d, (ts, ts))
+    assert derive_review_date(d) == "2026-04-30"
 
 
 def _make_tree(root: Path, files: list[str]) -> None:
