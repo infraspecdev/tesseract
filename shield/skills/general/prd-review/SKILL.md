@@ -9,23 +9,29 @@ Dispatch parallel expert reviewer agents against a PRD to produce a scored analy
 
 ## Output Path — MANDATORY
 
-All review output goes into the feature's prd-review directory:
+All review output goes into a per-run, date-keyed folder under the feature's `reviews/prd/` directory:
 
 ```
-{output_dir}/{feature}/prd-review/{N}-{slug}/
-├── summary.md                              ← scored analysis (main output)
-├── source-prd.md                           ← verbatim snapshot of original source
-├── enhanced-prd.md                         ← P0/P1 inline + P2 comments
-├── review-comments.json                    ← canonical structured per-section gaps
+{output_dir}/{feature}/reviews/prd/{date}{_counter}/        ← {review_dir}
+├── summary.md                              ← {review_summary}    (main output)
+├── source-prd.md                           ← verbatim source snapshot (side-artifact)
+├── enhanced-prd.md                         ← {review_enhanced}   (P0/P1 inline + P2 comments)
+├── review-comments.json                    ← canonical structured per-section gaps (side-artifact)
 └── detailed/
-    ├── pm-reviewer.md
-    ├── agile-coach.md
-    ├── tech-lead-reviewer.md
-    ├── dx-reviewer.md
-    └── finops-analyst.md
+    ├── pm-reviewer.md                      ← {review_detailed} (agent=pm-reviewer)
+    ├── agile-coach.md                      ← {review_detailed} (agent=agile-coach)
+    ├── tech-lead-reviewer.md               ← {review_detailed} (agent=tech-lead-reviewer)
+    ├── dx-reviewer.md                      ← {review_detailed} (agent=dx-reviewer)
+    └── finops-analyst.md                   ← {review_detailed} (agent=finops-analyst)
+
+{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/  ← {review_outputs_dir}
+├── summary.html                            ← {review_summary_html}
+└── enhanced-prd.html                       ← {review_enhanced_html}
 ```
 
-Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder (`{feature-name}-YYYYMMDD`), `{N}` is sequential, `{slug}` is a kebab-case descriptor. **Do NOT** use any other path. The Write tool creates directories automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder (`{feature-name}-YYYYMMDD`), `{date}` is today's ISO date (`YYYY-MM-DD`), and `{_counter}` is empty for the first run of the day or `_2`, `_3`, ... on same-day collisions. Numbered-run subfolders (`prd-review/{N}-{slug}/`) are gone. Reviews never overwrite prior runs.
+
+**Resolving the counter:** before writing, list `{output_dir}/{feature}/reviews/prd/` for entries matching today's date. If `{date}/` does not exist, use `_counter=""`. Otherwise, find the highest `{date}_<N>/` and use `_counter="_<N+1>"`. **Do NOT** use any other path. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -67,9 +73,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 Follow `ingest.md` Steps 1-3:
 - Classify input (local path / URL / paste)
 - Route through resolver chain if URL
-- Snapshot result to `{output_dir}/{feature}/prd-review/{N}-{slug}/source-prd.md`
-
-The slug is derived from the feature name + a short descriptor (e.g., `1-add-oauth-login`).
+- Snapshot result to `{review_dir}/source-prd.md` (where `{review_dir}` = `{output_dir}/{feature}/reviews/prd/{date}{_counter}` resolved per the Output Path section above)
 
 ### 3. Type detection + confirmation
 
@@ -198,9 +202,9 @@ Files written:
 - detailed/<persona>.md — per-reviewer findings
 
 What next?
-1. **Use enhanced as canonical PRD** — copy enhanced-prd.md to prd/{N}-{slug}/prd.md so downstream Shield commands consume the fixed version
-2. **Convert back to original format** — produce enhanced-prd.<ext> in source's format (HTML / Notion-flavored markdown)
-3. **Skip** — keep enhanced-prd.md in the review folder; do nothing else
+1. **Use enhanced as canonical PRD** — copy `{review_enhanced}` to `{prd}` (i.e. `{output_dir}/{feature}/prd.md`) so downstream Shield commands consume the fixed version
+2. **Convert back to original format** — produce `enhanced-prd.<ext>` in source's format (HTML / Notion-flavored markdown)
+3. **Skip** — keep `{review_enhanced}` in `{review_dir}`; do nothing else
 ```
 
 User picks; Shield executes.
@@ -210,7 +214,7 @@ User picks; Shield executes.
 | Mistake | Fix |
 |---|---|
 | Dispatching reviewer agents sequentially | Dispatch all 13 unique invocations in a single response (parallel) |
-| Writing review output to the wrong path | Must be `{output_dir}/{feature}/prd-review/{N}-{slug}/` — never `shield/` or `.shield/` |
+| Writing review output to the wrong path | Must be `{review_dir}` = `{output_dir}/{feature}/reviews/prd/{date}{_counter}/` — never the legacy `prd-review/{N}-{slug}/`, never `shield/` or `.shield/` |
 | Overwriting source-prd.md after dispatch | Source snapshot is immutable; only enhanced-prd.md gets annotated |
 | Skipping P0-gate when verdict has P0 + high composite | Verdict is Needs Work regardless of composite if any P0 exists |
 | Producing enhanced-prd.md without inline attribution | Every P0/P1 inline edit MUST have `<!-- [from: <Persona>] -->` attribution |
