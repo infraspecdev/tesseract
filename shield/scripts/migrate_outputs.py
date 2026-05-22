@@ -100,7 +100,6 @@ TRACKED_ARTIFACTS = {
     "plan_json":    "plan.json",
     "plan_md":      "plan.md",
     "plan_arch_md": "plan-architecture.md",
-    "readme":       "README.md",
 }
 
 

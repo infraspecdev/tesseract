@@ -20,7 +20,6 @@ paths:
 
   # Per-feature
   feature_dir:        "{output_dir}/{feature}"
-  readme:             "{feature_dir}/README.md"
   research:           "{feature_dir}/research.md"
   prd:                "{feature_dir}/prd.md"
   plan_json:          "{feature_dir}/plan.json"
@@ -29,7 +28,6 @@ paths:
 
   # Per-feature rendered
   feature_outputs:    "{feature_dir}/outputs"
-  readme_html:        "{feature_outputs}/README.html"
   prd_html:           "{feature_outputs}/prd.html"
   plan_html:          "{feature_outputs}/plan.html"
   plan_arch_html:     "{feature_outputs}/plan-architecture.html"
