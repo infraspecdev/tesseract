@@ -213,3 +213,24 @@ def test_plan_moves_returns_collision_resolutions(tmp_path: Path) -> None:
 
     discard_warnings = [w for w in warnings if "discarded" in w.lower() and "1-old" in w]
     assert len(discard_warnings) == 1, f"Expected one discard warning; got {warnings!r}"
+
+
+def test_cli_dry_run_logs_collision_discard(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    _make_tree(feature, [
+        "research/1-old/findings.md",
+        "research/2-new/findings.md",
+    ])
+    older = feature / "research/1-old/findings.md"
+    newer = feature / "research/2-new/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"), "--root", str(tmp_path)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0
+    out = result.stdout + result.stderr
+    assert "discarded on collision" in out
+    assert "1-old" in out
