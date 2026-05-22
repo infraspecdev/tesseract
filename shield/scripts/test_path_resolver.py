@@ -119,19 +119,6 @@ def test_resolve_added_artifacts() -> None:
         "docs/shield/f/reviews/code/2026-05-22/changes.md"
 
 
-def test_legacy_paths_resolve() -> None:
-    """Legacy entries (pre-redesign) must resolve so lint can pass during Phase 3 cutover."""
-    legacy_paths = [
-        ("legacy_research_dir", dict(output_dir="docs/shield", feature="f",
-                                     n="1", slug="my-topic")),
-        ("legacy_plan_dir",     dict(output_dir="docs/shield", feature="f",
-                                     n="1", slug="my-plan")),
-    ]
-    for name, bindings in legacy_paths:
-        result = resolve(name, **bindings)
-        assert result.startswith("docs/shield"), f"{name} did not resolve: {result!r}"
-
-
 def test_resolve_circular_reference_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_registry = {
         "variables": {},

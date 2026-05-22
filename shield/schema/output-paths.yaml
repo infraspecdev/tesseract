@@ -9,8 +9,6 @@ variables:
   date:         "YYYY-MM-DD of the review run"
   _counter:     "Empty for first run on a date; '_2', '_3', ... on same-day collisions"
   agent:        "Agent slug for per-agent detail files (e.g. 'backend-engineer')"
-  n:            "(legacy only) numbered-run prefix"
-  slug:         "(legacy only) human-readable run slug"
 
 paths:
   # Top-level
@@ -47,7 +45,3 @@ paths:
   review_summary_html:   "{review_outputs_dir}/summary.html"
   review_enhanced_html:  "{review_outputs_dir}/enhanced-{review_type}.html"
   review_detailed_html:  "{review_outputs_dir}/detailed/{agent}.html"
-
-  # Legacy (pre-redesign). Removed in Phase 5 (see design §10).
-  legacy_research_dir: "{output_dir}/{feature}/research/{n}-{slug}"
-  legacy_plan_dir:     "{output_dir}/{feature}/plan/{n}-{slug}"
