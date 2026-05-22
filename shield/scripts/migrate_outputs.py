@@ -19,6 +19,7 @@ _RESEARCH_FINDINGS = re.compile(r"^research/\d+-[^/]+/findings\.md$")
 _RESEARCH_TRANSCRIPT = re.compile(r"^research/\d+-[^/]+/transcript\.md$")
 _PLAN_ARCH_HTML = re.compile(r"^plan/\d+-[^/]+/architecture\.html$")
 _PRD_MD = re.compile(r"^prd/\d+-[^/]+/prd\.md$")
+_PRD_HTML = re.compile(r"^prd/\d+-[^/]+/prd\.html$")
 
 
 def map_legacy_path(relpath: str) -> Optional[str]:
@@ -35,6 +36,8 @@ def map_legacy_path(relpath: str) -> Optional[str]:
         return "outputs/plan-architecture.html"
     if _PRD_MD.match(relpath):
         return "prd.md"
+    if _PRD_HTML.match(relpath):
+        return "outputs/prd.html"
     return None
 
 

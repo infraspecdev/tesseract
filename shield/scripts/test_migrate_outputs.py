@@ -45,6 +45,13 @@ def test_map_prd_md(old: str, new: str) -> None:
     assert map_legacy_path(old) == new
 
 
+@pytest.mark.parametrize("old,new", [
+    ("prd/1-foo/prd.html", "outputs/prd.html"),
+])
+def test_map_prd_html(old: str, new: str) -> None:
+    assert map_legacy_path(old) == new
+
+
 def _make_tree(root: Path, files: list[str]) -> None:
     for f in files:
         path = root / f
