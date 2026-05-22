@@ -1,11 +1,15 @@
-"""End-to-end smoke test for migrate_outputs.py against a copy of docs/shield/.
+"""End-to-end smoke test for migrate_outputs.py against a copy of an output tree.
 
-Copies the real tree to a temp dir and exercises the full migration cycle:
-dry-run, apply, manifest verification, idempotence, no-data-loss. Real repo
+Copies the source tree to a temp dir and exercises the full migration cycle:
+dry-run, apply, manifest verification, idempotence, no-data-loss. Source tree
 is never touched.
 
-Runnable: `uv run --with pyyaml shield/scripts/verify_migration.py [--keep]`
-  --keep   leave the temp dir in place on success (for manual inspection).
+Runnable: `uv run --with pyyaml shield/scripts/verify_migration.py [--source DIR] [--keep]`
+  --source  output tree to verify against (default: docs/shield/ in repo).
+  --keep    leave the temp dir in place on success (for manual inspection).
+
+When --source is the default repo tree, also asserts known expected moves.
+For custom --source dirs, only the structural checks run.
 """
 from __future__ import annotations
 
@@ -57,37 +61,39 @@ def _run_migrate(root: Path, *, apply: bool) -> subprocess.CompletedProcess[str]
     return subprocess.run(cmd, capture_output=True, text=True, check=False)
 
 
-def verify(tmp_tree: Path) -> list[str]:
+def verify(tmp_tree: Path, *, check_known_moves: bool) -> list[str]:
     failures: list[str] = []
     before = _collect_file_hashes(tmp_tree)
     print(f"baseline: {len(before)} files in copy")
 
-    # 1. Dry-run lists every expected move + warning.
+    # 1. Dry-run runs cleanly. With known source, also asserts expected moves/warnings.
     dry = _run_migrate(tmp_tree, apply=False)
     if dry.returncode != 0:
         failures.append(f"dry-run exited {dry.returncode}: {dry.stderr.strip()}")
-    for old, new in EXPECTED_MOVES.items():
-        line = f"would move: {old} -> {new}"
-        if line not in dry.stdout:
-            failures.append(f"dry-run missing expected move line: {line!r}")
-    for needle in EXPECTED_WARNING_SUBSTRINGS:
-        if needle not in dry.stdout:
-            failures.append(f"dry-run missing warning containing {needle!r}")
+    if check_known_moves:
+        for old, new in EXPECTED_MOVES.items():
+            line = f"would move: {old} -> {new}"
+            if line not in dry.stdout:
+                failures.append(f"dry-run missing expected move line: {line!r}")
+        for needle in EXPECTED_WARNING_SUBSTRINGS:
+            if needle not in dry.stdout:
+                failures.append(f"dry-run missing warning containing {needle!r}")
 
     # 2. --apply moves files and writes manifest.
     apply = _run_migrate(tmp_tree, apply=True)
     if apply.returncode != 0:
         failures.append(f"--apply exited {apply.returncode}: {apply.stderr.strip()}")
 
-    for old, new in EXPECTED_MOVES.items():
-        if (tmp_tree / old).exists():
-            failures.append(f"source still present after --apply: {old}")
-        if not (tmp_tree / new).exists():
-            failures.append(f"destination missing after --apply: {new}")
-            continue
-        # Content preserved bit-for-bit.
-        if old in before and before[old] != _sha256(tmp_tree / new):
-            failures.append(f"content changed during move: {old} -> {new}")
+    if check_known_moves:
+        for old, new in EXPECTED_MOVES.items():
+            if (tmp_tree / old).exists():
+                failures.append(f"source still present after --apply: {old}")
+            if not (tmp_tree / new).exists():
+                failures.append(f"destination missing after --apply: {new}")
+                continue
+            # Content preserved bit-for-bit.
+            if old in before and before[old] != _sha256(tmp_tree / new):
+                failures.append(f"content changed during move: {old} -> {new}")
 
     # 3. Manifest written with schema_version: 2.
     manifest_path = tmp_tree / "manifest.json"
@@ -134,21 +140,28 @@ def verify(tmp_tree: Path) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=REAL_TREE,
+                        help=f"output tree to verify (default: {REAL_TREE})")
     parser.add_argument("--keep", action="store_true",
                         help="don't delete the temp dir on success")
     args = parser.parse_args(argv)
 
-    if not REAL_TREE.exists():
-        print(f"error: {REAL_TREE} does not exist", file=sys.stderr)
+    source = args.source.resolve()
+    if not source.exists():
+        print(f"error: --source {source} does not exist", file=sys.stderr)
         return 2
+
+    check_known_moves = source == REAL_TREE.resolve()
 
     tmp_root = Path(tempfile.mkdtemp(prefix="shield-verify-"))
     tmp_tree = tmp_root / "shield"
-    print(f"copying {REAL_TREE} -> {tmp_tree}")
-    shutil.copytree(REAL_TREE, tmp_tree)
+    print(f"copying {source} -> {tmp_tree}")
+    if not check_known_moves:
+        print("(custom --source: skipping known-moves assertions)")
+    shutil.copytree(source, tmp_tree)
 
     try:
-        failures = verify(tmp_tree)
+        failures = verify(tmp_tree, check_known_moves=check_known_moves)
         if failures:
             print(f"\nFAIL ({len(failures)} issues):", file=sys.stderr)
             for f in failures:
