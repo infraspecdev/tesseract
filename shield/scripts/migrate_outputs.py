@@ -67,3 +67,19 @@ def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
             warnings.append(f"{rel}: unrecognized nested file, left in place")
 
     return moves, warnings
+
+
+def apply_moves(moves: list[tuple[Path, Path]]) -> None:
+    """Execute the moves and clean up empty parent directories."""
+    parents_to_check: set[Path] = set()
+    for src, dst in moves:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        src.rename(dst)
+        parents_to_check.add(src.parent)
+
+    # Sweep emptied numbered-run dirs and their parents (one level up).
+    for p in sorted(parents_to_check, key=lambda x: len(x.as_posix()), reverse=True):
+        if p.exists() and not any(p.iterdir()):
+            p.rmdir()
+            if p.parent.exists() and not any(p.parent.iterdir()):
+                p.parent.rmdir()

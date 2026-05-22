@@ -13,7 +13,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from migrate_outputs import map_legacy_path, plan_moves  # type: ignore[import-not-found]
+from migrate_outputs import apply_moves, map_legacy_path, plan_moves  # type: ignore[import-not-found]
 
 
 @pytest.mark.parametrize("old,new", [
@@ -72,3 +72,30 @@ def test_plan_moves_already_migrated_tree(tmp_path: Path) -> None:
     assert moves == []
     # Already-flat files at root that aren't in the new schema would warn, but research/prd/plan_json are.
     assert warnings == []
+
+
+def test_apply_moves_executes(tmp_path: Path) -> None:
+    feature = tmp_path / "vpc-20260322"
+    _make_tree(feature, [
+        "research/1-claude-isolation/findings.md",
+        "research/1-claude-isolation/transcript.md",
+        "plan/1-foo/architecture.html",
+    ])
+    moves, _ = plan_moves(feature)
+    apply_moves(moves)
+
+    assert (feature / "research.md").exists()
+    assert (feature / ".session-transcript.md").exists()
+    assert (feature / "outputs" / "plan-architecture.html").exists()
+    # Sources should be gone
+    assert not (feature / "research" / "1-claude-isolation" / "findings.md").exists()
+
+
+def test_apply_moves_removes_empty_dirs(tmp_path: Path) -> None:
+    feature = tmp_path / "vpc-20260322"
+    _make_tree(feature, ["research/1-claude-isolation/findings.md"])
+    moves, _ = plan_moves(feature)
+    apply_moves(moves)
+
+    # The numbered-run folder and its parent should be cleaned up if empty
+    assert not (feature / "research").exists() or not any((feature / "research").iterdir())
