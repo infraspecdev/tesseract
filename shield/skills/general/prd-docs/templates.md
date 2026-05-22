@@ -353,10 +353,14 @@ Write the file `prd.shell.html` in the same directory as `prd.md`. The shell con
 Call the helper (it shells out to `uv run` and pulls `markdown-it-py` + `mdit-py-plugins` ephemerally — no global install needed):
 
 ```bash
+# Run from the feature directory so the helper resolves relative paths there.
+# Source `{prd}` lives flat in the feature dir; rendered `{prd_html}` goes under outputs/.
+cd "{output_dir}/{feature}"
+mkdir -p outputs
 "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
-  --md   "{output_dir}/{feature}/prd/{N}-{slug}/prd.md" \
-  --shell "{output_dir}/{feature}/prd/{N}-{slug}/prd.shell.html" \
-  --out  "{output_dir}/{feature}/prd/{N}-{slug}/prd.html"
+  --md    prd.md \
+  --shell prd.shell.html \
+  --out   outputs/prd.html
 ```
 
 After the helper writes `prd.html`, delete `prd.shell.html` — it is a build artifact, not part of the PRD record.

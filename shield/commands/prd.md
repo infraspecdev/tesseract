@@ -2,6 +2,7 @@
 name: prd
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
 description: Author a new PRD with Shield's 20-section problem-first scaffold (or 10-section lean variant). Includes Terminologies (§2, auto-filled from research+body), Architecture & flows (§5, optional Mermaid), per-story Type labels (new/enhancement/existing) in §8, and auto-generated TOC + rendered Mermaid in prd.html. Supports custom team templates, lean→standard upgrade flow.
+outputs: [prd, prd_html]
 ---
 
 # /prd
@@ -15,6 +16,15 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 /prd <topic>                  # uses topic as seed for Problem / feature name
 /prd --feature <name>         # explicit feature folder
 ```
+
+## Paths
+
+| Registry key | Resolved path |
+|---|---|
+| `prd` | `{output_dir}/{feature}/prd.md` |
+| `prd_html` | `{output_dir}/{feature}/outputs/prd.html` |
+
+`prd.meta.json` is a metadata sidecar written to `{output_dir}/{feature}/prd.meta.json` — it is not a primary deliverable and is not in the registry (similar to `.session-transcript.md` from /research).
 
 ## What it does
 
@@ -37,10 +47,10 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 ## Output
 
 ```
-{output_dir}/{feature}/prd/{N}-{slug}/
-├── prd.md
-├── prd.html
-└── prd.meta.json
+{output_dir}/{feature}/
+├── prd.md            ← registry: {prd}      = {feature_dir}/prd.md
+├── outputs/prd.html  ← registry: {prd_html} = {feature_outputs}/prd.html
+└── prd.meta.json     ← side-artifact (metadata sidecar, not in registry)
 ```
 
 ## Reference

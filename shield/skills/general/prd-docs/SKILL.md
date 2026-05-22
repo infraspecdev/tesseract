@@ -10,13 +10,15 @@ Author a new PRD with the Shield 20-section problem-first scaffold (or 10-sectio
 ## Output Path — MANDATORY
 
 ```
-{output_dir}/{feature}/prd/{N}-{slug}/
-├── prd.md
-├── prd.html
-└── prd.meta.json
+{output_dir}/{feature}/
+├── prd.md            ← registry: {prd}      = {feature_dir}/prd.md
+├── outputs/prd.html  ← registry: {prd_html} = {feature_outputs}/prd.html
+└── prd.meta.json     ← side-artifact (metadata sidecar, not in registry)
 ```
 
-Where `{output_dir}` comes from `.shield.json`, `{feature}` is the feature folder, `{N}` is sequential. The `prd.meta.json` records type, status, owner, last_updated, rubric_version, and `linked_plans` (auto-populated by `/plan` when it runs).
+Where `{output_dir}` comes from `.shield.json` and `{feature}` is the feature folder. Numbered run subfolders (`prd/{N}-{slug}/`) are gone — prd.md lives flat in the feature folder.
+
+`prd.meta.json` is metadata (records type, status, owner, last_updated, rubric_version, and `linked_plans` auto-populated by `/plan`) — it is a side-artifact like the manifest, not a primary deliverable, so it is not in the `outputs:` registry.
 
 ## When to Use
 
@@ -70,7 +72,7 @@ Determine which feature folder this PRD belongs to:
 
 ### 3. Detect prior lean PRD (upgrade flow)
 
-Glob `{output_dir}/{feature}/prd/*/prd.meta.json`. If any have `type: "lean"`:
+Read `{output_dir}/{feature}/prd.meta.json`. If it exists and has `type: "lean"`:
 
 Offer the user a multi-select:
 
@@ -99,8 +101,8 @@ I found a lean PRD in this feature folder. What would you like to do?
 ```
 
 If user picks "Add sections":
-- Create new run folder `prd/{N+1}-{slug}/`
-- Copy existing lean content forward
+- Read the existing `{output_dir}/{feature}/prd.md` and `{output_dir}/{feature}/prd.meta.json` (flat paths — no numbered subfolder)
+- Copy existing lean content forward into the upgraded PRD
 - Walk the user through the chosen new sections only
 
 If "Start fresh" or no prior lean PRD detected, proceed to Step 4.
@@ -117,7 +119,7 @@ Record user choice. Type is per-invocation; not stored in `.shield.json`.
 
 ### 5. Pre-populate from prior research
 
-Look for `{output_dir}/{feature}/research/*/transcript.md` (Phase C, falls back to `findings.md` if Phase C not yet shipped). If found:
+Look for `{output_dir}/{feature}/.session-transcript.md` (falls back to `{output_dir}/{feature}/research.md` if the transcript is absent). If found:
 - Read it
 - Extract Problem context, Target Users (personas), Constraints (Existing systems / compliance markers)
 - Pre-populate the corresponding sections in the PRD draft
@@ -238,7 +240,7 @@ For lean PRDs, walk lean §9 (Open questions), then §10 (Out of scope). Do NOT 
 
 Now that Sections 3-20 have content (or 3-10 for lean), populate the Terminologies placeholder inserted in step 6a.
 
-**Source A — research transcript glossary (REQUIRED copy, zero filtering).** If a `/research` transcript exists at `{output_dir}/{feature}/research/*/transcript.md` (or `findings.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list). **Copy EVERY row verbatim into the Terminologies table.**
+**Source A — research transcript glossary (REQUIRED copy, zero filtering).** If a `/research` transcript exists at `{output_dir}/{feature}/.session-transcript.md` (falls back to `{output_dir}/{feature}/research.md`), scan it for any `## Glossary`, `## Terminology`, or `## Terms` section. Parse rows (table or bullet list). **Copy EVERY row verbatim into the Terminologies table.**
 
 Rules for Source A copy:
 - Include ALL rows — **including business/marketing/product terms** (e.g., "ICP", "PLG", "GTM", "CAC") that may seem unrelated to the feature's technical domain. These terms appear in the research for a reason and reviewers depend on them.
@@ -279,7 +281,7 @@ If `.shield.json.prd_template` is set:
 
 ### 15. Write artifacts
 
-- Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.md`
+- Write `{output_dir}/{feature}/prd.md` (registry key: `prd`)
 - **Pre-flight: ensure `uv` is available.** Run `command -v uv` first. If missing, do NOT call the renderer yet — first prompt the user:
   ```
   prd.html rendering requires uv (one-time install, ~/.local/bin).
@@ -288,12 +290,13 @@ If `.shield.json.prd_template` is set:
     [n] Skip — prd.md is written, prd.html will be missing until you re-run /prd after installing uv
   ```
   If user agrees, run the installer via Bash, then `export PATH="$HOME/.local/bin:$PATH"` in the same shell so the next step finds it. If user declines, write `prd.md` and `prd.meta.json` but skip `prd.html` and surface the warning in the step-16 summary.
-- Render `prd.html` via the helper (see `templates.md` → HTML render template):
+- Render `{output_dir}/{feature}/outputs/prd.html` (registry key: `prd_html`) via the helper (see `templates.md` → HTML render template):
   1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md`. The shell **MUST include both placeholders**: `{{TOC}}` (placed immediately after the meta-banner div, on its own line — the renderer replaces it with the auto-generated table of contents) AND `{{BODY}}` (placed after `{{TOC}}`, on its own line — the renderer replaces it with the rendered markdown body). Fill in the title and meta-banner content directly (owner, status, sidecar/research links) — those are NOT placeholders. Do NOT omit `{{TOC}}` — without it, the rendered prd.html will have no table of contents.
-  2. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out prd.html`.
-  3. Delete `prd.shell.html` once the helper succeeds.
+  2. Ensure the `{output_dir}/{feature}/outputs/` directory exists before writing.
+  3. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out outputs/prd.html` (from the feature dir).
+  4. Delete `prd.shell.html` once the helper succeeds.
   Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, mermaid fence rules, and loose/tight wrapping.
-- Write `{output_dir}/{feature}/prd/{N}-{slug}/prd.meta.json` (per `meta-schema.md`)
+- Write `{output_dir}/{feature}/prd.meta.json` (per `meta-schema.md`) — side-artifact metadata sidecar, not a primary deliverable
 
 ### 16. Update dashboard
 
@@ -305,8 +308,8 @@ If `.shield.json.prd_template` is set:
 ```
 PRD authored. What's next?
 
-- /prd-review prd/{N}-{slug}/prd.md   — review for gaps
-- /plan                                — generate a technical plan from this PRD
+- /prd-review   — review for gaps (reads prd.md from the feature folder)
+- /plan         — generate a technical plan from this PRD
 ```
 
 ## Common Mistakes
@@ -323,7 +326,7 @@ PRD authored. What's next?
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
 | Mirroring §8 story AC as G/W/T FRs in §9 | §9 should only contain rules §8 doesn't capture (cross-story invariants, architectural commitments, negative "shall not" requirements, background/operational behaviors, data-handling rules, inter-service contracts). If an FR has a 1:1 back-pointer to a single story and says nothing the story doesn't, drop it. |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
-| Writing to a path other than {output_dir}/{feature}/prd/{N}-{slug}/ | This is the only valid output path |
+| Writing to a path other than {output_dir}/{feature}/ (e.g. creating a numbered prd/{N}-{slug}/ subfolder) | prd.md must be written flat in the feature folder: {output_dir}/{feature}/prd.md |
 | Omitting {{TOC}} from prd.shell.html | prd.shell.html MUST have BOTH {{TOC}} and {{BODY}}; omitting {{TOC}} produces a TOC-less prd.html |
 | Hand-rendering prd.html without render-markdown.sh | Always use render-markdown.sh; other renderers don't apply the mermaid fence rule or anchors plugin |
 | Dropping or duplicating lean §8 Milestones during upgrade to standard | The lean §8 Milestones table MUST migrate into standard §15's Milestones sub-table. Do NOT keep it as standalone §8 (that's Stories in standard) and do NOT duplicate it. The upgrade flow's Note line explicitly calls this out — agents that miss it produce corrupted PRDs. |
