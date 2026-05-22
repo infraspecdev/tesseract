@@ -58,26 +58,9 @@ tesseract/
 
 ## Eval coverage — MANDATORY for plugin updates
 
-> **Procedure:** see `.claude/skills/updating-plugin-assets/SKILL.md` (auto-loads when editing plugin assets). The section below is the policy; the skill walks the checklist.
+> **Procedure:** see `.claude/skills/updating-plugin-assets/SKILL.md` (auto-loads when editing plugin assets) for framework choice, RED→GREEN steps, and PR definition-of-done.
 
 **Every new or changed plugin asset (skill, agent, command, prompt, or skill-orchestrator wiring) MUST land in the same PR as at least one executable eval that exercises the new behavior.** In-conversation GREEN dispatches during implementation are *necessary but not sufficient* — they do not survive into the repo and cannot regression-test future changes.
-
-The shield plugin ships two eval frameworks; pick the one that fits your change:
-
-| Framework | Use when | Add |
-|---|---|---|
-| **Snapshot eval** (`shield/evals/run-evals.sh`, `expected/*.yaml`) | The change is a focused agent/subagent/prompt whose output you can capture once and grade many times against regex+qualitative assertions | A `expected/<name>.yaml` + a captured `results/<name>.txt` |
-| **End-to-end eval** (`shield/evals/run-eval.sh`, `<skill>/<NN>-*.md`) | The change is in skill orchestration — what matters is whether the SKILL drives a subagent correctly, not a static output | A new `shield/evals/<skill>/<NN>-<scenario>.md` with Setup + Prompt + Success criteria + Threshold |
-| **Custom merge-gate script** (e.g., `shield/evals/run-prd-review-merge-gate.sh`) | The change touches multiple dispatchers and the regression signal is an aggregate count or distribution across many runs | A script in `shield/evals/` that dispatches the work, writes a results JSON under `shield/evals/baselines/`, and exits non-zero on regression |
-
-Definition-of-done for a plugin-change PR:
-
-1. The eval file(s) exist and are committed.
-2. The eval(s) PASS (`./shield/evals/run-evals.sh` and/or `./shield/evals/run-eval.sh <folder>` are green for the affected scope).
-3. If a baseline JSON exists in `shield/evals/baselines/` for the affected area, the change does not regress it — either the same script that produced the baseline is re-run and committed alongside, or the baseline is intentionally updated with a one-line note in the commit message explaining why.
-4. The PR description references the eval(s) by path and links to the PASS output.
-
-**Why this matters:** the merge gate that closed `pm-restructure-v0` (May 2026) was a 36-dispatch in-conversation exercise — strong signal at PR time, but not reproducible afterward without a human re-running 36 prompts by hand. Future restructures of the same surface area cannot diff against it. Evals committed alongside the change turn that one-shot signal into a permanent regression check.
 
 If a change genuinely has no eval-shaped surface (e.g., a typo fix in a doc, a rename, a comment), state that explicitly in the PR body. Default is "eval required."
 
