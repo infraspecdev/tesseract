@@ -5,6 +5,8 @@ description: |
   dependency ordering, or acceptance criteria testability. Always dispatch
   for plans with stories.
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Agile Coach Reviewer

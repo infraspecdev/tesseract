@@ -6,6 +6,8 @@ description: |
   loads relevant agnostic and framework-specific skills, and dispatches cross-cutting concerns to
   specialist agents. Only activate when there is clear evidence of backend application code.
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Backend Reviewer
