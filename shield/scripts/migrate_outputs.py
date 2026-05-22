@@ -18,6 +18,7 @@ from typing import Optional
 _RESEARCH_FINDINGS = re.compile(r"^research/\d+-[^/]+/findings\.md$")
 _RESEARCH_TRANSCRIPT = re.compile(r"^research/\d+-[^/]+/transcript\.md$")
 _PLAN_ARCH_HTML = re.compile(r"^plan/\d+-[^/]+/architecture\.html$")
+_PRD_MD = re.compile(r"^prd/\d+-[^/]+/prd\.md$")
 
 
 def map_legacy_path(relpath: str) -> Optional[str]:
@@ -32,6 +33,8 @@ def map_legacy_path(relpath: str) -> Optional[str]:
         return ".session-transcript.md"
     if _PLAN_ARCH_HTML.match(relpath):
         return "outputs/plan-architecture.html"
+    if _PRD_MD.match(relpath):
+        return "prd.md"
     return None
 
 
