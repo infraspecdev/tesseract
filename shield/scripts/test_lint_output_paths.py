@@ -87,3 +87,48 @@ def test_validate_registry_flags_unknown_variable() -> None:
     assert len(errors) == 1
     assert "nonexistent" in errors[0]
     assert "research" in errors[0]
+
+
+import subprocess
+
+
+def test_cli_passes_clean_tree(tmp_path: Path) -> None:
+    # Build a minimal repo: registry + one asset with no outputs declared
+    schema_dir = tmp_path / "shield" / "schema"
+    schema_dir.mkdir(parents=True)
+    (schema_dir / "output-paths.yaml").write_text(
+        "variables:\n  output_dir: ''\n"
+        "paths:\n  feature_dir: '{output_dir}/x'\n"
+    )
+    asset = tmp_path / "shield" / "commands" / "plan.md"
+    asset.parent.mkdir(parents=True)
+    _write_asset(asset, "name: plan\n")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "lint_output_paths.py"), "--root", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_cli_fails_on_unknown_output_name(tmp_path: Path) -> None:
+    schema_dir = tmp_path / "shield" / "schema"
+    schema_dir.mkdir(parents=True)
+    (schema_dir / "output-paths.yaml").write_text(
+        "variables:\n  output_dir: ''\n"
+        "paths:\n  feature_dir: '{output_dir}/x'\n"
+    )
+    asset = tmp_path / "shield" / "commands" / "plan.md"
+    asset.parent.mkdir(parents=True)
+    _write_asset(asset, "name: plan\noutputs:\n  - ghost_path\n")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "lint_output_paths.py"), "--root", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "ghost_path" in result.stdout + result.stderr
