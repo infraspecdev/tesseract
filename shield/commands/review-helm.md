@@ -2,6 +2,11 @@
 name: review-helm
 description: Run Helm chart review for structure, best practices, and K8s security/operational issues in templates
 args: "[path]"
+outputs:
+  - review_summary    # review_type=code
+  - review_detailed   # review_type=code, agent=helm-structure | k8s-security | k8s-operations
+  - review_summary_html
+  - review_detailed_html
 ---
 
 # Helm Chart Review
@@ -11,6 +16,10 @@ Run a comprehensive review of a Helm chart covering chart structure, template be
 ## Usage
 
 `/review-helm [path]`
+
+## Paths
+
+Writes registry-tracked paths under `{review_dir}` = `{output_dir}/{feature}/reviews/code/{date}{_counter}` (review_type=code, agents=helm-structure / k8s-security / k8s-operations — one `{review_detailed}` per skill). See `shield/schema/output-paths.yaml` and the counter-resolution rule in `/review`. `changes.md` is a side-artifact.
 
 ## Behavior
 
@@ -27,22 +36,20 @@ Run a comprehensive review of a Helm chart covering chart structure, template be
 
 ## Output Path
 
-First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read `.shield.json` to get `output_dir` (default: `docs/shield`). Then determine the feature folder name and run number:
+First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read `.shield.json` to get `output_dir` (default: `docs/shield`). Determine `{feature}` (current feature directory name; if none exists yet, derive from current branch or story context + `-YYYYMMDD`). Resolve `{date}{_counter}` per the counter rule in `/review`.
 
-- **Feature folder** (`{feature}`): Use the current feature directory name. If none exists yet, derive from the current branch name or story context and append `-YYYYMMDD`.
-- **Run number** (`{N}`): Count existing folders inside `{output_dir}/{feature}/code-review/` and add 1.
-- **Slug** (`{slug}`): Use the story ID if available, otherwise the current git branch name.
-
-Write findings to the config-driven feature directory:
+Write findings under `{review_dir}` = `{output_dir}/{feature}/reviews/code/{date}{_counter}/`:
 
 ```
-{project_root}/{output_dir}/{feature}/code-review/{N}-{slug}/
-├── summary.md          (unified Helm review)
-├── changes.md
+{review_dir}/
+├── summary.md              ← {review_summary}
+├── changes.md              ← applied-fixes log (side-artifact)
 └── detailed/
-    ├── helm-structure.md
-    ├── k8s-security.md
-    └── k8s-operations.md
+    ├── helm-structure.md   ← {review_detailed} (agent=helm-structure)
+    ├── k8s-security.md     ← {review_detailed} (agent=k8s-security)
+    └── k8s-operations.md   ← {review_detailed} (agent=k8s-operations)
 ```
 
-After writing, update `{output_dir}/manifest.json` with the new review entry and regenerate `{output_dir}/index.html`.
+Numbered run subfolders (`code-review/{N}-{slug}/`) are gone — runs are date-keyed and never overwrite.
+
+After writing, also render `{review_summary_html}` and one `{review_detailed_html}` per agent under `{output_dir}/{feature}/outputs/reviews/code/{date}{_counter}/`. Then update `{output_dir}/manifest.json` with the new review entry and regenerate `{output_dir}/index.html`.
