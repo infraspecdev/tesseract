@@ -3,9 +3,13 @@
 # See docs/superpowers/specs/2026-05-22-shield-output-structure-design.md §5.
 
 variables:
-  output_dir: "Set by consumer in .shield.json"
-  feature:    "Auto-derived from command (e.g. 'vpc-module-20260319')"
+  output_dir:  "Set by consumer in .shield.json"
+  feature:     "Auto-derived from command (e.g. 'vpc-module-20260319')"
+  review_type: "One of: prd, plan, code"
+  date:        "YYYY-MM-DD of the review run"
+  _counter:    "Empty for first run on a date; '_2', '_3', ... on same-day collisions"
 
 paths:
   feature_dir: "{output_dir}/{feature}"
   research:    "{feature_dir}/research.md"
+  review_dir:  "{feature_dir}/reviews/{review_type}/{date}{_counter}"
