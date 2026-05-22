@@ -258,6 +258,10 @@ If the research transcript has 2 rows (e.g., ICP + PLG), the Terminologies table
 
 For each term, propose a one-line definition that prefers terminology from the PRD's own prose. Reference the research-transcript source path when applicable.
 
+**Grounding guard — MANDATORY.** Source B additions MUST be grounded in body text the SKILL wrote in Sections 3..20 *before* this step. Do NOT add canonical or "obviously relevant" auth / cloud / domain terms (e.g., JWS, OAuth, TLS, p99, SLO) that you happen to know but never used in the prose. A row's only occurrence cannot be the Terminologies row itself.
+
+Concrete check before substituting the table: for every Source B candidate row, count occurrences of the term in the PRD body *excluding* the Terminologies section. If the count is 0, DROP the row — even if the term is canonical for the domain. The "used 2+ times" criterion is measured in the body, not anticipated. If you find yourself wanting to keep an ungrounded but canonical term, edit the body to actually use it first, then re-scan.
+
 **Merge.** Deduplicate by lowercased term. Source A rows win on conflict.
 
 **User confirmation.** Present the merged table. Offer: accept all, edit, add, remove rows. Default: accept all.
@@ -323,6 +327,7 @@ PRD authored. What's next?
 | Walking §2 (Terminologies) in order during the first pass | §2 is intentionally deferred; placeholder inserted in step 6a, content filled in step 13 after the rest of the PRD is drafted |
 | Forcing diagrams in §5 (Architecture & flows) for every PRD | §5 is optional. If the feature has no notable architecture/flows, leave the section empty — don't manufacture diagrams |
 | Dropping Source A research-glossary terms from Terminologies | ALL terms from the research transcript's glossary section MUST appear in the Terminologies table — do not filter by domain relevance |
+| Adding ungrounded canonical terms to §2 Terminologies (e.g. JWS, OAuth, TLS, SLO when never used in body) | Source B is a scan of the body, not a domain-vocab dump. Before substituting the merged table, recount each candidate term's occurrences *excluding* the Terminologies section — if 0, drop the row. The "used 2+ times" criterion is measured in the body, not in your prior knowledge. |
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |
 | Mirroring §8 story AC as G/W/T FRs in §9 | §9 should only contain rules §8 doesn't capture (cross-story invariants, architectural commitments, negative "shall not" requirements, background/operational behaviors, data-handling rules, inter-service contracts). If an FR has a 1:1 back-pointer to a single story and says nothing the story doesn't, drop it. |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
