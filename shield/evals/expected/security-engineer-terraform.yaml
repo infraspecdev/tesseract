@@ -1,6 +1,7 @@
-# Security reviewer eval criteria for insecure-vpc-module
+# Security engineer eval criteria for insecure-vpc-module
 # Evaluated against: shield/evals/inputs/insecure-vpc-module/
-agent: security-reviewer
+# (renamed from security-reviewer in refactor/rename-reviewer-agents-to-roles)
+agent: security-engineer
 mode: infra-code
 input: insecure-vpc-module
 
@@ -34,5 +35,8 @@ should_find:
 
 must_not_false_positive:
   - id: valid-https
-    description: "Should not flag port 443 open to 0.0.0.0/0"
-    match_absence_in: "443.*0\\.0\\.0\\.0/0.*issue|443.*problem|port 443.*flag"
+    description: "Should not flag port 443 open to 0.0.0.0/0 as a finding"
+    # Match shape: a finding header (e.g. `#### [S6] ...`) or severity line that names 443.
+    # Loose keyword matching ("port 443.*flag") false-positives on prose like
+    # "Port 443 ingress to 0.0.0.0/0 is acceptable ... is not flagged."
+    match_absence_in: '####\s*\[S[0-9]+\][^\n]*\b443\b|Severity:\s*(Critical|High|Important)[^\n]*\b443\b|\b443\b[^\n]{0,80}Severity:\s*(Critical|High|Important)'

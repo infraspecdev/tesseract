@@ -1,5 +1,6 @@
-# Cost reviewer eval criteria for insecure-vpc-module
-agent: cost-reviewer
+# FinOps analyst eval criteria for insecure-vpc-module
+# (renamed from cost-reviewer in refactor/rename-reviewer-agents-to-roles)
+agent: finops-analyst
 mode: infra-code
 input: insecure-vpc-module
 
