@@ -22,6 +22,7 @@ paths:
   feature_dir:        "{output_dir}/{feature}"
   research:           "{feature_dir}/research.md"
   prd:                "{feature_dir}/prd.md"
+  prd_meta_json:      "{feature_dir}/prd.meta.json"
   plan_json:          "{feature_dir}/plan.json"
   plan_md:            "{feature_dir}/plan.md"
   plan_arch_md:       "{feature_dir}/plan-architecture.md"
@@ -33,10 +34,13 @@ paths:
   plan_arch_html:     "{feature_outputs}/plan-architecture.html"
 
   # Reviews (source)
-  review_dir:         "{feature_dir}/reviews/{review_type}/{date}{_counter}"
-  review_summary:     "{review_dir}/summary.md"
-  review_enhanced:    "{review_dir}/enhanced-{review_type}.md"
-  review_detailed:    "{review_dir}/detailed/{agent}.md"
+  review_dir:           "{feature_dir}/reviews/{review_type}/{date}{_counter}"
+  review_summary:       "{review_dir}/summary.md"
+  review_enhanced:      "{review_dir}/enhanced-{review_type}.md"
+  review_detailed:      "{review_dir}/detailed/{agent}.md"
+  source_prd:           "{review_dir}/source-prd.md"          # bound with review_type=prd
+  review_comments_json: "{review_dir}/review-comments.json"   # bound with review_type=prd
+  code_review_changes:  "{review_dir}/changes.md"             # bound with review_type=code
 
   # Reviews (rendered)
   review_outputs_dir:    "{feature_outputs}/reviews/{review_type}/{date}{_counter}"

@@ -105,6 +105,20 @@ def test_all_spec_paths_resolve() -> None:
         assert result.startswith("docs/shield"), f"{name} did not resolve cleanly: {result!r}"
 
 
+def test_resolve_added_artifacts() -> None:
+    base = dict(output_dir="docs/shield", feature="f")
+    review_base = {**base, "review_type": "prd", "date": "2026-05-21", "_counter": ""}
+
+    assert resolve("prd_meta_json", **base) == "docs/shield/f/prd.meta.json"
+    assert resolve("source_prd", **review_base) == "docs/shield/f/reviews/prd/2026-05-21/source-prd.md"
+    assert resolve("review_comments_json", **review_base) == \
+        "docs/shield/f/reviews/prd/2026-05-21/review-comments.json"
+
+    code_base = {**base, "review_type": "code", "date": "2026-05-22", "_counter": ""}
+    assert resolve("code_review_changes", **code_base) == \
+        "docs/shield/f/reviews/code/2026-05-22/changes.md"
+
+
 def test_legacy_paths_resolve() -> None:
     """Legacy entries (pre-redesign) must resolve so lint can pass during Phase 3 cutover."""
     legacy_paths = [
