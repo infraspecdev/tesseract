@@ -6,12 +6,12 @@ scenario: Authoring a PRD for a JWT auth rewrite, with research transcript conta
 
 ## Setup
 ```bash
-mkdir -p docs/shield/auth-rewrite/research/1-discovery
+mkdir -p docs/shield/auth-rewrite-20260522
 mkdir -p .shield
 cat > .shield.json <<'EOF'
 { "output_dir": "docs/shield" }
 EOF
-cat > docs/shield/auth-rewrite/research/1-discovery/transcript.md <<'EOF'
+cat > docs/shield/auth-rewrite-20260522/.session-transcript.md <<'EOF'
 # Auth rewrite — research
 
 Context: legacy session-token auth being rewritten to JWT.
@@ -28,7 +28,7 @@ EOF
 ```
 
 ## Prompt
-> A research transcript has been written to docs/shield/auth-rewrite/research/1-discovery/transcript.md — read it as part of step 5 (pre-populate) and step 13 (build Terminologies). Author a standard PRD for "auth-rewrite" using the shield:prd-docs skill. Walk all sections; populate each with plausible content for rewriting legacy session-token auth to JWT. When building §2 Terminologies (step 13), copy EVERY row from the transcript's Glossary section verbatim — do NOT filter any rows. When prompted to confirm Terminologies, accept defaults. Output the final prd.md content only — do not write files.
+> A research transcript has been written to docs/shield/auth-rewrite-20260522/.session-transcript.md — read it as part of step 5 (pre-populate) and step 13 (build Terminologies). Author a standard PRD for the feature folder "auth-rewrite-20260522" using the shield:prd-docs skill. Walk all sections; populate each with plausible content for rewriting legacy session-token auth to JWT. When building §2 Terminologies (step 13), copy EVERY row from the transcript's Glossary section verbatim — do NOT filter any rows. When prompted to confirm Terminologies, accept defaults. Output the final prd.md content only — do not write files.
 
 ## Success criteria
 
