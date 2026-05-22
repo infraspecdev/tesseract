@@ -135,3 +135,54 @@ def build_manifest(output_dir: Path) -> dict:
             "updated": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
         })
     return {"schema_version": 2, "features": features}
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Migrate Shield output tree to new flat layout."
+    )
+    parser.add_argument("--root", default="docs/shield",
+                        help="Output directory to migrate (default: docs/shield)")
+    parser.add_argument("--apply", action="store_true",
+                        help="Actually move files (default: dry-run)")
+    args = parser.parse_args(argv)
+
+    output_dir = Path(args.root).resolve()
+    if not output_dir.exists():
+        print(f"error: --root {output_dir} does not exist", file=sys.stderr)
+        return 2
+
+    total_moves = 0
+    total_warnings = 0
+
+    for feature_dir in sorted(p for p in output_dir.iterdir() if p.is_dir()):
+        if feature_dir.name == "outputs":
+            continue
+        moves, warnings = plan_moves(feature_dir)
+        for src, dst in moves:
+            rel_src = src.relative_to(output_dir).as_posix()
+            rel_dst = dst.relative_to(output_dir).as_posix()
+            verb = "moving" if args.apply else "would move"
+            print(f"{verb}: {rel_src} -> {rel_dst}")
+        for w in warnings:
+            print(f"warning: {feature_dir.name}/{w}")
+        if args.apply:
+            apply_moves(moves)
+        total_moves += len(moves)
+        total_warnings += len(warnings)
+
+    if args.apply:
+        manifest = build_manifest(output_dir)
+        (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        print(f"wrote manifest: {output_dir / 'manifest.json'}")
+
+    mode = "applied" if args.apply else "dry-run"
+    print(f"{mode}: {total_moves} moves, {total_warnings} warnings")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

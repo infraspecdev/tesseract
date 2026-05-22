@@ -6,6 +6,7 @@ Runnable: `cd shield/scripts && uv run --with pyyaml --with pytest pytest test_m
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -140,3 +141,36 @@ def test_build_manifest_v2_structure(tmp_path: Path) -> None:
     assert feat["reviews"]["plan"] == {"latest": "2026-05-21_2", "count": 2}
     assert feat["reviews"]["code"] == {"latest": "2026-05-22", "count": 1}
     assert "prd" not in feat["reviews"] or feat["reviews"]["prd"]["count"] == 0
+
+
+def test_cli_dry_run_does_not_move(tmp_path: Path) -> None:
+    output_dir = tmp_path / "docs" / "shield"
+    feature = output_dir / "vpc-20260322"
+    _make_tree(feature, ["research/1-claude-isolation/findings.md"])
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"), "--root", str(output_dir)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0
+    # Dry-run: file should still be at old location
+    assert (feature / "research" / "1-claude-isolation" / "findings.md").exists()
+    assert not (feature / "research.md").exists()
+    assert "dry-run" in result.stdout.lower() or "would move" in result.stdout.lower()
+
+
+def test_cli_apply_moves_and_writes_manifest(tmp_path: Path) -> None:
+    output_dir = tmp_path / "docs" / "shield"
+    feature = output_dir / "vpc-20260322"
+    _make_tree(feature, ["research/1-claude-isolation/findings.md", "plan.json"])
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"),
+         "--root", str(output_dir), "--apply"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (feature / "research.md").exists()
+    assert (output_dir / "manifest.json").exists()
+    manifest = json.loads((output_dir / "manifest.json").read_text())
+    assert manifest["schema_version"] == 2
