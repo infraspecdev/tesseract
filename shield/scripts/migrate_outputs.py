@@ -21,6 +21,7 @@ _PLAN_ARCH_HTML = re.compile(r"^plan/\d+-[^/]+/architecture\.html$")
 _PRD_MD = re.compile(r"^prd/\d+-[^/]+/prd\.md$")
 _PRD_HTML = re.compile(r"^prd/\d+-[^/]+/prd\.html$")
 _PRD_META_JSON = re.compile(r"^prd/\d+-[^/]+/prd\.meta\.json$")
+_PLAN_HTML = re.compile(r"^plan/\d+-[^/]+/plan\.html$")
 
 
 def map_legacy_path(relpath: str) -> Optional[str]:
@@ -41,6 +42,8 @@ def map_legacy_path(relpath: str) -> Optional[str]:
         return "outputs/prd.html"
     if _PRD_META_JSON.match(relpath):
         return "prd.meta.json"
+    if _PLAN_HTML.match(relpath):
+        return "outputs/plan.html"
     return None
 
 
