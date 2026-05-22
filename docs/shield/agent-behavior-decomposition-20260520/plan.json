@@ -1,0 +1,424 @@
+{
+  "version": "1.1",
+  "project": "shield",
+  "name": "agent-behavior-decomposition",
+  "phase": "Restructure PM + tech-lead reviewers around named-behavior catalog",
+  "source_research": "research/1-behavior-decomposition/findings.md",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Catalog convention scaffold",
+      "outcome": "shield/agents/behaviors/ exists as a documented, lintable catalog ready for behavior files",
+      "exit_criteria": [
+        "shield/agents/behaviors/ directory exists in the repo",
+        "shield/agents/behaviors/README.md documents file-naming, frontmatter shape, body schema",
+        "CLAUDE.md gains an 'Agent Behaviors Catalog' section pointing at the convention",
+        "shield/scripts/verify-behavior-references.sh exits 0 on main and errors when an agent.md references a non-existent behavior file",
+        "Pre-commit hook in .pre-commit-config.yaml runs the verify script",
+        "Zero behavior change for any existing reviewer agent (verified by running prd-review against a fixture pre/post)"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "M2",
+      "name": "PM reviewer composed from behavior catalog",
+      "outcome": "shield:product-manager-reviewer in PRD-Review mode walks 9 behavior files from the catalog and emits the new envelope; other 3 modes unchanged",
+      "exit_criteria": [
+        "Baseline distinct-finding-count captured against all 4 PRD-review test fixtures on main; recorded in shield/evals/agent-decomposition/baseline.json",
+        "9 PM behavior files exist in shield/agents/behaviors/ (problem-clarity, scope-discipline, measurable-success, raci-and-approvals, compliance-posture, gtm-comms, support-readiness, strategic-timing, risk-articulation)",
+        "shield/agents/product-manager-reviewer.md has a '## Behaviors (PRD-Review mode)' section with the order/dim table",
+        "shield/skills/general/prd-review/personas.md PM dispatch prompt references the new protocol",
+        "shield/skills/general/prd-review/scoring.md accepts both old {dim_grades:{}} and new {behaviors:[]} envelope shapes",
+        "PM1-PM11 retained in product-manager-reviewer.md under 'Legacy framework' for Research-Framing / Research-Review / Plan-Review / Standalone modes",
+        "Merge gate passes: new envelope produces >= baseline total finding count across the 4 fixtures, no fixture regresses by more than 10%"
+      ],
+      "depends_on": ["M1"]
+    },
+    {
+      "id": "M3",
+      "name": "Tech-lead reviewer composed from behavior catalog",
+      "outcome": "shield:architecture-reviewer (tech-lead) in PRD-Review mode walks ~13 behavior files covering dim 5 (NFR) and dim 6 (rollout); same envelope as PM",
+      "exit_criteria": [
+        "13 tech-lead behavior files exist in shield/agents/behaviors/ — dim 5: perf-budget, security-threat-model, rbac-matrix, accessibility, privacy-and-retention, telemetry-completeness, i18n-l10n; dim 6: flag-plan, canary-rollout, kill-switch, abort-thresholds, data-migration, backward-compatibility",
+        "shield/agents/architecture-reviewer.md has a '## Behaviors (PRD-Review mode)' section with the order/dim table",
+        "shield/skills/general/prd-review/personas.md tech-lead dispatch prompt references the new protocol",
+        "Merge gate passes for tech-lead: new envelope produces >= baseline total finding count for tech-lead-owned dims across the 4 fixtures, no fixture regresses by more than 10%",
+        "Backward-compat acceptance in scoring.md verified by running on a fixture with old envelope"
+      ],
+      "depends_on": ["M2"]
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Catalog convention scaffold (PR 0)",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Create shield/agents/behaviors/ directory with README",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Scaffold the catalog directory and document the convention. README.md captures file-naming (kebab-case, name matches frontmatter), frontmatter shape (name only — no owned_by, no owned_dim), and body schema (description, when_active, inputs, checks-with-severity, exceptions, output_shape).",
+          "tasks": [
+            "Create directory shield/agents/behaviors/",
+            "Write shield/agents/behaviors/README.md with file-naming + frontmatter + body schema sections",
+            "Include a worked example showing the behavior file shape (problem-clarity-style)",
+            "Cross-link to the catalog from shield/agents/README.md if it exists; create it if not",
+            "Add a .gitkeep if README.md doesn't suffice to track the directory"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/behaviors/README.md exists and renders correctly in GitHub",
+            "The README explicitly states that owned_by and owned_dim do NOT live in behavior frontmatter",
+            "The README shows a complete behavior file example (frontmatter + body) that an author could copy-paste",
+            "ls shield/agents/behaviors/ shows the README",
+            "`git diff --stat` shows zero changes to any existing reviewer agent's .md file"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Add 'Agent Behaviors Catalog' section to CLAUDE.md",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Document the catalog convention at the project level so future agent authors discover it. Add a short section to CLAUDE.md under 'Key Conventions' pointing to shield/agents/behaviors/README.md as the source of truth for behavior authoring.",
+          "tasks": [
+            "Edit CLAUDE.md and add a 'Agent Behaviors Catalog' subsection under 'Key Conventions'",
+            "Reference shield/agents/behaviors/README.md as the authoritative spec",
+            "Note that agent.md files are the authoritative index (which behaviors → which dim), not the behavior files themselves",
+            "Keep the section under 10 lines — CLAUDE.md should remain scannable"
+          ],
+          "acceptance_criteria": [
+            "CLAUDE.md contains an 'Agent Behaviors Catalog' heading under 'Key Conventions'",
+            "The section references shield/agents/behaviors/README.md by path",
+            "grep -c 'Agent Behaviors Catalog' CLAUDE.md returns 1"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S3",
+          "name": "Write verify-behavior-references.sh lint script + pre-commit hook",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Prevent catalog drift between agent.md indices and behavior files. Script parses each shield/agents/*.md for behavior file path references and asserts each path exists. Wire into pre-commit so the lint runs before each commit.",
+          "tasks": [
+            "Write shield/scripts/verify-behavior-references.sh — grep agent.md files for shield/agents/behaviors/*.md references and exit 1 on any missing",
+            "Make the script executable (chmod +x)",
+            "Add hook entry to .pre-commit-config.yaml that runs the script on changes to shield/agents/**/*.md",
+            "Test locally: corrupt a reference temporarily and confirm pre-commit blocks the commit; revert"
+          ],
+          "acceptance_criteria": [
+            "shield/scripts/verify-behavior-references.sh exists and is executable (test -x returns 0)",
+            "Running the script on main (with no behaviors referenced) exits 0",
+            "Manually-induced bad reference causes the script to exit non-zero with an actionable error message naming the missing file",
+            ".pre-commit-config.yaml includes the new hook",
+            "pre-commit run --all-files passes on the PR 0 branch"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    },
+    {
+      "id": "EPIC-2",
+      "name": "PM reviewer migration (PR 1)",
+      "stories": [
+        {
+          "id": "EPIC-2-S1",
+          "name": "Capture distinct-finding-count baseline against test fixtures",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Before any structural change, capture the merge-gate baseline. Run the current PM agent against the 4 PRD-review test fixtures on main, count distinct findings per fixture, sum to a total, and serialize to shield/evals/agent-decomposition/baseline.json. This is the number that the new envelope must meet or beat.",
+          "tasks": [
+            "Run /prd-review against each of shield/skills/general/prd-review/test-fixtures/well-formed-standard.md, standard-with-gaps.md, lean-with-gaps.md, internal-tool.md on main",
+            "For each, count distinct findings emitted by the PM persona (de-duplicate by gap text)",
+            "Record per-fixture count, total count, and the date/commit-SHA in shield/evals/agent-decomposition/baseline.json",
+            "Document the counting methodology in shield/evals/agent-decomposition/README.md so the count is reproducible"
+          ],
+          "acceptance_criteria": [
+            "shield/evals/agent-decomposition/baseline.json exists with keys per-fixture, total, commit_sha, captured_at",
+            "shield/evals/agent-decomposition/README.md explains the counting rule (de-dup by gap text) precisely enough that re-running gives the same number ±2",
+            "Total >= 0 and per-fixture sum equals total",
+            "Baseline is committed to main BEFORE the PM agent restructure lands so it cannot be retroactively rewritten"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S2",
+          "name": "Author 9 PM behavior files in the catalog",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Write one behavior file per PM-owned rubric dimension. Each file has frontmatter (name only) + body (description, when_active, inputs, checks-with-severity, exceptions, output_shape). Content derives from the existing rubric.md eval points for dims 1, 2, 3, 7, 8, 9, 10, 11, 12.",
+          "tasks": [
+            "Author shield/agents/behaviors/problem-clarity.md (dim 1: 1a-1d eval points)",
+            "Author shield/agents/behaviors/scope-discipline.md (dim 2: 2a-2c)",
+            "Author shield/agents/behaviors/measurable-success.md (dim 3: 3a-3d)",
+            "Author shield/agents/behaviors/raci-and-approvals.md (dim 7: 7a-7d)",
+            "Author shield/agents/behaviors/compliance-posture.md (dim 8: 8a-8d)",
+            "Author shield/agents/behaviors/gtm-comms.md (dim 9: 9a-9d)",
+            "Author shield/agents/behaviors/support-readiness.md (dim 10: 10a-10d)",
+            "Author shield/agents/behaviors/strategic-timing.md (dim 11: 11a-11c)",
+            "Author shield/agents/behaviors/risk-articulation.md (dim 12: 12a-12c)",
+            "Each behavior file follows shield/agents/behaviors/README.md schema; verify with the lint script from EPIC-1-S3"
+          ],
+          "acceptance_criteria": [
+            "All 9 files exist at shield/agents/behaviors/<name>.md",
+            "Each file's frontmatter contains exactly {name: <kebab>} matching the filename — no owned_by, no owned_dim",
+            "Each file's body contains all 6 sections: Description, When active, Inputs, Checks (with severity per check), Exceptions, Output shape",
+            "Every check listed in the behavior file traces to a rubric.md eval point (1a, 1b, etc.) with the same severity",
+            "verify-behavior-references.sh exits 0 once EPIC-2-S3 lands"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S3",
+          "name": "Restructure product-manager-reviewer.md with Behaviors section",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Add a '## Behaviors (PRD-Review mode)' section to shield/agents/product-manager-reviewer.md with an order/dim/severity-max table referencing each of the 9 behavior files. Add an Execution Protocol subsection describing how the agent walks the catalog at dispatch time. Move the existing PM1-PM11 framework into a 'Legacy framework — used in Research-Framing / Research-Review / Plan-Review / Standalone modes' section so other dispatches don't break.",
+          "tasks": [
+            "Edit shield/agents/product-manager-reviewer.md",
+            "Add '## Behaviors (PRD-Review mode)' section with order/dim/severity-max table for the 9 behaviors",
+            "Add '### Execution protocol' subsection: Read each behavior file in order, identify PRD inputs, evaluate checks, apply exceptions, emit per-behavior finding using output_shape",
+            "Add the JSON envelope shape spec to the protocol section",
+            "Rename existing PM1-PM11 section to 'Legacy framework — for Research-Framing / Research-Review / Plan-Review / Standalone' and note that PRD-Review mode now uses behaviors instead",
+            "Update 'Common Mistakes' table to add: forgetting to Read a behavior file; grading without applying exceptions; emitting findings without per-behavior output_shape"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/product-manager-reviewer.md has a '## Behaviors (PRD-Review mode)' section with a 9-row table",
+            "Each row references the correct path under shield/agents/behaviors/",
+            "verify-behavior-references.sh exits 0 (all referenced behaviors exist)",
+            "PM1-PM11 content is preserved under the renamed legacy heading",
+            "Diff inspection shows no removed content from the legacy PM1-PM11 framework",
+            "Word count of the new section is between 100 and 400 words (lean index, not duplicating behavior content)"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S4",
+          "name": "Update prd-review personas.md and scoring.md for new envelope",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "The orchestrator (shield:prd-review) must understand both the old {dim_grades:{}} envelope and the new {behaviors:[]} envelope. Update personas.md PM dispatch prompt to invoke the new behavior protocol; update scoring.md to accept both envelope shapes during the transition window.",
+          "tasks": [
+            "Edit shield/skills/general/prd-review/personas.md PM dispatch prompt to reference 'walks behaviors per the agent.md table' rather than 'grades dimensions'",
+            "Edit shield/skills/general/prd-review/scoring.md to specify: orchestrator accepts envelopes with `behaviors[]` (new) or `dim_grades:{}` (old). Aggregate by `dim` field in either case.",
+            "Add a transition note to scoring.md explaining the dual acceptance window and stating that the old shape will be deprecated when all reviewer agents are migrated",
+            "Verify: dispatch the unchanged PM agent against a test fixture and confirm scoring still works (back-compat); dispatch the new PM agent and confirm scoring also works"
+          ],
+          "acceptance_criteria": [
+            "personas.md PM dispatch prompt references the behavior protocol",
+            "scoring.md explicitly documents acceptance of both envelope shapes",
+            "Running /prd-review on a fixture with the OLD PM agent (pre-this-PR) still produces a graded summary.md without errors",
+            "Running /prd-review on a fixture with the NEW PM agent (post-this-PR) also produces a graded summary.md without errors",
+            "The two summary.md outputs grade the same 9 dimensions (1, 2, 3, 7, 8, 9, 10, 11, 12) — column structure unchanged"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S5",
+          "name": "Provide PM1-PM11 → behavior name mapper script",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Old eval cases reference PM1-PM11 check IDs. To keep them runnable without rewrites, provide a one-time mapper. Output is a small script and a mapping table.",
+          "tasks": [
+            "Create shield/evals/agent-decomposition/pm-id-mapper.json mapping PM1-PM11 → corresponding behavior + check id (e.g., PM1 → problem-clarity.1a)",
+            "Write shield/scripts/translate-pm-ids.sh that reads an eval fixture and rewrites PM* references to behavior-scoped ids",
+            "Document usage in shield/evals/agent-decomposition/README.md"
+          ],
+          "acceptance_criteria": [
+            "shield/evals/agent-decomposition/pm-id-mapper.json exists with 11 entries (PM1 through PM11)",
+            "Each entry maps to a behavior name + check id that exists in the catalog",
+            "shield/scripts/translate-pm-ids.sh runs on a sample eval fixture and outputs valid behavior-scoped references",
+            "Documentation explains when to use the mapper (one-off migration of eval fixtures) vs. when not to (new eval cases should reference behavior ids directly)"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S6",
+          "name": "CI merge gate: distinct-finding-count against fixtures",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Wire the merge-gate metric into CI so PR 1 cannot land if the new PM agent regresses below the baseline. Compare new run against shield/evals/agent-decomposition/baseline.json captured in EPIC-2-S1.",
+          "tasks": [
+            "Write shield/scripts/check-finding-count.sh — runs PM agent on each of the 4 fixtures, counts findings, compares to baseline.json",
+            "Add a GitHub Actions job under .github/workflows/ (or extend an existing one) that runs the check on PRs that touch shield/agents/product-manager-reviewer.md or shield/agents/behaviors/",
+            "Gate criteria: total finding count >= baseline total AND no fixture regresses by more than 10%",
+            "Emit a markdown PR comment summarizing per-fixture deltas (baseline X → new Y)"
+          ],
+          "acceptance_criteria": [
+            "shield/scripts/check-finding-count.sh exists and is executable",
+            "GitHub Actions workflow runs the check on PRs touching the relevant paths",
+            "The check fails (exits non-zero) when finding count regresses below the gate",
+            "The check passes on PR 1 when the new envelope meets or exceeds baseline",
+            "PR check status appears in the GitHub UI as 'Behavior decomposition / finding count'"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    },
+    {
+      "id": "EPIC-3",
+      "name": "Tech-lead reviewer migration (PR 2)",
+      "stories": [
+        {
+          "id": "EPIC-3-S1",
+          "name": "Author 13 tech-lead behavior files (dim 5 + dim 6)",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Write one behavior file per sub-check inside dims 5 (NFR) and 6 (rollout & ops). Each file follows the catalog schema. This is where the largest depth gain lives because each tech-lead dim today has 6-7 eval points.",
+          "tasks": [
+            "Author shield/agents/behaviors/perf-budget.md (dim 5a)",
+            "Author shield/agents/behaviors/security-threat-model.md (dim 5b)",
+            "Author shield/agents/behaviors/rbac-matrix.md (dim 5c)",
+            "Author shield/agents/behaviors/accessibility.md (dim 5d)",
+            "Author shield/agents/behaviors/privacy-and-retention.md (dim 5e)",
+            "Author shield/agents/behaviors/telemetry-completeness.md (dim 5f)",
+            "Author shield/agents/behaviors/i18n-l10n.md (dim 5g)",
+            "Author shield/agents/behaviors/flag-plan.md (dim 6a)",
+            "Author shield/agents/behaviors/canary-rollout.md (dim 6b)",
+            "Author shield/agents/behaviors/kill-switch.md (dim 6c)",
+            "Author shield/agents/behaviors/abort-thresholds.md (dim 6d)",
+            "Author shield/agents/behaviors/data-migration.md (dim 6e)",
+            "Author shield/agents/behaviors/backward-compatibility.md (dim 6f)"
+          ],
+          "acceptance_criteria": [
+            "All 13 files exist under shield/agents/behaviors/",
+            "Each file's frontmatter contains exactly {name: <kebab>} matching the filename",
+            "Each file's body has all 6 schema sections",
+            "Each check in each behavior traces to a rubric.md eval point with matching severity",
+            "verify-behavior-references.sh exits 0 once EPIC-3-S2 lands",
+            "Dim 5b's 'security' behavior content is consistent with what a future dedicated security-reviewer agent would compose"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-3-S2",
+          "name": "Restructure architecture-reviewer.md with Behaviors section",
+          "status": "ready",
+          "assignee": null,
+          "priority": "critical",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Apply the same restructure pattern proven in EPIC-2-S3. Add a '## Behaviors (PRD-Review mode)' section referencing 13 tech-lead behaviors with dim + severity-max columns. Keep any existing legacy framework under a 'Legacy' heading.",
+          "tasks": [
+            "Edit shield/agents/architecture-reviewer.md",
+            "Add '## Behaviors (PRD-Review mode)' section with 13-row table",
+            "Add '### Execution protocol' subsection (identical shape to PM's, scoped to tech-lead behaviors)",
+            "Preserve any existing non-PRD-Review-mode content under a legacy heading",
+            "Update 'Common Mistakes' if present"
+          ],
+          "acceptance_criteria": [
+            "shield/agents/architecture-reviewer.md has a 13-row '## Behaviors (PRD-Review mode)' table",
+            "All 13 paths exist (verify-behavior-references.sh exits 0)",
+            "Word count of the new section is between 150 and 500 words",
+            "Existing non-PRD-Review content preserved (diff inspection shows no removed content)"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-3-S3",
+          "name": "Update prd-review personas.md tech-lead dispatch prompt",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Mirror the personas.md change from EPIC-2-S4 for the tech-lead persona. scoring.md does not need further changes — the dual-acceptance logic from EPIC-2-S4 already handles tech-lead's new envelope.",
+          "tasks": [
+            "Edit shield/skills/general/prd-review/personas.md tech-lead (architecture-reviewer) dispatch prompt",
+            "Reference the behavior protocol like PM",
+            "Run /prd-review against well-formed-standard.md and verify summary.md still grades dims 5 + 6 correctly"
+          ],
+          "acceptance_criteria": [
+            "personas.md tech-lead dispatch prompt references the behavior protocol",
+            "Running /prd-review on a fixture produces a summary.md that grades dims 5 + 6 with no errors",
+            "summary.md column structure remains unchanged"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-3-S4",
+          "name": "Apply CI merge gate to tech-lead",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Re-use the check-finding-count.sh script from EPIC-2-S6 with a tech-lead scoping flag. Capture a tech-lead baseline against the same 4 fixtures before this PR and gate merge on the same non-regression criteria.",
+          "tasks": [
+            "Capture tech-lead-scoped baseline against the 4 PRD-review test fixtures on the post-PR-1 main; add to shield/evals/agent-decomposition/baseline.json under a tech_lead key",
+            "Parameterize check-finding-count.sh to support --persona pm|tech-lead",
+            "Extend GitHub Actions workflow to run the check on PRs touching shield/agents/architecture-reviewer.md or new tech-lead behavior files",
+            "Gate criteria identical to PM: total >= baseline, no fixture regresses >10%"
+          ],
+          "acceptance_criteria": [
+            "shield/evals/agent-decomposition/baseline.json contains both pm and tech_lead keys",
+            "check-finding-count.sh accepts --persona flag and runs both modes",
+            "GitHub Actions check appears for tech-lead PRs",
+            "PR 2 passes the gate"
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-20",
+    "domains": ["general"],
+    "reviewer_grades": {},
+    "source_research": "docs/shield/agent-behavior-decomposition-20260520/research/1-behavior-decomposition/findings.md",
+    "merge_gate": {
+      "metric": "distinct-finding-count per fixture",
+      "fixtures": [
+        "shield/skills/general/prd-review/test-fixtures/well-formed-standard.md",
+        "shield/skills/general/prd-review/test-fixtures/standard-with-gaps.md",
+        "shield/skills/general/prd-review/test-fixtures/lean-with-gaps.md",
+        "shield/skills/general/prd-review/test-fixtures/internal-tool.md"
+      ],
+      "criteria": "new envelope total finding count >= baseline total; no fixture regresses by more than 10%; stretch goal 1.3x baseline",
+      "baseline_location": "shield/evals/agent-decomposition/baseline.json"
+    }
+  }
+}
