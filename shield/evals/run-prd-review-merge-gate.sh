@@ -101,7 +101,7 @@ Inputs:
 
 Steps:
 1. Read the prompt file to load criteria, exception clause, and output shape.
-2. Read the PRD at prd_path. Ignore '> **Gap**:' annotations and '<!-- EXPECTED REVIEW OUTCOMES -->' comments — those are RED-GREEN test markers, not PRD content.
+2. Read the PRD at prd_path. Ignore '> **Gap**:' annotations and any '<!-- ... -->' HTML comments (including the pointer to shield/evals/baselines/ that replaced the old EXPECTED REVIEW OUTCOMES blocks) — those are author / test markers, not PRD content.
 3. Grade each evaluation point per the prompt's criteria. Apply the lean-mode exemption or N/A exception if the prompt and inputs indicate it.
 4. Return ONLY valid JSON matching the prompt's output_shape. No prose, no markdown fences.
 EOF

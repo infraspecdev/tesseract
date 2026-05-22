@@ -206,12 +206,8 @@ CloudWatch Alarms:
 ---
 
 <!--
-EXPECTED REVIEW OUTCOMES (used by RED-GREEN tests, do not delete):
-  P0 expected on dims: none
-  P1 expected on dims: none
-  N/A expected on dims: 8 (Legal/privacy - no PII), 9 (GTM - internal), 10 (Support - no external)
-  N/A expected on eval points: 5g (i18n - English-only internal)
-  All graded dims expected: A or B
-  Composite expected: 3.0+ (computed over GRADED dims only)
-  Verdict expected: Ready
+Expected review outcomes for this fixture are captured empirically in
+shield/evals/baselines/prd-review-pm-postchange.json (per-dim finding counts; dim 2/8/9/10
+N/A exemptions are recorded there) and in shield/evals/expected/*.yaml. Do not restate
+them inline here — they will drift.
 -->

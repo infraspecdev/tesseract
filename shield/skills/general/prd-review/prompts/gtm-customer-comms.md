@@ -27,7 +27,7 @@ If `prd_type == "lean"`, return immediately with grade `informational` and an em
 | ID | Eval point | Severity | Pass criterion |
 |---|---|---|---|
 | 9a | Pricing / packaging implications addressed | Important | The PRD names the tier/SKU the feature lives in, any price change, and the GTM decision about packaging (bundled, add-on, no change). Silence fails. |
-| 9b | In-app messaging / release notes plan | Important | A concrete plan for in-app announcement and release notes is documented (owner, draft cadence, channel). "We'll write release notes" fails. |
+| 9b | In-app messaging / release notes plan | Critical | A concrete plan for in-app announcement and release notes is documented (owner, draft cadence, channel). "We'll write release notes" fails. Customer-facing launch with no announcement/release-notes plan is a P0 (no path for users to discover the feature; support tickets and sales miscommunication follow). |
 | 9c | CS / sales enablement (who tells customers) | Warning | CS and/or Sales enablement is documented: runbook link, named enablement owner, training/one-pager artifact. Silence fails. |
 | 9d | Beta / early-access plan (if applicable) | Warning | A beta cohort is named (design partners, internal cohort), with an explicit feedback loop and graduation criterion. Internal-only features may grade `N/A` with reasoning. |
 
@@ -56,7 +56,7 @@ with a non-empty `na_reasoning` field quoting the bounding evidence. Bare N/A is
       "gap": "<one sentence, or null if grade A>",
       "suggestion": "<one sentence, or null if grade A>"
     },
-    { "id": "9b", "grade": "...", "severity": "Important", "evidence_quote": "...", "gap": "...", "suggestion": "..." },
+    { "id": "9b", "grade": "...", "severity": "Critical",  "evidence_quote": "...", "gap": "...", "suggestion": "..." },
     { "id": "9c", "grade": "...", "severity": "Warning",   "evidence_quote": "...", "gap": "...", "suggestion": "..." },
     { "id": "9d", "grade": "...", "severity": "Warning",   "evidence_quote": "...", "gap": "...", "suggestion": "..." }
   ]
