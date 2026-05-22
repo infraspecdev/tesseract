@@ -17,7 +17,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from migrate_outputs import apply_moves, build_manifest, map_legacy_path, plan_moves  # type: ignore[import-not-found]
+from migrate_outputs import apply_moves, build_manifest, git_dirty_paths, map_legacy_path, plan_moves  # type: ignore[import-not-found]
 
 
 @pytest.mark.parametrize("old,new", [
@@ -234,3 +234,70 @@ def test_cli_dry_run_logs_collision_discard(tmp_path: Path) -> None:
     out = result.stdout + result.stderr
     assert "discarded on collision" in out
     assert "1-old" in out
+
+
+def _git_init(path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=path, check=True)
+
+
+def test_git_dirty_paths_clean_repo(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    (tmp_path / "a.md").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    assert git_dirty_paths(tmp_path) == []
+
+
+def test_git_dirty_paths_with_uncommitted(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    (tmp_path / "a.md").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "b.md").write_text("b")
+    dirty = git_dirty_paths(tmp_path)
+    assert dirty is not None
+    assert any("b.md" in line for line in dirty)
+
+
+def test_git_dirty_paths_non_git_returns_none(tmp_path: Path) -> None:
+    assert git_dirty_paths(tmp_path) is None
+
+
+def test_apply_with_dirty_tree_aborts_without_yes(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    feature = tmp_path / "f"
+    _make_tree(feature, ["research/1-foo/findings.md"])
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "untracked.md").write_text("dirty")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"),
+         "--root", str(tmp_path), "--apply"],
+        capture_output=True, text=True, check=False,
+        input="",
+    )
+    assert result.returncode != 0
+    combined = (result.stdout + result.stderr).lower()
+    assert "dirty" in combined or "uncommitted" in combined
+    assert (feature / "research/1-foo/findings.md").exists()
+    assert not (feature / "research.md").exists()
+
+
+def test_apply_with_dirty_tree_proceeds_with_yes(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    feature = tmp_path / "f"
+    _make_tree(feature, ["research/1-foo/findings.md"])
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "untracked.md").write_text("dirty")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"),
+         "--root", str(tmp_path), "--apply", "--yes"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (feature / "research.md").exists()

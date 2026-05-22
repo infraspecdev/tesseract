@@ -8,6 +8,7 @@ Runnable: `uv run --with pyyaml shield/scripts/migrate_outputs.py [--root docs/s
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -152,6 +153,26 @@ def build_manifest(output_dir: Path) -> dict:
     return {"schema_version": 2, "features": features}
 
 
+def git_dirty_paths(root: Path) -> list[str] | None:
+    """Return a list of dirty git paths (porcelain output lines) under `root`.
+
+    Returns:
+        [] if the tree is git-tracked and clean.
+        [non-empty list of paths] if there are uncommitted changes.
+        None if `root` is not inside a git repo (no git tracking to consult).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            capture_output=True, text=True, check=False,
+        )
+    except FileNotFoundError:
+        return None
+    if result.returncode != 0:
+        return None
+    return [ln for ln in result.stdout.splitlines() if ln.strip()]
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     import json
@@ -163,12 +184,34 @@ def main(argv: list[str] | None = None) -> int:
                         help="Output directory to migrate (default: docs/shield)")
     parser.add_argument("--apply", action="store_true",
                         help="Actually move files (default: dry-run)")
+    parser.add_argument("--yes", action="store_true",
+                        help="Skip dirty-tree confirmation prompt (for scripted use)")
     args = parser.parse_args(argv)
 
     output_dir = Path(args.root).resolve()
     if not output_dir.exists():
         print(f"error: --root {output_dir} does not exist", file=sys.stderr)
         return 2
+
+    if args.apply:
+        dirty = git_dirty_paths(output_dir)
+        if dirty:
+            print("WARNING: source tree has uncommitted changes:", file=sys.stderr)
+            for ln in dirty[:10]:
+                print(f"  {ln}", file=sys.stderr)
+            if len(dirty) > 10:
+                print(f"  ... and {len(dirty) - 10} more", file=sys.stderr)
+            print(
+                "If migration discards older versions on collision, the older "
+                "content will NOT be recoverable from git history.",
+                file=sys.stderr,
+            )
+            if not args.yes:
+                print("Proceed anyway? [y/N] ", end="", file=sys.stderr, flush=True)
+                resp = sys.stdin.readline().strip().lower()
+                if resp != "y":
+                    print("Aborted.", file=sys.stderr)
+                    return 3
 
     total_moves = 0
     total_warnings = 0
