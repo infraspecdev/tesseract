@@ -58,6 +58,8 @@ tesseract/
 
 ## Eval coverage — MANDATORY for plugin updates
 
+> **Procedure:** see `.claude/skills/updating-plugin-assets/SKILL.md` (auto-loads when editing plugin assets). The section below is the policy; the skill walks the checklist.
+
 **Every new or changed plugin asset (skill, agent, command, prompt, or skill-orchestrator wiring) MUST land in the same PR as at least one executable eval that exercises the new behavior.** In-conversation GREEN dispatches during implementation are *necessary but not sufficient* — they do not survive into the repo and cannot regression-test future changes.
 
 The shield plugin ships two eval frameworks; pick the one that fits your change:
