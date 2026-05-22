@@ -20,6 +20,7 @@ _RESEARCH_TRANSCRIPT = re.compile(r"^research/\d+-[^/]+/transcript\.md$")
 _PLAN_ARCH_HTML = re.compile(r"^plan/\d+-[^/]+/architecture\.html$")
 _PRD_MD = re.compile(r"^prd/\d+-[^/]+/prd\.md$")
 _PRD_HTML = re.compile(r"^prd/\d+-[^/]+/prd\.html$")
+_PRD_META_JSON = re.compile(r"^prd/\d+-[^/]+/prd\.meta\.json$")
 
 
 def map_legacy_path(relpath: str) -> Optional[str]:
@@ -38,12 +39,14 @@ def map_legacy_path(relpath: str) -> Optional[str]:
         return "prd.md"
     if _PRD_HTML.match(relpath):
         return "outputs/prd.html"
+    if _PRD_META_JSON.match(relpath):
+        return "prd.meta.json"
     return None
 
 
 # Files that are valid at the feature root in the new schema (no warning if seen here).
 KNOWN_ROOT_FILES = {
-    "README.md", "research.md", "prd.md", "plan.json", "plan.md",
+    "README.md", "research.md", "prd.md", "prd.meta.json", "plan.json", "plan.md",
     "plan-architecture.md", ".session-transcript.md",
 }
 
