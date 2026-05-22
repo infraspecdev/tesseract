@@ -47,10 +47,11 @@ KNOWN_SUBDIRS = {"outputs", "reviews"}
 def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
     """Walk a feature directory and return (moves, warnings).
 
-    moves: list of (src, dst) absolute pairs to move.
-    warnings: human-readable messages for files we don't recognize.
+    On destination collisions, the latest-mtime source wins; older sources are
+    discarded with a warning (their content remains recoverable via git history
+    of the source path, provided the source tree was committed before migration).
     """
-    moves: list[tuple[Path, Path]] = []
+    raw_moves: list[tuple[Path, Path]] = []
     warnings: list[str] = []
 
     for path in sorted(feature_dir.rglob("*")):
@@ -59,22 +60,37 @@ def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
         rel = path.relative_to(feature_dir).as_posix()
         target = map_legacy_path(rel)
         if target is not None:
-            moves.append((path, feature_dir / target))
+            raw_moves.append((path, feature_dir / target))
             continue
-        # No mapping. Is it already-correct, or unrecognized?
         if "/" not in rel:
             if rel not in KNOWN_ROOT_FILES:
                 warnings.append(f"{rel}: unrecognized file at feature root, left in place")
-            # else: file is already at its correct location
         else:
-            # Nested file. Check if it's in a known subdirectory (already migrated).
             top_dir = rel.split("/")[0]
             if top_dir not in KNOWN_SUBDIRS:
-                # Not in a known subdir — warn.
                 warnings.append(f"{rel}: unrecognized nested file, left in place")
-            # else: file is already in a migrated location
 
-    return moves, warnings
+    by_dst: dict[Path, list[Path]] = {}
+    for src, dst in raw_moves:
+        by_dst.setdefault(dst, []).append(src)
+
+    resolved: list[tuple[Path, Path]] = []
+    for dst, srcs in by_dst.items():
+        if len(srcs) == 1:
+            resolved.append((srcs[0], dst))
+            continue
+        srcs_sorted = sorted(srcs, key=lambda p: p.stat().st_mtime, reverse=True)
+        winner = srcs_sorted[0]
+        resolved.append((winner, dst))
+        for loser in srcs_sorted[1:]:
+            rel_loser = loser.relative_to(feature_dir).as_posix()
+            rel_winner = winner.relative_to(feature_dir).as_posix()
+            rel_dst = dst.relative_to(feature_dir).as_posix()
+            warnings.append(
+                f"{rel_loser}: discarded on collision (newer {rel_winner} wins for {rel_dst})"
+            )
+
+    return resolved, warnings
 
 
 def apply_moves(moves: list[tuple[Path, Path]]) -> None:

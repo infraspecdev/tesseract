@@ -6,8 +6,10 @@ Runnable: `cd shield/scripts && uv run --with pyyaml --with pytest pytest test_m
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -187,3 +189,27 @@ def test_cli_apply_moves_and_writes_manifest(tmp_path: Path) -> None:
     assert (output_dir / "manifest.json").exists()
     manifest = json.loads((output_dir / "manifest.json").read_text())
     assert manifest["schema_version"] == 2
+
+
+def test_plan_moves_returns_collision_resolutions(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    _make_tree(feature, [
+        "research/1-old/findings.md",
+        "research/2-new/findings.md",
+    ])
+    older = feature / "research/1-old/findings.md"
+    newer = feature / "research/2-new/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    moves, warnings = plan_moves(feature)
+    moves_to_research = [
+        (src, dst) for src, dst in moves
+        if dst.name == "research.md"
+    ]
+    assert len(moves_to_research) == 1
+    chosen_src, _ = moves_to_research[0]
+    assert chosen_src == newer, f"Expected newer file to win; got {chosen_src}"
+
+    discard_warnings = [w for w in warnings if "discarded" in w.lower() and "1-old" in w]
+    assert len(discard_warnings) == 1, f"Expected one discard warning; got {warnings!r}"
