@@ -6,7 +6,7 @@ scenario: /shield migrate writes manifest.json and lands migrated artifacts at t
 
 ## Setup
 ```bash
-mkdir -p shield/docs
+mkdir -p shield/docs/plans
 cat > shield/docs/plans/legacy-feature.json <<'EOF'
 {
   "version": "1.0",
@@ -26,8 +26,6 @@ cat > shield/docs/plans/legacy-feature.json <<'EOF'
   }]
 }
 EOF
-mkdir -p shield/docs/plans
-mv shield/docs/plans/legacy-feature.json shield/docs/plans/legacy-feature.json 2>/dev/null || true
 ```
 
 ## Prompt
