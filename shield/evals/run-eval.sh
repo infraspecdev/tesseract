@@ -104,18 +104,22 @@ run_one() {
   # a file at a wrong path won't match any assertion and is reported here.
   # This replaces the old "must-not-find" qualitative anti-pattern checks.
   #
-  # Implicitly-allowed derived globals (no per-eval declaration required):
+  # Implicitly-allowed derived/side-artifact files (no per-eval declaration
+  # required):
   #   - docs/shield/manifest.json   (regenerated on every write)
   #   - docs/shield/index.html      (regenerated on every write)
   #   - any file under outputs/     (rendered HTML side-artifacts)
+  #   - reviews/.../changes.md      (applied-fixes log — documented in the
+  #                                  design spec as a side-artifact, not a
+  #                                  deliverable. Per-run optional.)
   # Per the hardening plan's strengthened-eval guidance.
   local extra_total=0 extra_unmatched=0
   for wf in "${agent_files[@]:-}"; do
     [[ -z "$wf" ]] && continue
     extra_total=$((extra_total + 1))
     local rel="${wf#$workdir/}"
-    # Exempt derived globals.
-    if echo "$rel" | grep -qE "(^|/)(manifest\.json|index\.html)$|(^|/)outputs/"; then
+    # Exempt derived globals and the changes.md side-artifact.
+    if echo "$rel" | grep -qE "(^|/)(manifest\.json|index\.html|changes\.md)$|(^|/)outputs/"; then
       continue
     fi
     local matched=0

@@ -33,6 +33,9 @@ EOF
 ### Structural
 - prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/summary\.md
 - prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/enhanced-prd\.md
+- prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/source-prd\.md
+- prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/review-comments\.json
+- prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/detailed/.+\.md
 
 ## Pass threshold
-2 of 2 structural
+5 of 5 structural

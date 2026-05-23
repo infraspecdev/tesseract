@@ -50,6 +50,7 @@ EOF
 - plan-test-20260522/plan\.json
 - plan-test-20260522/plan\.md
 - plan-test-20260522/plan-architecture\.md
+- plan-test-20260522/prd\.meta\.json
 
 ## Pass threshold
-3 of 3 structural
+4 of 4 structural

@@ -32,6 +32,7 @@ EOF
 
 ### Structural
 - prd-test-20260522/prd\.md
+- prd-test-20260522/prd\.meta\.json
 
 ## Pass threshold
-1 of 1 structural
+2 of 2 structural
