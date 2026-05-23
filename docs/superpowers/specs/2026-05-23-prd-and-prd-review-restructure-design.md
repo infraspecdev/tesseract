@@ -79,7 +79,7 @@ shield/skills/general/prd/
 | # | Section | Change | Walk-prompt framing |
 |---|---|---|---|
 | 1 | Header | unchanged | owner, status, links, sign-off contact |
-| 2 | Terminologies | unchanged (deferred fill in pass 2) | auto from research + body |
+| 2 | Terminologies | **rule change**: populated LAST, from PRD body only. Placeholder until then. | Body-grounded only. Research glossary is a candidate source; terms not referenced in §3..§20 are dropped — including from research. See §5.1. |
 | 3 | **Current context** (new) | replaces standalone Problem (was §3) | 4 subsections: **What exists today** (incl. current-arch Mermaid as context only) / **The problem we're facing** / **What we're proposing to change** / **Why now** |
 | 4 | Personas | renumber | unchanged |
 | 5 | Goals & non-goals | renumber | unchanged |
@@ -103,6 +103,30 @@ shield/skills/general/prd/
 
 **Mermaid:** still supported by the renderer; lives in §3 Current context (current-state diagram, optional). No dedicated §5.
 
+### 5.1 §2 Terminologies protocol — body-grounded, populated last
+
+§2 is the **last** section to be populated in both entry paths. Until it's filled, it carries a placeholder block:
+
+```markdown
+## 2. Terminologies
+
+<!-- Populated last from PRD body content. See §5.1 of the design. -->
+| Term | Definition |
+|---|---|
+```
+
+**Protocol (runs after §3..§20 are drafted and accepted):**
+
+1. **Extract candidates** from two sources:
+   - **Source A — research transcript glossary** (if `/research` transcript present at `{feature}/.session-transcript.md`): parse `## Glossary` / `## Terminology` / `## Terms` rows. Each row becomes a candidate `{term, definition, source: "research"}`.
+   - **Source B — LLM body scan** of §3..§20: propose 5–15 candidates that are ALL-CAPS acronyms used 2+ times, capitalized multi-word phrases used as named concepts, domain nouns in §4 Personas / §9 UX-impacting constraints / §11 Dependencies without prior definition, or internal product / service names referenced in §11/§14/§16.
+2. **Filter by body-occurrence (script).** `count-term-in-body.sh <term> <prd.md>` returns occurrence count in §3..§20 (excluding §2 itself). Candidates with **0 occurrences are dropped** — including Source A candidates. The rule that today says "ALL research-glossary rows MUST appear" is reversed: research is a source pool, not a mandatory copy.
+3. **Deduplicate** by lowercased term. On conflict, **Source A's definition wins** (research is authoritative for terms it defines).
+4. **Present filtered list to user.** Offer accept-all / edit / add / remove. Default: accept all.
+5. **Substitute** into §2, replacing the placeholder block.
+
+**Rationale:** the Common Mistakes rule today says "Dropping Source A research-glossary terms is an error" — that rule is removed. The opposite is now correct: **a §2 entry whose term doesn't appear in the PRD body is the error**. If a research-glossary term is genuinely important to the PRD, the body should reference it (and the user can add the reference during the walk / review). If the term isn't referenced, it doesn't belong in §2.
+
 ## 6. Entry path: `/prd` (author from scratch)
 
 ```
@@ -118,15 +142,17 @@ shield/skills/general/prd/
 5. One-shot generate full draft prd.md from:
      - ingested context (step 3)
      - /research transcript (step 4, if present)
-     - templates.md scaffold
+     - templates.md scaffold (with §2 left as the placeholder block
+       per §5.1 — generation MUST NOT fill §2 here)
    Write to {feature}/.prd-draft.md (hidden temp). Generation MUST emit
    a sidecar {feature}/.prd-draft.confidence.json with per-section
-   confidence: high | medium | low.
+   confidence: high | medium | low for §3..§20 only (§2 is N/A).
 6. Run filter-low-confidence.sh → list of §-IDs to walk.
 7. walkSection(§N) for each low-confidence §. UX: show draft content,
    accept/edit/skip.
-8. walkSection(§2 Terminologies) — always. Auto-merge research glossary +
-   body scan. User confirms.
+8. Run the §2 Terminologies protocol from §5.1 (extract candidates,
+   filter by body-occurrence via count-term-in-body.sh, user confirms,
+   substitute into §2). This is ALWAYS the last fill step.
 9. Present full draft. Ask: "Manually review, then confirm to finalize."
 10. On confirm → finalize-prd.sh --entry prd --feature X --draft {feature}/.prd-draft.md
     On reject → keep .prd-draft.md; exit (user can re-run to resume).
@@ -159,11 +185,15 @@ shield/skills/general/prd/
      - source-prd.md
      - review-comments.json (grouped by § via map-gaps-to-sections.sh)
      - additional context from step 6 (if any)
-     - templates.md scaffold (new 20-section structure)
+     - templates.md scaffold (new 20-section structure; §2 LEFT as
+       placeholder per §5.1 — generation MUST NOT fill §2 here)
    Write to reviews/prd/{date}/corrected-prd.md.
-8. Present corrected PRD. Ask: "Manually review, then confirm to
+8. Run the §2 Terminologies protocol from §5.1 against the corrected
+   PRD body (extract candidates, filter by body-occurrence, user
+   confirms, substitute into §2). Last fill step before review.
+9. Present corrected PRD. Ask: "Manually review, then confirm to
    finalize into {feature}/prd.md."
-9. On accept → finalize-prd.sh --entry prd-review --feature X
+10. On accept → finalize-prd.sh --entry prd-review --feature X
                                   --draft <reviews/prd/{date}/corrected-prd.md>
                                   --review-dir <reviews/prd/{date}/>
    On reject → keep corrected-prd.md in review folder; exit.
@@ -272,7 +302,8 @@ All scripts live at `shield/scripts/prd/`. Python via `uv run --with <deps>` per
 | `filter-low-confidence.sh` | List low-confidence §s | `<draft.confidence.json>` | `{"section_ids":[3,9]}` |
 | `update-manifest.sh` | Append + regenerate index.html | `--feature X --event <type> [--payload <json>]` | exit 0 on success |
 | `finalize-prd.sh` | Atomic copy + render + cleanup + meta update + manifest | see §8 | exit 0 on success |
-| `copy-glossary-rows.sh` | Source A glossary copy for §2 Terminologies | `<transcript>` | rows appended to draft prd.md |
+| `extract-glossary-candidates.sh` | Parse research transcript glossary into candidate rows (no copy into PRD yet) | `<transcript>` | `{"candidates":[{"term":"...","definition":"...","source":"research"}]}` |
+| `count-term-in-body.sh` | Count term occurrences in PRD body (§3..§20, excluding §2) | `<term>`, `<prd.md>` | `{"term":"...","count":N}` |
 
 Scripts that stay as-is: `shield/scripts/render-markdown.sh` (unchanged).
 
@@ -347,7 +378,8 @@ Error:
 | `prd-cost-high-level.eval.md` | §15 Cost has lump estimates; "Aurora us-east-1", "NAT gateway" are MUST-NOT-FIND |
 | `prd-finalize-html-rendered.eval.md` | `finalize-prd.sh` re-renders prd.html whenever prd.md changes |
 | `prd-temp-cleanup.eval.md` | After finalize, `.prd-draft.md` + confidence sidecar removed |
-| `prd-glossary-source-a-preserved.eval.md` | `copy-glossary-rows.sh` copies EVERY row from a research transcript's `## Glossary` / `## Terminology` / `## Terms` block verbatim into §2 (no domain filtering) |
+| `prd-terminologies-body-grounded.eval.md` | §2 contains ONLY terms that occur in §3..§20 of the same PRD (excluding §2 itself). Specifically: a research-glossary term NOT used in the body is absent from §2. A term used 2+ times in the body but missing from research is present. `count-term-in-body.sh` returns N>0 for every row in §2. |
+| `prd-terminologies-placeholder-until-last.eval.md` | During the walk / generation phase, §2 is a placeholder block (not populated). It only fills after §3..§20 are accepted. |
 
 ### 13.2 `shield/evals/prd-review/` (updated)
 
