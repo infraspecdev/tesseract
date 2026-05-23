@@ -27,7 +27,7 @@ Writes registry-tracked paths under `{review_dir}` = `{output_dir}/{feature}/rev
 
 ## Output Path — MANDATORY
 
-First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read `.shield.json` to get `output_dir` (default: `docs/shield`). Determine `{feature}` (current feature directory name; if none exists yet, derive from current branch or story context + `-YYYYMMDD`). Resolve `{date}{_counter}` per the counter rule in `/review`.
+First, find the project root by locating `.shield.json` (check current directory, then parent directories). Read `.shield.json` to get `output_dir` (default: `docs/shield`). Determine `{feature}` (current feature directory name; if none exists yet, derive from current branch or story context + `-YYYYMMDD`). Resolve `{date}{_counter}` per the counter rule in `/review` (today's ISO date in `YYYY-MM-DD` format; empty `_counter` for first same-day run, `_2`/`_3`/... otherwise).
 
 Write findings under `{review_dir}` = `{output_dir}/{feature}/reviews/code/{date}{_counter}/`:
 
