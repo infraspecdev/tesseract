@@ -51,9 +51,5 @@ EOF
 - plan-test-20260522/plan\.md
 - plan-test-20260522/plan-architecture\.md
 
-### Qualitative
-- The agent wrote (or attempted to write) `plan.json`, `plan.md`, and `plan-architecture.md` flat at the feature root `docs/shield/plan-test-20260522/` — NOT under any `plan/{N}-<slug>/` numbered subfolder.
-- No numbered-run folder pattern (e.g. `plan/1-foundation` or `plan/1-...`) appears in the agent-written file paths or output narration.
-
 ## Pass threshold
-3 of 3 structural + 2 of 2 qualitative
+3 of 3 structural

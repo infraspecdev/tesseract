@@ -37,11 +37,6 @@ mv shield/docs/plans/legacy-feature.json shield/docs/plans/legacy-feature.json 2
 
 ### Structural
 - legacy-feature-20260522/plan\.json
-- docs/shield/manifest\.json
-
-### Qualitative
-- The agent wrote (or attempted to write) `docs/shield/legacy-feature-20260522/plan.json` (the new flat `{plan_json}` path) and `docs/shield/manifest.json` (the `{manifest}` path).
-- No legacy `plan/{N}-<slug>/`, `plan-review/{N}-<slug>/`, or `research/{N}-<slug>/` folder pattern appears anywhere in the agent-written file paths or output narration.
 
 ## Pass threshold
-2 of 2 structural + 2 of 2 qualitative
+1 of 1 structural

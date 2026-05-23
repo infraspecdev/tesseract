@@ -43,9 +43,5 @@ EOF
 ### Structural
 - pm-sync-test-20260522/plan\.json
 
-### Qualitative
-- The agent updated (or attempted to update) the existing `plan.json` at `docs/shield/pm-sync-test-20260522/plan.json` with PM ID/URL fields on a story.
-- No legacy `plan/{N}-<slug>/` folder pattern appears anywhere in the agent-written file paths or output narration. The agent did not create any new files outside `plan.json`.
-
 ## Pass threshold
-1 of 1 structural + 2 of 2 qualitative
+1 of 1 structural

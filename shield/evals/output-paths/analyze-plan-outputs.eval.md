@@ -30,12 +30,7 @@ EOF
 ## Success criteria
 
 ### Structural
-- analyze-plan-test-20260522/reviews/code/2026-05-22
-- summary\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` under a path ending in `reviews/code/2026-05-22/` inside the `analyze-plan-test-20260522` feature folder.
-- No improvised subdirectory (e.g. `terraform-plan/`, `analyze/`, or a numbered-run subfolder) appears anywhere in the agent-written file paths or output narration.
+- analyze-plan-test-20260522/reviews/code/2026-05-22/summary\.md
 
 ## Pass threshold
-2 of 2 structural + 2 of 2 qualitative
+1 of 1 structural

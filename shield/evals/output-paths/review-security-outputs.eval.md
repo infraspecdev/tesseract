@@ -22,13 +22,8 @@ EOF
 ## Success criteria
 
 ### Structural
-- review-security-test-20260522/reviews/code/2026-05-22
-- summary\.md
-- detailed/security-engineer\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` and `detailed/security-engineer.md` under a path ending in `reviews/code/2026-05-22/` inside the `review-security-test-20260522` feature folder.
-- No legacy `code-review/{N}-<slug>/` folder pattern appears anywhere in the agent-written file paths or output narration.
+- review-security-test-20260522/reviews/code/2026-05-22(_\d+)?/summary\.md
+- review-security-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/security-engineer\.md
 
 ## Pass threshold
-3 of 3 structural + 2 of 2 qualitative
+2 of 2 structural

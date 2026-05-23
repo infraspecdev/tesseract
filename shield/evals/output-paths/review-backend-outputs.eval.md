@@ -22,13 +22,8 @@ EOF
 ## Success criteria
 
 ### Structural
-- review-backend-test-20260522/reviews/code/2026-05-22
-- summary\.md
-- detailed/backend-engineer\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` and `detailed/backend-engineer.md` under a path ending in `reviews/code/2026-05-22/` inside the `review-backend-test-20260522` feature folder.
-- No legacy `code-review/{N}-<slug>/` folder pattern appears anywhere in the agent-written file paths or output narration.
+- review-backend-test-20260522/reviews/code/2026-05-22(_\d+)?/summary\.md
+- review-backend-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/backend-engineer\.md
 
 ## Pass threshold
-3 of 3 structural + 2 of 2 qualitative
+2 of 2 structural

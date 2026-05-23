@@ -54,13 +54,9 @@ EOF
 ## Success criteria
 
 ### Structural
-- plan-review-test-20260522/reviews/plan/2026-05-22
-- enhanced-plan\.md
-- detailed/.*\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md`, `enhanced-plan.md`, and at least one `detailed/<agent>.md` file under a path ending in `reviews/plan/2026-05-22/` (or `reviews/plan/2026-05-22_2/` if same-day collision detected) inside the `plan-review-test-20260522` feature folder.
-- No legacy `plan-review/{N}-<slug>/` folder pattern (e.g. `plan-review/1-jwt` or `plan-review/1-...`) appears anywhere in the agent-written file paths or output narration.
+- plan-review-test-20260522/reviews/plan/2026-05-22(_\d+)?/summary\.md
+- plan-review-test-20260522/reviews/plan/2026-05-22(_\d+)?/enhanced-plan\.md
+- plan-review-test-20260522/reviews/plan/2026-05-22(_\d+)?/detailed/.+\.md
 
 ## Pass threshold
-3 of 3 structural + 2 of 2 qualitative
+3 of 3 structural

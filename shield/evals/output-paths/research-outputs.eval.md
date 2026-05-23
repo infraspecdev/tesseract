@@ -19,11 +19,7 @@ EOF
 
 ### Structural
 - auth-rewrite-test-20260522/research\.md
-- session-transcript
-
-### Qualitative
-- The agent wrote (or attempted to write) a file at a path ending in `auth-rewrite-test-20260522/research.md` — NOT under any `research/{N}-<slug>/` numbered subfolder.
-- No numbered-run folder pattern (e.g. `research/1-jwt` or `research/1-...`) appears in the agent-written file paths or output narration.
+- auth-rewrite-test-20260522/\.session-transcript\.md
 
 ## Pass threshold
-2 of 2 structural + 2 of 2 qualitative
+2 of 2 structural

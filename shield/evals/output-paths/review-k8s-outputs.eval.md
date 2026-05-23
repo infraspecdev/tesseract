@@ -32,14 +32,10 @@ EOF
 ## Success criteria
 
 ### Structural
-- review-k8s-test-20260522/reviews/code/2026-05-22
-- detailed/k8s-security\.md
-- detailed/k8s-cost\.md
-- detailed/k8s-operations\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` plus three `detailed/*.md` files (k8s-security, k8s-cost, k8s-operations) under a path ending in `reviews/code/2026-05-22/` inside the `review-k8s-test-20260522` feature folder.
-- No legacy `code-review/{N}-<slug>/` folder pattern appears anywhere in the agent-written file paths or output narration.
+- review-k8s-test-20260522/reviews/code/2026-05-22(_\d+)?/summary\.md
+- review-k8s-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/k8s-security\.md
+- review-k8s-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/k8s-cost\.md
+- review-k8s-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/k8s-operations\.md
 
 ## Pass threshold
-4 of 4 structural + 2 of 2 qualitative
+4 of 4 structural

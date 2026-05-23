@@ -32,11 +32,6 @@ EOF
 
 ### Structural
 - prd-test-20260522/prd\.md
-- prd-test-20260522
-
-### Qualitative
-- The agent wrote (or attempted to write) a file at a path ending in `prd-test-20260522/prd.md` — NOT under any `prd/{N}-<slug>/` numbered subfolder.
-- No numbered-run folder pattern (e.g. `prd/1-jwt` or `prd/1-...`) appears in the agent-written file paths or output narration.
 
 ## Pass threshold
-2 of 2 structural + 2 of 2 qualitative
+1 of 1 structural

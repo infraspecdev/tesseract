@@ -24,13 +24,8 @@ EOF
 ## Success criteria
 
 ### Structural
-- review-test-20260522/reviews/code/2026-05-22
-- summary\.md
-- detailed/.*\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` and at least one `detailed/<agent>.md` file under a path ending in `reviews/code/2026-05-22/` (or `reviews/code/2026-05-22_2/` if same-day collision detected) inside the `review-test-20260522` feature folder.
-- No legacy `code-review/{N}-<slug>/` folder pattern (e.g. `code-review/1-branch` or `code-review/1-...`) appears anywhere in the agent-written file paths or output narration.
+- review-test-20260522/reviews/code/2026-05-22(_\d+)?/summary\.md
+- review-test-20260522/reviews/code/2026-05-22(_\d+)?/detailed/.+\.md
 
 ## Pass threshold
-3 of 3 structural + 2 of 2 qualitative
+2 of 2 structural

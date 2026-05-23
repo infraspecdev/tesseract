@@ -31,12 +31,8 @@ EOF
 ## Success criteria
 
 ### Structural
-- prd-review-test-20260522/reviews/prd/2026-05-22
-- enhanced-prd\.md
-
-### Qualitative
-- The agent wrote (or attempted to write) `summary.md` and `enhanced-prd.md` under a path ending in `reviews/prd/2026-05-22/` (or `reviews/prd/2026-05-22_2/` if it detected a same-day collision) inside the `prd-review-test-20260522` feature folder.
-- No legacy `prd-review/{N}-<slug>/` folder pattern (e.g. `prd-review/1-jwt` or `prd-review/1-...`) appears anywhere in the agent-written file paths or the output narration.
+- prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/summary\.md
+- prd-review-test-20260522/reviews/prd/2026-05-22(_\d+)?/enhanced-prd\.md
 
 ## Pass threshold
-2 of 2 structural + 2 of 2 qualitative
+2 of 2 structural

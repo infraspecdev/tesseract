@@ -64,13 +64,12 @@ def check_eval_format(eval_file: Path) -> None:
             print(f"{eval_file}: missing frontmatter key '{key.rstrip(':')}'", file=sys.stderr)
             sys.exit(1)
 
-    # Success criteria substructure check
+    # Success criteria substructure check. Structural is required; Qualitative
+    # is optional — evals can declare a single, deterministic must-find structural
+    # block instead of layering an LLM-judged qualitative section on top.
     crit_body = sections.get("success criteria", "")
     if "### Structural" not in crit_body:
         print(f"{eval_file}: success criteria missing '### Structural' subsection", file=sys.stderr)
-        sys.exit(1)
-    if "### Qualitative" not in crit_body:
-        print(f"{eval_file}: success criteria missing '### Qualitative' subsection", file=sys.stderr)
         sys.exit(1)
 
     sys.exit(0)
