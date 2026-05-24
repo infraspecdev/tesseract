@@ -33,8 +33,6 @@ EXPECTED_MOVES = {
         "devcontainer-implement-20260518/research.md",
     "devcontainer-implement-20260518/research/1-claude-implement-isolation/transcript.md":
         "devcontainer-implement-20260518/.session-transcript.md",
-    "agent-behavior-decomposition-20260520/plan/1-behavior-catalog-migration/architecture.html":
-        "agent-behavior-decomposition-20260520/outputs/plan-architecture.html",
 }
 
 EXPECTED_WARNING_SUBSTRINGS = ["handoff.md"]

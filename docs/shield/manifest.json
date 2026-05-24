@@ -2,28 +2,6 @@
   "schema_version": 2,
   "features": [
     {
-      "name": "agent-behavior-decomposition-20260520",
-      "artifacts": {
-        "research": false,
-        "prd": false,
-        "plan_json": true,
-        "plan_md": false,
-        "plan_arch_md": false
-      },
-      "reviews": {
-        "prd": {
-          "count": 0
-        },
-        "plan": {
-          "count": 0
-        },
-        "code": {
-          "count": 0
-        }
-      },
-      "updated": "2026-05-22T21:52:55+00:00"
-    },
-    {
       "name": "devcontainer-implement-20260518",
       "artifacts": {
         "research": true,
