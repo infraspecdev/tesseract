@@ -47,3 +47,36 @@ repos:
         language: system
         files: '^(\.devcontainer/devcontainer\.json|shield/scripts/(compose_devcontainer|check_devcontainer_refs)\.py|shield/skills/devcontainer/feature-map\.json)$'
         pass_filenames: false
+
+      # ── 6. shield output-path lint ───────────────────────────────────────
+      # Validates the registry + every command/skill/agent's `outputs:` block:
+      #   - declared outputs resolve to a real registry entry
+      #   - registry placeholders are declared variables or sibling paths
+      #   - every registry path is declared by ≥1 asset OR marked `derived:`
+      #   - frontmatter is well-formed YAML
+      # Whole-repo check (pass_filenames: false) — fast (~1.5s) and catches
+      # cross-file drift that a per-file check would miss.
+      - id: shield-path-lint
+        name: shield output-path lint
+        entry: bash -c 'uv run --quiet --with pyyaml shield/scripts/lint_output_paths.py --root .'
+        language: system
+        files: '^(shield/schema/output-paths\.yaml|shield/commands/.*\.md|shield/skills/.*/SKILL\.md|shield/agents/.*\.md)$'
+        pass_filenames: false
+
+      # ── 7. shield path-resolver tests ────────────────────────────────────
+      # Resolver behavior is load-bearing for every shield command; fast (<1s).
+      - id: shield-resolver-tests
+        name: shield path-resolver pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pyyaml --with pytest pytest test_path_resolver.py'
+        language: system
+        files: '^shield/(scripts/(path_resolver|test_path_resolver)\.py|schema/output-paths\.yaml)$'
+        pass_filenames: false
+
+      # ── 8. shield lint-script tests ──────────────────────────────────────
+      # Guards against regressions in the lint script itself.
+      - id: shield-lint-tests
+        name: shield lint-output-paths pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pyyaml --with pytest pytest test_lint_output_paths.py'
+        language: system
+        files: '^shield/scripts/(lint_output_paths|test_lint_output_paths)\.py$'
+        pass_filenames: false
