@@ -1,7 +1,7 @@
 ---
 name: research
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep, WebFetch
-description: Capture product + tech context for a new feature. Phase 1: Q&A walk with repo auto-detection. Phase 2 (optional): external evidence-gathering with citations.
+description: "Capture product + tech context for a new feature. Phase 1: Q&A walk with repo auto-detection. Phase 2 (optional): external evidence-gathering with citations."
 outputs:
   - research
 # Note: .session-transcript.md is a hidden side-artifact (not a deliverable) and is

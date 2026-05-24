@@ -30,15 +30,20 @@ def discover_assets(root: Path) -> list[Path]:
 
 
 def parse_outputs_block(asset_path: Path) -> list[str]:
-    """Return the `outputs:` list from an asset's frontmatter, or [] if absent."""
+    """Return the `outputs:` list from an asset's frontmatter, or [] if absent.
+
+    Raises:
+        yaml.YAMLError: if the frontmatter is unparseable. Caller (validate_asset)
+            converts this into a lint error so the asset gets fixed; silently
+            swallowing YAML errors lets coverage drift sneak in (e.g. an asset
+            with `outputs: [foo]` whose frontmatter fails to parse for an
+            unrelated reason has the same coverage signature as no declaration).
+    """
     text = asset_path.read_text()
     match = FRONTMATTER_RE.match(text)
     if not match:
         return []
-    try:
-        front = yaml.safe_load(match.group(1)) or {}
-    except yaml.YAMLError:
-        return []
+    front = yaml.safe_load(match.group(1)) or {}
     raw = front.get("outputs", [])
     if not isinstance(raw, list):
         return []
@@ -51,7 +56,12 @@ def validate_asset(asset_path: Path, registry_names: set[str]) -> list[str]:
     Empty list means the asset is clean (including the case where it declares no outputs).
     """
     errors: list[str] = []
-    for name in parse_outputs_block(asset_path):
+    try:
+        declared = parse_outputs_block(asset_path)
+    except yaml.YAMLError as exc:
+        first_line = str(exc).splitlines()[0]
+        return [f"{asset_path.name}: frontmatter does not parse ({first_line})"]
+    for name in declared:
         if name not in registry_names:
             errors.append(
                 f"{asset_path.name}: declared output '{name}' is not in the path registry"
@@ -77,6 +87,47 @@ def validate_registry(registry: dict) -> list[str]:
     return errors
 
 
+def validate_coverage(registry: dict, referenced: set[str]) -> list[str]:
+    """Check that every registry path entry is either declared by an asset's
+    `outputs:` block or explicitly listed under `derived:` (for parent-directory
+    or computed-global entries that no single asset owns).
+
+    Args:
+        registry: parsed output-paths.yaml content.
+        referenced: set of registry names declared by at least one asset's `outputs:`.
+
+    Returns:
+        Human-readable error messages. Empty list means coverage is clean.
+
+    This catches the failure mode where a registry entry is added (e.g. in a
+    schema-amendment commit) but never wired into an owning command — invisible
+    to per-asset lint and (without the bidirectional eval check) invisible to
+    the eval suite.
+    """
+    errors: list[str] = []
+    path_names = set(registry.get("paths", {}).keys())
+    derived = set(registry.get("derived", []) or [])
+
+    # 1. Every derived entry must actually exist in `paths` (typo protection).
+    for name in sorted(derived):
+        if name not in path_names:
+            errors.append(
+                f"derived entry '{name}' is not in `paths:` — fix the typo or remove from `derived:`"
+            )
+
+    # 2. Every path entry must be referenced OR derived.
+    for name in sorted(path_names):
+        if name in derived:
+            continue
+        if name not in referenced:
+            errors.append(
+                f"registry path '{name}' is declared but no asset declares it in `outputs:` "
+                f"(add it to a command/skill/agent, or mark as `derived:` if it's a "
+                f"parent-directory or computed-global entry)"
+            )
+    return errors
+
+
 def _load_registry_from(root: Path) -> dict:
     schema = root / "shield" / "schema" / "output-paths.yaml"
     with schema.open() as f:
@@ -97,8 +148,18 @@ def main(argv: list[str] | None = None) -> int:
     errors.extend(validate_registry(registry))
     registry_names = set(registry.get("paths", {}).keys())
     assets = discover_assets(root / "shield")
+    referenced: set[str] = set()
     for asset in assets:
         errors.extend(validate_asset(asset, registry_names))
+        try:
+            declared = parse_outputs_block(asset)
+        except yaml.YAMLError:
+            # validate_asset already surfaced the parse error; skip coverage harvest.
+            continue
+        for name in declared:
+            if name in registry_names:
+                referenced.add(name)
+    errors.extend(validate_coverage(registry, referenced))
 
     if errors:
         print("Lint failed:", file=sys.stderr)

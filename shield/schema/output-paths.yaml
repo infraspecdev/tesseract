@@ -46,3 +46,17 @@ paths:
   review_summary_html:   "{review_outputs_dir}/summary.html"
   review_enhanced_html:  "{review_outputs_dir}/enhanced-{review_type}.html"
   review_detailed_html:  "{review_outputs_dir}/detailed/{agent}.html"
+
+# Registry entries that are intentionally not declared in any command/skill/agent
+# `outputs:` block — they're parent directories (used inside other path templates)
+# or cross-feature globals computed by the index/manifest pipeline rather than
+# written by a single command. Listing them here is what tells the lint coverage
+# check to skip them. Add an entry here when a registry path is genuinely
+# derived/parent-only; otherwise wire it into the owning command's `outputs:`.
+derived:
+  - feature_dir         # parent dir, composed from output_dir + feature
+  - feature_outputs     # parent dir for per-feature rendered HTML
+  - review_dir          # parent dir for review runs
+  - review_outputs_dir  # parent dir for rendered review HTML
+  - global_outputs_dir  # top-level rendered output dir
+  - global_index_html   # top-level dashboard, regenerated on every write
