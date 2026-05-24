@@ -145,7 +145,7 @@ paths:
   review_detailed_html:  "{review_outputs_dir}/detailed/{agent}.html"
 ```
 
-**Amendment 2026-05-22:** the original §5.1 missed four artifacts emitted by current shield commands (`prd.meta.json` from `/shield prd`; `source-prd.md`, `review-comments.json` from `/shield prd-review`; `changes.md` from `/shield review` and its domain variants). These were added during migration hardening after auditing actual command bodies.
+**Amendment 2026-05-22:** the original §5.1 missed three artifacts emitted by current shield commands (`prd.meta.json` from `/shield prd` and updated by `/shield plan`; `source-prd.md` and `review-comments.json` from `/shield prd-review`). These were added during migration hardening after auditing actual command bodies. `changes.md` from `/shield review` and its domain variants remains a side-artifact (applied-fixes run-history log) and is intentionally not in the registry.
 
 ### 5.2 Per-asset references
 

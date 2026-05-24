@@ -114,10 +114,6 @@ def test_resolve_added_artifacts() -> None:
     assert resolve("review_comments_json", **review_base) == \
         "docs/shield/f/reviews/prd/2026-05-21/review-comments.json"
 
-    code_base = {**base, "review_type": "code", "date": "2026-05-22", "_counter": ""}
-    assert resolve("code_review_changes", **code_base) == \
-        "docs/shield/f/reviews/code/2026-05-22/changes.md"
-
 
 def test_resolve_circular_reference_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_registry = {

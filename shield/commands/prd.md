@@ -2,7 +2,7 @@
 name: prd
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
 description: Author a new PRD with Shield's 20-section problem-first scaffold (or 10-section lean variant). Includes Terminologies (§2, auto-filled from research+body), Architecture & flows (§5, optional Mermaid), per-story Type labels (new/enhancement/existing) in §8, and auto-generated TOC + rendered Mermaid in prd.html. Supports custom team templates, lean→standard upgrade flow.
-outputs: [prd, prd_html]
+outputs: [prd, prd_html, prd_meta_json]
 ---
 
 # /prd
@@ -23,8 +23,9 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 |---|---|
 | `prd` | `{output_dir}/{feature}/prd.md` |
 | `prd_html` | `{output_dir}/{feature}/outputs/prd.html` |
+| `prd_meta_json` | `{output_dir}/{feature}/prd.meta.json` |
 
-`prd.meta.json` is a metadata sidecar written to `{output_dir}/{feature}/prd.meta.json` — it is not a primary deliverable and is not in the registry (similar to `.session-transcript.md` from /research).
+`prd.meta.json` is the PRD metadata sidecar (status, sections present, linked plans). `/plan` later updates the `linked_plans` field when it generates a plan against this PRD.
 
 ## What it does
 

@@ -7,6 +7,7 @@ outputs:
   - plan_arch_md
   - plan_html
   - plan_arch_html
+  - prd_meta_json   # updates the PRD sidecar's linked_plans field
 ---
 
 # Plan
@@ -28,6 +29,7 @@ This command writes the following registry-tracked paths (see `shield/schema/out
 | `plan_arch_md` | `{output_dir}/{feature}/plan-architecture.md` |
 | `plan_html` | `{output_dir}/{feature}/outputs/plan.html` |
 | `plan_arch_html` | `{output_dir}/{feature}/outputs/plan-architecture.html` |
+| `prd_meta_json` | `{output_dir}/{feature}/prd.meta.json` (updated — appends to `linked_plans`) |
 
 The global dashboard `{output_dir}/index.html` (registry key `global_index_html`) is updated as a side effect; it is not declared in `outputs:` because it is a cross-feature artifact, not a per-run deliverable.
 

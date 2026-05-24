@@ -38,7 +38,8 @@ paths:
   review_detailed:      "{review_dir}/detailed/{agent}.md"
   source_prd:           "{review_dir}/source-prd.md"          # bound with review_type=prd
   review_comments_json: "{review_dir}/review-comments.json"   # bound with review_type=prd
-  code_review_changes:  "{review_dir}/changes.md"             # bound with review_type=code
+  # Note: reviews/.../changes.md is an applied-fixes run-history log; it is a
+  # side-artifact, not a registry-tracked deliverable. See /review command body.
 
   # Reviews (rendered)
   review_outputs_dir:    "{feature_outputs}/reviews/{review_type}/{date}{_counter}"

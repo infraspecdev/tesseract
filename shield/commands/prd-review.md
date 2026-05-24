@@ -3,10 +3,12 @@ name: prd-review
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
 description: Run multi-persona PRD review against a 13-dimension rubric. Produces scored summary with severity-tiered gaps and an enhanced PRD with suggested fixes.
 outputs:
-  - review_summary    # review_type=prd
-  - review_enhanced   # review_type=prd
+  - review_summary           # review_type=prd
+  - review_enhanced          # review_type=prd
   - review_summary_html
   - review_enhanced_html
+  - source_prd               # immutable snapshot of input PRD
+  - review_comments_json     # canonical machine-readable gap export
 ---
 
 # /prd-review
@@ -33,11 +35,10 @@ This command writes the following registry-tracked paths (see `shield/schema/out
 | `review_enhanced` | `{review_dir}/enhanced-prd.md` |
 | `review_summary_html` | `{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/summary.html` |
 | `review_enhanced_html` | `{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/enhanced-prd.html` |
+| `source_prd` | `{review_dir}/source-prd.md` (immutable snapshot of the input PRD) |
+| `review_comments_json` | `{review_dir}/review-comments.json` (machine-readable gap export) |
 
-Side-artifacts written under `{review_dir}` but not in the registry (similar to `prd.meta.json` for `/prd`):
-- `source-prd.md` — verbatim snapshot of the input PRD (immutable after step 3)
-- `review-comments.json` — canonical machine-readable gap export
-- `detailed/<persona>.md` × 5 — per-reviewer detailed reports (declared by the reviewer subagents themselves, not by this command)
+Each dispatched reviewer subagent also writes its own `detailed/<persona>.md` under `{review_dir}/detailed/` — those are declared (`review_detailed`) by the reviewer subagents themselves, not by this command.
 
 ### Resolving the counter
 
