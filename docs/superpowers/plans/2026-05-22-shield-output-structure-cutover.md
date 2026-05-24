@@ -38,7 +38,7 @@ Create `shield/evals/output-paths/<asset>-outputs.eval.md`. The eval invokes the
 
 After running the command, the eval captures the full set of files written under `$output_dir` (e.g. via `find $output_dir -type f`). It then asserts:
   - Every declared output path is present.
-  - No file is present that is not declared (allowing for `manifest.json` and `outputs/` rendered artifacts, which are derived).
+  - No file is present that is not declared (the runner implicitly exempts derived globals and side-artifacts: `manifest.json`, `index.html`, anything under `outputs/`, and `changes.md`).
 
 A command that silently writes to an undeclared path fails its eval. This is the load-bearing check against future registry drift — lint catches declaration errors, but only the eval catches the "command wrote files it didn't tell anyone about" case.
 

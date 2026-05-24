@@ -5,8 +5,10 @@ description: Run multi-persona PRD review against a 13-dimension rubric. Produce
 outputs:
   - review_summary           # review_type=prd
   - review_enhanced          # review_type=prd
+  - review_detailed          # review_type=prd, multiple reviewer personas
   - review_summary_html
   - review_enhanced_html
+  - review_detailed_html
   - source_prd               # immutable snapshot of input PRD
   - review_comments_json     # canonical machine-readable gap export
 ---
@@ -33,12 +35,14 @@ This command writes the following registry-tracked paths (see `shield/schema/out
 |---|---|
 | `review_summary` | `{review_dir}/summary.md` |
 | `review_enhanced` | `{review_dir}/enhanced-prd.md` |
+| `review_detailed` (per persona) | `{review_dir}/detailed/{agent}.md` |
 | `review_summary_html` | `{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/summary.html` |
 | `review_enhanced_html` | `{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/enhanced-prd.html` |
+| `review_detailed_html` (per persona) | `{output_dir}/{feature}/outputs/reviews/prd/{date}{_counter}/detailed/{agent}.html` |
 | `source_prd` | `{review_dir}/source-prd.md` (immutable snapshot of the input PRD) |
 | `review_comments_json` | `{review_dir}/review-comments.json` (machine-readable gap export) |
 
-Each dispatched reviewer subagent also writes its own `detailed/<persona>.md` under `{review_dir}/detailed/` — those are declared (`review_detailed`) by the reviewer subagents themselves, not by this command.
+Each dispatched reviewer subagent writes its own `detailed/<persona>.md` — that file is also declared by the reviewer subagent itself (matches `/review` and `/plan-review` convention of orchestrator + subagent both declaring the per-agent output).
 
 ### Resolving the counter
 
