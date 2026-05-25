@@ -1,4 +1,6 @@
 {
+  "project": "Shield",
+  "output_dir": "docs/shield",
   "devcontainer": {
     "version": 1,
     "stacks_detected": [
