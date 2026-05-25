@@ -44,6 +44,28 @@
         }
       },
       "updated": "2026-05-22T21:52:55+00:00"
+    },
+    {
+      "name": "plan-trd-refactor-20260524",
+      "artifacts": {
+        "research": true,
+        "prd": false,
+        "plan_json": true,
+        "plan_md": true,
+        "plan_arch_md": true
+      },
+      "reviews": {
+        "prd": {
+          "count": 0
+        },
+        "plan": {
+          "count": 0
+        },
+        "code": {
+          "count": 0
+        }
+      },
+      "updated": "2026-05-24T20:00:00+00:00"
     }
   ]
 }
