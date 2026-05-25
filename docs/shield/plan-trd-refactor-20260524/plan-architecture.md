@@ -16,27 +16,30 @@ Full rationale, alternatives considered, and citations are in `research.md`. Thi
 
 ## How the implementation breaks down
 
-Three milestones, five epics, twelve stories. Sequencing is enforced by milestone `depends_on` in `plan.json`.
+Three milestones, five epics, sixteen stories (post-review). Sequencing is enforced by milestone `depends_on` in `plan.json`. Plan reflects the 2026-05-25 plan-review feedback (composite B / Ready; 6 P0 + 12 of 15 P1 recommendations folded in).
 
 ```
 M1 TRD cutover                                  ← P0 (ship together in one PR)
 ├─ EPIC-1: TRD generation and storage
-│   ├─ S1 Author the canonical 13-section TRD template
-│   ├─ S2 Update /plan to emit trd.md (replaces plan-architecture.md)
-│   └─ S3 Update existing-feature behavior on re-run
+│   ├─ S1 Author the canonical 14-section TRD template
+│   ├─ S2 Update /plan to emit trd.md (unified backend + infra + mixed)
+│   ├─ S3 Update existing-feature behavior on re-run
+│   └─ S4 Bump plugin version per CLAUDE.md mandate          (new — P1-12)
 ├─ EPIC-2: Story schema and design traceability
 │   ├─ S1 Extend plan.json schema with optional design_refs[]
-│   └─ S2 Populate design_refs[] when /plan has TRD context
+│   ├─ S2 Populate design_refs[] when /plan has TRD context
+│   └─ S3 Add JSON Schema validator for plan.json            (new — P1-7)
 └─ EPIC-3: Eval coverage for TRD format
-    ├─ S1 Author positive TRD eval fixture
-    ├─ S2 Author missing-section negative fixtures
-    └─ S3 Wire eval into CI / RED-GREEN paper trail
+    ├─ S1 Author positive TRD eval fixtures (backend + infra + mixed)
+    ├─ S2 Author 16 negative fixtures (14 missing + drift + vague-TBD)
+    └─ S3 Wire eval into recurring CI + RED-GREEN paper trail
 
 M2 Review + sync wiring                         ← P1 (follows M1)
 └─ EPIC-4: /plan-review and /pm-sync wiring
-    ├─ S1 Add 13-section presence rule to /plan-review
+    ├─ S0 Scaffold Jira / Confluence / Notion adapter packages   (new — P0-2)
+    ├─ S1 Add 14-section presence rule + stale-anchor rule
     ├─ S2 Add PRD↔TRD duplication-detection rule
-    └─ S3 /pm-sync emits design_refs[] as web links
+    └─ S3 /pm-sync emits design_refs[] as web links with idempotent upsert
 
 M3 Drift + duplication hardening                ← P2 (follows M2)
 └─ EPIC-5: Drift + duplication hardening
@@ -72,7 +75,7 @@ The TRD section list, anchor strategy, `design_refs[]` shape, de-duplication con
 - `shield/evals/plan-trd/fixtures/vague-tbd/` — section with "TBD" instead of `n/a — <reason>`; eval must fail
 
 ### M2 — Review + sync wiring (one PR)
-- `shield/skills/general/plan-review/SKILL.md` — 13-section presence rule + duplication-detection rule
+- `shield/skills/general/plan-review/SKILL.md` — 14-section presence rule + stale-anchor rule + duplication-detection rule
 - `shield/commands/pm-sync.md` — describes `design_refs[]` forwarding
 - `shield/adapters/<each>/...` — Confluence, Jira, ClickUp, Notion adapters forward `design_refs[]` as web links
 - `shield/evals/plan-review-trd.yaml` — fixtures exercising both new review rules
@@ -102,6 +105,6 @@ The following are deferred and tracked in `plan.json` `metadata.out_of_scope`:
 
 ## What to do next
 
-- `/plan-review docs/shield/plan-trd-refactor-20260524/plan.json` — multi-agent review against the 13-dimension rubric.
+- `/plan-review docs/shield/plan-trd-refactor-20260524/plan.json` — multi-agent review against the rubric.
 - `/pm-sync docs/shield/plan-trd-refactor-20260524/plan.json --tool clickup` (or jira, notion) — sync stories to your PM tool.
 - `/implement` — TDD-driven implementation, starting with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail.

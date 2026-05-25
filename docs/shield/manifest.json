@@ -59,13 +59,23 @@
           "count": 0
         },
         "plan": {
-          "count": 0
+          "count": 1,
+          "latest": {
+            "date": "2026-05-25",
+            "path": "reviews/plan/2026-05-25",
+            "composite_grade": "B",
+            "verdict": "Ready",
+            "reviewers": ["agile-coach", "dx-engineer", "architect", "backend-engineer", "sre"],
+            "p0_count": 6,
+            "p1_count": 15,
+            "p2_count": 18
+          }
         },
         "code": {
           "count": 0
         }
       },
-      "updated": "2026-05-24T20:00:00+00:00"
+      "updated": "2026-05-25T11:00:00+00:00"
     }
   ]
 }

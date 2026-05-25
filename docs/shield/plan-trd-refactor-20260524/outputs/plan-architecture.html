@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="sidecar" content="../plan.json">
-<title>Plan Architecture — /plan TRD refactor</title>
+<title>Plan — /plan TRD refactor</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
 h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
 h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
 h3 { color: #5f6368; margin-top: 22px; }
@@ -31,7 +31,7 @@ a:hover { text-decoration: underline; }
   <a href="../../index.html">&larr; Shield Overview</a> |
   <a href="../research.md">Research</a> |
   <a href="../plan.json">Sidecar (JSON)</a> |
-  <a href="plan.html">Detailed Plan &rarr;</a>
+  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
 </div>
 <h1 id="plan-architecture--plan-trd-refactor">Plan Architecture — <code>/plan</code> TRD refactor</h1>
 <p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code>
@@ -45,25 +45,28 @@ a:hover { text-decoration: underline; }
 <p><code>/plan</code> currently emits a stories-first work-breakdown plus a free-form <code>plan-architecture.md</code> companion. The current artifact is loose and de-facto ADR-flavored — well-suited to infra work but missing the structural rigor (NFRs, Cross-Cutting Concerns, first-class Milestones) that backend work needs. The refactor introduces a <strong>unified 14-section Technical Requirements Document</strong> (TRD) — grounded in IEEE 1016 + the reference TRD template (synthesized during research) + Google/Uber/Larson/Orosz modern practice — that replaces <code>plan-architecture.md</code> for <strong>both backend and infrastructure</strong> work. Domain-aware prompting per section surfaces the right interpretation (e.g., §11 APIs = HTTP contracts for backend, module interfaces + cloud-API surface for infra), and an explicit <code>n/a — &lt;reason&gt;</code> escape handles sections that genuinely don't apply (e.g., §4 Product Journey on a pure-state infra change). The strongest property of today's <code>plan-architecture.md</code> — Rollback Strategy — is promoted to first-class §14. LLDs are per-component (C4 Container/Component) and authored separately by a future <code>/lld &lt;component&gt;</code> command; typically backend-only since infra code is declarative-spec-as-code. This plan run only emits TODO placeholders for LLD references.</p>
 <p>Full rationale, alternatives considered, and citations are in <code>research.md</code>. This document does not restate them.</p>
 <h2 id="how-the-implementation-breaks-down">How the implementation breaks down</h2>
-<p>Three milestones, five epics, twelve stories. Sequencing is enforced by milestone <code>depends_on</code> in <code>plan.json</code>.</p>
+<p>Three milestones, five epics, sixteen stories (post-review). Sequencing is enforced by milestone <code>depends_on</code> in <code>plan.json</code>. Plan reflects the 2026-05-25 plan-review feedback (composite B / Ready; 6 P0 + 12 of 15 P1 recommendations folded in).</p>
 <pre><code>M1 TRD cutover                                  ← P0 (ship together in one PR)
 ├─ EPIC-1: TRD generation and storage
-│   ├─ S1 Author the canonical 13-section TRD template
-│   ├─ S2 Update /plan to emit trd.md (replaces plan-architecture.md)
-│   └─ S3 Update existing-feature behavior on re-run
+│   ├─ S1 Author the canonical 14-section TRD template
+│   ├─ S2 Update /plan to emit trd.md (unified backend + infra + mixed)
+│   ├─ S3 Update existing-feature behavior on re-run
+│   └─ S4 Bump plugin version per CLAUDE.md mandate          (new — P1-12)
 ├─ EPIC-2: Story schema and design traceability
 │   ├─ S1 Extend plan.json schema with optional design_refs[]
-│   └─ S2 Populate design_refs[] when /plan has TRD context
+│   ├─ S2 Populate design_refs[] when /plan has TRD context
+│   └─ S3 Add JSON Schema validator for plan.json            (new — P1-7)
 └─ EPIC-3: Eval coverage for TRD format
-    ├─ S1 Author positive TRD eval fixture
-    ├─ S2 Author missing-section negative fixtures
-    └─ S3 Wire eval into CI / RED-GREEN paper trail
+    ├─ S1 Author positive TRD eval fixtures (backend + infra + mixed)
+    ├─ S2 Author 16 negative fixtures (14 missing + drift + vague-TBD)
+    └─ S3 Wire eval into recurring CI + RED-GREEN paper trail
 
 M2 Review + sync wiring                         ← P1 (follows M1)
 └─ EPIC-4: /plan-review and /pm-sync wiring
-    ├─ S1 Add 13-section presence rule to /plan-review
+    ├─ S0 Scaffold Jira / Confluence / Notion adapter packages   (new — P0-2)
+    ├─ S1 Add 14-section presence rule + stale-anchor rule
     ├─ S2 Add PRD↔TRD duplication-detection rule
-    └─ S3 /pm-sync emits design_refs[] as web links
+    └─ S3 /pm-sync emits design_refs[] as web links with idempotent upsert
 
 M3 Drift + duplication hardening                ← P2 (follows M2)
 └─ EPIC-5: Drift + duplication hardening
@@ -98,7 +101,7 @@ M3 Drift + duplication hardening                ← P2 (follows M2)
 </ul>
 <h3 id="m2--review--sync-wiring-one-pr">M2 — Review + sync wiring (one PR)</h3>
 <ul>
-<li><code>shield/skills/general/plan-review/SKILL.md</code> — 13-section presence rule + duplication-detection rule</li>
+<li><code>shield/skills/general/plan-review/SKILL.md</code> — 14-section presence rule + stale-anchor rule + duplication-detection rule</li>
 <li><code>shield/commands/pm-sync.md</code> — describes <code>design_refs[]</code> forwarding</li>
 <li><code>shield/adapters/&lt;each&gt;/...</code> — Confluence, Jira, ClickUp, Notion adapters forward <code>design_refs[]</code> as web links</li>
 <li><code>shield/evals/plan-review-trd.yaml</code> — fixtures exercising both new review rules</li>
@@ -128,7 +131,7 @@ M3 Drift + duplication hardening                ← P2 (follows M2)
 </ul>
 <h2 id="what-to-do-next">What to do next</h2>
 <ul>
-<li><code>/plan-review docs/shield/plan-trd-refactor-20260524/plan.json</code> — multi-agent review against the 13-dimension rubric.</li>
+<li><code>/plan-review docs/shield/plan-trd-refactor-20260524/plan.json</code> — multi-agent review against the rubric.</li>
 <li><code>/pm-sync docs/shield/plan-trd-refactor-20260524/plan.json --tool clickup</code> (or jira, notion) — sync stories to your PM tool.</li>
 <li><code>/implement</code> — TDD-driven implementation, starting with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail.</li>
 </ul>

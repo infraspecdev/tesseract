@@ -7,8 +7,8 @@
 
 | ID | Name | Outcome | Depends on |
 |---|---|---|---|
-| **M1** | TRD cutover | `/plan` emits `trd.md` (14 sections, stable anchors, domain-aware prompting for backend/infra); `plan.json` carries optional `design_refs[]`; eval coverage in place for both domains. | — |
-| **M2** | Review + sync wiring | `/plan-review` grades against 14-section rubric (with `n/a — <reason>` escape) + duplication rule; `/pm-sync` adapters forward `design_refs[]` as web links. | M1 |
+| **M1** | TRD cutover | `/plan` emits `trd.md` (14 sections, stable anchors, domain-aware prompting for backend/infra/mixed, atomic write, provenance stamp); `plan.json` carries optional `design_refs[]`; JSON schema validator wired; recurring CI gate runs the eval; coverage = 3 positives (backend + infra + mixed) + 16 negatives. | — |
+| **M2** | Review + sync wiring | `/plan-review` grades against 14-section rubric (with `n/a — <reason>` escape) + duplication rule + stale-anchor rule; `/pm-sync` adapters forward `design_refs[]` as web links with idempotent upsert (sha256 globalId). | M1 |
 | **M3** | Drift + duplication hardening | `last_aligned_with` metadata + implementation-manual lint rule. | M2 |
 
 ---
@@ -49,6 +49,21 @@ Modify `shield/commands/plan.md` and `shield/skills/general/plan-docs/SKILL.md` 
 - `shield/schema/output-paths.yaml` lists `plan_trd_md` and `plan_trd_html`; `plan_arch_md` and `plan_arch_html` are removed.
 - Running `/plan` on a feature folder with only infra markers produces a TRD where the infra interpretation is reflected in §4–7, §11, and §14 prose; sections like §4 may legitimately carry `n/a — <reason>`.
 - Running `/plan` on a feature folder with only backend markers produces a TRD where the backend interpretation is reflected in §4–7, §11, and §14 prose.
+
+### EPIC-1-S4 · Bump plugin version per CLAUDE.md mandate  ·  `priority: high`
+
+CLAUDE.md "Plugin isolation / Versioning" requires bumping `.claude-plugin/marketplace.json` and `pyproject.toml` in the same commit as any plugin update. Added per SRE P1-12 + DX P2.
+
+**Tasks**
+- Bump `.claude-plugin/marketplace.json` version field for the Shield plugin entry.
+- Bump `pyproject.toml` version in any package modified (`shield/adapters/clickup/pyproject.toml`, plus new adapter packages from EPIC-4-S0).
+- Update Shield's user-facing CHANGELOG (or create one if absent) noting the cutover from `plan-architecture.md` to `trd.md` and the schema 1.1 → 1.2 bump.
+
+**Acceptance criteria**
+- The M1 PR includes both version bumps in the same commit as the SKILL.md changes.
+- CHANGELOG mentions the cutover and the schema bump.
+
+---
 
 ### EPIC-1-S3 · Update existing-feature behavior on re-run  ·  `priority: medium`
 
@@ -97,6 +112,23 @@ When `/plan` generates stories, populate each story's `design_refs[]` with a for
 
 ---
 
+### EPIC-2-S3 · Add JSON Schema validator for plan.json  ·  `priority: high`
+
+Two version bumps (1.1 → 1.2 → 1.3) without a machine-readable validator is the drift inflection. Add a pydantic/jsonschema validator now, invoked by `/plan-review` and the eval runner. New per Backend P1-7.
+
+**Tasks**
+- Create `shield/scripts/validate_plan.py` using `pydantic` (preferred — already in deps via clickup adapter) or `jsonschema`.
+- Schema definition lives at `shield/schema/plan-sidecar.schema.json` (machine-readable counterpart to `sidecar-schema.md`).
+- Validator is invoked by `/plan-review` (first check, before rubric) and the eval runner (in EPIC-3-S3 CI workflow).
+- Reject unknown `doc` enum values, enforce `design_refs[]` cardinality (min 1 per story when populated), reject sidecar versions newer than current.
+
+**Acceptance criteria**
+- `uv run shield/scripts/validate_plan.py <path>` exits 0 on valid sidecars and non-zero with a named error on invalid ones.
+- `/plan-review` invokes the validator before applying rubric checks and aborts on schema failure.
+- Sidecar version forward-compat behavior matches the policy in `sidecar-schema.md`.
+
+---
+
 ## EPIC-3 · Eval coverage for TRD format  ·  M1
 
 ### EPIC-3-S1 · Author positive TRD eval fixtures (backend + infra)  ·  `priority: high`
@@ -137,19 +169,36 @@ Run the eval before and after the `/plan` command changes land to produce the RE
 
 **Tasks**
 - Before any `/plan` command changes: run the eval and confirm RED (positive fixture missing `trd.md` → expected fail).
-- After `/plan` changes land: run the eval and confirm GREEN (positive fixture passes; all 13 negatives fail with the right error).
+- After `/plan` changes land: run the eval and confirm GREEN (3 positive fixtures pass; all 16 negatives — 14 missing-section + 1 drift + 1 vague-TBD — fail with the right named errors).
 - Capture both run outputs in the PR description.
 
 **Acceptance criteria**
 - PR body contains a 'RED' section showing the eval failing before the changes.
-- PR body contains a 'GREEN' section showing the eval passing positive + failing all 13 negatives with named errors after the changes.
+- PR body contains a 'GREEN' section showing the eval passing 3 positives + failing all 16 negatives with named errors after the changes.
 - The eval is invocable via `uv run shield/evals/run.py plan-trd` (or equivalent existing eval runner).
 
 ---
 
 ## EPIC-4 · /plan-review and /pm-sync wiring  ·  M2
 
-### EPIC-4-S1 · Add 14-section presence rule to /plan-review  ·  `priority: high`
+### EPIC-4-S0 · Scaffold Jira / Confluence / Notion adapter packages  ·  `priority: high`
+
+Only `shield/adapters/clickup/` exists today as a `uv` package. EPIC-4-S3 implies four adapters land in one story but three have no `pyproject.toml`, no `tests/`, no MCP server skeleton. Scaffold them first. New per Backend P0-3 (repo-grounded — verified).
+
+**Tasks**
+- Create `shield/adapters/jira/` with `pyproject.toml`, `server/` skeleton, `tests/` with placeholder contract test, `.mcp.json` entry.
+- Same for `shield/adapters/confluence/`.
+- Same for `shield/adapters/notion/`.
+- Create `shield/adapters/_common/design_refs.py` exposing `DesignRef`, `ForwardResult`, `ForwardError`, and the `forward_design_refs` protocol interface.
+- Update top-level workspace pyproject if needed.
+
+**Acceptance criteria**
+- Each new adapter directory has a working `pyproject.toml` resolvable by `uv sync`.
+- Each new adapter has a placeholder contract test runnable under `uv run pytest shield/adapters/<tool>/tests/`.
+- `shield/adapters/_common/design_refs.py` exports the named types and protocol.
+- `.mcp.json` entries for new adapters are present (even if disabled until EPIC-4-S3).
+
+### EPIC-4-S1 · Add 14-section presence rule + stale-anchor rule to /plan-review  ·  `priority: high`
 
 Extend the `/plan-review` rubric to check that `trd.md` contains all 14 required sections with the canonical slug anchors. Sections containing `n/a — <reason>` pass; sections containing only 'TBD' or empty content fail. Report missing or vague sections as Critical severity.
 
@@ -176,20 +225,51 @@ Detect when a TRD section verbatim-restates content from the linked PRD. Use a s
 - A fixture pair where `trd.md` §2 copies `prd.md` problem section verbatim produces a duplication finding.
 - A fixture pair where `trd.md` §2 paraphrases or summarizes the PRD problem section does not produce a finding.
 
-### EPIC-4-S3 · /pm-sync emits design_refs[] as web links  ·  `priority: high`
+### EPIC-4-S3 · /pm-sync emits design_refs[] as web links with idempotent upsert  ·  `priority: high`
 
-Update `/pm-sync` adapters (Confluence, Jira, ClickUp, Notion) to forward each story's `design_refs[]` entries as web links on the synced task. Confluence/Jira use issue-link affordances; ClickUp uses URL custom field; Notion uses URL property.
+Update `/pm-sync` adapters (ClickUp + Jira/Confluence/Notion from EPIC-4-S0) to forward each story's `design_refs[]` entries as web links on the synced task with a deterministic idempotency key. Adapter interface contract locked across all four; observability structured; tool/access requirements documented. Per Backend P0-1, P0-3, P0-4 + DX P1-3 + Backend P1-8 + DX P1-13.
+
+**Adapter file paths (P1-3)**
+- `shield/adapters/clickup/server/tools/sync.py` — extend existing
+- `shield/adapters/jira/server/tools/sync.py` — new (per EPIC-4-S0)
+- `shield/adapters/confluence/server/tools/sync.py` — new
+- `shield/adapters/notion/server/tools/sync.py` — new
+
+**Adapter interface contract (P0-3)**
+
+Each adapter exposes:
+```python
+def forward_design_refs(task_id: str, refs: list[DesignRef]) -> ForwardResult: ...
+```
+where `ForwardResult = {created: int, skipped: int, errors: list[ForwardError]}`. Both `DesignRef` and `ForwardResult` are defined in `shield/adapters/_common/design_refs.py` (from EPIC-4-S0).
+
+**Idempotency key**: each `DesignRef` produces `idempotency_key = sha256(story_id + anchor_url)[:32]`. Adapters use this as:
+- Jira: `globalId` on `remote_issue_link`
+- Confluence: `name` on `remote_link`
+- ClickUp: comparison key for URL custom-field dedup before write
+- Notion: comparison key for URL property dedup before write
+
+**Observability (P1-8)**: one `action_log` entry per ref with `action='forward_design_ref'`, fields `{story_id, adapter, anchor_url, outcome, idempotency_key}`. Failures emit `action='forward_design_ref_failed'` with `{error_class, http_status, idempotency_key}`.
+
+**Tool & access requirements (P1-13)**:
+- Integration tests use HTTP mocking via `responses` (preferred, credential-free CI) OR free-tier sandbox tenants when run live.
+- Live credentials come from `SHIELD_<ADAPTER>_TOKEN` env vars; CI defaults to mocked mode.
+- Python deps: Jira → `requests`; Confluence → `requests`; ClickUp → existing `httpx`; Notion → `requests`. All declared per-adapter.
 
 **Tasks**
-- Edit `shield/commands/pm-sync.md` to describe `design_refs[]` forwarding.
-- Update the relevant adapter logic (Python under `shield/adapters/`) for each tool: Confluence remote link, Jira remote-issue-link, ClickUp URL custom field, Notion URL property.
-- Adapters that do not understand `design_refs[]` (or have no link affordance) log 'design_refs forwarding skipped — adapter does not support web links' instead of failing.
-- Add per-adapter eval fixtures covering both populated and empty `design_refs[]` cases.
+- Edit `shield/commands/pm-sync.md` to describe the forwarding contract, idempotency key, and per-adapter affordances.
+- Implement `forward_design_refs` in each of the four adapter files above.
+- Adapters with no link affordance log `'design_refs forwarding skipped — adapter does not support web links'` instead of failing.
+- Adapter eval fixtures using `responses` / `respx` HTTP mocking.
+- **(P0-4) Per-adapter idempotency test** under `shield/adapters/<tool>/tests/test_idempotency.py`: run `forward_design_refs` twice with the same input against a mocked remote; assert second call produces 0 `created` and N `skipped`.
 
 **Acceptance criteria**
 - Running `/pm-sync` against each of {Confluence, Jira, ClickUp, Notion} forwards `design_refs[]` URLs on the synced task.
-- Running `/pm-sync` with an empty `design_refs[]` succeeds with no side effect.
+- Running `/pm-sync` with empty `design_refs[]` succeeds with no side effect.
 - Adapter fixtures pass in `shield/evals/`.
+- **(P0-4)** Running `/pm-sync` twice on the same plan produces no duplicates — verified by per-adapter idempotency test.
+- **(P0-3)** All four adapters implement the same `forward_design_refs(task_id, refs) → ForwardResult` signature from `_common/design_refs.py`.
+- **(P1-8)** `action_log` entries emitted per ref with the documented fields.
 
 ---
 

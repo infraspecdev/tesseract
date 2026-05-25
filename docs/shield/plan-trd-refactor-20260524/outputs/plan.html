@@ -30,8 +30,8 @@ a:hover { text-decoration: underline; }
 <div class="nav">
   <a href="../../index.html">&larr; Shield Overview</a> |
   <a href="../research.md">Research</a> |
-  <a href="plan-architecture.html">&larr; Plan Architecture</a> |
-  <a href="../plan.json">Sidecar (JSON)</a>
+  <a href="../plan.json">Sidecar (JSON)</a> |
+  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
 </div>
 <h1 id="plan--plan-trd-refactor">Plan — <code>/plan</code> TRD refactor</h1>
 <p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code> · <strong>Phase:</strong> v1 cutover · <strong>Source:</strong> <a href="./research.md"><code>research.md</code></a> · <a href="./plan-architecture.md"><code>plan-architecture.md</code></a>
@@ -50,13 +50,13 @@ a:hover { text-decoration: underline; }
 <tr>
 <td><strong>M1</strong></td>
 <td>TRD cutover</td>
-<td><code>/plan</code> emits <code>trd.md</code> (14 sections, stable anchors, domain-aware prompting for backend/infra); <code>plan.json</code> carries optional <code>design_refs[]</code>; eval coverage in place for both domains.</td>
+<td><code>/plan</code> emits <code>trd.md</code> (14 sections, stable anchors, domain-aware prompting for backend/infra/mixed, atomic write, provenance stamp); <code>plan.json</code> carries optional <code>design_refs[]</code>; JSON schema validator wired; recurring CI gate runs the eval; coverage = 3 positives (backend + infra + mixed) + 16 negatives.</td>
 <td>—</td>
 </tr>
 <tr>
 <td><strong>M2</strong></td>
 <td>Review + sync wiring</td>
-<td><code>/plan-review</code> grades against 14-section rubric (with <code>n/a — &lt;reason&gt;</code> escape) + duplication rule; <code>/pm-sync</code> adapters forward <code>design_refs[]</code> as web links.</td>
+<td><code>/plan-review</code> grades against 14-section rubric (with <code>n/a — &lt;reason&gt;</code> escape) + duplication rule + stale-anchor rule; <code>/pm-sync</code> adapters forward <code>design_refs[]</code> as web links with idempotent upsert (sha256 globalId).</td>
 <td>M1</td>
 </tr>
 <tr>
@@ -104,6 +104,20 @@ a:hover { text-decoration: underline; }
 <li>Running <code>/plan</code> on a feature folder with only infra markers produces a TRD where the infra interpretation is reflected in §4–7, §11, and §14 prose; sections like §4 may legitimately carry <code>n/a — &lt;reason&gt;</code>.</li>
 <li>Running <code>/plan</code> on a feature folder with only backend markers produces a TRD where the backend interpretation is reflected in §4–7, §11, and §14 prose.</li>
 </ul>
+<h3 id="epic-1-s4--bump-plugin-version-per-claudemd-mandate----priority-high">EPIC-1-S4 · Bump plugin version per CLAUDE.md mandate  ·  <code>priority: high</code></h3>
+<p>CLAUDE.md &quot;Plugin isolation / Versioning&quot; requires bumping <code>.claude-plugin/marketplace.json</code> and <code>pyproject.toml</code> in the same commit as any plugin update. Added per SRE P1-12 + DX P2.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Bump <code>.claude-plugin/marketplace.json</code> version field for the Shield plugin entry.</li>
+<li>Bump <code>pyproject.toml</code> version in any package modified (<code>shield/adapters/clickup/pyproject.toml</code>, plus new adapter packages from EPIC-4-S0).</li>
+<li>Update Shield's user-facing CHANGELOG (or create one if absent) noting the cutover from <code>plan-architecture.md</code> to <code>trd.md</code> and the schema 1.1 → 1.2 bump.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>The M1 PR includes both version bumps in the same commit as the SKILL.md changes.</li>
+<li>CHANGELOG mentions the cutover and the schema bump.</li>
+</ul>
+<hr />
 <h3 id="epic-1-s3--update-existing-feature-behavior-on-re-run----priority-medium">EPIC-1-S3 · Update existing-feature behavior on re-run  ·  <code>priority: medium</code></h3>
 <p>When <code>/plan</code> is re-run in a feature folder that has both an old <code>plan-architecture.md</code> and a new <code>trd.md</code> (or only an old <code>plan-architecture.md</code>), make the behavior deterministic: leave old <code>plan-architecture.md</code> untouched, write/overwrite <code>trd.md</code>. Old folders remain readable; no migration.</p>
 <p><strong>Tasks</strong></p>
@@ -148,6 +162,22 @@ a:hover { text-decoration: underline; }
 <li>Re-running <code>/plan</code> does not duplicate entries; existing entries are preserved or updated in place.</li>
 </ul>
 <hr />
+<h3 id="epic-2-s3--add-json-schema-validator-for-planjson----priority-high">EPIC-2-S3 · Add JSON Schema validator for plan.json  ·  <code>priority: high</code></h3>
+<p>Two version bumps (1.1 → 1.2 → 1.3) without a machine-readable validator is the drift inflection. Add a pydantic/jsonschema validator now, invoked by <code>/plan-review</code> and the eval runner. New per Backend P1-7.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create <code>shield/scripts/validate_plan.py</code> using <code>pydantic</code> (preferred — already in deps via clickup adapter) or <code>jsonschema</code>.</li>
+<li>Schema definition lives at <code>shield/schema/plan-sidecar.schema.json</code> (machine-readable counterpart to <code>sidecar-schema.md</code>).</li>
+<li>Validator is invoked by <code>/plan-review</code> (first check, before rubric) and the eval runner (in EPIC-3-S3 CI workflow).</li>
+<li>Reject unknown <code>doc</code> enum values, enforce <code>design_refs[]</code> cardinality (min 1 per story when populated), reject sidecar versions newer than current.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>uv run shield/scripts/validate_plan.py &lt;path&gt;</code> exits 0 on valid sidecars and non-zero with a named error on invalid ones.</li>
+<li><code>/plan-review</code> invokes the validator before applying rubric checks and aborts on schema failure.</li>
+<li>Sidecar version forward-compat behavior matches the policy in <code>sidecar-schema.md</code>.</li>
+</ul>
+<hr />
 <h2 id="epic-3--eval-coverage-for-trd-format----m1">EPIC-3 · Eval coverage for TRD format  ·  M1</h2>
 <h3 id="epic-3-s1--author-positive-trd-eval-fixtures-backend--infra----priority-high">EPIC-3-S1 · Author positive TRD eval fixtures (backend + infra)  ·  <code>priority: high</code></h3>
 <p>Create <strong>two</strong> positive fixture <code>trd.md</code> files: one for a backend feature (full 14 sections populated with realistic content), one for an infra feature (full 14 sections with realistic content where infra interpretation applies; at least one section uses <code>n/a — &lt;reason&gt;</code> to exercise the escape pattern). The positive eval asserts: all 14 anchors present, each section non-empty OR carrying a valid <code>n/a — &lt;reason&gt;</code> line, slug allow-list matches.</p>
@@ -186,18 +216,35 @@ a:hover { text-decoration: underline; }
 <p><strong>Tasks</strong></p>
 <ul>
 <li>Before any <code>/plan</code> command changes: run the eval and confirm RED (positive fixture missing <code>trd.md</code> → expected fail).</li>
-<li>After <code>/plan</code> changes land: run the eval and confirm GREEN (positive fixture passes; all 13 negatives fail with the right error).</li>
+<li>After <code>/plan</code> changes land: run the eval and confirm GREEN (3 positive fixtures pass; all 16 negatives — 14 missing-section + 1 drift + 1 vague-TBD — fail with the right named errors).</li>
 <li>Capture both run outputs in the PR description.</li>
 </ul>
 <p><strong>Acceptance criteria</strong></p>
 <ul>
 <li>PR body contains a 'RED' section showing the eval failing before the changes.</li>
-<li>PR body contains a 'GREEN' section showing the eval passing positive + failing all 13 negatives with named errors after the changes.</li>
+<li>PR body contains a 'GREEN' section showing the eval passing 3 positives + failing all 16 negatives with named errors after the changes.</li>
 <li>The eval is invocable via <code>uv run shield/evals/run.py plan-trd</code> (or equivalent existing eval runner).</li>
 </ul>
 <hr />
 <h2 id="epic-4--plan-review-and-pm-sync-wiring----m2">EPIC-4 · /plan-review and /pm-sync wiring  ·  M2</h2>
-<h3 id="epic-4-s1--add-14-section-presence-rule-to-plan-review----priority-high">EPIC-4-S1 · Add 14-section presence rule to /plan-review  ·  <code>priority: high</code></h3>
+<h3 id="epic-4-s0--scaffold-jira--confluence--notion-adapter-packages----priority-high">EPIC-4-S0 · Scaffold Jira / Confluence / Notion adapter packages  ·  <code>priority: high</code></h3>
+<p>Only <code>shield/adapters/clickup/</code> exists today as a <code>uv</code> package. EPIC-4-S3 implies four adapters land in one story but three have no <code>pyproject.toml</code>, no <code>tests/</code>, no MCP server skeleton. Scaffold them first. New per Backend P0-3 (repo-grounded — verified).</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create <code>shield/adapters/jira/</code> with <code>pyproject.toml</code>, <code>server/</code> skeleton, <code>tests/</code> with placeholder contract test, <code>.mcp.json</code> entry.</li>
+<li>Same for <code>shield/adapters/confluence/</code>.</li>
+<li>Same for <code>shield/adapters/notion/</code>.</li>
+<li>Create <code>shield/adapters/_common/design_refs.py</code> exposing <code>DesignRef</code>, <code>ForwardResult</code>, <code>ForwardError</code>, and the <code>forward_design_refs</code> protocol interface.</li>
+<li>Update top-level workspace pyproject if needed.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Each new adapter directory has a working <code>pyproject.toml</code> resolvable by <code>uv sync</code>.</li>
+<li>Each new adapter has a placeholder contract test runnable under <code>uv run pytest shield/adapters/&lt;tool&gt;/tests/</code>.</li>
+<li><code>shield/adapters/_common/design_refs.py</code> exports the named types and protocol.</li>
+<li><code>.mcp.json</code> entries for new adapters are present (even if disabled until EPIC-4-S3).</li>
+</ul>
+<h3 id="epic-4-s1--add-14-section-presence-rule--stale-anchor-rule-to-plan-review----priority-high">EPIC-4-S1 · Add 14-section presence rule + stale-anchor rule to /plan-review  ·  <code>priority: high</code></h3>
 <p>Extend the <code>/plan-review</code> rubric to check that <code>trd.md</code> contains all 14 required sections with the canonical slug anchors. Sections containing <code>n/a — &lt;reason&gt;</code> pass; sections containing only 'TBD' or empty content fail. Report missing or vague sections as Critical severity.</p>
 <p><strong>Tasks</strong></p>
 <ul>
@@ -224,20 +271,50 @@ a:hover { text-decoration: underline; }
 <li>A fixture pair where <code>trd.md</code> §2 copies <code>prd.md</code> problem section verbatim produces a duplication finding.</li>
 <li>A fixture pair where <code>trd.md</code> §2 paraphrases or summarizes the PRD problem section does not produce a finding.</li>
 </ul>
-<h3 id="epic-4-s3--pm-sync-emits-design_refs-as-web-links----priority-high">EPIC-4-S3 · /pm-sync emits design_refs[] as web links  ·  <code>priority: high</code></h3>
-<p>Update <code>/pm-sync</code> adapters (Confluence, Jira, ClickUp, Notion) to forward each story's <code>design_refs[]</code> entries as web links on the synced task. Confluence/Jira use issue-link affordances; ClickUp uses URL custom field; Notion uses URL property.</p>
+<h3 id="epic-4-s3--pm-sync-emits-design_refs-as-web-links-with-idempotent-upsert----priority-high">EPIC-4-S3 · /pm-sync emits design_refs[] as web links with idempotent upsert  ·  <code>priority: high</code></h3>
+<p>Update <code>/pm-sync</code> adapters (ClickUp + Jira/Confluence/Notion from EPIC-4-S0) to forward each story's <code>design_refs[]</code> entries as web links on the synced task with a deterministic idempotency key. Adapter interface contract locked across all four; observability structured; tool/access requirements documented. Per Backend P0-1, P0-3, P0-4 + DX P1-3 + Backend P1-8 + DX P1-13.</p>
+<p><strong>Adapter file paths (P1-3)</strong></p>
+<ul>
+<li><code>shield/adapters/clickup/server/tools/sync.py</code> — extend existing</li>
+<li><code>shield/adapters/jira/server/tools/sync.py</code> — new (per EPIC-4-S0)</li>
+<li><code>shield/adapters/confluence/server/tools/sync.py</code> — new</li>
+<li><code>shield/adapters/notion/server/tools/sync.py</code> — new</li>
+</ul>
+<p><strong>Adapter interface contract (P0-3)</strong></p>
+<p>Each adapter exposes:</p>
+<pre><code class="language-python">def forward_design_refs(task_id: str, refs: list[DesignRef]) -&gt; ForwardResult: ...
+</code></pre>
+<p>where <code>ForwardResult = {created: int, skipped: int, errors: list[ForwardError]}</code>. Both <code>DesignRef</code> and <code>ForwardResult</code> are defined in <code>shield/adapters/_common/design_refs.py</code> (from EPIC-4-S0).</p>
+<p><strong>Idempotency key</strong>: each <code>DesignRef</code> produces <code>idempotency_key = sha256(story_id + anchor_url)[:32]</code>. Adapters use this as:</p>
+<ul>
+<li>Jira: <code>globalId</code> on <code>remote_issue_link</code></li>
+<li>Confluence: <code>name</code> on <code>remote_link</code></li>
+<li>ClickUp: comparison key for URL custom-field dedup before write</li>
+<li>Notion: comparison key for URL property dedup before write</li>
+</ul>
+<p><strong>Observability (P1-8)</strong>: one <code>action_log</code> entry per ref with <code>action='forward_design_ref'</code>, fields <code>{story_id, adapter, anchor_url, outcome, idempotency_key}</code>. Failures emit <code>action='forward_design_ref_failed'</code> with <code>{error_class, http_status, idempotency_key}</code>.</p>
+<p><strong>Tool &amp; access requirements (P1-13)</strong>:</p>
+<ul>
+<li>Integration tests use HTTP mocking via <code>responses</code> (preferred, credential-free CI) OR free-tier sandbox tenants when run live.</li>
+<li>Live credentials come from <code>SHIELD_&lt;ADAPTER&gt;_TOKEN</code> env vars; CI defaults to mocked mode.</li>
+<li>Python deps: Jira → <code>requests</code>; Confluence → <code>requests</code>; ClickUp → existing <code>httpx</code>; Notion → <code>requests</code>. All declared per-adapter.</li>
+</ul>
 <p><strong>Tasks</strong></p>
 <ul>
-<li>Edit <code>shield/commands/pm-sync.md</code> to describe <code>design_refs[]</code> forwarding.</li>
-<li>Update the relevant adapter logic (Python under <code>shield/adapters/</code>) for each tool: Confluence remote link, Jira remote-issue-link, ClickUp URL custom field, Notion URL property.</li>
-<li>Adapters that do not understand <code>design_refs[]</code> (or have no link affordance) log 'design_refs forwarding skipped — adapter does not support web links' instead of failing.</li>
-<li>Add per-adapter eval fixtures covering both populated and empty <code>design_refs[]</code> cases.</li>
+<li>Edit <code>shield/commands/pm-sync.md</code> to describe the forwarding contract, idempotency key, and per-adapter affordances.</li>
+<li>Implement <code>forward_design_refs</code> in each of the four adapter files above.</li>
+<li>Adapters with no link affordance log <code>'design_refs forwarding skipped — adapter does not support web links'</code> instead of failing.</li>
+<li>Adapter eval fixtures using <code>responses</code> / <code>respx</code> HTTP mocking.</li>
+<li><strong>(P0-4) Per-adapter idempotency test</strong> under <code>shield/adapters/&lt;tool&gt;/tests/test_idempotency.py</code>: run <code>forward_design_refs</code> twice with the same input against a mocked remote; assert second call produces 0 <code>created</code> and N <code>skipped</code>.</li>
 </ul>
 <p><strong>Acceptance criteria</strong></p>
 <ul>
 <li>Running <code>/pm-sync</code> against each of {Confluence, Jira, ClickUp, Notion} forwards <code>design_refs[]</code> URLs on the synced task.</li>
-<li>Running <code>/pm-sync</code> with an empty <code>design_refs[]</code> succeeds with no side effect.</li>
+<li>Running <code>/pm-sync</code> with empty <code>design_refs[]</code> succeeds with no side effect.</li>
 <li>Adapter fixtures pass in <code>shield/evals/</code>.</li>
+<li><strong>(P0-4)</strong> Running <code>/pm-sync</code> twice on the same plan produces no duplicates — verified by per-adapter idempotency test.</li>
+<li><strong>(P0-3)</strong> All four adapters implement the same <code>forward_design_refs(task_id, refs) → ForwardResult</code> signature from <code>_common/design_refs.py</code>.</li>
+<li><strong>(P1-8)</strong> <code>action_log</code> entries emitted per ref with the documented fields.</li>
 </ul>
 <hr />
 <h2 id="epic-5--drift--duplication-hardening----m3">EPIC-5 · Drift + duplication hardening  ·  M3</h2>
