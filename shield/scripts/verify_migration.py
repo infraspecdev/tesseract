@@ -33,8 +33,6 @@ EXPECTED_MOVES = {
         "devcontainer-implement-20260518/research.md",
     "devcontainer-implement-20260518/research/1-claude-implement-isolation/transcript.md":
         "devcontainer-implement-20260518/.session-transcript.md",
-    "agent-behavior-decomposition-20260520/plan/1-behavior-catalog-migration/architecture.html":
-        "agent-behavior-decomposition-20260520/outputs/plan-architecture.html",
 }
 
 EXPECTED_WARNING_SUBSTRINGS = ["handoff.md"]
@@ -144,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
                         help=f"output tree to verify (default: {REAL_TREE})")
     parser.add_argument("--keep", action="store_true",
                         help="don't delete the temp dir on success")
+    parser.add_argument("--keep-on-failure", action="store_true",
+                        help="leave the temp dir in place on failure (for inspection)")
     args = parser.parse_args(argv)
 
     source = args.source.resolve()
@@ -160,19 +160,25 @@ def main(argv: list[str] | None = None) -> int:
         print("(custom --source: skipping known-moves assertions)")
     shutil.copytree(source, tmp_tree)
 
+    exit_code = 0
     try:
         failures = verify(tmp_tree, check_known_moves=check_known_moves)
         if failures:
             print(f"\nFAIL ({len(failures)} issues):", file=sys.stderr)
             for f in failures:
                 print(f"  - {f}", file=sys.stderr)
-            return 1
-        location = str(tmp_tree) if args.keep else "(cleaned up)"
-        print(f"\nPASS — migration verified on copy at {location}")
-        return 0
+            exit_code = 1
+        else:
+            location = str(tmp_tree) if args.keep else "(cleaned up)"
+            print(f"\nPASS — migration verified on copy at {location}")
+            exit_code = 0
+        return exit_code
     finally:
-        if not args.keep and tmp_root.exists():
-            shutil.rmtree(tmp_root)
+        if exit_code != 0 and args.keep_on_failure:
+            print(f"[--keep-on-failure] preserved temp tree at: {tmp_root}", file=sys.stderr)
+        elif exit_code != 0 or not args.keep:
+            if tmp_root.exists():
+                shutil.rmtree(tmp_root, ignore_errors=True)
 
 
 if __name__ == "__main__":

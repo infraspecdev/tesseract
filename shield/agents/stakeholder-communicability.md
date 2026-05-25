@@ -3,6 +3,8 @@ name: stakeholder-communicability
 description: Grade PM5 — can a non-technical stakeholder understand what's being built and why? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Stakeholder Communicability (PM5)

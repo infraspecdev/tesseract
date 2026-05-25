@@ -6,8 +6,10 @@ Runnable: `cd shield/scripts && uv run --with pyyaml --with pytest pytest test_m
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -15,7 +17,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from migrate_outputs import apply_moves, build_manifest, map_legacy_path, plan_moves  # type: ignore[import-not-found]
+from migrate_outputs import apply_moves, build_manifest, derive_review_date, git_dirty_paths, map_legacy_path, plan_moves  # type: ignore[import-not-found]
 
 
 @pytest.mark.parametrize("old,new", [
@@ -33,6 +35,169 @@ from migrate_outputs import apply_moves, build_manifest, map_legacy_path, plan_m
 ])
 def test_map_legacy_path(old: str, new: str | None) -> None:
     assert map_legacy_path(old) == new
+
+
+@pytest.mark.parametrize("old,new", [
+    ("prd/1-foo/prd.md",          "prd.md"),
+    ("prd/3-bar-baz-qux/prd.md",  "prd.md"),
+])
+def test_map_prd_md(old: str, new: str) -> None:
+    assert map_legacy_path(old) == new
+
+
+@pytest.mark.parametrize("old,new", [
+    ("prd/1-foo/prd.html", "outputs/prd.html"),
+])
+def test_map_prd_html(old: str, new: str) -> None:
+    assert map_legacy_path(old) == new
+
+
+@pytest.mark.parametrize("old,new", [
+    ("prd/1-foo/prd.meta.json", "prd.meta.json"),
+])
+def test_map_prd_meta_json(old: str, new: str) -> None:
+    assert map_legacy_path(old) == new
+
+
+@pytest.mark.parametrize("old,new", [
+    ("plan/1-foo/plan.html", "outputs/plan.html"),
+])
+def test_map_plan_html(old: str, new: str) -> None:
+    assert map_legacy_path(old) == new
+
+
+def test_derive_review_date_from_dir_mtime(tmp_path: Path) -> None:
+    d = tmp_path / "prd-review" / "1-foo"
+    d.mkdir(parents=True)
+    (d / "summary.md").write_text("x")
+    ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(d, (ts, ts))
+    assert derive_review_date(d) == "2026-04-30"
+
+
+def test_prd_review_folder_migrates_to_dated_dir(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    rev = feature / "prd-review" / "1-myslug"
+    rev.mkdir(parents=True)
+    (rev / "summary.md").write_text("s")
+    (rev / "enhanced-prd.md").write_text("e")
+    (rev / "source-prd.md").write_text("src")
+    (rev / "review-comments.json").write_text("{}")
+    detailed = rev / "detailed"
+    detailed.mkdir()
+    (detailed / "agile-coach.md").write_text("a")
+    (detailed / "tech-lead-reviewer.md").write_text("t")
+
+    ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(rev, (ts, ts))
+
+    moves, _warnings = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _src, dst in moves}
+
+    expected = {
+        "reviews/prd/2026-04-30/summary.md",
+        "reviews/prd/2026-04-30/enhanced-prd.md",
+        "reviews/prd/2026-04-30/source-prd.md",
+        "reviews/prd/2026-04-30/review-comments.json",
+        "reviews/prd/2026-04-30/detailed/agile-coach.md",
+        "reviews/prd/2026-04-30/detailed/tech-lead-reviewer.md",
+    }
+    assert expected.issubset(dst_paths)
+
+
+def test_plan_review_folder_migrates_to_dated_dir(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    rev = feature / "plan-review" / "1-foo"
+    rev.mkdir(parents=True)
+    (rev / "summary.md").write_text("s")
+    (rev / "enhanced-plan.md").write_text("e")
+    detailed = rev / "detailed"
+    detailed.mkdir()
+    (detailed / "backend-engineer.md").write_text("b")
+
+    ts = datetime(2026, 5, 21, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(rev, (ts, ts))
+
+    moves, _ = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _src, dst in moves}
+    expected = {
+        "reviews/plan/2026-05-21/summary.md",
+        "reviews/plan/2026-05-21/enhanced-plan.md",
+        "reviews/plan/2026-05-21/detailed/backend-engineer.md",
+    }
+    assert expected.issubset(dst_paths)
+
+
+def test_same_day_review_folders_get_counter(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    for i, slug in enumerate(["1-first", "2-second"]):
+        d = feature / "prd-review" / slug
+        d.mkdir(parents=True)
+        (d / "summary.md").write_text(f"r{i}")
+        ts = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp()
+        os.utime(d, (ts, ts))
+
+    moves, _ = plan_moves(feature)
+    dst_dirs = {dst.parent.relative_to(feature).as_posix() for _, dst in moves}
+    assert "reviews/prd/2026-04-30" in dst_dirs
+    assert "reviews/prd/2026-04-30_2" in dst_dirs
+
+
+def _make_realistic_tree(root: Path) -> Path:
+    """Build a synthetic feature tree shaped like a real shield-managed project."""
+    feature = root / "bill-payments-platform-20260430"
+    files = {
+        "plan.json": '{"epics": []}',
+        "research/1-platform-foundations/findings.md": "platform foundations findings",
+        "research/2-multi-geo-data-and-execution-residency/findings.md": "multi-geo findings",
+        "prd/1-bill-payments-platform-v2/prd.md": "# PRD body",
+        "prd/1-bill-payments-platform-v2/prd.html": "<html>PRD</html>",
+        "prd/1-bill-payments-platform-v2/prd.meta.json": '{"version": 2}',
+        "prd-review/1-bill-payments-platform-v2/summary.md": "# Summary",
+        "prd-review/1-bill-payments-platform-v2/enhanced-prd.md": "# Enhanced PRD",
+        "prd-review/1-bill-payments-platform-v2/source-prd.md": "# Source snapshot",
+        "prd-review/1-bill-payments-platform-v2/review-comments.json": '{"comments": []}',
+        "prd-review/1-bill-payments-platform-v2/detailed/agile-coach.md": "agile findings",
+        "prd-review/1-bill-payments-platform-v2/detailed/tech-lead-reviewer.md": "tech findings",
+        "plan/1-prd-v2-foundation/architecture.html": "<html>arch</html>",
+        "plan/1-prd-v2-foundation/plan.html": "<html>plan</html>",
+        "plan-review/1-bill-payments-platform/detailed/architecture-reviewer.md": "arch reviewer",
+        "plans/product-note.md": "side note",
+    }
+    for relpath, content in files.items():
+        p = feature / relpath
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+    return feature
+
+
+def test_realistic_tree_full_migration(tmp_path: Path) -> None:
+    feature = _make_realistic_tree(tmp_path)
+
+    # Force the older research folder to be older than the newer one for collision resolution.
+    older = feature / "research/1-platform-foundations/findings.md"
+    newer = feature / "research/2-multi-geo-data-and-execution-residency/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    moves, warnings = plan_moves(feature)
+    dst_paths = {dst.relative_to(feature).as_posix() for _, dst in moves}
+
+    assert "prd.md" in dst_paths
+    assert "outputs/prd.html" in dst_paths
+    assert "prd.meta.json" in dst_paths
+    assert "outputs/plan-architecture.html" in dst_paths
+    assert "outputs/plan.html" in dst_paths
+
+    review_dirs = {p for p in dst_paths if p.startswith("reviews/")}
+    assert any("reviews/prd/" in p and "/summary.md" in p for p in review_dirs)
+    assert any("reviews/plan/" in p and "/detailed/architecture-reviewer.md" in p for p in review_dirs)
+
+    research_targets = [p for p in dst_paths if p == "research.md"]
+    assert len(research_targets) == 1
+    assert any("discarded on collision" in w for w in warnings)
+
+    assert any("plans/product-note.md" in w for w in warnings)
 
 
 def _make_tree(root: Path, files: list[str]) -> None:
@@ -187,3 +352,115 @@ def test_cli_apply_moves_and_writes_manifest(tmp_path: Path) -> None:
     assert (output_dir / "manifest.json").exists()
     manifest = json.loads((output_dir / "manifest.json").read_text())
     assert manifest["schema_version"] == 2
+
+
+def test_plan_moves_returns_collision_resolutions(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    _make_tree(feature, [
+        "research/1-old/findings.md",
+        "research/2-new/findings.md",
+    ])
+    older = feature / "research/1-old/findings.md"
+    newer = feature / "research/2-new/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    moves, warnings = plan_moves(feature)
+    moves_to_research = [
+        (src, dst) for src, dst in moves
+        if dst.name == "research.md"
+    ]
+    assert len(moves_to_research) == 1
+    chosen_src, _ = moves_to_research[0]
+    assert chosen_src == newer, f"Expected newer file to win; got {chosen_src}"
+
+    discard_warnings = [w for w in warnings if "discarded" in w.lower() and "1-old" in w]
+    assert len(discard_warnings) == 1, f"Expected one discard warning; got {warnings!r}"
+
+
+def test_cli_dry_run_logs_collision_discard(tmp_path: Path) -> None:
+    feature = tmp_path / "f"
+    _make_tree(feature, [
+        "research/1-old/findings.md",
+        "research/2-new/findings.md",
+    ])
+    older = feature / "research/1-old/findings.md"
+    newer = feature / "research/2-new/findings.md"
+    os.utime(older, (1700000000, 1700000000))
+    os.utime(newer, (1800000000, 1800000000))
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"), "--root", str(tmp_path)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0
+    out = result.stdout + result.stderr
+    assert "discarded on collision" in out
+    assert "1-old" in out
+
+
+def _git_init(path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=path, check=True)
+
+
+def test_git_dirty_paths_clean_repo(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    (tmp_path / "a.md").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    assert git_dirty_paths(tmp_path) == []
+
+
+def test_git_dirty_paths_with_uncommitted(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    (tmp_path / "a.md").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "b.md").write_text("b")
+    dirty = git_dirty_paths(tmp_path)
+    assert dirty is not None
+    assert any("b.md" in line for line in dirty)
+
+
+def test_git_dirty_paths_non_git_returns_none(tmp_path: Path) -> None:
+    assert git_dirty_paths(tmp_path) is None
+
+
+def test_apply_with_dirty_tree_aborts_without_yes(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    feature = tmp_path / "f"
+    _make_tree(feature, ["research/1-foo/findings.md"])
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "untracked.md").write_text("dirty")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"),
+         "--root", str(tmp_path), "--apply"],
+        capture_output=True, text=True, check=False,
+        input="",
+    )
+    assert result.returncode != 0
+    combined = (result.stdout + result.stderr).lower()
+    assert "dirty" in combined or "uncommitted" in combined
+    assert (feature / "research/1-foo/findings.md").exists()
+    assert not (feature / "research.md").exists()
+
+
+def test_apply_with_dirty_tree_proceeds_with_yes(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    feature = tmp_path / "f"
+    _make_tree(feature, ["research/1-foo/findings.md"])
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    (tmp_path / "untracked.md").write_text("dirty")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "migrate_outputs.py"),
+         "--root", str(tmp_path), "--apply", "--yes"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (feature / "research.md").exists()

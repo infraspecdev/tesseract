@@ -13,7 +13,7 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lint_output_paths import discover_assets, parse_outputs_block, validate_asset, validate_registry  # type: ignore[import-not-found]
+from lint_output_paths import discover_assets, parse_outputs_block, validate_asset, validate_coverage, validate_registry  # type: ignore[import-not-found]
 
 
 def _write_asset(path: Path, frontmatter: str, body: str = "Body.\n") -> None:
@@ -89,20 +89,94 @@ def test_validate_registry_flags_unknown_variable() -> None:
     assert "research" in errors[0]
 
 
-import subprocess
+def test_validate_coverage_clean_all_declared() -> None:
+    registry = {
+        "paths": {"plan_md": "...", "research": "..."},
+        "derived": [],
+    }
+    referenced = {"plan_md", "research"}
+    assert validate_coverage(registry, referenced) == []
 
 
-def test_cli_passes_clean_tree(tmp_path: Path) -> None:
-    # Build a minimal repo: registry + one asset with no outputs declared
+def test_validate_coverage_flags_orphan_registry_entry() -> None:
+    registry = {
+        "paths": {"plan_md": "...", "ghost_path": "..."},
+        "derived": [],
+    }
+    referenced = {"plan_md"}
+    errors = validate_coverage(registry, referenced)
+    assert len(errors) == 1
+    assert "ghost_path" in errors[0]
+    assert "no asset declares it" in errors[0] or "no asset" in errors[0]
+
+
+def test_validate_coverage_derived_entry_is_exempt() -> None:
+    registry = {
+        "paths": {
+            "plan_md": "...",
+            "global_index_html": "...",
+            "review_outputs_dir": "...",
+        },
+        "derived": ["global_index_html", "review_outputs_dir"],
+    }
+    referenced = {"plan_md"}
+    assert validate_coverage(registry, referenced) == []
+
+
+def test_validate_coverage_derived_entry_must_exist_in_paths() -> None:
+    registry = {
+        "paths": {"plan_md": "..."},
+        "derived": ["nonexistent_entry"],
+    }
+    referenced = {"plan_md"}
+    errors = validate_coverage(registry, referenced)
+    assert len(errors) == 1
+    assert "nonexistent_entry" in errors[0]
+
+
+def test_cli_fails_on_orphaned_registry_entry(tmp_path: Path) -> None:
     schema_dir = tmp_path / "shield" / "schema"
     schema_dir.mkdir(parents=True)
     (schema_dir / "output-paths.yaml").write_text(
         "variables:\n  output_dir: ''\n"
-        "paths:\n  feature_dir: '{output_dir}/x'\n"
+        "paths:\n"
+        "  feature_dir: '{output_dir}/x'\n"
+        "  declared_path: '{feature_dir}/declared.md'\n"
+        "  orphan_path:   '{feature_dir}/orphan.md'\n"
     )
     asset = tmp_path / "shield" / "commands" / "plan.md"
     asset.parent.mkdir(parents=True)
-    _write_asset(asset, "name: plan\n")
+    _write_asset(asset, "name: plan\noutputs:\n  - declared_path\n")
+
+    result = subprocess.run(
+        ["python3", str(SCRIPT_DIR / "lint_output_paths.py"), "--root", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "orphan_path" in result.stdout + result.stderr
+
+
+import subprocess
+
+
+def test_cli_passes_clean_tree(tmp_path: Path) -> None:
+    # Build a minimal repo: registry with one path declared by an asset, plus
+    # a parent-directory entry marked as `derived:`.
+    schema_dir = tmp_path / "shield" / "schema"
+    schema_dir.mkdir(parents=True)
+    (schema_dir / "output-paths.yaml").write_text(
+        "variables:\n  output_dir: ''\n"
+        "paths:\n"
+        "  feature_dir: '{output_dir}/x'\n"
+        "  plan_md:     '{feature_dir}/plan.md'\n"
+        "derived:\n"
+        "  - feature_dir\n"
+    )
+    asset = tmp_path / "shield" / "commands" / "plan.md"
+    asset.parent.mkdir(parents=True)
+    _write_asset(asset, "name: plan\noutputs:\n  - plan_md\n")
 
     result = subprocess.run(
         ["python3", str(SCRIPT_DIR / "lint_output_paths.py"), "--root", str(tmp_path)],

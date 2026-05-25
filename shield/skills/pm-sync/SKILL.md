@@ -1,6 +1,8 @@
 ---
 name: pm-sync
 description: Use when the user asks about sprint planning, syncing plan docs to a PM tool, managing stories/tasks in bulk, or checking sprint status. Triggers on mentions of sprint, sync, stories, PM bulk operations, or epic planning.
+outputs:
+  - plan_json    # mutated in place during sync (PM IDs/URLs added to stories)
 ---
 
 # PM Sync Skill

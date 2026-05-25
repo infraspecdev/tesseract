@@ -6,14 +6,14 @@ scenario: After /prd writes prd.md and prd.html, verify the rendered HTML has al
 
 ## Setup
 ```bash
-mkdir -p docs/shield/render-e2e
+mkdir -p docs/shield/render-e2e-20260522
 cat > .shield.json <<'EOF'
 { "output_dir": "docs/shield" }
 EOF
 ```
 
 ## Prompt
-> Author a standard PRD for "render-e2e" — feature: cache-warm-on-deploy. Include at least one Mermaid block in §5 Architecture & flows. Write the PRD to disk at `docs/shield/render-e2e/prd/1-cache-warm-on-deploy/`. Confirm by printing the path to prd.html and the first 80 lines of prd.html.
+> Author a standard PRD for the feature folder "render-e2e-20260522" (topic: cache-warm-on-deploy) using the shield:prd-docs skill. Include at least one Mermaid block in §5 Architecture & flows. Write outputs to the v2 flat-path layout — prd.md at `docs/shield/render-e2e-20260522/prd.md` and the rendered prd.html at `docs/shield/render-e2e-20260522/outputs/prd.html`. Do NOT use numbered-run subfolders (no `prd/{N}-{slug}/`). Confirm by printing the path to prd.html and the first 80 lines of prd.html.
 
 ## Success criteria
 

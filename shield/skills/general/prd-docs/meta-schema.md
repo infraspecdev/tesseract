@@ -21,7 +21,7 @@ Lightweight metadata sidecar accompanying every `prd.md`. Records type, status, 
   "rubric_version": "1.2",
   "sections_present": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
   "sections_missing_from_standard": [],
-  "linked_research": "research/1-some-slug/findings.md | null",
+  "linked_research": "research.md | null",
   "linked_design_spec": "<path or null>",
   "linked_plans": ["plan/1-foundation-slug/", "plan/2-rollout-slug/"]
 }

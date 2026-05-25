@@ -6,6 +6,8 @@ description: |
   code reviews when K8s manifests are detected. Only activate when there is clear
   evidence of Kubernetes usage — if ambiguous, ask the user.
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Kubernetes Reviewer

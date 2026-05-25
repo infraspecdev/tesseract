@@ -34,7 +34,13 @@ Sections A–E reuse this exact pattern per asset. Read it once here; section ta
 
 - [ ] **Step 1: RED — write the failing eval**
 
-Create `shield/evals/output-paths/<asset>-outputs.eval.md`. The eval invokes the asset against a sandboxed `output_dir = $TMPDIR/shield-eval-<n>` and asserts that the files at the asset's declared paths exist after the run. The exact eval format follows existing examples in `shield/evals/` (see any `*.eval.md` there); the assertion section lists each registry path name and the substituted concrete path that should exist on disk.
+Create `shield/evals/output-paths/<asset>-outputs.eval.md`. The eval invokes the asset against a sandboxed `output_dir = $TMPDIR/shield-eval-<n>`.
+
+After running the command, the eval captures the full set of files written under `$output_dir` (e.g. via `find $output_dir -type f`). It then asserts:
+  - Every declared output path is present.
+  - No file is present that is not declared (the runner implicitly exempts derived globals and side-artifacts: `manifest.json`, `index.html`, anything under `outputs/`, and `changes.md`).
+
+A command that silently writes to an undeclared path fails its eval. This is the load-bearing check against future registry drift — lint catches declaration errors, but only the eval catches the "command wrote files it didn't tell anyone about" case.
 
 Run: `bash shield/evals/run-eval.sh shield/evals/output-paths/<asset>-outputs.eval.md`
 Expected: FAIL — the asset still writes to legacy paths.

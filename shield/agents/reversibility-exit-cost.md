@@ -3,6 +3,8 @@ name: reversibility-exit-cost
 description: Grade PM9 — what happens if this is the wrong bet? How hard is it to change course? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Reversibility & Exit Cost (PM9)

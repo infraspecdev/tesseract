@@ -3,6 +3,8 @@ name: success-metrics-defined
 description: Grade PM8 — how will we know this worked? Measurable outcomes defined? Dispatched by `/plan-review`, `/research`, and standalone PM workflows. DISTINCT from PRD-Review dim 3 measurable-success (which grades a PRD's structural metrics section).
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Success Metrics Defined (PM8)

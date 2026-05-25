@@ -5,6 +5,8 @@ description: |
   network exposure, threat modeling, access control, and compliance alignment.
   Dispatch for plan reviews or infrastructure code reviews.
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Security Reviewer

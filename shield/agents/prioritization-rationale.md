@@ -3,6 +3,8 @@ name: prioritization-rationale
 description: Grade PM4 — is effort-vs-impact considered, dependencies mapped, sequencing justified? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Prioritization Rationale (PM4)

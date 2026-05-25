@@ -9,17 +9,25 @@ Dispatch parallel expert reviewer agents against a plan document to produce a sc
 
 ## Output Path — MANDATORY
 
-All review output goes into the feature's plan-review directory:
+All review output goes into a per-run, date-keyed folder under the feature's `reviews/plan/` directory:
 
 ```
-{output_dir}/{feature}/plan-review/{N}-{slug}/
-├── summary.md                        ← scored analysis (main output)
-├── enhanced-plan.md                  ← enhanced plan with feedback applied
+{output_dir}/{feature}/reviews/plan/{date}{_counter}/   ← {review_dir}
+├── summary.md                        ← {review_summary}  (scored analysis, main output)
+├── enhanced-plan.md                  ← {review_enhanced} (enhanced plan with feedback applied)
 └── detailed/
-    └── <agent-name>.md               ← one file per dispatched agent
+    └── <agent>.md                    ← {review_detailed} (one per dispatched agent)
+
+{output_dir}/{feature}/outputs/reviews/plan/{date}{_counter}/  ← {review_outputs_dir}
+├── summary.html                      ← {review_summary_html}
+├── enhanced-plan.html                ← {review_enhanced_html}
+└── detailed/
+    └── <agent>.html                  ← {review_detailed_html} (one per agent)
 ```
 
-Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{N}` is a sequential number, and `{slug}` is a short kebab-case descriptor. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{date}` is today's ISO date (`YYYY-MM-DD`), and `{_counter}` is empty for the first run of the day or `_2`, `_3`, ... on same-day collisions. Numbered-run subfolders (`plan-review/{N}-{slug}/`) are gone. Reviews never overwrite prior runs.
+
+**Resolving the counter:** before writing, list `{output_dir}/{feature}/reviews/plan/` for entries matching today's date. If `{date}/` does not exist, use `_counter=""`. Otherwise, find the highest `{date}_<N>/` and use `_counter="_<N+1>"`. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -51,18 +59,17 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 
 ### Step 1a: Detect prior PRD
 
-If `{output_dir}/{feature}/prd/*/prd.meta.json` exists, read the latest one. Use its `sections_present` and `type` to inform the plan-vs-PRD alignment check (future enhancement — for now, record it in `plan-review/{N}-{slug}/summary.md` as a "Source PRD" header line, e.g. `Source PRD: prd/1-gift-card-support/prd.md`). This gives reviewers visibility into which PRD version the plan was built from.
+If `{output_dir}/{feature}/prd.meta.json` exists (alongside `{prd}` = `{output_dir}/{feature}/prd.md`), read it. Use its `sections_present` and `type` to inform the plan-vs-PRD alignment check (future enhancement — for now, record it in `{review_summary}` as a "Source PRD" header line, e.g. `Source PRD: prd.md (type: standard, rubric: 1.2)`). This gives reviewers visibility into which PRD version the plan was built from.
 
 ## Plan Input
 
 The skill reads plan data from (in priority order):
-1. **Named plan sidecar** (`{output_dir}/{feature}/plan.json`) — if name provided or only one feature exists. If multiple features exist and no name given, list them and ask.
-2. **Plan docs** in `{output_dir}/{feature}/` — architecture docs, research findings (glob for `{output_dir}/{feature}/plan/` and `{output_dir}/{feature}/research/`)
-3. **HTML plan document** — if only HTML exists, parse it for story content
-4. **Markdown plan document** — path provided by user or auto-detected
-5. **User-provided path** — explicit path argument
+1. **Named plan sidecar** (`{plan_json}` = `{output_dir}/{feature}/plan.json`) — if name provided or only one feature exists. If multiple features exist and no name given, list them and ask.
+2. **Plan markdown sources** at feature root (`{plan_md}` = `{output_dir}/{feature}/plan.md` and `{plan_arch_md}` = `{output_dir}/{feature}/plan-architecture.md`) — canonical narrative deliverables, hand-readable.
+3. **HTML plan document** — `{plan_html}` / `{plan_arch_html}` under `{output_dir}/{feature}/outputs/`; if only HTML exists, parse it for story content.
+4. **User-provided path** — explicit path argument.
 
-**Always start by checking for plan sidecar in `{output_dir}/*/plan.json` and docs in `{output_dir}/{feature}/`.** If no plans exist, ask the user for the plan location or check the project root.
+**Always start by checking for the plan sidecar at `{output_dir}/*/plan.json` and the canonical markdown sources at `{output_dir}/{feature}/plan.md`.** If no plans exist, ask the user for the plan location or check the project root.
 
 ## Persona Selection
 
@@ -92,7 +99,7 @@ persona calls in a single response. Aggregating sequentially throws away the dep
 Use `subagent_type` matching the agent name (e.g., `shield:architect`), or `general-purpose`
 as fallback.
 
-After all agents return, write each agent's full raw output to `plan-review/{N}-{slug}/detailed/<agent-name>.md` with a header and back-link:
+After all agents return, write each agent's full raw output to `{review_dir}/detailed/<agent>.md` (i.e. `{review_detailed}` with `agent=<that-subagent-slug>`) with a header and back-link:
 
 ```markdown
 # <Agent Name> — Detailed Findings
@@ -122,12 +129,17 @@ After all agents return:
 
 ## Output
 
-Write to `{output_dir}/{feature}/plan-review/{N}-{slug}/`:
-- `summary.md` — scored evaluation with consolidated recommendations
-- `enhanced-plan.md` — enhanced version of original plan with feedback applied
-- `detailed/<agent-name>.md` — full output from each dispatched agent
+Write to `{review_dir}` = `{output_dir}/{feature}/reviews/plan/{date}{_counter}/`:
+- `{review_summary}` (`summary.md`) — scored evaluation with consolidated recommendations
+- `{review_enhanced}` (`enhanced-plan.md`) — enhanced version of original plan with feedback applied
+- `{review_detailed}` (`detailed/<agent>.md`) — full output from each dispatched agent
 
 The summary should include a "Detailed Agent Findings" section linking to each detailed file.
+
+Render HTML to `{review_outputs_dir}` = `{output_dir}/{feature}/outputs/reviews/plan/{date}{_counter}/` via `render-markdown.sh`:
+- `{review_summary_html}` (`summary.html`)
+- `{review_enhanced_html}` (`enhanced-plan.html`)
+- `{review_detailed_html}` (`detailed/<agent>.html`) — one per dispatched agent
 
 After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
 
@@ -138,11 +150,11 @@ See `templates.md` for output formats and enhanced plan rules.
 **Do NOT proceed until the user explicitly confirms.**
 
 After writing output files, present the user with three options:
-1. **Apply as-is** — replace original plan with enhanced `plan-review/{N}-{slug}/enhanced-plan.md`
-2. **Apply with edits** — user modifies `plan-review/{N}-{slug}/enhanced-plan.md` first, re-read before applying
-3. **Skip** — keep original plan unchanged
+1. **Apply as-is** — replace `{plan_md}` with `{review_enhanced}`
+2. **Apply with edits** — user modifies `{review_enhanced}` first, re-read before applying
+3. **Skip** — keep `{plan_md}` unchanged
 
-The user may also edit `plan-review/{N}-{slug}/summary.md`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
+The user may also edit `{review_summary}`, ask for changes to specific recommendations, or reject recommendations. Wait for explicit confirmation before overwriting anything.
 
 ## Common Mistakes
 
@@ -152,6 +164,7 @@ The user may also edit `plan-review/{N}-{slug}/summary.md`, ask for changes to s
 | Grading infra points F on a non-infrastructure plan | Only activated personas grade — don't penalize for out-of-scope concerns |
 | Applying enhanced plan without user review | Always wait for Step 5 confirmation — never auto-apply |
 | Repeating scoring logic instead of referencing scoring.md | All grade math lives in `scoring.md` — reference it, don't inline it |
-| Generating plan.md in different format than original | HTML in → HTML out, markdown in → markdown out |
+| Writing to legacy `plan-review/{N}-{slug}/` path | Reviews land under `{review_dir}` = `{output_dir}/{feature}/reviews/plan/{date}{_counter}/` — date-keyed, no numbered runs |
+| Generating enhanced-plan.md in a different format than original | HTML in → HTML out, markdown in → markdown out |
 | Softening grades because the user is under time pressure | Grade what the plan SAYS — missing info is F regardless of deadline |
 | Giving partial credit for implied or assumed information | Grade only what is explicitly documented — "they probably meant X" is not in the plan |

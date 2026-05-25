@@ -3,6 +3,8 @@ name: market-competitive-awareness
 description: Grade PM6 — how does this position relative to alternatives (buy-vs-build, existing tools, competitor offerings)? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Market / Competitive Awareness (PM6)

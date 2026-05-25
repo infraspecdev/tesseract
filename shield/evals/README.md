@@ -31,8 +31,8 @@ Hooks included: whitespace hygiene, YAML/JSON validity, bash syntax, end-to-end 
 | **When to use** | Validating specialist agents (finops-analyst, security-engineer, product-manager) — where each agent run is expensive and you want to iterate on grading criteria without re-running | Validating skill behavior (`shield:prd-docs`, future skills) — where the thing being tested IS how the skill drives a subagent |
 | **Inputs** | Pre-existing fixture directory under `inputs/` | Inline bash heredoc in the eval's Setup section |
 | **Output capture** | Human-driven (run agent separately, save to `results/<name>.txt`) | Automated (runner dispatches subagent via `claude --print` and captures output) |
-| **Assertions** | YAML regex with `must_find` / `should_find` / `must_not_false_positive` | Structural regex + qualitative LLM-judge |
-| **Severity tiers** | `must_find` (FAIL) / `should_find` (WARN) / `must_not_false_positive` (FAIL) | Pass threshold per bucket (e.g. `4 of 4 structural + 2 of 3 qualitative`) |
+| **Assertions** | YAML regex with `must_find` / `should_find` / `must_not_false_positive` | Structural regex (bidirectional must-find) — every assertion matches ≥1 agent file AND every agent file matches ≥1 assertion. Qualitative LLM-judge is *optional*; deterministic evals omit `### Qualitative` and rely on structural alone. |
+| **Severity tiers** | `must_find` (FAIL) / `should_find` (WARN) / `must_not_false_positive` (FAIL) | Pass threshold per bucket (e.g. `4 of 4 structural` or `3 of 3 structural + 2 of 3 qualitative`). Coverage check: any unaccounted agent file fails. Derived globals (`manifest.json`, `index.html`, anything under `outputs/`, `changes.md`) are implicitly exempt. |
 
 **Why both exist:** specialist agents (finops-analyst, etc.) produce long reports against complex inputs; re-running them every time you tweak a regex is wasteful. Skills (prd-docs) are tested by *what the subagent does*, which isn't a static artifact — every behavior change needs a re-run.
 
@@ -56,7 +56,7 @@ For skill-behavior tests. Each eval is a markdown file with Setup + Prompt + Suc
 ./shield/evals/run-eval.sh prd-docs
 ```
 
-Each eval prints structural and qualitative pass counts plus `RESULT: PASS|FAIL`. Aggregate summary at the end. Script exits 1 if any eval fails its threshold — usable as a CI gate.
+Each eval prints structural and (if present) qualitative pass counts plus a `COVERAGE:` line showing how many agent-written files matched a structural pattern, then `RESULT: PASS|FAIL`. Aggregate summary at the end. Script exits 1 if any eval fails its threshold — usable as a CI gate. An eval fails if any agent-written file is unaccounted for (no structural pattern matches), unless that file is a derived global / side-artifact (`manifest.json`, `index.html`, `outputs/*`, `changes.md`).
 
 ### Eval file format
 
@@ -75,16 +75,18 @@ scenario: <one-line description>
 
 ## Success criteria
 
-### Structural (deterministic)
-- <regex assertion>
+### Structural (deterministic, bidirectional must-find)
+- <regex assertion — typically a full-path pattern so the coverage check is tight>
 - <regex assertion>
 
-### Qualitative (LLM-judged)
+### Qualitative (LLM-judged) — OPTIONAL
 - <criterion phrased as a yes/no question for the judge>
 
 ## Pass threshold
-<N> of <M> structural checks + <P> of <Q> qualitative checks.
+<N> of <M> structural [+ <P> of <Q> qualitative]
 ```
+
+Omit the `### Qualitative` section entirely for fully deterministic evals; the runner detects the absence and skips the LLM judge. Prefer structural-only when the criteria are expressible as path patterns.
 
 ### Adding a new eval
 

@@ -2,7 +2,7 @@
 
 ## Overview / Index Template
 
-This page is written to `{output_dir}/index.html` and updated by each skill that produces artifacts. It links to all features and their artifacts.
+This page is written to `{output_dir}/index.html` (registry: `global_index_html`) and regenerated each time `{manifest}` is updated. It links to all features and their artifacts. See `manifest-schema.md` for the full link layout per feature (post-cutover flat paths under `{feature}/` and `{feature}/outputs/`).
 
 ```html
 <!DOCTYPE html>
@@ -34,22 +34,26 @@ a:hover { text-decoration: underline; }
 
 <p>Generated: {date}</p>
 
-<h2>Artifacts</h2>
+<h2>Artifacts (example feature row)</h2>
 
 <table>
   <tr><th>Phase</th><th>Document</th><th>Date</th></tr>
-  <tr><td><span class="badge badge-research">Research</span></td><td><a href="research-{ts}.md">Research Document</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="architecture-{ts}.html">Architecture / ADR</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="plan-{ts}.html">Detailed Execution Plan</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="../plan.json">Plan Sidecar (JSON)</a></td><td>{date}</td></tr>
-  <!-- Add rows as phases complete -->
-  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="analysis-{ts}.md">Plan Review</a></td><td>{date}</td></tr> -->
-  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="review-{ts}.md">Code Review</a></td><td>{date}</td></tr> -->
+  <tr><td><span class="badge badge-research">Research</span></td><td><a href="{feature}/research.md">Research Document</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">PRD</span></td><td><a href="{feature}/prd.md">PRD (Markdown)</a> · <a href="{feature}/outputs/prd.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan-architecture.md">Architecture / ADR</a> · <a href="{feature}/outputs/plan-architecture.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan.md">Detailed Execution Plan</a> · <a href="{feature}/outputs/plan.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan.json">Plan Sidecar (JSON)</a></td><td>{date}</td></tr>
+  <!-- Add rows for review run folders as they accumulate under {feature}/reviews/{type}/{date}{_counter}/ -->
+  <!-- <tr><td><span class="badge badge-review">PRD Review</span></td><td><a href="{feature}/reviews/prd/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
+  <!-- <tr><td><span class="badge badge-review">Plan Review</span></td><td><a href="{feature}/reviews/plan/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
+  <!-- <tr><td><span class="badge badge-review">Code Review</span></td><td><a href="{feature}/reviews/code/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
 </table>
 
 </body>
 </html>
 ```
+
+The generator should iterate over `manifest.json` → `features[]`, emitting one card or one table-section per feature with rows conditional on `artifacts.<key>` and `reviews.<type>.count > 0`.
 
 ## Architecture / ADR Template
 
@@ -83,8 +87,8 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 <body>
 
 <div class="nav">
-  <a href="index.html">&larr; Overview</a> |
-  <a href="plan-{YYYYMMDD-HHMMSS}.html">Detailed Plan &rarr;</a>
+  <a href="../../index.html">&larr; Overview</a> |
+  <a href="plan.html">Detailed Plan &rarr;</a>
 </div>
 
 <h2>Phase {N}: {Name}</h2>
@@ -224,8 +228,8 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 <body>
 
 <div class="nav">
-  <a href="index.html">&larr; Overview</a> |
-  <a href="architecture-{YYYYMMDD-HHMMSS}.html">&larr; Architecture</a>
+  <a href="../../index.html">&larr; Overview</a> |
+  <a href="plan-architecture.html">&larr; Architecture</a>
 </div>
 
 <h1>Phase {N}: {Name} &mdash; Detailed Plan</h1>

@@ -3,6 +3,8 @@ name: user-impact-clarity
 description: Grade PM1 — does the document name specific users/personas and quantify the impact on them? Dispatched by `/plan-review`, `/research` (Research-Review mode), and any workflow that needs a focused PM user-impact grade.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # User Impact Clarity (PM1)

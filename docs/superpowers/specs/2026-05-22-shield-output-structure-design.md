@@ -117,6 +117,7 @@ paths:
   readme:             "{feature_dir}/README.md"
   research:           "{feature_dir}/research.md"
   prd:                "{feature_dir}/prd.md"
+  prd_meta_json:      "{feature_dir}/prd.meta.json"
   plan_json:          "{feature_dir}/plan.json"
   plan_md:            "{feature_dir}/plan.md"
   plan_arch_md:       "{feature_dir}/plan-architecture.md"
@@ -129,10 +130,13 @@ paths:
   plan_arch_html:     "{feature_outputs}/plan-architecture.html"
 
   # Reviews (source)
-  review_dir:         "{feature_dir}/reviews/{review_type}/{date}{_counter}"
-  review_summary:     "{review_dir}/summary.md"
-  review_enhanced:    "{review_dir}/enhanced-{review_type}.md"
-  review_detailed:    "{review_dir}/detailed/{agent}.md"
+  review_dir:           "{feature_dir}/reviews/{review_type}/{date}{_counter}"
+  review_summary:       "{review_dir}/summary.md"
+  review_enhanced:      "{review_dir}/enhanced-{review_type}.md"
+  review_detailed:      "{review_dir}/detailed/{agent}.md"
+  source_prd:           "{review_dir}/source-prd.md"          # bound with review_type=prd
+  review_comments_json: "{review_dir}/review-comments.json"   # bound with review_type=prd
+  code_review_changes:  "{review_dir}/changes.md"             # bound with review_type=code
 
   # Reviews (rendered)
   review_outputs_dir:    "{feature_outputs}/reviews/{review_type}/{date}{_counter}"
@@ -140,6 +144,8 @@ paths:
   review_enhanced_html:  "{review_outputs_dir}/enhanced-{review_type}.html"
   review_detailed_html:  "{review_outputs_dir}/detailed/{agent}.html"
 ```
+
+**Amendment 2026-05-22:** the original §5.1 missed three artifacts emitted by current shield commands (`prd.meta.json` from `/shield prd` and updated by `/shield plan`; `source-prd.md` and `review-comments.json` from `/shield prd-review`). These were added during migration hardening after auditing actual command bodies. `changes.md` from `/shield review` and its domain variants remains a side-artifact (applied-fixes run-history log) and is intentionally not in the registry.
 
 ### 5.2 Per-asset references
 

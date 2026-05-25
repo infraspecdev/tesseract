@@ -3,6 +3,8 @@ name: problem-solution-fit
 description: Grade PM2 — does the proposed approach actually solve the stated problem, or is it a solution looking for a problem? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Problem-Solution Fit (PM2)

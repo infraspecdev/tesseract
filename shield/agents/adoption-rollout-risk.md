@@ -3,6 +3,8 @@ name: adoption-rollout-risk
 description: Grade PM7 — what could block adoption (migration pain, learning curve, organizational resistance, communication gaps)? Dispatched by `/plan-review`, `/research`, and standalone PM workflows.
 persona: product-manager
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # Adoption & Rollout Risk (PM7)

@@ -3,6 +3,8 @@ name: cloud-architect
 description: |
   Use this agent for a holistic infra-code review using the AWS Well-Architected Framework across all 6 pillars: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability. Dispatch for architecture decision reviews, production readiness gates, or when evaluating overall infrastructure code quality against AWS best practices.
 model: inherit
+outputs:
+  - review_detailed    # dispatcher (plan-review / review / prd-review / research) supplies review_type and agent slug
 ---
 
 # AWS Well-Architected Reviewer

@@ -1,6 +1,8 @@
 ---
 name: migrate
 description: Migrate from old plugins (infra-review, clickup-sprint-planner, dev-workflow) to Shield
+outputs:
+  - manifest
 ---
 
 # Shield Migrate
@@ -128,13 +130,13 @@ For each phase, parse the HTML `detailed-plan.html` using these selectors:
 
 ### 3c. Copy HTML docs to feature folder
 
-For each phase:
-- Copy `phases/<phase>/architecture.html` → `{output_dir}/{feature}/plan/{N}-{slug}/architecture.html`
-- Copy `phases/<phase>/detailed-plan.html` → `{output_dir}/{feature}/plan/{N}-{slug}/plan.html`
+For each phase, land artifacts in the new flat layout (no numbered-run subfolders):
+- Copy `phases/<phase>/architecture.html` → `{plan_arch_html}` = `{output_dir}/{feature}/outputs/plan-architecture.html`
+- Copy `phases/<phase>/detailed-plan.html` → `{plan_html}` = `{output_dir}/{feature}/outputs/plan.html`
 
 Update the `<meta name="sidecar">` tag in each plan HTML to point to the new sidecar path:
 ```html
-<meta name="sidecar" content="../../plan.json">
+<meta name="sidecar" content="../plan.json">
 ```
 
 Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) with the new path:
@@ -153,19 +155,19 @@ Replace any old `nav.js` script references (e.g., `<script src="../nav.js">`) wi
 
 Also include sections for Reviews and Plan Sidecars at the bottom.
 
-**`{output_dir}/manifest.json`** — populate with all migrated feature folders, their `plan.json` paths, and latest pointers for each phase. This is the source of truth that `index.html` reads. See `manifest-schema.md` for the full schema.
+**`{manifest}`** = `{output_dir}/manifest.json` — populate with all migrated feature folders, their `{plan_json}` paths, and latest pointers for each phase. This is the source of truth that `index.html` reads. See `manifest-schema.md` for the full schema.
 
 ### 3e. Copy review artifacts
 
-For each review directory:
-- Copy `review/<date>-<name>/analysis.md` → `{output_dir}/{feature}/plan-review/{N}-{slug}/summary.md`
-- Copy `review/<date>-<name>/plan.md` → `{output_dir}/{feature}/plan-review/{N}-{slug}/enhanced-plan.md`
+For each review directory, use the new date-keyed layout (derive `{date}` from the review folder name when available, otherwise use the file modified date):
+- Copy `review/<date>-<name>/analysis.md` → `{review_summary}` = `{output_dir}/{feature}/reviews/plan/{date}/summary.md`
+- Copy `review/<date>-<name>/plan.md` → `{review_enhanced}` = `{output_dir}/{feature}/reviews/plan/{date}/enhanced-plan.md`
 
 ### 3f. Migrate legacy shield/plan.json
 
 If `shield/plan.json` exists (old single-plan path):
 - Read the JSON, derive a feature name from the `project` or `phase` field
-- Write to `{output_dir}/{feature}/plan.json`, adding the `name` field
+- Write to `{plan_json}` = `{output_dir}/{feature}/plan.json`, adding the `name` field
 - Delete `shield/plan.json`
 
 ### 3g. Migrate old Shield v2.x `shield/docs/` structure
@@ -174,9 +176,9 @@ If `shield/docs/` exists with Shield v2.x artifacts (plans, research, reviews):
 
 | Old path | New path |
 |----------|----------|
-| `shield/docs/plans/<name>.json` | `{output_dir}/{name}-YYYYMMDD/plan.json` (use file modified date) |
-| `shield/docs/research-YYYYMMDD-HHMMSS.md` | `{output_dir}/{feature}/research/1-migrated/findings.md` |
-| `shield/docs/architecture-YYYYMMDD-HHMMSS.html` | `{output_dir}/{feature}/plan/1-migrated/architecture.html` |
+| `shield/docs/plans/<name>.json` | `{plan_json}` = `{output_dir}/{name}-YYYYMMDD/plan.json` (use file modified date) |
+| `shield/docs/research-YYYYMMDD-HHMMSS.md` | `{research}` = `{output_dir}/{feature}/research.md` |
+| `shield/docs/architecture-YYYYMMDD-HHMMSS.html` | `{plan_arch_html}` = `{output_dir}/{feature}/outputs/plan-architecture.html` |
 | `shield/docs/plan-YYYYMMDD-HHMMSS.html` | `{output_dir}/{feature}/plan/1-migrated/plan.html` |
 | `shield/docs/reviews-<ts>/summary/code-review-summary.md` | `{output_dir}/{feature}/code-review/1-migrated/summary.md` |
 | `shield/docs/reviews-<ts>/summary/plan-review-summary.md` | `{output_dir}/{feature}/plan-review/1-migrated/summary.md` |
@@ -209,14 +211,15 @@ Plans (7 phases migrated):
   ✓ {output_dir}/account-migration-YYYYMMDD/plan.json (P6 — 5 stories, 5 with ClickUp IDs)
 
 HTML docs copied to feature folders:
-  ✓ 14 architecture + plan HTML files under {output_dir}/{feature}/plan/{N}-{slug}/
+  ✓ 14 architecture + plan HTML files under {output_dir}/{feature}/outputs/
+    ({plan_html} and {plan_arch_html} — flat layout, no numbered runs)
   ✓ Meta tags updated to reference sidecar JSON
   ✓ {output_dir}/index.html — card-grid overview linking all artifacts
-  ✓ {output_dir}/manifest.json — feature folder registry
+  ✓ {manifest} = {output_dir}/manifest.json — feature folder registry
 
 Reviews:
-  ✓ {output_dir}/{feature}/plan-review/{N}-{slug}/summary.md
-  ✓ {output_dir}/{feature}/plan-review/{N}-{slug}/enhanced-plan.md
+  ✓ {output_dir}/{feature}/reviews/plan/{date}/summary.md       ({review_summary})
+  ✓ {output_dir}/{feature}/reviews/plan/{date}/enhanced-plan.md ({review_enhanced})
 
 Old files left in place (safe to delete after verifying):
   - sprint-planner.json

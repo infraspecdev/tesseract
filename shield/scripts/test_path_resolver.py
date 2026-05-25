@@ -72,14 +72,12 @@ def test_all_spec_paths_resolve() -> None:
         ("global_outputs_dir",    dict(output_dir="docs/shield")),
         ("global_index_html",     dict(output_dir="docs/shield")),
         ("feature_dir",           dict(output_dir="docs/shield", feature="f")),
-        ("readme",                dict(output_dir="docs/shield", feature="f")),
         ("research",              dict(output_dir="docs/shield", feature="f")),
         ("prd",                   dict(output_dir="docs/shield", feature="f")),
         ("plan_json",             dict(output_dir="docs/shield", feature="f")),
         ("plan_md",               dict(output_dir="docs/shield", feature="f")),
         ("plan_arch_md",          dict(output_dir="docs/shield", feature="f")),
         ("feature_outputs",       dict(output_dir="docs/shield", feature="f")),
-        ("readme_html",           dict(output_dir="docs/shield", feature="f")),
         ("prd_html",              dict(output_dir="docs/shield", feature="f")),
         ("plan_html",             dict(output_dir="docs/shield", feature="f")),
         ("plan_arch_html",        dict(output_dir="docs/shield", feature="f")),
@@ -107,17 +105,14 @@ def test_all_spec_paths_resolve() -> None:
         assert result.startswith("docs/shield"), f"{name} did not resolve cleanly: {result!r}"
 
 
-def test_legacy_paths_resolve() -> None:
-    """Legacy entries (pre-redesign) must resolve so lint can pass during Phase 3 cutover."""
-    legacy_paths = [
-        ("legacy_research_dir", dict(output_dir="docs/shield", feature="f",
-                                     n="1", slug="my-topic")),
-        ("legacy_plan_dir",     dict(output_dir="docs/shield", feature="f",
-                                     n="1", slug="my-plan")),
-    ]
-    for name, bindings in legacy_paths:
-        result = resolve(name, **bindings)
-        assert result.startswith("docs/shield"), f"{name} did not resolve: {result!r}"
+def test_resolve_added_artifacts() -> None:
+    base = dict(output_dir="docs/shield", feature="f")
+    review_base = {**base, "review_type": "prd", "date": "2026-05-21", "_counter": ""}
+
+    assert resolve("prd_meta_json", **base) == "docs/shield/f/prd.meta.json"
+    assert resolve("source_prd", **review_base) == "docs/shield/f/reviews/prd/2026-05-21/source-prd.md"
+    assert resolve("review_comments_json", **review_base) == \
+        "docs/shield/f/reviews/prd/2026-05-21/review-comments.json"
 
 
 def test_resolve_circular_reference_raises(monkeypatch: pytest.MonkeyPatch) -> None:
