@@ -1,5 +1,61 @@
 # Shield — Changelog
 
+## 2.21.0 — 2026-05-25 — `/plan-review` TRD gates + `/pm-sync` design_refs forwarding + drift accountability
+
+### Added — `/plan-review`
+
+- Deterministic gates 0a–0e run **before** persona dispatch (see
+  `shield/skills/general/plan-review/SKILL.md`):
+  - **0a Schema validation** — `validate_plan.py` runs as the first check; rubric
+    grading and TRD gates only run on schema-valid sidecars.
+  - **0b TRD section presence** — `validate_trd.py` against `trd.md`; missing /
+    vague / drift sections become Critical findings.
+  - **0c Stale-anchor rule** — every `design_refs[]` with `doc: trd` is checked
+    against the live TRD anchor set; stale refs surface as Critical findings.
+  - **0d PRD↔TRD duplication** — TRD §2 and §5 are compared to the linked PRD
+    for verbatim overlap longer than 80 characters.
+  - **0e Implementation-manual rule** — TRD §7 code blocks > 20 lines without
+    a populated §8 Alternatives Considered trigger the anti-pattern finding.
+- Eval suite `shield/evals/plan-review-trd.yaml` with 5 fixtures
+  (clean / stale-anchor / duplication / duplication-paraphrased / implementation-manual);
+  5/5 cases pass.
+
+### Added — `/pm-sync`
+
+- All four PM adapters (ClickUp, Jira, Confluence, Notion) ship a uniform
+  `forward_design_refs(task_id, refs) -> ForwardResult` from
+  `shield_adapters_common` (under `shield/adapters/_common/`). Each adapter
+  forwards every story's `design_refs[]` as web links on the synced task with
+  a deterministic idempotency key `sha256(story_id + anchor_url)[:32]`:
+  - Jira: `globalId` on `remote_issue_link`.
+  - Confluence: `name` on `remote_link`.
+  - ClickUp: companion text custom field `Shield Design Link Keys` for dedup.
+  - Notion: rich-text property `Shield Link Keys` for dedup.
+- Per-adapter idempotency test (`test_idempotency.py` / `test_forward_design_refs.py`)
+  asserts running `/pm-sync` twice on the same plan produces zero duplicates.
+- Structured observability: one `action_log` entry per ref (`action='forward_design_ref'`)
+  with `{story_id, adapter, anchor_url, outcome, idempotency_key}`. Failures emit
+  `action='forward_design_ref_failed'` with `{error_class, http_status, idempotency_key}`.
+
+### Added — drift accountability (M3)
+
+- Sidecar schema **1.2 → 1.3** introduces a top-level `last_aligned_with` field
+  (40-char git SHA, or `null` until the first `/implement` close).
+- `/implement` step 5f writes `last_aligned_with = HEAD` whenever a story
+  closes; `/plan-review` and `/pm-sync` surface the value as an "Aligned with"
+  line so reviewers can compare plan and code as of the same commit.
+- `shield/scripts/validate_plan.py` accepts the new field; forward-compat warns
+  on sidecar version newer than current.
+
+### Plugin versioning
+
+- `.claude-plugin/marketplace.json` shield 2.20.0 → **2.21.0**.
+- New adapter packages: `shield-jira-adapter@0.1.0`,
+  `shield-confluence-adapter@0.1.0`, `shield-notion-adapter@0.1.0`,
+  `shield-adapters-common@0.1.0`.
+
+---
+
 ## 2.20.0 — 2026-05-25 — `/plan` TRD cutover
 
 ### Breaking

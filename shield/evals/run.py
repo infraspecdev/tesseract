@@ -35,6 +35,7 @@ EVAL_DIR = REPO_ROOT / "shield" / "evals"
 SCRIPTS_DIR = REPO_ROOT / "shield" / "scripts"
 VALIDATE_TRD = SCRIPTS_DIR / "validate_trd.py"
 VALIDATE_PLAN = SCRIPTS_DIR / "validate_plan.py"
+CHECK_PLAN_REVIEW_TRD = SCRIPTS_DIR / "check_plan_review_trd.py"
 
 
 def _run_validator(script: Path, target: Path) -> tuple[int, str]:
@@ -105,6 +106,24 @@ def run_suite(suite_name: str, only_case: str | None = None, verbose: bool = Fal
                 failed_assertions.append(f"plan: {evidence}")
             elif verbose:
                 print(f"    plan OK ({plan_expect})")
+
+        # plan-review TRD gates check.
+        gates_expect = expect.get("gates")
+        if gates_expect is not None:
+            prd_path = fixture_dir / "prd.md"
+            args = [str(plan_path), str(trd_path)]
+            if prd_path.exists():
+                args.extend(["--prd", str(prd_path)])
+            proc = subprocess.run(
+                [sys.executable, str(CHECK_PLAN_REVIEW_TRD), *args],
+                capture_output=True,
+                text=True,
+            )
+            ok, evidence = _matches(gates_expect, proc.returncode, proc.stderr.strip())
+            if not ok:
+                failed_assertions.append(f"gates: {evidence}")
+            elif verbose:
+                print(f"    gates OK ({gates_expect})")
 
         if failed_assertions:
             print(f"  FAIL {name}")

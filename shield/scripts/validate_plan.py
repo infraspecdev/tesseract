@@ -48,7 +48,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "shield" / "schema" / "plan-sidecar.schema.json"
 TRD_SECTIONS_PATH = REPO_ROOT / "shield" / "schema" / "trd-sections.yaml"
 
-CURRENT_VERSION = (1, 2)
+CURRENT_VERSION = (1, 3)
 
 
 def _parse_version(v: str) -> tuple[int, int]:

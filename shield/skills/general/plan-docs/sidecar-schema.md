@@ -1,13 +1,14 @@
 # Plan Sidecar JSON Schema
 
-The schema versions in lock-step with `/plan` itself. Current version: **1.2**.
+The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
 
 ```jsonc
 {
-  "version": "1.2",
+  "version": "1.3",
   "project": "<project name from .shield.json>",
   "name": "<kebab-case-plan-name>",
   "phase": "<phase name>",
+  "last_aligned_with": null,
   "milestones": [
     {
       "id": "M1",
@@ -74,7 +75,7 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.2**.
 
 ## Rules
 
-- `version` is `"1.2"`. Older sidecars (`"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. `1.3` reserves a top-level `last_aligned_with` field (see M3).
+- `version` is `"1.3"`. Older sidecars (`"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.3 bump adds the top-level `last_aligned_with` field (see "`last_aligned_with`" below).
 - Every epic MUST have at least 1 story.
 - Every story MUST have at least 1 acceptance criterion.
 - Every story SHOULD have at least 1 `design_refs[]` entry pointing at a TRD section. LLD refs may be TODO placeholders until `/lld <component>` lands.
@@ -151,13 +152,30 @@ stories with no design refs once a TRD is present in the feature folder.
 ]
 ```
 
+### `last_aligned_with`
+
+Top-level field. Stores the git commit SHA of the most recent `/implement` run
+that closed (moved to `status: done`) a story in this plan. Pairs with the TRD
+provenance stamp to give drift accountability: the plan and the code can be
+compared as of the same commit.
+
+- Type: `string | null`. A 40-character lowercase hex sha when set; `null` until
+  the first story closes.
+- `/implement` writes the field on every story close (status flip to `done`).
+- `/plan-review` and `/pm-sync` surface the value as an "Aligned with" line in
+  their summaries (e.g., `Aligned with: abc1234… (2026-05-25)`).
+- The field is opaque to validators — schema 1.3 enforces shape, not freshness;
+  the undead-doc detection that would flag *stale* `last_aligned_with` is a
+  separate rule that lives in `/plan-review` (out of scope for this schema bump).
+
 ### Back-compat
 
-A sidecar with `version: "1.0"` or `"1.1"` or no `version` field is read as a 1.x
-sidecar. `design_refs[]` is optional in 1.0/1.1 — missing fields default to `[]`.
-A 1.2 sidecar with no `design_refs[]` on any story still validates; the validator
-emits a `WARN` (not `FAIL`) when a TRD is present in the feature folder and a story
-has zero refs.
+A sidecar with `version: "1.0"` / `"1.1"` / `"1.2"` or no `version` field is read
+as a back-compat sidecar. `design_refs[]` is optional in 1.0/1.1 — missing fields
+default to `[]`. `last_aligned_with` is optional in 1.0/1.1/1.2 — missing field
+is treated as `null`. A 1.3 sidecar with no `design_refs[]` on any story still
+validates; the validator emits a `WARN` (not `FAIL`) when a TRD is present in
+the feature folder and a story has zero refs.
 
 A 1.0/1.1 sidecar with `milestones: []` and every story's `milestone_id: null` is
 treated as a single implicit milestone covering all stories — see "Single implicit
