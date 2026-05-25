@@ -107,6 +107,7 @@ def validate_coverage(registry: dict, referenced: set[str]) -> list[str]:
     errors: list[str] = []
     path_names = set(registry.get("paths", {}).keys())
     derived = set(registry.get("derived", []) or [])
+    deprecated = set(registry.get("deprecated", []) or [])
 
     # 1. Every derived entry must actually exist in `paths` (typo protection).
     for name in sorted(derived):
@@ -115,15 +116,22 @@ def validate_coverage(registry: dict, referenced: set[str]) -> list[str]:
                 f"derived entry '{name}' is not in `paths:` — fix the typo or remove from `derived:`"
             )
 
-    # 2. Every path entry must be referenced OR derived.
+    # 1b. Every deprecated entry must also exist in `paths` (typo protection).
+    for name in sorted(deprecated):
+        if name not in path_names:
+            errors.append(
+                f"deprecated entry '{name}' is not in `paths:` — fix the typo or remove from `deprecated:`"
+            )
+
+    # 2. Every path entry must be referenced, derived, OR deprecated.
     for name in sorted(path_names):
-        if name in derived:
+        if name in derived or name in deprecated:
             continue
         if name not in referenced:
             errors.append(
                 f"registry path '{name}' is declared but no asset declares it in `outputs:` "
-                f"(add it to a command/skill/agent, or mark as `derived:` if it's a "
-                f"parent-directory or computed-global entry)"
+                f"(add it to a command/skill/agent, or mark as `derived:`/`deprecated:` "
+                f"if it's a parent-directory, computed-global, or sunset entry)"
             )
     return errors
 

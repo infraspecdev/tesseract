@@ -1,0 +1,60 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "aurora-global-payments",
+  "phase": "v1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Module compiles + planned",
+      "outcome": "aurora-global terraform module compiles cleanly and is published to the internal registry",
+      "exit_criteria": [
+        "terraform plan clean in dev",
+        "module published to internal registry"
+      ],
+      "depends_on": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Aurora Global module",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Author terraform-aws-aurora-global module",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Compose aws_rds_global_cluster, two aws_rds_cluster resources, and per-region KMS keys.",
+          "tasks": [
+            "Implement aws_rds_global_cluster resource",
+            "Implement per-region cluster + instance resources",
+            "Export primary_writer_endpoint and secondary_reader_endpoint"
+          ],
+          "acceptance_criteria": [
+            "terraform plan against the module is a no-op when re-applied",
+            "module exports the three named outputs"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "high-level-design",
+              "anchor_url": "trd.md#high-level-design",
+              "label": "§7 High-Level Design"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-25",
+    "domains": ["terraform"]
+  }
+}

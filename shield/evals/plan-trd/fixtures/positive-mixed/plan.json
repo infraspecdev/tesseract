@@ -1,0 +1,90 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "search-index-cutover",
+  "phase": "v1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Module + service compile",
+      "outcome": "search-api Helm chart and search-index Terraform module both compile cleanly",
+      "exit_criteria": [
+        "helm template clean",
+        "terraform plan clean"
+      ],
+      "depends_on": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Search platform",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement search-api skeleton",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Bootstrap the Go service with /v1/search and /healthz handlers wired to the OpenSearch client.",
+          "tasks": [
+            "Scaffold cmd/search-api main package",
+            "Wire OpenSearch Go client",
+            "Add Helm chart skeleton"
+          ],
+          "acceptance_criteria": [
+            "GET /v1/search returns 200 against an empty index",
+            "/healthz responds 200"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "apis-involved",
+              "anchor_url": "trd.md#apis-involved",
+              "label": "§11 APIs Involved [backend]"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Provision search-index OpenSearch domain",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Compose the search-index terraform module — domain, IAM, VPC endpoint.",
+          "tasks": [
+            "Implement aws_opensearch_domain resource",
+            "Implement service role with IRSA trust",
+            "Export the three named outputs"
+          ],
+          "acceptance_criteria": [
+            "terraform plan clean against module",
+            "module exports endpoint, domain_arn, service_role_arn"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "apis-involved",
+              "anchor_url": "trd.md#apis-involved",
+              "label": "§11 APIs Involved [infra]"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-25",
+    "domains": ["backend", "terraform"]
+  }
+}
