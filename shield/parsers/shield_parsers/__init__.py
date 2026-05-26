@@ -8,6 +8,7 @@ from shield_parsers.sidecar import (
     Milestone,
     Plan,
     Story,
+    load_plan,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "Milestone",
     "Plan",
     "Story",
+    "load_plan",
 ]

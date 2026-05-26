@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 CURRENT_SCHEMA_VERSION = "1.4"
@@ -72,3 +74,95 @@ class Plan:
     last_aligned_with: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     extra: dict[str, Any] = field(default_factory=dict)
+
+
+def _story_from_dict(d: dict[str, Any]) -> Story:
+    known = {
+        "id", "name", "status", "description", "tasks", "acceptance_criteria",
+        "assignee", "priority", "week", "milestone_id", "design_refs",
+        "pm_id", "pm_url",
+    }
+    refs = [_design_ref_from_dict(r) for r in d.get("design_refs", []) or []]
+    extra = {k: v for k, v in d.items() if k not in known}
+    return Story(
+        id=d["id"],
+        name=d["name"],
+        status=d["status"],
+        description=d["description"],
+        tasks=list(d.get("tasks", [])),
+        acceptance_criteria=list(d.get("acceptance_criteria", [])),
+        assignee=d.get("assignee"),
+        priority=d.get("priority"),
+        week=d.get("week"),
+        milestone_id=d.get("milestone_id"),
+        design_refs=refs,
+        pm_id=d.get("pm_id"),
+        pm_url=d.get("pm_url"),
+        extra=extra,
+    )
+
+
+def _design_ref_from_dict(d: dict[str, Any]) -> DesignRef:
+    known = {"doc", "label", "component", "section_id", "anchor_url", "stale"}
+    extra = {k: v for k, v in d.items() if k not in known}
+    return DesignRef(
+        doc=d["doc"],
+        label=d["label"],
+        component=d.get("component"),
+        section_id=d.get("section_id"),
+        anchor_url=d.get("anchor_url"),
+        stale=d.get("stale", False),
+        extra=extra,
+    )
+
+
+def _epic_from_dict(d: dict[str, Any]) -> Epic:
+    known = {"id", "name", "stories", "pm_id", "pm_url"}
+    extra = {k: v for k, v in d.items() if k not in known}
+    return Epic(
+        id=d["id"],
+        name=d["name"],
+        stories=[_story_from_dict(s) for s in d.get("stories", [])],
+        pm_id=d.get("pm_id"),
+        pm_url=d.get("pm_url"),
+        extra=extra,
+    )
+
+
+def _milestone_from_dict(d: dict[str, Any]) -> Milestone:
+    known = {"id", "name", "outcome", "exit_criteria", "depends_on"}
+    extra = {k: v for k, v in d.items() if k not in known}
+    return Milestone(
+        id=d["id"],
+        name=d["name"],
+        outcome=d["outcome"],
+        exit_criteria=list(d["exit_criteria"]),
+        depends_on=list(d.get("depends_on", [])),
+        extra=extra,
+    )
+
+
+def load_plan(path: Path | str) -> Plan:
+    """Load a plan.json sidecar from disk into a typed `Plan` object."""
+    p = Path(path)
+    raw = json.loads(p.read_text(encoding="utf-8"))
+    known_top = {
+        "version", "project", "name", "phase", "source_research", "source_prd",
+        "prd_rubric_version_at_planning", "last_aligned_with", "milestones",
+        "epics", "metadata",
+    }
+    extra = {k: v for k, v in raw.items() if k not in known_top}
+    return Plan(
+        version=raw["version"],
+        project=raw["project"],
+        name=raw["name"],
+        milestones=[_milestone_from_dict(m) for m in raw.get("milestones", [])],
+        epics=[_epic_from_dict(e) for e in raw.get("epics", [])],
+        phase=raw.get("phase"),
+        source_research=raw.get("source_research"),
+        source_prd=raw.get("source_prd"),
+        prd_rubric_version_at_planning=raw.get("prd_rubric_version_at_planning"),
+        last_aligned_with=raw.get("last_aligned_with"),
+        metadata=dict(raw.get("metadata", {})),
+        extra=extra,
+    )

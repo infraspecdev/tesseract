@@ -42,3 +42,25 @@ def test_dataclasses_instantiate_with_minimal_args() -> None:
     assert plan.version == "1.4"
     assert plan.epics[0].stories[0].pm_id is None
     assert plan.epics[0].pm_id is None
+
+
+from pathlib import Path
+
+from shield_parsers.sidecar import load_plan
+
+
+def test_load_plan_v14_minimal(tmp_path: Path) -> None:
+    src = Path(__file__).parent / "fixtures" / "plan-v14-minimal.json"
+    plan = load_plan(src)
+
+    assert plan.version == "1.4"
+    assert plan.project == "shield"
+    assert plan.name == "some-feature"
+    assert len(plan.milestones) == 1
+    assert plan.milestones[0].id == "M1"
+    assert len(plan.epics) == 1
+    assert plan.epics[0].id == "EPIC-1"
+    assert plan.epics[0].pm_id is None
+    assert len(plan.epics[0].stories) == 1
+    assert plan.epics[0].stories[0].id == "EPIC-1-S1"
+    assert plan.epics[0].stories[0].milestone_id == "M1"
