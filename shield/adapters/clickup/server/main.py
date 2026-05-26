@@ -85,7 +85,6 @@ class _DepsLoader:
         self._config = None
         self._client = None
         self._action_log = None
-        self._base_path = None
 
     def ensure_loaded(self):
         if self._loaded:
@@ -104,7 +103,6 @@ class _DepsLoader:
         api_token = get_api_token(config)
         self._config = config
         self._client = ClickUpClient(api_token)
-        self._base_path = _resolve_relative(config.plan_docs.base_path, config_path)
         log_path = _resolve_relative(config.action_log.path, config_path)
         self._action_log = ActionLog(log_path)
 
@@ -120,10 +118,6 @@ class _DepsLoader:
     def action_log(self):
         return self._action_log
 
-    @property
-    def base_path(self):
-        return self._base_path
-
 
 _deps = _DepsLoader()
 
@@ -133,12 +127,11 @@ def _register_tools():
     client = _LazyProxy(_deps, "client")
     config = _LazyProxy(_deps, "config")
     action_log = _LazyProxy(_deps, "action_log")
-    base_path = _LazyProxy(_deps, "base_path")
 
     capabilities.register(mcp)
     relationships.register(mcp, client, action_log)
     bulk_create.register(mcp, client, action_log, config)
-    sync.register(mcp, client, config, base_path, action_log)
+    sync.register(mcp, client, config, action_log)
     status.register(mcp, client, config)
     bulk_update.register(mcp, client, action_log)
     rename.register(mcp, client, action_log, config)

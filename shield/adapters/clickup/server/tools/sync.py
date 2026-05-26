@@ -278,7 +278,6 @@ def register(
     mcp: FastMCP,
     client: ClickUpClient,
     config: SprintPlannerConfig,
-    base_path: Path,
     action_log: ActionLog | None = None,
 ):
     @mcp.tool()
