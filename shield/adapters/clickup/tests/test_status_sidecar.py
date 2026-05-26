@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from server.clickup_client import ClickUpAPIError
 from server.tools.status import pm_get_status_impl
 
 
@@ -161,3 +163,104 @@ async def test_status_group_by_status_ignores_epic_list(
     assert "groups" in result
     assert result["groups"]["done"]["count"] == 1
     assert result["groups"]["ready"]["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_status_fetch_error_returns_error(
+    mock_client: MagicMock, mock_config: MagicMock, tmp_path: Path
+) -> None:
+    """A ClickUpAPIError fetching tasks surfaces as a result error."""
+    p = _plan_with_pm_ids(tmp_path, {0: "EPIC-PM-1"})
+    mock_client.get_tasks_by_list = AsyncMock(
+        side_effect=ClickUpAPIError(500, "INTERNAL", "status boom")
+    )
+
+    result = await pm_get_status_impl(
+        plan_json_path=str(p),
+        client=mock_client,
+        config=mock_config,
+    )
+
+    assert "error" in result
+    assert result["error"].startswith("Failed to fetch tasks")
+
+
+@pytest.mark.asyncio
+async def test_status_invalid_group_by_returns_error(
+    mock_client: MagicMock, mock_config: MagicMock, tmp_path: Path
+) -> None:
+    """An unrecognized group_by value returns an error listing valid options."""
+    p = _plan_with_pm_ids(tmp_path, {0: "EPIC-PM-1"})
+    mock_client.get_tasks_by_list = AsyncMock(return_value=[])
+
+    result = await pm_get_status_impl(
+        plan_json_path=str(p),
+        client=mock_client,
+        config=mock_config,
+        group_by="nonsense",
+    )
+
+    assert "error" in result
+    assert "nonsense" in result["error"]
+    assert "epic" in result["error"]
+    assert "status" in result["error"]
+    assert "assignee" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_status_group_by_assignee_resolves_team_names(
+    mock_client: MagicMock, mock_config: MagicMock, tmp_path: Path
+) -> None:
+    """group_by='assignee' groups tasks by assignee, resolving team-member ids
+    to names and falling back to username for unknown ids."""
+    p = _plan_with_pm_ids(tmp_path, {0: "EPIC-PM-1"})
+
+    # config.team maps id "100" -> "Alice"; id "999" is not on the team.
+    member = SimpleNamespace(id="100", name="Alice")
+    mock_config.team = [member]
+
+    tasks = [
+        {
+            "id": "T1",
+            "name": "Story T1",
+            "status": {"status": "done"},
+            "assignees": [{"id": 100, "username": "alice_cu"}],
+            "custom_fields": [],
+        },
+        {
+            "id": "T2",
+            "name": "Story T2",
+            "status": {"status": "ready"},
+            "assignees": [{"id": 999, "username": "bob_cu"}],
+            "custom_fields": [],
+        },
+        {
+            "id": "T3",
+            "name": "Story T3",
+            "status": {"status": "ready"},
+            "assignees": [],
+            "custom_fields": [],
+        },
+    ]
+    mock_client.get_tasks_by_list = AsyncMock(return_value=tasks)
+
+    result = await pm_get_status_impl(
+        plan_json_path=str(p),
+        client=mock_client,
+        config=mock_config,
+        group_by="assignee",
+    )
+
+    groups = result["groups"]
+    # Known team id resolves to the configured name.
+    assert "Alice" in groups
+    assert groups["Alice"]["count"] == 1
+    # Unknown id falls back to the ClickUp username.
+    assert "bob_cu" in groups
+    assert groups["bob_cu"]["count"] == 1
+    # No assignees -> Unassigned bucket.
+    assert "Unassigned" in groups
+    assert groups["Unassigned"]["count"] == 1
+    # _extract_stories resolved Alice's assignee name on the story summary.
+    alice_story = groups["Alice"]["stories"][0]
+    assert alice_story["assignee"] == "Alice"

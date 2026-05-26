@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from server.clickup_client import ClickUpAPIError
 from server.tools.sync import pm_sync_sidecar_impl
 
 
@@ -182,3 +183,106 @@ async def test_sync_orphans_in_clickup_surfaced(
     orphans = result["orphans_in_clickup"]
     assert len(orphans) == 1
     assert orphans[0]["id"] == "ORPHAN-1"
+
+
+@pytest.mark.asyncio
+async def test_sync_story_exact_id_match_with_drifted_name_is_to_update(
+    mock_client: MagicMock, mock_config: MagicMock, tmp_path: Path
+) -> None:
+    """A story with pm_id matching a ClickUp task by exact id, but whose name
+    has drifted well below FUZZY_MATCH_THRESHOLD, classifies as to_update."""
+    import json
+    plan_data = json.loads(FIXTURE.read_text())
+    plan_data["epics"][0]["pm_id"] = "EPIC-PM-1"
+    plan_data["epics"][0]["pm_url"] = "https://clickup/EPIC-PM-1"
+    plan_data["epics"][0]["stories"][0]["pm_id"] = "STORY-PM-1"
+    plan_data["epics"][0]["stories"][0]["pm_url"] = "https://clickup/STORY-PM-1"
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps(plan_data))
+
+    mock_client.get_tasks_by_list = AsyncMock(
+        side_effect=[
+            # epics list — exact id match, name drifted -> epic to_update too
+            [{"id": "EPIC-PM-1", "name": "Completely different epic title",
+              "status": {"status": "open"}}],
+            # backlog list — exact story id match, name drifted far from "Story one"
+            [{"id": "STORY-PM-1",
+              "name": "Totally unrelated wording here zzz",
+              "status": {"status": "open"}, "custom_fields": []}],
+        ]
+    )
+
+    result = await pm_sync_sidecar_impl(
+        plan_json_path=p, client=mock_client, config=mock_config
+    )
+
+    story = next(s for s in result["stories"] if s["id"] == "EPIC-1-S1")
+    assert story["diff"] == "to_update"
+    assert story["pm_id"] == "STORY-PM-1"
+
+    epic = next(e for e in result["epics"] if e["id"] == "EPIC-1")
+    assert epic["diff"] == "to_update"
+    assert epic["pm_id"] == "EPIC-PM-1"
+
+
+@pytest.mark.asyncio
+async def test_sync_epic_unknown_scope_returns_error(
+    mock_client: MagicMock, mock_config: MagicMock
+) -> None:
+    """Scoping to an epic id not present in the plan returns an error listing
+    the available epic ids (early return before any ClickUp fetch)."""
+    result = await pm_sync_sidecar_impl(
+        plan_json_path=FIXTURE,
+        client=mock_client,
+        config=mock_config,
+        epic="EPIC-99",
+    )
+
+    assert "error" in result
+    assert "EPIC-99" in result["error"]
+    assert "EPIC-1" in result["error"]
+    assert "EPIC-2" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_sync_clickup_fetch_error_returns_error(
+    mock_client: MagicMock, mock_config: MagicMock
+) -> None:
+    """A ClickUpAPIError while fetching tasks surfaces as a result error."""
+    mock_client.get_tasks_by_list = AsyncMock(
+        side_effect=ClickUpAPIError(500, "INTERNAL", "boom")
+    )
+
+    result = await pm_sync_sidecar_impl(
+        plan_json_path=FIXTURE, client=mock_client, config=mock_config
+    )
+
+    assert "error" in result
+    assert result["error"].startswith("Failed to fetch ClickUp tasks")
+
+
+@pytest.mark.asyncio
+async def test_sync_epic_to_link_for_fuzzy_match_on_epic_card(
+    mock_client: MagicMock, mock_config: MagicMock
+) -> None:
+    """A plan epic (pm_id=None) whose name fuzzy-matches an existing ClickUp
+    epic card between the link and match thresholds is flagged to_link."""
+    mock_client.get_tasks_by_list = AsyncMock(
+        side_effect=[
+            # epics list — a card whose name is a near-but-not-exact match of
+            # "First epic" (ratio between 0.6 and 0.8).
+            [{"id": "EPIC-CARD-X", "name": "First epico draft",
+              "status": {"status": "open"}}],
+            # backlog list — empty
+            [],
+        ]
+    )
+
+    result = await pm_sync_sidecar_impl(
+        plan_json_path=FIXTURE, client=mock_client, config=mock_config
+    )
+
+    to_link = [e for e in result["epics"] if e["diff"] == "to_link"]
+    assert len(to_link) == 1
+    assert to_link[0]["id"] == "EPIC-1"
+    assert to_link[0]["candidate"]["clickup_id"] == "EPIC-CARD-X"
