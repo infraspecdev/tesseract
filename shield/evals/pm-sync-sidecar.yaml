@@ -1,0 +1,23 @@
+# shield/evals/pm-sync-sidecar.yaml
+# Deterministic eval for the /pm-sync sidecar refactor: validates that the
+# schema-1.4 plan.json shape (pm_id/pm_url on epics AND stories) round-trips
+# through the canonical validator, in both pre-sync (null pm ids) and
+# post-sync (populated pm ids) states, and that a malformed epic is rejected.
+# Invoked by: uv run shield/evals/run.py pm-sync-sidecar
+
+name: pm-sync-sidecar
+description: >
+  Validates schema-1.4 plan.json sidecars through validate_plan.py. Covers the
+  new epic-level pm_id/pm_url fields in both unsynced (null) and synced
+  (populated) states, plus a schema-violation negative.
+
+cases:
+  - name: v14-unsynced-null-pm-ids
+    fixture: fixtures/v14-unsynced
+    expect: { plan: PASS }
+  - name: v14-synced-populated-pm-ids
+    fixture: fixtures/v14-synced
+    expect: { plan: PASS }
+  - name: invalid-epic-missing-stories
+    fixture: fixtures/invalid-epic-missing-stories
+    expect: { plan: "schema_violation" }
