@@ -9,7 +9,7 @@ from pathlib import Path
 
 def test_capabilities_lists_all_required_operations(mock_capabilities):
     """pm_get_capabilities must return all required operations."""
-    required = {"pm_sync", "pm_get_status", "pm_get_capabilities"}
+    required = {"pm_sync_sidecar", "pm_get_status", "pm_get_capabilities"}
     actual = set(mock_capabilities["capabilities"])
     missing = required - actual
     assert not missing, f"Missing required capabilities: {missing}"

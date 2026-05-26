@@ -9,7 +9,7 @@ def mock_capabilities():
         "adapter": "clickup",
         "adapter_mode": "hybrid",
         "capabilities": [
-            "pm_sync",
+            "pm_sync_sidecar",
             "pm_bulk_create",
             "pm_bulk_update",
             "pm_get_status",
