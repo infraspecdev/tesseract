@@ -884,7 +884,7 @@ provides-extras = ["test"]
 
 [[package]]
 name = "shield-clickup-adapter"
-version = "2.1.0"
+version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
