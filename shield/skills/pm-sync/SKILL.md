@@ -65,7 +65,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 3. Present diff table to user         → match / to_create / to_update / to_link
 4. User confirms which to create
 5. pm_bulk_create(list_id=config.lists.backlog.id, stories=[...], set_relationships=true)
-   - Names auto-formatted as "{epic_id} - {name}" (e.g. "P3 - Install Istio")
+   - Names auto-formatted as "{epic_id} - {name}" (e.g. "EPIC-1 - Install Istio")
    - Include orderindex with sequence * 1000 gaps
    - Include full card descriptions with all required sections
 6. Show results table                 → created tasks with IDs and URLs

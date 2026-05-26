@@ -36,7 +36,7 @@ async def pm_get_status_impl(
     Args:
         plan_json_path: Path to the plan.json sidecar that lists the epics
             to report on.
-        epic: Epic ID to filter (e.g. "P1a"). Omit for all epics.
+        epic: Epic ID to filter (e.g. "EPIC-1"). Omit for all epics.
         group_by: Grouping: "epic" (default), "status", or "assignee".
     """
     plan = load_plan(plan_json_path)
@@ -84,7 +84,7 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig):
         Args:
             plan_json_path: Path to the plan.json sidecar that lists the epics
                 to report on.
-            epic: Epic ID to filter (e.g. "P1a"). Omit for all epics.
+            epic: Epic ID to filter (e.g. "EPIC-1"). Omit for all epics.
             group_by: Grouping: "epic" (default), "status", or "assignee".
         """
         return await pm_get_status_impl(

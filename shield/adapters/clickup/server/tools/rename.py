@@ -33,7 +33,7 @@ async def pm_bulk_rename_impl(
     Args:
         plan_json_path: Path to the plan.json sidecar that lists the epics
             to rename-check.
-        epic: Epic ID to scope (e.g. "P3"). Omit for all epics.
+        epic: Epic ID to scope (e.g. "EPIC-1"). Omit for all epics.
         apply: If true, rename the tasks. If false (default), preview only.
         strip_prefix: Regex pattern to strip from existing names before
             reformatting. E.g. r"\\[K8S Migration\\] Phase \\d+ \\|\\s*"
@@ -201,7 +201,7 @@ def register(
         Args:
             plan_json_path: Path to the plan.json sidecar that lists the epics
                 to rename-check.
-            epic: Epic ID to scope (e.g. "P3"). Omit for all epics.
+            epic: Epic ID to scope (e.g. "EPIC-1"). Omit for all epics.
             apply: If true, rename the tasks. If false (default), preview only.
             strip_prefix: Regex pattern to strip from existing names before
                 reformatting. E.g. r"\\[K8S Migration\\] Phase \\d+ \\|\\s*"
