@@ -2,11 +2,11 @@
 
 > For the purpose of each Shield artifact and how they relate, see [`shield/docs/artifacts.md`](../../../docs/artifacts.md).
 
-The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
+The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
 
 ```jsonc
 {
-  "version": "1.3",
+  "version": "1.4",
   "project": "<project name from .shield.json>",
   "name": "<kebab-case-plan-name>",
   "phase": "<phase name>",
@@ -64,7 +64,9 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
           "pm_id": null,
           "pm_url": null
         }
-      ]
+      ],
+      "pm_id": null,
+      "pm_url": null
     }
   ],
   "metadata": {
@@ -77,7 +79,7 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
 
 ## Rules
 
-- `version` is `"1.3"`. Older sidecars (`"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.3 bump adds the top-level `last_aligned_with` field (see "`last_aligned_with`" below).
+- `version` is `"1.4"`. Older sidecars (`"1.3"`, `"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.4 bump adds `pm_id` / `pm_url` to each epic (see "`epics[].pm_id` / `pm_url`" above); the 1.3 bump added the top-level `last_aligned_with` field (see "`last_aligned_with`" below).
 - Every epic MUST have at least 1 story.
 - Every story MUST have at least 1 acceptance criterion.
 - Every story SHOULD have at least 1 `design_refs[]` entry pointing at a TRD section. LLD refs may be TODO placeholders until `/lld <component>` lands.
@@ -85,6 +87,8 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
 - Tasks must be specific enough to execute without questions.
 - Status starts as `"ready"` for new stories.
 - `pm_id` and `pm_url` start as `null` — populated by `/pm-sync`.
+
+**`epics[].pm_id` / `pm_url` (1.4+)** — ClickUp/Jira/Notion task ID + URL for the epic itself. `null` until first `/pm-sync`. Symmetric with `stories[].pm_id` / `pm_url`. First sync creates the epic task; subsequent syncs read this field to skip already-synced epics.
 - Plan name must be kebab-case (`^[a-z0-9-]+$`).
 - Each plan lives at `{output_dir}/{feature}/plan.json`.
 - Story IDs must be unique across all plans in a project.
