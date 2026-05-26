@@ -178,3 +178,98 @@ def test_save_plan_is_atomic_no_partial_file(tmp_path: Path, monkeypatch) -> Non
     assert out.read_text() == '{"old": "content"}'
     leftovers = [p.name for p in tmp_path.iterdir() if p.suffix == ".tmp"]
     assert leftovers == [], f"orphan tmp files: {leftovers}"
+
+
+def test_save_plan_round_trips_design_refs_depends_on_and_metadata(tmp_path: Path) -> None:
+    src = tmp_path / "in.json"
+    src.write_text(
+        json.dumps(
+            {
+                "version": "1.4",
+                "project": "shield",
+                "name": "rich",
+                "metadata": {"owner": "team-x", "sprint": 7},
+                "milestones": [
+                    {
+                        "id": "M2",
+                        "name": "MS two",
+                        "outcome": "ships Y",
+                        "exit_criteria": ["Y exists"],
+                        "depends_on": ["M1"],
+                    }
+                ],
+                "epics": [
+                    {
+                        "id": "EPIC-1",
+                        "name": "E",
+                        "stories": [
+                            {
+                                "id": "EPIC-1-S1",
+                                "name": "S",
+                                "status": "ready",
+                                "description": "d",
+                                "tasks": ["t"],
+                                "acceptance_criteria": ["a"],
+                                "design_refs": [
+                                    {
+                                        "doc": "trd",
+                                        "label": "Component A",
+                                        "component": "auth",
+                                        "section_id": "3.1",
+                                        "anchor_url": "https://trd#3.1",
+                                        "stale": True,
+                                        "note": "extra-key-survives",
+                                    },
+                                    {
+                                        "doc": "lld",
+                                        "label": "Component B",
+                                    },
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+    plan = load_plan(src)
+
+    # Sanity: the typed model parsed the design refs (covers _design_ref_from_dict).
+    parsed_refs = plan.epics[0].stories[0].design_refs
+    assert len(parsed_refs) == 2
+    assert parsed_refs[0].stale is True
+    assert parsed_refs[0].extra == {"note": "extra-key-survives"}
+    assert parsed_refs[1].stale is False
+    assert plan.milestones[0].depends_on == ["M1"]
+    assert plan.metadata == {"owner": "team-x", "sprint": 7}
+
+    out = tmp_path / "out.json"
+    save_plan(out, plan)
+    written = json.loads(out.read_text())
+
+    assert written["metadata"] == {"owner": "team-x", "sprint": 7}
+    assert written["milestones"][0]["depends_on"] == ["M1"]
+
+    refs = written["epics"][0]["stories"][0]["design_refs"]
+    assert len(refs) == 2
+    first = refs[0]
+    assert first["doc"] == "trd"
+    assert first["label"] == "Component A"
+    assert first["component"] == "auth"
+    assert first["section_id"] == "3.1"
+    assert first["anchor_url"] == "https://trd#3.1"
+    assert first["stale"] is True
+    assert first["note"] == "extra-key-survives"
+    # Non-stale ref must NOT emit a "stale" key (writer only writes stale when True).
+    assert "stale" not in refs[1]
+    assert refs[1]["doc"] == "lld"
+    assert refs[1]["label"] == "Component B"
+
+    # Full round trip: reload the written file and confirm it still parses.
+    reloaded = load_plan(out)
+    rt_refs = reloaded.epics[0].stories[0].design_refs
+    assert rt_refs[0].extra == {"note": "extra-key-survives"}
+    assert rt_refs[0].stale is True
+    assert rt_refs[1].stale is False
+    assert reloaded.milestones[0].depends_on == ["M1"]
+    assert reloaded.metadata == {"owner": "team-x", "sprint": 7}
