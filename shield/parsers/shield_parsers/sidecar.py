@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -210,3 +212,103 @@ def load_plan(path: Path | str) -> Plan:
         metadata=dict(raw.get("metadata", {})),
         extra=extra,
     )
+
+
+def _design_ref_to_dict(r: DesignRef) -> dict[str, Any]:
+    out = {
+        "doc": r.doc,
+        "label": r.label,
+        "component": r.component,
+        "section_id": r.section_id,
+        "anchor_url": r.anchor_url,
+    }
+    if r.stale:
+        out["stale"] = True
+    out.update(r.extra)
+    return out
+
+
+def _story_to_dict(s: Story) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "id": s.id,
+        "name": s.name,
+        "status": s.status,
+        "assignee": s.assignee,
+        "priority": s.priority,
+        "week": s.week,
+        "milestone_id": s.milestone_id,
+        "description": s.description,
+        "tasks": list(s.tasks),
+        "acceptance_criteria": list(s.acceptance_criteria),
+        "pm_id": s.pm_id,
+        "pm_url": s.pm_url,
+    }
+    if s.design_refs:
+        out["design_refs"] = [_design_ref_to_dict(r) for r in s.design_refs]
+    out.update(s.extra)
+    return out
+
+
+def _epic_to_dict(e: Epic) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "id": e.id,
+        "name": e.name,
+        "pm_id": e.pm_id,
+        "pm_url": e.pm_url,
+        "stories": [_story_to_dict(s) for s in e.stories],
+    }
+    out.update(e.extra)
+    return out
+
+
+def _milestone_to_dict(m: Milestone) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "id": m.id,
+        "name": m.name,
+        "outcome": m.outcome,
+        "exit_criteria": list(m.exit_criteria),
+    }
+    if m.depends_on:
+        out["depends_on"] = list(m.depends_on)
+    out.update(m.extra)
+    return out
+
+
+def _plan_to_dict(plan: Plan) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "version": CURRENT_SCHEMA_VERSION,  # always stamp current on save
+        "project": plan.project,
+        "name": plan.name,
+        "phase": plan.phase,
+        "source_research": plan.source_research,
+        "source_prd": plan.source_prd,
+        "prd_rubric_version_at_planning": plan.prd_rubric_version_at_planning,
+        "last_aligned_with": plan.last_aligned_with,
+        "milestones": [_milestone_to_dict(m) for m in plan.milestones],
+        "epics": [_epic_to_dict(e) for e in plan.epics],
+    }
+    if plan.metadata:
+        out["metadata"] = dict(plan.metadata)
+    out.update(plan.extra)
+    return out
+
+
+def save_plan(path: Path | str, plan: Plan) -> None:
+    """Atomically write a Plan to disk as plan.json, stamping CURRENT_SCHEMA_VERSION."""
+    p = Path(path)
+    data = _plan_to_dict(plan)
+    parent = p.parent
+    fd, tmp_path_str = tempfile.mkstemp(
+        prefix=p.name + ".", suffix=".tmp", dir=parent
+    )
+    tmp_path = Path(tmp_path_str)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+        os.replace(tmp_path, p)
+    except Exception:
+        # Clean up the temp file on any failure so we don't leave .tmp orphans.
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise

@@ -11,6 +11,7 @@ from shield_parsers.sidecar import (
     SchemaVersionTooNew,
     Story,
     load_plan,
+    save_plan,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "SchemaVersionTooNew",
     "Story",
     "load_plan",
+    "save_plan",
 ]
