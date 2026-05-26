@@ -1,0 +1,44 @@
+{
+  "version": "1.4",
+  "project": "shield",
+  "name": "sync-fixture",
+  "milestones": [
+    {"id": "M1", "name": "MS1", "outcome": "X", "exit_criteria": ["X done"]}
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "First epic",
+      "pm_id": null,
+      "pm_url": null,
+      "stories": [
+        {
+          "id": "EPIC-1-S1", "name": "Story one",
+          "status": "ready", "description": "First story.",
+          "tasks": ["t1"], "acceptance_criteria": ["a1"],
+          "milestone_id": "M1", "pm_id": null, "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2", "name": "Story two",
+          "status": "ready", "description": "Second story.",
+          "tasks": ["t2"], "acceptance_criteria": ["a2"],
+          "milestone_id": "M1", "pm_id": null, "pm_url": null
+        }
+      ]
+    },
+    {
+      "id": "EPIC-2",
+      "name": "Second epic",
+      "pm_id": null,
+      "pm_url": null,
+      "stories": [
+        {
+          "id": "EPIC-2-S1", "name": "Story three",
+          "status": "ready", "description": "Third story.",
+          "tasks": ["t3"], "acceptance_criteria": ["a3"],
+          "milestone_id": "M1", "pm_id": null, "pm_url": null
+        }
+      ]
+    }
+  ]
+}
