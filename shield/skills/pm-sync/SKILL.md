@@ -35,7 +35,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 | Tool | Purpose |
 |------|---------|
 | `pm_get_capabilities` | Check which operations the configured adapter supports |
-| `pm_sync` | Diff plan sidecar JSON against PM tool state (read-only) |
+| `pm_sync_sidecar` | Diff plan.json sidecar against PM tool state (read-only) — requires plan_json_path arg |
 | `pm_bulk_create` | Create multiple tasks + set EPIC relationships |
 | `pm_link_story_to_epic` | Set list_relationship custom fields directly |
 | `pm_bulk_update` | Batch update status/assignee/priority |
@@ -45,10 +45,10 @@ Orchestrate project management operations through abstract PM adapters — sync 
 ## Rules
 
 1. **Check capabilities first.** Always call `pm_get_capabilities` before any other `pm_*` call. If an operation is unsupported, inform the user and skip it.
-2. **Sync before mutating.** Always call `pm_sync` first. Present the diff and get confirmation.
+2. **Sync before mutating.** Always call `pm_sync_sidecar` first. Present the diff and get confirmation.
 3. **Use bulk operations.** Never create tasks one-by-one. Use `pm_bulk_create` with `set_relationships: true`.
 4. **Read config, don't hardcode.** All IDs come from `~/.shield/projects/<project>/pm.json`. Never hardcode PM tool IDs.
-5. **Always locate and read plan sidecar JSONs first.** Read `output_dir` from `.shield.json` (default `docs/shield`), then run `Glob("{output_dir}/*/plan.json")` to find all sidecars. Read the relevant sidecar for story data — not raw HTML or plan docs. If multiple plans exist and no name specified, list them and ask. Never claim sidecars don't exist without searching first.
+5. **Always locate and read plan sidecar JSONs first.** Read `output_dir` from `.shield.json` (default `docs/shield`), then run `Glob("{output_dir}/*/plan.json")` to find all sidecars. Read the relevant sidecar for story data — not raw HTML or plan docs. If multiple plans exist and no name specified, list them and ask. Never claim sidecars don't exist without searching first. The MCP tool `pm_sync_sidecar` now takes the full plan_json_path as an explicit argument — the skill resolves the path and passes it in.
 6. **Confirm before mutating.** Show the user exactly what will happen and ask for confirmation.
 7. **Surface errors clearly.** If tools report failure, it's real. Show which operations succeeded vs failed.
 8. **Present results as tables.** After any operation, show task names, IDs, statuses, and any failures.
@@ -59,8 +59,9 @@ Orchestrate project management operations through abstract PM adapters — sync 
 ### Creating Stories
 
 ```
-1. pm_get_capabilities()              → verify adapter supports bulk_create, sync
-2. pm_sync(plan="<name>", epic="P1a") → see what exists vs named plan sidecar JSON
+1. pm_get_capabilities()              → verify adapter supports bulk_create, pm_sync_sidecar
+2. pm_sync_sidecar(plan_json_path="{output_dir}/{feature}/plan.json", epic=None)
+   → returns diff: match / to_create / to_update / to_link / orphan per epic + story
 3. Present diff table to user         → match / to_create / to_update / to_link
 4. User confirms which to create
 5. pm_bulk_create(list_id=config.lists.backlog.id, stories=[...], set_relationships=true)
@@ -68,14 +69,13 @@ Orchestrate project management operations through abstract PM adapters — sync 
    - Include orderindex with sequence * 1000 gaps
    - Include full card descriptions with all required sections
 6. Show results table                 → created tasks with IDs and URLs
-7. If pm_sync flagged "to_link" items:
-   pm_sync(apply_links=true)          → auto-set relationship fields + log action
+7. If pm_sync_sidecar flagged "to_link" items: use pm_link_story_to_epic to set relationship fields.
 ```
 
 ### Updating Stories
 
 ```
-1. pm_sync(epic="P1")                → identify stale stories
+1. pm_sync_sidecar(plan_json_path=..., epic="EPIC-1") → identify stale stories
 2. Present diff to user
 3. User confirms which to update
 4. pm_bulk_update(updates=[{ "task_id": "...", "description": "...", "orderindex": "1000" }])
@@ -103,7 +103,7 @@ Every card MUST include: Summary, Tasks checklist, Context/Notes, Acceptance Cri
 | Mistake | Fix |
 |---------|-----|
 | Creating tasks one-by-one | Use `pm_bulk_create` for all stories in one call |
-| Not syncing before creating | Always `pm_sync` first — avoids duplicating existing tasks |
+| Not syncing before creating | Always `pm_sync_sidecar` first — avoids duplicating existing tasks |
 | One-line card descriptions | Include all 4 required sections (see `card-format.md`) |
 | Hardcoding PM tool IDs | Read from `~/.shield/projects/<project>/pm.json` config |
 | Setting orderindex without gaps | Use `sequence * 1000` to leave room for inserts |
