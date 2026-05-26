@@ -8,6 +8,7 @@ from shield_parsers.sidecar import (
     Milestone,
     Plan,
     PlanSchemaError,
+    SchemaVersionTooNew,
     Story,
     load_plan,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "Milestone",
     "Plan",
     "PlanSchemaError",
+    "SchemaVersionTooNew",
     "Story",
     "load_plan",
 ]

@@ -75,3 +75,21 @@ def test_load_plan_rejects_invalid_schema() -> None:
     msg = str(exc_info.value)
     # The error must name the failing field so callers can act on it.
     assert "stories" in msg
+
+
+from shield_parsers.sidecar import SchemaVersionTooNew
+
+
+def test_load_plan_v11_reads_with_defaults_for_pm_fields() -> None:
+    src = Path(__file__).parent / "fixtures" / "plan-v11-no-pm-ids.json"
+    plan = load_plan(src)
+    assert plan.version == "1.1"
+    assert plan.epics[0].pm_id is None
+    assert plan.epics[0].stories[0].pm_id is None
+
+
+def test_load_plan_rejects_too_new_version() -> None:
+    src = Path(__file__).parent / "fixtures" / "plan-v20-too-new.json"
+    with pytest.raises(SchemaVersionTooNew) as exc_info:
+        load_plan(src)
+    assert "2.0" in str(exc_info.value)

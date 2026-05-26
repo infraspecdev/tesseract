@@ -17,6 +17,15 @@ class PlanSchemaError(ValueError):
     """Raised when a plan.json file fails JSON Schema validation."""
 
 
+class SchemaVersionTooNew(ValueError):
+    """Raised when a plan.json declares a major version we don't support."""
+
+
+def _parse_version(v: str) -> tuple[int, int]:
+    parts = v.split(".")
+    return int(parts[0]), int(parts[1])
+
+
 def _schema_path() -> Path:
     # shield/parsers/shield_parsers/sidecar.py → shield/schema/plan-sidecar.schema.json
     # parents[0]=shield_parsers/, parents[1]=parsers/, parents[2]=shield/
@@ -172,6 +181,14 @@ def load_plan(path: Path | str) -> Plan:
         raise PlanSchemaError(
             f"plan.json at {p} failed schema validation at {loc}: {e.message}"
         ) from e
+
+    declared_major, _ = _parse_version(raw["version"])
+    current_major, _ = _parse_version(CURRENT_SCHEMA_VERSION)
+    if declared_major > current_major:
+        raise SchemaVersionTooNew(
+            f"plan.json at {p} declares version {raw['version']!r}, "
+            f"newer than supported (max {CURRENT_SCHEMA_VERSION!r})"
+        )
 
     known_top = {
         "version", "project", "name", "phase", "source_research", "source_prd",

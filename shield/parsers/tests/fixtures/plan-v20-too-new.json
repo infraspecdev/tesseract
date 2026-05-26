@@ -1,0 +1,21 @@
+{
+  "version": "2.0",
+  "project": "shield",
+  "name": "future",
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Future epic",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Future story",
+          "status": "ready",
+          "description": "From the future.",
+          "tasks": ["t"],
+          "acceptance_criteria": ["a"]
+        }
+      ]
+    }
+  ]
+}
