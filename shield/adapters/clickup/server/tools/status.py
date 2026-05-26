@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
+from shield_parsers.sidecar import load_plan
 
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
@@ -21,9 +22,58 @@ def _normalize_status(status_str: str) -> str:
     return "ready"
 
 
+async def pm_get_status_impl(
+    plan_json_path: str,
+    client: ClickUpClient,
+    config: SprintPlannerConfig,
+    epic: str | None = None,
+    group_by: str = "epic",
+) -> dict:
+    """Get sprint/epic overview with story states from ClickUp.
+
+    Fetches tasks from the backlog list and aggregates stats per epic.
+
+    Args:
+        plan_json_path: Path to the plan.json sidecar that lists the epics
+            to report on.
+        epic: Epic ID to filter (e.g. "P1a"). Omit for all epics.
+        group_by: Grouping: "epic" (default), "status", or "assignee".
+    """
+    plan = load_plan(plan_json_path)
+    epics_to_check = plan.epics
+    if epic:
+        epics_to_check = [p for p in plan.epics if p.id == epic]
+        if not epics_to_check:
+            available = [p.id for p in plan.epics]
+            return {"error": f"Epic {epic!r} not found. Available: {available}"}
+
+    # Fetch all backlog tasks
+    try:
+        all_tasks = await client.get_tasks_by_list(
+            config.clickup.lists.backlog.id, include_closed=True
+        )
+    except ClickUpAPIError as e:
+        return {"error": f"Failed to fetch tasks: {e}"}
+
+    # Build team lookup
+    team_by_id = {m.id: m.name for m in config.team}
+
+    relationship_field_id = config.clickup.relationship_field.id
+
+    if group_by == "epic":
+        return _group_by_epic(epics_to_check, all_tasks, team_by_id, relationship_field_id)
+    elif group_by == "status":
+        return _group_by_status(all_tasks, team_by_id)
+    elif group_by == "assignee":
+        return _group_by_assignee(all_tasks, team_by_id)
+    else:
+        return {"error": f"Invalid group_by: {group_by!r}. Use 'epic', 'status', or 'assignee'."}
+
+
 def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig):
     @mcp.tool()
     async def pm_get_status(
+        plan_json_path: str,
         epic: str | None = None,
         group_by: str = "epic",
     ) -> dict:
@@ -32,37 +82,18 @@ def register(mcp: FastMCP, client: ClickUpClient, config: SprintPlannerConfig):
         Fetches tasks from the backlog list and aggregates stats per epic.
 
         Args:
+            plan_json_path: Path to the plan.json sidecar that lists the epics
+                to report on.
             epic: Epic ID to filter (e.g. "P1a"). Omit for all epics.
             group_by: Grouping: "epic" (default), "status", or "assignee".
         """
-        epics_to_check = config.plan_docs.epics
-        if epic:
-            epics_to_check = [p for p in epics_to_check if p.id == epic]
-            if not epics_to_check:
-                available = [p.id for p in config.plan_docs.epics]
-                return {"error": f"Epic {epic!r} not found. Available: {available}"}
-
-        # Fetch all backlog tasks
-        try:
-            all_tasks = await client.get_tasks_by_list(
-                config.clickup.lists.backlog.id, include_closed=True
-            )
-        except ClickUpAPIError as e:
-            return {"error": f"Failed to fetch tasks: {e}"}
-
-        # Build team lookup
-        team_by_id = {m.id: m.name for m in config.team}
-
-        relationship_field_id = config.clickup.relationship_field.id
-
-        if group_by == "epic":
-            return _group_by_epic(epics_to_check, all_tasks, team_by_id, relationship_field_id)
-        elif group_by == "status":
-            return _group_by_status(all_tasks, team_by_id)
-        elif group_by == "assignee":
-            return _group_by_assignee(all_tasks, team_by_id)
-        else:
-            return {"error": f"Invalid group_by: {group_by!r}. Use 'epic', 'status', or 'assignee'."}
+        return await pm_get_status_impl(
+            plan_json_path=plan_json_path,
+            client=client,
+            config=config,
+            epic=epic,
+            group_by=group_by,
+        )
 
 
 def _extract_stories(tasks: list[dict], team_by_id: dict) -> list[dict]:
@@ -101,12 +132,12 @@ def _group_by_epic(epics: list, all_tasks: list[dict], team_by_id: dict, relatio
     for epic_cfg in epics:
         epic_tasks = [
             t for t in all_tasks
-            if epic_cfg.epic_id in _get_linked_epic_ids(t, relationship_field_id)
+            if epic_cfg.pm_id in _get_linked_epic_ids(t, relationship_field_id)
         ]
         result_epics.append({
             "id": epic_cfg.id,
             "name": epic_cfg.name,
-            "epic_id": epic_cfg.epic_id,
+            "epic_id": epic_cfg.pm_id,
             "stats": _compute_stats(epic_tasks),
             "stories": _extract_stories(epic_tasks, team_by_id),
         })
