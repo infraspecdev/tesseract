@@ -42,6 +42,32 @@ def _parse_covered_lines(xml_path: Path) -> dict[str, set[int]]:
     return out
 
 
+def _parse_tracked_lines(xml_path: Path) -> dict[str, set[int]]:
+    """Return {filename: {all_line_numbers_coverage_tracks}} from coverage.xml.
+
+    Coverage only emits <line> entries for executable statements, not for
+    blank lines, comments, or non-statement continuations. The patch-coverage
+    denominator must be restricted to these tracked lines — otherwise added
+    blanks/comments/field declarations count as "uncovered" and a fully-tested
+    new module scores far below 100%.
+    """
+    tree = ET.parse(xml_path)
+    out: dict[str, set[int]] = {}
+    for cls in tree.iter("class"):
+        filename = cls.get("filename")
+        if filename is None:
+            continue
+        tracked: set[int] = set()
+        for line in cls.iter("line"):
+            try:
+                lineno = int(line.get("number", "0"))
+            except ValueError:
+                continue
+            tracked.add(lineno)
+        out.setdefault(filename, set()).update(tracked)
+    return out
+
+
 def _patch_lines(base_ref: str) -> dict[str, set[int]]:
     """Return {filename: {added_or_modified_line_numbers}} relative to base_ref."""
     result = subprocess.run(
@@ -77,6 +103,7 @@ def main() -> int:
     args = p.parse_args()
 
     covered = _parse_covered_lines(args.xml)
+    tracked = _parse_tracked_lines(args.xml)
     patch = _patch_lines(args.base_ref)
 
     total_patch = 0
@@ -92,7 +119,16 @@ def main() -> int:
             (cov for path, cov in covered.items() if filename.endswith(path)),
             set(),
         )
+        tracked_for_file = next(
+            (trk for path, trk in tracked.items() if filename.endswith(path)),
+            set(),
+        )
         for ln in lines:
+            # Only count lines coverage actually tracks (executable statements).
+            # Skip added blanks/comments/non-statement lines so a fully-tested
+            # new file isn't penalized for them.
+            if ln not in tracked_for_file:
+                continue
             total_patch += 1
             if ln in cov_for_file:
                 total_covered += 1

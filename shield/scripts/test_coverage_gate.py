@@ -14,13 +14,13 @@ import pytest
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from coverage_gate import _parse_covered_lines, _patch_lines  # type: ignore[import-not-found]
+from coverage_gate import (  # type: ignore[import-not-found]
+    _parse_covered_lines,
+    _parse_tracked_lines,
+    _patch_lines,
+)
 
-
-def test_parse_covered_lines_extracts_hit_lines(tmp_path: Path) -> None:
-    xml = tmp_path / "coverage.xml"
-    xml.write_text(
-        """<?xml version="1.0" ?>
+_SAMPLE_XML = """<?xml version="1.0" ?>
 <coverage>
   <packages>
     <package>
@@ -37,9 +37,23 @@ def test_parse_covered_lines_extracts_hit_lines(tmp_path: Path) -> None:
   </packages>
 </coverage>
 """
-    )
+
+
+def test_parse_covered_lines_extracts_hit_lines(tmp_path: Path) -> None:
+    xml = tmp_path / "coverage.xml"
+    xml.write_text(_SAMPLE_XML)
     result = _parse_covered_lines(xml)
     assert result == {"pkg/mod.py": {1, 3}}
+
+
+def test_parse_tracked_lines_includes_all_tracked_regardless_of_hits(
+    tmp_path: Path,
+) -> None:
+    xml = tmp_path / "coverage.xml"
+    xml.write_text(_SAMPLE_XML)
+    result = _parse_tracked_lines(xml)
+    # Line 2 has hits=0 but is still a tracked statement — must be included.
+    assert result == {"pkg/mod.py": {1, 2, 3}}
 
 
 def test_patch_lines_parses_unified_diff_hunks(monkeypatch: pytest.MonkeyPatch) -> None:
