@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM1",
+  "name": "User impact clarity",
+  "persona": "product-manager",
+  "grade": "A",
+  "severity": "Critical",
+  "evidence_quote": "Anya manages a 12-person growth team. She builds weekly acquisition dashboards in the analytics product and screenshots them to share in Slack. She loses 30–45 minutes a week on this manual step and her screenshots go stale within hours.",
+  "gap": null,
+  "suggestion": null
+}
+```

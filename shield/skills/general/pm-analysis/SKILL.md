@@ -8,7 +8,17 @@ description: |
 
 # PM Analysis Skill
 
-Thin orchestrator that dispatches the `product-manager-reviewer` agent with the right mode and context. The domain knowledge lives entirely in the agent — this skill only determines the mode, gathers input, and dispatches.
+Thin orchestrator that dispatches the appropriate focused subagent(s) based on mode. Post
+pm-restructure-v0, the omnibus `shield:product-manager` agent has been decomposed; this skill
+now routes to:
+
+- `research-framing` mode → `shield:research-framer`
+- `research-review` mode → `shield:research-reviewer-narrative` + `shield:user-impact-clarity` (PM1) + ... + `shield:business-value-alignment` (PM10) + `shield:framing-coverage-honored` (PM11), dispatched in parallel
+- `plan-review` mode → `shield:user-impact-clarity` (PM1) + ... + `shield:business-value-alignment` (PM10), dispatched in parallel
+- `standalone` mode → same as `plan-review` (PM1-PM10 in parallel)
+
+The domain knowledge lives in the focused subagents — this skill only determines the mode,
+gathers input, and dispatches.
 
 ## When to Use
 
@@ -35,41 +45,39 @@ The calling skill passes the mode explicitly. Standalone is the default when no 
 
 ## Dispatch Workflow
 
-1. **Determine mode** — use the explicit parameter from the calling skill, or default to `standalone`
-2. **Gather input material** — raw topic (for framing), research doc (for research-review), plan doc (for plan-review), or caller-provided input (for standalone)
-3. **Dispatch the PM agent** — use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`. The agent definition is loaded automatically by the Agent tool — do NOT manually read the agent file.
-4. **Return output** — pass the agent's output back to the calling workflow unchanged
+1. **Determine mode** — use the explicit parameter from the calling skill, or default to `standalone`.
+2. **Gather input material** — raw topic (for framing), research doc (for research-review), plan doc (for plan-review), or caller-provided input (for standalone).
+3. **Dispatch the appropriate subagent(s)** per the routing table below.
+4. **Return output** — pass the subagent output(s) back to the calling workflow unchanged. For multi-subagent dispatches (research-review, plan-review, standalone) the orchestrator returns the merged narrative + scorecard the caller expects.
 
-### Dispatch Prompt
+### Routing table
 
-The `prompt` parameter for the Agent tool should contain:
+| Mode | Dispatches (parallel) | Inputs |
+|---|---|---|
+| `research-framing` | `shield:research-framer` | `topic`, optional `decision_context`, optional `urgency` |
+| `research-review` | `shield:research-reviewer-narrative` + PM1-PM10 + `shield:framing-coverage-honored` (PM11) | `findings_path`, `framing_brief_path` |
+| `plan-review` | PM1-PM10 (10 parallel dispatches; no PM11) | `doc_path` |
+| `standalone` | PM1-PM10 | `doc_path` |
 
-```
-You are a Technical Product Manager reviewing [input type].
+PM1-PM10 are the 10 global subagents `shield:user-impact-clarity`, `shield:problem-solution-fit`,
+`shield:scope-discipline-of-plan`, `shield:prioritization-rationale`, `shield:stakeholder-
+communicability`, `shield:market-competitive-awareness`, `shield:adoption-rollout-risk`,
+`shield:success-metrics-defined`, `shield:reversibility-exit-cost`, `shield:business-value-
+alignment`.
 
-Mode: [research-framing|research-review|plan-review|standalone]
+### Notes
 
-Input:
-{the input material}
-
-[For evaluative modes only — read and include scoring.md:]
-Scoring rubric:
-{content of ${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md}
-
-Operate in the specified mode. Follow the Review Process and Output Format for that mode exactly.
-```
-
-**Notes:**
-- The scoring rubric is only included for evaluative modes (`research-review`, `plan-review`, `standalone`). Omit it for `research-framing`.
-- The `[input type]` should reflect the mode: "a research topic" (framing), "research findings" (research-review), "an implementation plan" (plan-review), or "the following input" (standalone).
-- For the scoring rubric, read `scoring.md` relative to the plugin root: `${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md`.
+- The scoring rubric (`scoring.md`) is loaded by each PM dim subagent's frontmatter context as
+  needed; this skill no longer inlines the rubric in the dispatch prompt.
+- `framing_brief_path` should reference the markdown brief produced by `shield:research-framer`
+  upstream. PM11 returns `N/A` if no framing brief is supplied.
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
-| Manually reading the agent file before dispatching | The Agent tool with `subagent_type` loads the agent definition automatically — don't double-inject |
-| Skipping PM framing in research because "the topic is clear enough" | Always run framing — it shapes research agent prompts, not just the user's understanding |
-| Including scoring rubric in research-framing mode | Framing produces a structured brief, not a graded scorecard — omit the rubric |
-| Treating PM review output as optional | The Product Lens section is a required part of the research document |
-| Using relative paths for scoring.md | Use `${CLAUDE_PLUGIN_ROOT}/skills/general/plan-review/scoring.md` |
+| Dispatching `shield:product-manager` | That agent was deleted in pm-restructure-v0. Route by mode per the table above. |
+| Dispatching subagents sequentially in research-review / plan-review / standalone modes | Always dispatch PM1-PM10 in PARALLEL — sequential calls throw away the depth gains from decomposition. |
+| Skipping framing in research because "the topic is clear enough" | Always run framing — it shapes research agent prompts, not just the user's understanding. |
+| Omitting `framing_brief_path` from research-review mode | PM11 returns N/A without it; provide it whenever a framing brief was produced upstream. |
+| Treating PM review output as optional | The Product Lens section is a required part of the research document. |

@@ -2,6 +2,9 @@
 name: pm-status
 description: Show sprint/epic status overview from your PM tool
 args: "[epic] [--by status|assignee]"
+# No outputs declared: pm-status is read-only. It reads from the PM tool
+# (or `{plan_json}` as fallback) and renders a status table inline. No
+# files are written.
 ---
 
 # PM Status
@@ -25,4 +28,4 @@ Show sprint or epic status overview from your project management tool.
 4. Present results as a formatted table:
    - Epic summary: Total, Done, In Progress, Ready, Blocked
    - Story detail when specific epic is requested
-5. If no PM tool configured, scan `{output_dir}/*/plan.json` for plan sidecar JSON and show status from that instead
+5. If no PM tool configured, scan `{output_dir}/*/plan.json` (i.e. each feature's `{plan_json}`) for plan sidecar JSON and show status from that instead

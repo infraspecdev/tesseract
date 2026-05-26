@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="sidecar" content="../plan.json">
+<title>Plan — /plan TRD refactor</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
+h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
+h3 { color: #5f6368; margin-top: 22px; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
+th { background-color: #f1f3f4; font-weight: bold; }
+tr:nth-child(even) { background-color: #f8f9fa; }
+code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', Menlo, 'Courier New', monospace; font-size: 13px; }
+pre { background-color: #f1f3f4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: 'SF Mono', Menlo, 'Courier New', monospace; white-space: pre; font-size: 12px; line-height: 1.4; }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 4px solid #1a73e8; margin: 15px 0; padding: 10px 20px; background-color: #e8f0fe; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #dadce0; margin: 24px 0; }
+a { color: #1a73e8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid #dadce0; font-size: 14px; }
+.nav a { margin-right: 14px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="../../index.html">&larr; Shield Overview</a> |
+  <a href="../research.md">Research</a> |
+  <a href="../plan.json">Sidecar (JSON)</a> |
+  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
+</div>
+<h1 id="plan-architecture--plan-trd-refactor">Plan Architecture — <code>/plan</code> TRD refactor</h1>
+<p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code>
+<strong>Source research:</strong> <a href="./research.md"><code>research.md</code></a> — read this first; it is the authoritative source for design decisions, citations, and rejected alternatives.
+<strong>Date:</strong> 2026-05-24</p>
+<blockquote>
+<p>This document is the <strong>why &amp; how</strong> companion to <code>plan.json</code>. For the <strong>what to do</strong> breakdown (epics, stories, ACs), see <code>plan.json</code> and the rendered <a href="./plan.md"><code>plan.md</code></a>.</p>
+<p><strong>Note on path layout:</strong> <code>/plan</code> today still emits <code>plan-architecture.md</code>. This plan run uses today's <code>/plan</code> to plan the refactor of <code>/plan</code>. After EPIC-1-S2 lands, future plan runs will emit <code>trd.md</code> in this slot instead.</p>
+</blockquote>
+<h2 id="why-this-refactor">Why this refactor</h2>
+<p><code>/plan</code> currently emits a stories-first work-breakdown plus a free-form <code>plan-architecture.md</code> companion. The current artifact is loose and de-facto ADR-flavored — well-suited to infra work but missing the structural rigor (NFRs, Cross-Cutting Concerns, first-class Milestones) that backend work needs. The refactor introduces a <strong>unified 14-section Technical Requirements Document</strong> (TRD) — grounded in IEEE 1016 + the reference TRD template (synthesized during research) + Google/Uber/Larson/Orosz modern practice — that replaces <code>plan-architecture.md</code> for <strong>both backend and infrastructure</strong> work. Domain-aware prompting per section surfaces the right interpretation (e.g., §11 APIs = HTTP contracts for backend, module interfaces + cloud-API surface for infra), and an explicit <code>n/a — &lt;reason&gt;</code> escape handles sections that genuinely don't apply (e.g., §4 Product Journey on a pure-state infra change). The strongest property of today's <code>plan-architecture.md</code> — Rollback Strategy — is promoted to first-class §14. LLDs are per-component (C4 Container/Component) and authored separately by a future <code>/lld &lt;component&gt;</code> command; typically backend-only since infra code is declarative-spec-as-code. This plan run only emits TODO placeholders for LLD references.</p>
+<p>Full rationale, alternatives considered, and citations are in <code>research.md</code>. This document does not restate them.</p>
+<h2 id="how-the-implementation-breaks-down">How the implementation breaks down</h2>
+<p>Three milestones, five epics, sixteen stories (post-review). Sequencing is enforced by milestone <code>depends_on</code> in <code>plan.json</code>. Plan reflects the 2026-05-25 plan-review feedback (composite B / Ready; 6 P0 + 12 of 15 P1 recommendations folded in).</p>
+<pre><code>M1 TRD cutover                                  ← P0 (ship together in one PR)
+├─ EPIC-1: TRD generation and storage
+│   ├─ S1 Author the canonical 14-section TRD template
+│   ├─ S2 Update /plan to emit trd.md (unified backend + infra + mixed)
+│   ├─ S3 Update existing-feature behavior on re-run
+│   └─ S4 Bump plugin version per CLAUDE.md mandate          (new — P1-12)
+├─ EPIC-2: Story schema and design traceability
+│   ├─ S1 Extend plan.json schema with optional design_refs[]
+│   ├─ S2 Populate design_refs[] when /plan has TRD context
+│   └─ S3 Add JSON Schema validator for plan.json            (new — P1-7)
+└─ EPIC-3: Eval coverage for TRD format
+    ├─ S1 Author positive TRD eval fixtures (backend + infra + mixed)
+    ├─ S2 Author 16 negative fixtures (14 missing + drift + vague-TBD)
+    └─ S3 Wire eval into recurring CI + RED-GREEN paper trail
+
+M2 Review + sync wiring                         ← P1 (follows M1)
+└─ EPIC-4: /plan-review and /pm-sync wiring
+    ├─ S0 Scaffold Jira / Confluence / Notion adapter packages   (new — P0-2)
+    ├─ S1 Add 14-section presence rule + stale-anchor rule
+    ├─ S2 Add PRD↔TRD duplication-detection rule
+    └─ S3 /pm-sync emits design_refs[] as web links with idempotent upsert
+
+M3 Drift + duplication hardening                ← P2 (follows M2)
+└─ EPIC-5: Drift + duplication hardening
+    ├─ S1 Add last_aligned_with metadata to plan.json
+    └─ S2 Add implementation-manual / pseudo-code lint rule
+</code></pre>
+<h2 id="key-architectural-decisions">Key architectural decisions</h2>
+<p>The TRD section list, anchor strategy, <code>design_refs[]</code> shape, de-duplication contract, and failure-mode countermeasures are all locked in <code>research.md</code>. The decisions specific to this implementation plan are:</p>
+<ol>
+<li><strong>Direct cutover, no feature flag.</strong> EPIC-1-S2 swaps <code>plan-architecture.md</code> for <code>trd.md</code> in <code>/plan</code>'s output set. No <code>.shield.json</code> toggle.</li>
+<li><strong>One TRD, two domains.</strong> Same 14-section template applies to backend and infra work. <code>/plan</code>'s SKILL.md carries domain-aware prompting per section (backend interpretation + infra interpretation), and the eval accepts <code>n/a — &lt;reason&gt;</code> as an escape for sections that genuinely don't apply (e.g., §4 Product Journey on a pure-state infra change).</li>
+<li><strong>§14 Rollback Strategy is a first-class section</strong> — preserves the strongest property of today's <code>plan-architecture.md</code>.</li>
+<li><strong>Old feature folders are left untouched.</strong> EPIC-1-S3 explicitly guards against deleting existing <code>plan-architecture.md</code> files. Git history is the archive.</li>
+<li><strong>M1 ships as a single PR.</strong> Generator, schema, and eval land together. The eval cannot ship before the generator (no fixture to validate); the generator should not ship without the eval (regression risk on first re-run). Land them atomically.</li>
+<li><strong><code>design_refs[]</code> is additive and zero-risk.</strong> Bumps sidecar schema 1.1 → 1.2. Adapters that don't understand the field ignore it; no <code>/pm-sync</code> schema break (EPIC-4-S3 is the additive forward-link wiring).</li>
+<li><strong>LLD references are TODO placeholders in v1.</strong> <code>design_refs[]</code> entries with <code>doc: &quot;lld&quot;</code> carry <code>anchor_url: null</code> and <code>label: &quot;TODO: link when /lld &lt;component&gt; lands&quot;</code>. When <code>/lld</code> ships in a later epic, those placeholders get resolved. LLDs are typically backend-only.</li>
+<li><strong>Eval is the structural enforcement mechanism.</strong> Per CLAUDE.md eval-coverage mandate, M1 ships with <strong>two</strong> positive fixtures (one backend, one infra), one missing-section negative per required section, one drift-by-addition negative, and one &quot;vague-prose-instead-of-<code>n/a</code>&quot; negative. RED → GREEN paper trail captured in the PR body (EPIC-3-S3).</li>
+</ol>
+<h2 id="deliverables-per-milestone">Deliverables (per milestone)</h2>
+<h3 id="m1--trd-cutover-one-pr">M1 — TRD cutover (one PR)</h3>
+<ul>
+<li><code>shield/commands/plan.md</code> — emits <code>trd.md</code> not <code>plan-architecture.md</code></li>
+<li><code>shield/skills/general/plan-docs/SKILL.md</code> — 14-section TRD template + generation prompt with <strong>domain-aware section guidance</strong> (backend interpretation + infra interpretation per section)</li>
+<li><code>shield/skills/general/plan-docs/sidecar-schema.md</code> — schema bumped to 1.2 with <code>design_refs[]</code> documented</li>
+<li><code>shield/schema/output-paths.yaml</code> — <code>plan_arch_md</code>/<code>plan_arch_html</code> replaced by <code>plan_trd_md</code>/<code>plan_trd_html</code></li>
+<li><code>shield/evals/plan-trd.yaml</code> — 2 positives (backend + infra) + 14 missing-section negatives + 1 drift-by-addition negative + 1 vague-prose-instead-of-<code>n/a</code> negative</li>
+<li><code>shield/evals/plan-trd/fixtures/positive-backend/</code> — full 14-section TRD fixture for a backend feature</li>
+<li><code>shield/evals/plan-trd/fixtures/positive-infra/</code> — full 14-section TRD fixture for an infra change (with <code>n/a — &lt;reason&gt;</code> on at least one section)</li>
+<li><code>shield/evals/plan-trd/fixtures/missing-*/</code> — 14 missing-section negative fixtures</li>
+<li><code>shield/evals/plan-trd/fixtures/extra-section/</code> — drift-by-addition negative fixture</li>
+<li><code>shield/evals/plan-trd/fixtures/vague-tbd/</code> — section with &quot;TBD&quot; instead of <code>n/a — &lt;reason&gt;</code>; eval must fail</li>
+</ul>
+<h3 id="m2--review--sync-wiring-one-pr">M2 — Review + sync wiring (one PR)</h3>
+<ul>
+<li><code>shield/skills/general/plan-review/SKILL.md</code> — 14-section presence rule + stale-anchor rule + duplication-detection rule</li>
+<li><code>shield/commands/pm-sync.md</code> — describes <code>design_refs[]</code> forwarding</li>
+<li><code>shield/adapters/&lt;each&gt;/...</code> — Confluence, Jira, ClickUp, Notion adapters forward <code>design_refs[]</code> as web links</li>
+<li><code>shield/evals/plan-review-trd.yaml</code> — fixtures exercising both new review rules</li>
+<li>Per-adapter eval fixtures</li>
+</ul>
+<h3 id="m3--drift--duplication-hardening-one-pr">M3 — Drift + duplication hardening (one PR)</h3>
+<ul>
+<li><code>shield/skills/general/plan-docs/sidecar-schema.md</code> — schema bumped to 1.3 with <code>last_aligned_with</code></li>
+<li><code>shield/skills/general/implement/SKILL.md</code> (or equivalent) — updates <code>last_aligned_with</code> on story close</li>
+<li><code>shield/skills/general/plan-review/SKILL.md</code> — implementation-manual lint rule</li>
+<li>Eval fixtures for both new rules</li>
+</ul>
+<h2 id="rollback-strategy">Rollback strategy</h2>
+<p>The refactor is a direct cutover; reversibility cost is low.</p>
+<ul>
+<li><strong>Forward:</strong> Three PRs (M1, M2, M3), sequenced by <code>depends_on</code>.</li>
+<li><strong>Reversal:</strong> Revert <code>plan-docs/SKILL.md</code> to the pre-refactor template + restore <code>plan-architecture.md</code> generation. Existing <code>trd.md</code> files in feature folders remain readable. <code>design_refs[]</code> is optional everywhere, so removing it is a no-op for downstream adapters. <code>last_aligned_with</code> is also optional and reverting drops it without breaking older sidecars.</li>
+<li><strong>No migration:</strong> Pre-refactor feature folders keep their <code>plan-architecture.md</code> — no rewrite, no script.</li>
+</ul>
+<h2 id="out-of-scope">Out of scope</h2>
+<p>The following are deferred and tracked in <code>plan.json</code> <code>metadata.out_of_scope</code>:</p>
+<ul>
+<li><code>/lld &lt;component&gt;</code> command (template locked, command is a separate epic).</li>
+<li>Adapter auto-creation of Confluence/Notion design-doc pages.</li>
+<li>Structured ClickUp/Notion relationships beyond URL fields.</li>
+<li>Migration tool for existing <code>plan-architecture.md</code>.</li>
+</ul>
+<h2 id="what-to-do-next">What to do next</h2>
+<ul>
+<li><code>/plan-review docs/shield/plan-trd-refactor-20260524/plan.json</code> — multi-agent review against the rubric.</li>
+<li><code>/pm-sync docs/shield/plan-trd-refactor-20260524/plan.json --tool clickup</code> (or jira, notion) — sync stories to your PM tool.</li>
+<li><code>/implement</code> — TDD-driven implementation, starting with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail.</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+# adoption-rollout-risk (PM7) snapshot eval — single-check JSON shape
+agent: adoption-rollout-risk
+input: standard-with-gaps-prd
+
+must_find:
+  - id: pm7-id-field
+    description: "Output contains the correct PM7 id field"
+    match: '"id":\s*"PM7"'
+  - id: pm7-name-field
+    description: "Output contains the adoption-rollout-risk name field"
+    match: '"name":\s*"Adoption . rollout risk"'
+  - id: pm7-persona-tag
+    description: "Output carries persona: product-manager"
+    match: '"persona":\s*"product-manager"'
+  - id: pm7-severity-correct
+    description: "Severity is Important per the rubric"
+    match: '"severity":\s*"Important"'
+  - id: pm7-grade-valid-letter
+    description: "Grade is a valid A-F letter"
+    match: '"grade":\s*"(A|B|C|D|F)"'
+  - id: pm7-evidence-quote-field
+    description: "evidence_quote field is present"
+    match: '"evidence_quote":'
+
+should_find:
+  - id: pm7-non-a-grade
+    description: "Fixture lists only technical risks — expect non-A grade"
+    match: '"grade":\s*"[BCDF]"'
+  - id: pm7-cites-adoption-or-migration
+    description: "Gap/suggestion should reference adoption friction, migration, or change management"
+    match: "[Aa]doption|[Mm]igrat|change.?manag|learning.?curve|behavior.?change|training"
+
+must_not_false_positive:
+  - id: not-scorecard-table
+    description: "Single-check subagent must NOT emit a multi-row scorecard table"
+    match_absence_in: '\| PM[0-9]+ \|.*\| PM[0-9]+ \|'

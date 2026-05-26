@@ -22,7 +22,7 @@ Triggers on backend stacks (file paths under `services/`, `src/`, `backend/`, pr
 - Pure infrastructure code — use the relevant infra skill
 - Trivial changes (one-line fixes, comment-only edits, generated code)
 - Performance review — separate concern
-- Security review — use the security-reviewer agent
+- Security review — use the security-engineer agent
 
 ## Review Process
 

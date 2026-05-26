@@ -1,0 +1,296 @@
+# shield/scripts/migrate_outputs.py
+"""Migrate a Shield output tree from the legacy numbered-run layout to the
+flat per-feature layout defined in
+docs/superpowers/specs/2026-05-22-shield-output-structure-design.md.
+
+Runnable: `uv run --with pyyaml shield/scripts/migrate_outputs.py [--root docs/shield] [--apply]`
+"""
+from __future__ import annotations
+
+import re
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional
+
+# Patterns: (compiled regex on POSIX relpath, callable returning new relpath or None)
+_RESEARCH_FINDINGS = re.compile(r"^research/\d+-[^/]+/findings\.md$")
+_RESEARCH_TRANSCRIPT = re.compile(r"^research/\d+-[^/]+/transcript\.md$")
+_PLAN_ARCH_HTML = re.compile(r"^plan/\d+-[^/]+/architecture\.html$")
+_PRD_MD = re.compile(r"^prd/\d+-[^/]+/prd\.md$")
+_PRD_HTML = re.compile(r"^prd/\d+-[^/]+/prd\.html$")
+_PRD_META_JSON = re.compile(r"^prd/\d+-[^/]+/prd\.meta\.json$")
+_PLAN_HTML = re.compile(r"^plan/\d+-[^/]+/plan\.html$")
+
+
+def derive_review_date(legacy_review_dir: Path) -> str:
+    """Return YYYY-MM-DD derived from the directory's mtime (UTC)."""
+    ts = legacy_review_dir.stat().st_mtime
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def map_legacy_path(relpath: str) -> Optional[str]:
+    """Map a path under {output_dir}/{feature}/ to its new location.
+
+    Returns None if the path is already at its new location (no move needed) or
+    is unrecognized (caller decides whether to warn).
+    """
+    if _RESEARCH_FINDINGS.match(relpath):
+        return "research.md"
+    if _RESEARCH_TRANSCRIPT.match(relpath):
+        return ".session-transcript.md"
+    if _PLAN_ARCH_HTML.match(relpath):
+        return "outputs/plan-architecture.html"
+    if _PRD_MD.match(relpath):
+        return "prd.md"
+    if _PRD_HTML.match(relpath):
+        return "outputs/prd.html"
+    if _PRD_META_JSON.match(relpath):
+        return "prd.meta.json"
+    if _PLAN_HTML.match(relpath):
+        return "outputs/plan.html"
+    return None
+
+
+# Files that are valid at the feature root in the new schema (no warning if seen here).
+KNOWN_ROOT_FILES = {
+    "README.md", "research.md", "prd.md", "prd.meta.json", "plan.json", "plan.md",
+    "plan-architecture.md", ".session-transcript.md",
+}
+
+# Subdirectories that are valid in the new schema (no warning if files are here).
+KNOWN_SUBDIRS = {"outputs", "reviews"}
+
+# Legacy review-folder directory names handled by _plan_review_folder_moves.
+_LEGACY_REVIEW_DIRS = {"prd-review", "plan-review"}
+
+
+def _plan_review_folder_moves(
+    feature_dir: Path, review_type: str, legacy_dir_name: str
+) -> list[tuple[Path, Path]]:
+    legacy_root = feature_dir / legacy_dir_name
+    if not legacy_root.is_dir():
+        return []
+    seen_dates: dict[str, int] = {}
+    out: list[tuple[Path, Path]] = []
+    for run_dir in sorted(p for p in legacy_root.iterdir() if p.is_dir()):
+        if not re.match(r"^\d+-", run_dir.name):
+            continue
+        date = derive_review_date(run_dir)
+        seen_dates[date] = seen_dates.get(date, 0) + 1
+        counter = "" if seen_dates[date] == 1 else f"_{seen_dates[date]}"
+        new_run = feature_dir / "reviews" / review_type / f"{date}{counter}"
+        for src in run_dir.rglob("*"):
+            if not src.is_file():
+                continue
+            rel_inside = src.relative_to(run_dir).as_posix()
+            out.append((src, new_run / rel_inside))
+    return out
+
+
+def plan_moves(feature_dir: Path) -> tuple[list[tuple[Path, Path]], list[str]]:
+    """Walk a feature directory and return (moves, warnings).
+
+    On destination collisions, the latest-mtime source wins; older sources are
+    discarded with a warning (their content remains recoverable via git history
+    of the source path, provided the source tree was committed before migration).
+    """
+    raw_moves: list[tuple[Path, Path]] = []
+    warnings: list[str] = []
+
+    for path in sorted(feature_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(feature_dir).as_posix()
+        # Files inside legacy review folders are handled by _plan_review_folder_moves below.
+        top_dir = rel.split("/")[0] if "/" in rel else ""
+        if top_dir in _LEGACY_REVIEW_DIRS:
+            continue
+        target = map_legacy_path(rel)
+        if target is not None:
+            raw_moves.append((path, feature_dir / target))
+            continue
+        if "/" not in rel:
+            if rel not in KNOWN_ROOT_FILES:
+                warnings.append(f"{rel}: unrecognized file at feature root, left in place")
+        else:
+            if top_dir not in KNOWN_SUBDIRS:
+                warnings.append(f"{rel}: unrecognized nested file, left in place")
+
+    for review_type, legacy_dir_name in [("prd", "prd-review"), ("plan", "plan-review")]:
+        raw_moves.extend(_plan_review_folder_moves(feature_dir, review_type, legacy_dir_name))
+
+    by_dst: dict[Path, list[Path]] = {}
+    for src, dst in raw_moves:
+        by_dst.setdefault(dst, []).append(src)
+
+    resolved: list[tuple[Path, Path]] = []
+    for dst, srcs in by_dst.items():
+        if len(srcs) == 1:
+            resolved.append((srcs[0], dst))
+            continue
+        srcs_sorted = sorted(srcs, key=lambda p: p.stat().st_mtime, reverse=True)
+        winner = srcs_sorted[0]
+        resolved.append((winner, dst))
+        for loser in srcs_sorted[1:]:
+            rel_loser = loser.relative_to(feature_dir).as_posix()
+            rel_winner = winner.relative_to(feature_dir).as_posix()
+            rel_dst = dst.relative_to(feature_dir).as_posix()
+            warnings.append(
+                f"{rel_loser}: discarded on collision (newer {rel_winner} wins for {rel_dst})"
+            )
+
+    return resolved, warnings
+
+
+def apply_moves(moves: list[tuple[Path, Path]]) -> None:
+    """Execute the moves and clean up empty parent directories."""
+    parents_to_check: set[Path] = set()
+    for src, dst in moves:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        src.rename(dst)
+        parents_to_check.add(src.parent)
+
+    # Sweep emptied numbered-run dirs and their parents (one level up).
+    for p in sorted(parents_to_check, key=lambda x: len(x.as_posix()), reverse=True):
+        if p.exists() and not any(p.iterdir()):
+            p.rmdir()
+            if p.parent.exists() and not any(p.parent.iterdir()):
+                p.parent.rmdir()
+
+
+# Artifact filenames the manifest tracks per feature (matches design §6.1).
+TRACKED_ARTIFACTS = {
+    "research":     "research.md",
+    "prd":          "prd.md",
+    "plan_json":    "plan.json",
+    "plan_md":      "plan.md",
+    "plan_arch_md": "plan-architecture.md",
+}
+
+
+def _summarize_reviews(feature_dir: Path, review_type: str) -> dict[str, str | int]:
+    review_root = feature_dir / "reviews" / review_type
+    if not review_root.exists():
+        return {"count": 0}
+    runs = sorted(d.name for d in review_root.iterdir() if d.is_dir())
+    if not runs:
+        return {"count": 0}
+    return {"latest": runs[-1], "count": len(runs)}
+
+
+def build_manifest(output_dir: Path) -> dict:
+    """Walk {output_dir} and return a v2 manifest dict."""
+    features: list[dict] = []
+    for feature_dir in sorted(p for p in output_dir.iterdir() if p.is_dir()):
+        if feature_dir.name == "outputs":
+            continue  # global rendered output, not a feature
+        artifacts = {
+            key: (feature_dir / fname).exists()
+            for key, fname in TRACKED_ARTIFACTS.items()
+        }
+        reviews = {
+            rt: _summarize_reviews(feature_dir, rt)
+            for rt in ("prd", "plan", "code")
+        }
+        features.append({
+            "name": feature_dir.name,
+            "artifacts": artifacts,
+            "reviews": reviews,
+            "updated": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+        })
+    return {"schema_version": 2, "features": features}
+
+
+def git_dirty_paths(root: Path) -> list[str] | None:
+    """Return a list of dirty git paths (porcelain output lines) under `root`.
+
+    Returns:
+        [] if the tree is git-tracked and clean.
+        [non-empty list of paths] if there are uncommitted changes.
+        None if `root` is not inside a git repo (no git tracking to consult).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            capture_output=True, text=True, check=False,
+        )
+    except FileNotFoundError:
+        return None
+    if result.returncode != 0:
+        return None
+    return [ln for ln in result.stdout.splitlines() if ln.strip()]
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Migrate Shield output tree to new flat layout."
+    )
+    parser.add_argument("--root", default="docs/shield",
+                        help="Output directory to migrate (default: docs/shield)")
+    parser.add_argument("--apply", action="store_true",
+                        help="Actually move files (default: dry-run)")
+    parser.add_argument("--yes", action="store_true",
+                        help="Skip dirty-tree confirmation prompt (for scripted use)")
+    args = parser.parse_args(argv)
+
+    output_dir = Path(args.root).resolve()
+    if not output_dir.exists():
+        print(f"error: --root {output_dir} does not exist", file=sys.stderr)
+        return 2
+
+    if args.apply:
+        dirty = git_dirty_paths(output_dir)
+        if dirty:
+            print("WARNING: source tree has uncommitted changes:", file=sys.stderr)
+            for ln in dirty[:10]:
+                print(f"  {ln}", file=sys.stderr)
+            if len(dirty) > 10:
+                print(f"  ... and {len(dirty) - 10} more", file=sys.stderr)
+            print(
+                "If migration discards older versions on collision, the older "
+                "content will NOT be recoverable from git history.",
+                file=sys.stderr,
+            )
+            if not args.yes:
+                print("Proceed anyway? [y/N] ", end="", file=sys.stderr, flush=True)
+                resp = sys.stdin.readline().strip().lower()
+                if resp != "y":
+                    print("Aborted.", file=sys.stderr)
+                    return 3
+
+    total_moves = 0
+    total_warnings = 0
+
+    for feature_dir in sorted(p for p in output_dir.iterdir() if p.is_dir()):
+        if feature_dir.name == "outputs":
+            continue
+        moves, warnings = plan_moves(feature_dir)
+        for src, dst in moves:
+            rel_src = src.relative_to(output_dir).as_posix()
+            rel_dst = dst.relative_to(output_dir).as_posix()
+            verb = "moving" if args.apply else "would move"
+            print(f"{verb}: {rel_src} -> {rel_dst}")
+        for w in warnings:
+            print(f"warning: {feature_dir.name}/{w}")
+        if args.apply:
+            apply_moves(moves)
+        total_moves += len(moves)
+        total_warnings += len(warnings)
+
+    if args.apply:
+        manifest = build_manifest(output_dir)
+        (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        print(f"wrote manifest: {output_dir / 'manifest.json'}")
+
+    mode = "applied" if args.apply else "dry-run"
+    print(f"{mode}: {total_moves} moves, {total_warnings} warnings")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

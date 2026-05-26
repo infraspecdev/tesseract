@@ -14,6 +14,9 @@ clickup-sprint-planner/phases/
 # Local dev settings
 **/.claude/settings.local.json
 
+# Claude Code isolated agent worktrees (created by Agent isolation: "worktree")
+**/.claude/worktrees/
+
 # OS
 .DS_Store
 

@@ -1,0 +1,10 @@
+{
+  "devcontainer": {
+    "version": 1,
+    "stacks_detected": [
+      "python"
+    ],
+    "required": "ask",
+    "firewall_extra_allowlist": []
+  }
+}

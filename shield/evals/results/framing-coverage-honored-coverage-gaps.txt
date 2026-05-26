@@ -1,0 +1,14 @@
+```json
+{
+  "id": "PM11",
+  "name": "Framing coverage honored",
+  "persona": "product-manager",
+  "grade": "D",
+  "severity": "Important",
+  "missing_pf7_voices": ["Martin Fowler", "Vaughn Vernon"],
+  "missing_pf8_source_types": ["Regulatory/standards (RBI 24h rule, MiFID II Art. 16, GDPR Art. 17)", "Vendor docs (EventStoreDB, Axon, Apache Kafka, AWS EventBridge)"],
+  "evidence_quote": "For canonical references on the pattern itself, see Martin Fowler's \"Event",
+  "gap": "Synthesis body quotes Greg Young and the Calvin peer-reviewed paper but omits direct quotes from Martin Fowler and Vaughn Vernon (PF7) and from regulatory/standards texts and vendor docs (PF8), leaving four required coverage items unmet.",
+  "suggestion": "Add a direct blockquote from Fowler's martinfowler.com Event Sourcing article and from Vernon's IDDD ch. 8 in the body, plus at least one regulator quote (e.g., MiFID II Art. 16 or GDPR Art. 17) and one vendor-doc quote (e.g., EventStoreDB or Kafka) to close the four-item gap."
+}
+```

@@ -1,6 +1,8 @@
 ---
+name: prd
 allowed-tools: Read, Write, Bash, Agent, Glob, Grep
-description: Author a new PRD with Shield's 17-section problem-first scaffold (or 7-section lean variant). Supports custom team templates, lean→standard upgrade flow, and consumes prior /research transcripts as pre-population.
+description: Author a new PRD with Shield's 20-section problem-first scaffold (or 10-section lean variant). Includes Terminologies (§2, auto-filled from research+body), Architecture & flows (§5, optional Mermaid), per-story Type labels (new/enhancement/existing) in §8, and auto-generated TOC + rendered Mermaid in prd.html. Supports custom team templates, lean→standard upgrade flow.
+outputs: [prd, prd_html, prd_meta_json]
 ---
 
 # /prd
@@ -15,26 +17,41 @@ Author a PRD interactively. Walks the user through the scaffold; invokes `shield
 /prd --feature <name>         # explicit feature folder
 ```
 
+## Paths
+
+| Registry key | Resolved path |
+|---|---|
+| `prd` | `{output_dir}/{feature}/prd.md` |
+| `prd_html` | `{output_dir}/{feature}/outputs/prd.html` |
+| `prd_meta_json` | `{output_dir}/{feature}/prd.meta.json` |
+
+`prd.meta.json` is the PRD metadata sidecar (status, sections present, linked plans). `/plan` later updates the `linked_plans` field when it generates a plan against this PRD.
+
 ## What it does
 
 1. **Reads `.shield.json`** for `prd_template` (custom team template path, optional)
 2. **Resolves feature folder** — `--feature` flag or current context
 3. **Detects prior lean PRD** in the folder — if present, offers upgrade flow (multi-select of standard sections to add)
-4. **Asks for PRD type** — standard (17 sections) or lean (7 sections)
+4. **Asks for PRD type** — standard (20 sections) or lean (10 sections)
 5. **Pre-populates from prior `/research` transcript** if present
-6. **Walks Sections 1-4** (Header, Problem, Personas, Goals)
-7. **Invokes `shield:story-coverage`** between Sections 4 and 6 — scaffolds expected stories (persona × goal + archetypal flows) for user confirmation/skip
-8. **Walks remaining sections** (5, 6 content, 7-17 for standard; 5, 16, 17 for lean)
-9. **Merges custom template** if configured — appends missing required sections with `<!-- Shield: added required section -->` markers
-10. **Writes** `prd.md`, `prd.html` (rendered via Shield's standard CSS), `prd.meta.json` (with linked_plans field — auto-populated by `/plan` later)
+6. **Walks Section 1** (Header) — defers Section 2 (Terminologies) for now
+7. **Walks Sections 3, 4** (Problem, Personas), **then Section 5** (Architecture & flows — optional Mermaid), **then Section 6** (Goals)
+8. **Invokes `shield:story-coverage`** between Sections 6 and 8 — scaffolds expected stories *(standard only — lean skips story-coverage)*
+9. **Walks Section 7** (Metrics); for standard, also walks Section 8 (Stories — prompts each story for Type: new | enhancement | existing)
+10. **Walks Sections 9..14** (Functional through Assumptions) *(standard only)*
+11. **Invokes `shield:milestone-coverage`** between Sections 8 and 15 — scaffolds Milestones into §15 (or §8 for lean)
+12. **Walks Section 15** rollout-mechanics, **then Sections 16..20** *(standard only — lean walks §9 Open questions, §10 Out of scope)*
+13. **Builds Terminologies (§2)** — copies from research-transcript glossary, proposes terms via LLM scan of drafted body, user confirms
+14. **Merges custom template** if configured
+15. **Writes** `prd.md`, `prd.html` (rendered via Shield's renderer — includes auto-TOC + Mermaid rendering), `prd.meta.json`
 
 ## Output
 
 ```
-{output_dir}/{feature}/prd/{N}-{slug}/
-├── prd.md
-├── prd.html
-└── prd.meta.json
+{output_dir}/{feature}/
+├── prd.md            ← registry: {prd}      = {feature_dir}/prd.md
+├── outputs/prd.html  ← registry: {prd_html} = {feature_outputs}/prd.html
+└── prd.meta.json     ← side-artifact (metadata sidecar, not in registry)
 ```
 
 ## Reference

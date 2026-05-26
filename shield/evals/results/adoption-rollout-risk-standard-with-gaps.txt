@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM7",
+  "name": "Adoption & rollout risk",
+  "persona": "product-manager",
+  "grade": "D",
+  "severity": "Important",
+  "evidence_quote": "Email notification deliverability could be blocked by corporate spam filters",
+  "gap": "The doc lists technical/performance risks but does not surface concrete adoption blockers such as migration pain from existing screenshot/CSV workflows, learning curve for the Share modal, change-management for teams, or partner-team (Design/Legal/Security all TBD) buy-in dependencies.",
+  "suggestion": "Add an explicit adoption-risk subsection naming behavior-change friction (weaning users off Slack screenshots and Monday CSV emails), training/comms plan for Editors vs Viewers, and the dependency on currently-TBD Design/Legal/Security owners signing off before GA."
+}
+```

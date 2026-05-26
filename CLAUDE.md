@@ -42,7 +42,7 @@ tesseract/
 
 ## Working with the Codebase
 
-- The only Python code is in `clickup-sprint-planner/server/`. Run with `uv run`.
+- Python runs through `uv` only: `pyproject.toml`-packaged (`clickup-sprint-planner/server/`, `shield/adapters/*/`) for shipped components, and `uv run --with <deps>` for standalone scripts (`shield/scripts/`, `shield/evals/`). No system pip, no `requirements.txt`.
 - Everything else is markdown definitions (commands, skills, agents) and shell scripts (hooks).
 - Config files with real workspace data (`sprint-planner.json`) are gitignored. Only example configs are tracked.
 - Never commit `.env` files or `settings.local.json`.
@@ -55,6 +55,14 @@ tesseract/
   3. **REFACTOR**: If GREEN reveals gaps (agents skipping checks, missing edge cases), fix the skill and re-test.
 - Create test fixtures with intentional issues that exercise the skill's checks, including edge cases from the Common Mistakes table.
 - Skills should follow the `superpowers:writing-skills` guide for CSO, frontmatter, structure, and token efficiency.
+
+## Eval coverage — MANDATORY for plugin updates
+
+> **Procedure:** see `.claude/skills/updating-plugin-assets/SKILL.md` (auto-loads when editing plugin assets) for framework choice, RED→GREEN steps, and PR definition-of-done.
+
+**Every new or changed plugin asset (skill, agent, command, prompt, or skill-orchestrator wiring) MUST land in the same PR as at least one executable eval that exercises the new behavior.** In-conversation GREEN dispatches during implementation are *necessary but not sufficient* — they do not survive into the repo and cannot regression-test future changes.
+
+If a change genuinely has no eval-shaped surface (e.g., a typo fix in a doc, a rename, a comment), state that explicitly in the PR body. Default is "eval required."
 
 ## Git Conventions
 

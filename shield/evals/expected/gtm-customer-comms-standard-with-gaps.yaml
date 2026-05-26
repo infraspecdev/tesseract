@@ -1,0 +1,52 @@
+# gtm-customer-comms (PRD-Review dim 9) snapshot eval — per-dim JSON shape.
+# Captured against shield/skills/general/prd-review/test-fixtures/standard-with-gaps.md
+# after promoting 9b severity from Important to Critical (rubric.md line 137).
+#
+# What this guards: 9b ("In-app messaging / release notes plan") is now Critical, so a
+# customer-facing PRD with no release-notes plan must surface a P0. If a future edit
+# silently reverts 9b to Important, must_find #9b-severity-critical fails this eval.
+
+agent: gtm-customer-comms
+input: standard-with-gaps-prd
+
+must_find:
+  - id: dim9-id-field
+    description: "Output is the dim-9 envelope (id field == 9)"
+    match: '"id":\s*9'
+  - id: dim9-name-field
+    description: "name field is GTM / customer-comms"
+    match: '"name":\s*"GTM / customer-comms"'
+  - id: dim9-evaluation-points-present
+    description: "evaluation_points array is present"
+    match: '"evaluation_points":\s*\['
+  - id: 9b-eval-point-present
+    description: "9b appears as an eval-point id"
+    match: '"id":\s*"9b"'
+  - id: 9b-severity-critical
+    description: "9b severity is Critical per the post-fix rubric (the assertion this eval was created for)"
+    match: '"id":\s*"9b"[^}]*"severity":\s*"Critical"'
+  - id: 9b-grade-d-or-f
+    description: "9b grades D or F on this fixture (no release-notes plan in the PRD)"
+    match: '"id":\s*"9b"[^}]*"grade":\s*"(D|F)"'
+  - id: 9a-severity-important
+    description: "9a remains Important (pricing/packaging — unchanged severity)"
+    match: '"id":\s*"9a"[^}]*"severity":\s*"Important"'
+  - id: 9c-severity-warning
+    description: "9c remains Warning (CS / sales enablement — unchanged severity)"
+    match: '"id":\s*"9c"[^}]*"severity":\s*"Warning"'
+  - id: 9d-severity-warning
+    description: "9d remains Warning (beta / early-access plan — unchanged severity)"
+    match: '"id":\s*"9d"[^}]*"severity":\s*"Warning"'
+
+should_find:
+  - id: 9b-gap-mentions-release-notes
+    description: "9b gap field mentions release notes or in-app messaging (substantive gap text)"
+    match: '"id":\s*"9b"[^}]*"gap":[^}]*(release.notes|in.app|announcement)'
+
+must_not_false_positive:
+  - id: not-informational
+    description: "Standard PRD: dim 9 must NOT return informational (that's the lean-mode path only)"
+    match_absence_in: '"grade":\s*"informational"'
+  - id: not-na-without-reasoning
+    description: "If dim grade is N/A there must be na_reasoning; standard-with-gaps is not internal-only so N/A is wrong anyway"
+    match_absence_in: '"grade":\s*"N/A"'

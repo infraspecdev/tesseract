@@ -35,6 +35,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 
 | Step | Action | Condition | Mandatory |
 |------|--------|-----------|-----------|
+| 0 | Devcontainer gate (skip if not in repo with `.devcontainer/`) | always | Yes |
 | 1 | Load story from plan.json | skip if no plan context | No |
 | 2 | Confirm acceptance criteria | always | Yes |
 | 3 | Write failing test | always (TDD) | Yes |
@@ -43,6 +44,25 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 6 | Commit + update AC status in plan.json | always | Yes |
 | 7 | Repeat 3-6 for next AC | loop until all AC done | Yes |
 | 8 | Update story status in plan.json | always | Yes |
+
+## Phase 0: Devcontainer Gate
+
+Before any other work, run the pre-flight gate to ensure `/implement` runs in the right place:
+
+```bash
+SHIELD_REPO=. python3 shield/scripts/devcontainer_gate.py
+```
+
+Behavior:
+- Inside a devcontainer (`SHIELD_IN_DEVCONTAINER=true`): proceeds silently.
+- Outside, but no `.devcontainer/` in the repo: proceeds silently (no devcontainer set up).
+- Outside, with `.devcontainer/` present:
+  - If `.shield.json` `devcontainer.required = true`: refuses to start; prints reopen instructions; exits.
+  - If `false`: proceeds.
+  - If `ask` (default): prompts `[y/n/always/never]`. `y`/`always` refuses + instructs reopen; `n`/`never` proceeds.
+- Exit code 1 means refuse — `/implement` must not continue.
+
+This is the same logic implemented in `shield/scripts/devcontainer_gate.py` (covered by `test_devcontainer_gate.py`).
 
 **Per-AC tracking:** Step 6 updates each AC's status in `plan.json` immediately after commit — not just at the end (step 8). This means `plan.json` is the per-AC source of truth. On resume, the skill reads `plan.json` to determine which ACs are already done, then continues the loop from the next incomplete AC. `steps.json` tracks coarse workflow position; `plan.json` tracks per-AC completion.
 

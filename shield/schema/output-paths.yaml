@@ -1,0 +1,62 @@
+# shield/schema/output-paths.yaml
+# Plugin-owned contract. Consumers should NOT edit.
+# See docs/superpowers/specs/2026-05-22-shield-output-structure-design.md §5.
+
+variables:
+  output_dir:   "Set by consumer in .shield.json"
+  feature:      "Auto-derived from command (e.g. 'vpc-module-20260319')"
+  review_type:  "One of: prd, plan, code"
+  date:         "YYYY-MM-DD of the review run"
+  _counter:     "Empty for first run on a date; '_2', '_3', ... on same-day collisions"
+  agent:        "Agent slug for per-agent detail files (e.g. 'backend-engineer')"
+
+paths:
+  # Top-level
+  manifest:           "{output_dir}/manifest.json"
+  global_outputs_dir: "{output_dir}/outputs"
+  global_index_html:  "{global_outputs_dir}/index.html"
+
+  # Per-feature
+  feature_dir:        "{output_dir}/{feature}"
+  research:           "{feature_dir}/research.md"
+  prd:                "{feature_dir}/prd.md"
+  prd_meta_json:      "{feature_dir}/prd.meta.json"
+  plan_json:          "{feature_dir}/plan.json"
+  plan_md:            "{feature_dir}/plan.md"
+  plan_arch_md:       "{feature_dir}/plan-architecture.md"
+
+  # Per-feature rendered
+  feature_outputs:    "{feature_dir}/outputs"
+  prd_html:           "{feature_outputs}/prd.html"
+  plan_html:          "{feature_outputs}/plan.html"
+  plan_arch_html:     "{feature_outputs}/plan-architecture.html"
+
+  # Reviews (source)
+  review_dir:           "{feature_dir}/reviews/{review_type}/{date}{_counter}"
+  review_summary:       "{review_dir}/summary.md"
+  review_enhanced:      "{review_dir}/enhanced-{review_type}.md"
+  review_detailed:      "{review_dir}/detailed/{agent}.md"
+  source_prd:           "{review_dir}/source-prd.md"          # bound with review_type=prd
+  review_comments_json: "{review_dir}/review-comments.json"   # bound with review_type=prd
+  # Note: reviews/.../changes.md is an applied-fixes run-history log; it is a
+  # side-artifact, not a registry-tracked deliverable. See /review command body.
+
+  # Reviews (rendered)
+  review_outputs_dir:    "{feature_outputs}/reviews/{review_type}/{date}{_counter}"
+  review_summary_html:   "{review_outputs_dir}/summary.html"
+  review_enhanced_html:  "{review_outputs_dir}/enhanced-{review_type}.html"
+  review_detailed_html:  "{review_outputs_dir}/detailed/{agent}.html"
+
+# Registry entries that are intentionally not declared in any command/skill/agent
+# `outputs:` block — they're parent directories (used inside other path templates)
+# or cross-feature globals computed by the index/manifest pipeline rather than
+# written by a single command. Listing them here is what tells the lint coverage
+# check to skip them. Add an entry here when a registry path is genuinely
+# derived/parent-only; otherwise wire it into the owning command's `outputs:`.
+derived:
+  - feature_dir         # parent dir, composed from output_dir + feature
+  - feature_outputs     # parent dir for per-feature rendered HTML
+  - review_dir          # parent dir for review runs
+  - review_outputs_dir  # parent dir for rendered review HTML
+  - global_outputs_dir  # top-level rendered output dir
+  - global_index_html   # top-level dashboard, regenerated on every write

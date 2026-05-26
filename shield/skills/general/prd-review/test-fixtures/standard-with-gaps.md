@@ -193,11 +193,9 @@ Roll out to all Enterprise accounts.
 ---
 
 <!--
-EXPECTED REVIEW OUTCOMES (used by RED-GREEN tests, do not delete):
-  P0 expected on dims: 2 (no out-of-scope), 9 (no GTM), 10 (no Support)
-  P1 expected on dims: 1 (problem present but no baseline), 3 (single metric no counter), 4 (happy paths only; AC prose; missing archetypal recovery flows), 6 (no kill-switch criteria), 12 (risks without mitigations)
-  Anti-patterns expected: solution-first ordering, vague language ("intuitive UX", "simple flow", "performant"), single metric without counter, AC as prose only
-  N/A expected on dims: none (standard PRD)
-  Composite expected: 1.4 - 1.9 (Needs Work)
-  Verdict expected: Needs Work (blocked by 3 P0s)
+Expected review outcomes for this fixture are captured empirically in
+shield/evals/baselines/prd-review-pm-postchange.json (per-dim finding counts) and in
+shield/evals/expected/*.yaml (per-dim grade + severity assertions). Do not restate them
+inline here — they will drift. Gap annotations on individual sections above are
+authoring intent, kept for human readers; the merge gate ignores them.
 -->

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="sidecar" content="../plan.json">
+<title>Plan — /plan TRD refactor</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
+h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
+h3 { color: #5f6368; margin-top: 22px; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
+th { background-color: #f1f3f4; font-weight: bold; }
+tr:nth-child(even) { background-color: #f8f9fa; }
+code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', Menlo, 'Courier New', monospace; font-size: 13px; }
+pre { background-color: #f1f3f4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: 'SF Mono', Menlo, 'Courier New', monospace; white-space: pre; font-size: 12px; line-height: 1.4; }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 4px solid #1a73e8; margin: 15px 0; padding: 10px 20px; background-color: #e8f0fe; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #dadce0; margin: 24px 0; }
+a { color: #1a73e8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid #dadce0; font-size: 14px; }
+.nav a { margin-right: 14px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="../../index.html">&larr; Shield Overview</a> |
+  <a href="../research.md">Research</a> |
+  <a href="../plan.json">Sidecar (JSON)</a> |
+  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
+</div>
+<h1 id="plan--plan-trd-refactor">Plan — <code>/plan</code> TRD refactor</h1>
+<p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code> · <strong>Phase:</strong> v1 cutover · <strong>Source:</strong> <a href="./research.md"><code>research.md</code></a> · <a href="./plan-architecture.md"><code>plan-architecture.md</code></a>
+<strong>Sidecar:</strong> <a href="./plan.json"><code>plan.json</code></a> (schema v1.1)</p>
+<h2 id="milestones">Milestones</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Outcome</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M1</strong></td>
+<td>TRD cutover</td>
+<td><code>/plan</code> emits <code>trd.md</code> (14 sections, stable anchors, domain-aware prompting for backend/infra/mixed, atomic write, provenance stamp); <code>plan.json</code> carries optional <code>design_refs[]</code>; JSON schema validator wired; recurring CI gate runs the eval; coverage = 3 positives (backend + infra + mixed) + 16 negatives.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>M2</strong></td>
+<td>Review + sync wiring</td>
+<td><code>/plan-review</code> grades against 14-section rubric (with <code>n/a — &lt;reason&gt;</code> escape) + duplication rule + stale-anchor rule; <code>/pm-sync</code> adapters forward <code>design_refs[]</code> as web links with idempotent upsert (sha256 globalId).</td>
+<td>M1</td>
+</tr>
+<tr>
+<td><strong>M3</strong></td>
+<td>Drift + duplication hardening</td>
+<td><code>last_aligned_with</code> metadata + implementation-manual lint rule.</td>
+<td>M2</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="epic-1--trd-generation-and-storage----m1">EPIC-1 · TRD generation and storage  ·  M1</h2>
+<h3 id="epic-1-s1--author-the-canonical-14-section-trd-template-with-domain-aware-prompting----priority-high">EPIC-1-S1 · Author the canonical 14-section TRD template with domain-aware prompting  ·  <code>priority: high</code></h3>
+<p>Encode the 14-section TRD template (Document Overview through Rollback Strategy) in <code>plan-docs/SKILL.md</code> or a sibling <code>templates.md</code>. Each section has TWO authoring-guidance paragraphs: one for backend interpretation, one for infra interpretation. Sections that may not apply to one domain are documented with the <code>n/a — &lt;reason&gt;</code> escape pattern from the LLD sample's §12. Each section header in the emitted markdown carries an explicit <code>{#section-id}</code> kebab-case anchor.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Add a 'TRD template' subsection to <code>shield/skills/general/plan-docs/SKILL.md</code> (or extend <code>templates.md</code>) listing all 14 section titles, slug IDs, and per-domain authoring guidance sourced from <code>research.md §What the Industry Recommends</code>.</li>
+<li>Define the canonical slug allow-list: <code>['document-overview','problem-statement','objective-scope','product-journey','functional-requirements','non-functional-requirements','high-level-design','alternatives-considered','cross-cutting-concerns','milestones','apis-involved','open-questions','references','rollback-strategy']</code>.</li>
+<li>Document the explicit <code>{#section-id}</code> markdown-anchor convention used by <code>/plan</code> output.</li>
+<li>Document the <code>n/a — &lt;reason&gt;</code> escape: any section may declare <code>n/a — &lt;reason&gt;</code> when it genuinely doesn't apply (typical use: §4 on pure-infra plans). Vague TBDs and silent omissions are not allowed.</li>
+<li>Per-section domain guidance must explicitly call out where the infra interpretation differs from backend (notably §4, §5, §6, §7, §11, §14).</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>shield/skills/general/plan-docs/SKILL.md</code> (or <code>templates.md</code>) contains the 14-section TRD template with slug IDs and per-domain authoring guidance.</li>
+<li>The slug allow-list is published as a machine-readable list (YAML or JSON sidecar under <code>shield/schema/</code>) so the eval can import it; the list has exactly 14 entries.</li>
+<li>A reader following <code>plan-docs/SKILL.md</code> can identify which section a given heading belongs to AND which domain interpretation applies, without re-reading <code>research.md</code>.</li>
+<li>The <code>n/a — &lt;reason&gt;</code> escape pattern is documented with at least one worked example per applicable section.</li>
+</ul>
+<h3 id="epic-1-s2--update-plan-to-emit-trdmd-unified-backend--infra----priority-high">EPIC-1-S2 · Update /plan to emit trd.md (unified backend + infra)  ·  <code>priority: high</code></h3>
+<p>Modify <code>shield/commands/plan.md</code> and <code>shield/skills/general/plan-docs/SKILL.md</code> so <code>/plan</code> writes <code>trd.md</code> with all 14 sections for <strong>both backend and infrastructure features</strong>. Stop emitting <code>plan-architecture.md</code> going forward. Direct cutover: no feature flag, no side-by-side period. The generation prompt detects the dominant domain and surfaces the right per-section authoring guidance (backend vs infra) for the LLM.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Replace the 'Generate plan-architecture.md' step in <code>shield/commands/plan.md</code> with 'Generate trd.md per the unified 14-section template'.</li>
+<li>Update <code>shield/skills/general/plan-docs/SKILL.md</code> generation prompt to walk the 14 sections, select the domain-appropriate authoring guidance per section, and emit explicit <code>{#section-id}</code> anchors.</li>
+<li>Domain detection: reuse the existing detection (<code>*.tf</code> / <code>atmos.yaml</code> / <code>Chart.yaml</code> → infra; <code>pom.xml</code> / <code>pyproject.toml</code> / <code>package.json</code> / <code>go.mod</code> → backend). Mixed → annotate per section.</li>
+<li>Update <code>shield/schema/output-paths.yaml</code>: replace <code>plan_arch_md</code> with <code>plan_trd_md</code> (<code>{output_dir}/{feature}/trd.md</code>) and <code>plan_arch_html</code> with <code>plan_trd_html</code> (<code>{output_dir}/{feature}/outputs/trd.html</code>). Mirror in <code>shield/commands/plan.md</code> outputs: frontmatter.</li>
+<li>Update the render-markdown helper invocation in <code>plan-docs/SKILL.md</code> to render <code>trd.md</code> to <code>outputs/trd.html</code>.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Running <code>/plan</code> in a fresh feature folder writes <code>docs/shield/{feature}/trd.md</code> and <code>docs/shield/{feature}/outputs/trd.html</code>.</li>
+<li><code>/plan</code> no longer writes <code>plan-architecture.md</code> anywhere.</li>
+<li><code>shield/schema/output-paths.yaml</code> lists <code>plan_trd_md</code> and <code>plan_trd_html</code>; <code>plan_arch_md</code> and <code>plan_arch_html</code> are removed.</li>
+<li>Running <code>/plan</code> on a feature folder with only infra markers produces a TRD where the infra interpretation is reflected in §4–7, §11, and §14 prose; sections like §4 may legitimately carry <code>n/a — &lt;reason&gt;</code>.</li>
+<li>Running <code>/plan</code> on a feature folder with only backend markers produces a TRD where the backend interpretation is reflected in §4–7, §11, and §14 prose.</li>
+</ul>
+<h3 id="epic-1-s4--bump-plugin-version-per-claudemd-mandate----priority-high">EPIC-1-S4 · Bump plugin version per CLAUDE.md mandate  ·  <code>priority: high</code></h3>
+<p>CLAUDE.md &quot;Plugin isolation / Versioning&quot; requires bumping <code>.claude-plugin/marketplace.json</code> and <code>pyproject.toml</code> in the same commit as any plugin update. Added per SRE P1-12 + DX P2.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Bump <code>.claude-plugin/marketplace.json</code> version field for the Shield plugin entry.</li>
+<li>Bump <code>pyproject.toml</code> version in any package modified (<code>shield/adapters/clickup/pyproject.toml</code>, plus new adapter packages from EPIC-4-S0).</li>
+<li>Update Shield's user-facing CHANGELOG (or create one if absent) noting the cutover from <code>plan-architecture.md</code> to <code>trd.md</code> and the schema 1.1 → 1.2 bump.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>The M1 PR includes both version bumps in the same commit as the SKILL.md changes.</li>
+<li>CHANGELOG mentions the cutover and the schema bump.</li>
+</ul>
+<hr />
+<h3 id="epic-1-s3--update-existing-feature-behavior-on-re-run----priority-medium">EPIC-1-S3 · Update existing-feature behavior on re-run  ·  <code>priority: medium</code></h3>
+<p>When <code>/plan</code> is re-run in a feature folder that has both an old <code>plan-architecture.md</code> and a new <code>trd.md</code> (or only an old <code>plan-architecture.md</code>), make the behavior deterministic: leave old <code>plan-architecture.md</code> untouched, write/overwrite <code>trd.md</code>. Old folders remain readable; no migration.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Add a guard in <code>plan-docs/SKILL.md</code> that does not delete <code>plan-architecture.md</code> if it exists.</li>
+<li>Document the re-run behavior in <code>shield/commands/plan.md</code> ('plan-architecture.md is no longer generated; existing files are left in place').</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Re-running <code>/plan</code> on a feature folder with an existing <code>plan-architecture.md</code> does not delete or modify that file.</li>
+<li>The new <code>trd.md</code> is written alongside (or overwrites prior <code>trd.md</code>).</li>
+</ul>
+<hr />
+<h2 id="epic-2--story-schema-and-design-traceability----m1">EPIC-2 · Story schema and design traceability  ·  M1</h2>
+<h3 id="epic-2-s1--extend-planjson-schema-with-optional-design_refs----priority-high">EPIC-2-S1 · Extend plan.json schema with optional design_refs[]  ·  <code>priority: high</code></h3>
+<p>Add an optional <code>design_refs[]</code> array to each story in the <code>plan.json</code> sidecar. Shape: <code>{doc, component?, section_id, anchor_url, label}</code>. Bump sidecar schema to 1.2; preserve back-compat (missing field is ignored).</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Edit <code>shield/skills/general/plan-docs/sidecar-schema.md</code> to add <code>design_refs[]</code> field on the story record with the field shape above.</li>
+<li>Bump version key in the schema example from <code>'1.1'</code> to <code>'1.2'</code>.</li>
+<li>Document back-compat: 1.1/1.0 sidecars without <code>design_refs[]</code> remain valid.</li>
+<li>Add a 'design_refs[] field' subsection explaining the per-field semantics (<code>doc ∈ {trd, lld, prd}</code>; <code>component</code> for LLD scoping; <code>anchor_url</code> stable across heading renames).</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>shield/skills/general/plan-docs/sidecar-schema.md</code> documents <code>design_refs[]</code> with version 1.2.</li>
+<li>A <code>plan.json</code> with no <code>design_refs[]</code> still validates as 1.2.</li>
+<li>A <code>plan.json</code> with <code>design_refs[]</code> populated validates as 1.2.</li>
+</ul>
+<h3 id="epic-2-s2--populate-design_refs-when-plan-has-trd-context----priority-high">EPIC-2-S2 · Populate design_refs[] when /plan has TRD context  ·  <code>priority: high</code></h3>
+<p>When <code>/plan</code> generates stories, populate each story's <code>design_refs[]</code> with a forward link to the TRD section it implements. <code>lld</code> refs are emitted as TODO entries until <code>/lld</code> lands.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Update <code>plan-docs/SKILL.md</code> generation prompt: for each story, identify which TRD §7 (HLD), §10 (Milestones), or §11 (APIs Involved) section the story implements, and emit a <code>design_refs</code> entry pointing at <code>trd.md#{section-id}</code>.</li>
+<li>For LLD references, emit placeholder entries with <code>doc='lld'</code>, <code>component=null</code>, <code>anchor_url=null</code>, <code>label='TODO: link when /lld &lt;component&gt; lands'</code>.</li>
+<li>Document the heuristic for picking <code>section_id</code> (story title keyword → TRD section anchor).</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>A <code>/plan</code> run on a feature with a <code>trd.md</code> emits at least one <code>design_refs</code> entry per story pointing at a real <code>trd.md</code> anchor.</li>
+<li>Each story has at least one TRD design_ref; LLD refs are emitted as TODO placeholders.</li>
+<li>Re-running <code>/plan</code> does not duplicate entries; existing entries are preserved or updated in place.</li>
+</ul>
+<hr />
+<h3 id="epic-2-s3--add-json-schema-validator-for-planjson----priority-high">EPIC-2-S3 · Add JSON Schema validator for plan.json  ·  <code>priority: high</code></h3>
+<p>Two version bumps (1.1 → 1.2 → 1.3) without a machine-readable validator is the drift inflection. Add a pydantic/jsonschema validator now, invoked by <code>/plan-review</code> and the eval runner. New per Backend P1-7.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create <code>shield/scripts/validate_plan.py</code> using <code>pydantic</code> (preferred — already in deps via clickup adapter) or <code>jsonschema</code>.</li>
+<li>Schema definition lives at <code>shield/schema/plan-sidecar.schema.json</code> (machine-readable counterpart to <code>sidecar-schema.md</code>).</li>
+<li>Validator is invoked by <code>/plan-review</code> (first check, before rubric) and the eval runner (in EPIC-3-S3 CI workflow).</li>
+<li>Reject unknown <code>doc</code> enum values, enforce <code>design_refs[]</code> cardinality (min 1 per story when populated), reject sidecar versions newer than current.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>uv run shield/scripts/validate_plan.py &lt;path&gt;</code> exits 0 on valid sidecars and non-zero with a named error on invalid ones.</li>
+<li><code>/plan-review</code> invokes the validator before applying rubric checks and aborts on schema failure.</li>
+<li>Sidecar version forward-compat behavior matches the policy in <code>sidecar-schema.md</code>.</li>
+</ul>
+<hr />
+<h2 id="epic-3--eval-coverage-for-trd-format----m1">EPIC-3 · Eval coverage for TRD format  ·  M1</h2>
+<h3 id="epic-3-s1--author-positive-trd-eval-fixtures-backend--infra----priority-high">EPIC-3-S1 · Author positive TRD eval fixtures (backend + infra)  ·  <code>priority: high</code></h3>
+<p>Create <strong>two</strong> positive fixture <code>trd.md</code> files: one for a backend feature (full 14 sections populated with realistic content), one for an infra feature (full 14 sections with realistic content where infra interpretation applies; at least one section uses <code>n/a — &lt;reason&gt;</code> to exercise the escape pattern). The positive eval asserts: all 14 anchors present, each section non-empty OR carrying a valid <code>n/a — &lt;reason&gt;</code> line, slug allow-list matches.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Author <code>shield/evals/plan-trd/fixtures/positive-backend/trd.md</code> with all 14 sections (use Bytebite-style fictional feature so content is realistic).</li>
+<li>Author <code>shield/evals/plan-trd/fixtures/positive-infra/trd.md</code> with all 14 sections (use a fictional terraform/atmos change — e.g., new VPC module, new Aurora cluster — so content is realistic). At least one section must use <code>n/a — &lt;reason&gt;</code> (e.g., §4 Product Journey marked <code>n/a — declarative state change, no runtime path</code>).</li>
+<li>Author the corresponding <code>plan.json</code> sidecars with <code>design_refs[]</code> entries pointing at the fixture <code>trd.md</code> anchors.</li>
+<li>Write <code>shield/evals/plan-trd.yaml</code> with both positive cases wired.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>shield/evals/plan-trd/fixtures/positive-backend/trd.md</code> contains all 14 sections with explicit <code>{#section-id}</code> anchors.</li>
+<li><code>shield/evals/plan-trd/fixtures/positive-infra/trd.md</code> contains all 14 sections with explicit <code>{#section-id}</code> anchors and uses <code>n/a — &lt;reason&gt;</code> on at least one section.</li>
+<li>Running the eval on both positive fixtures passes (exit code 0).</li>
+<li>The fixtures are self-contained: no external API calls, no LLM dispatches.</li>
+</ul>
+<h3 id="epic-3-s2--author-missing-section--drift--vague-tbd-negative-fixtures----priority-high">EPIC-3-S2 · Author missing-section + drift + vague-TBD negative fixtures  ·  <code>priority: high</code></h3>
+<p>For each of the 14 required sections, author a fixture <code>trd.md</code> that omits that section. Add one drift-by-addition fixture (unprompted 15th section). Add one vague-TBD fixture (section present but contents are 'TBD' instead of either real content or <code>n/a — &lt;reason&gt;</code>). The eval must fail on each with a named, distinguishable error.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>For each section in the slug allow-list (14 entries), derive a positive fixture and remove only that section to create a negative fixture under <code>shield/evals/plan-trd/fixtures/missing-{section-id}/trd.md</code>.</li>
+<li>Wire each negative fixture into <code>shield/evals/plan-trd.yaml</code> with <code>expected_error</code> including the missing section's slug.</li>
+<li>Add one drift-by-addition negative fixture under <code>shield/evals/plan-trd/fixtures/extra-section/</code>: add an unprompted 15th section; eval fails with 'unexpected section'.</li>
+<li>Add one vague-TBD negative fixture under <code>shield/evals/plan-trd/fixtures/vague-tbd/</code>: §6 Non-Functional Requirements contains only 'TBD' (no real content, no <code>n/a — &lt;reason&gt;</code>); eval fails with 'vague section content'.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>14 missing-section negative fixtures exist, one per required section.</li>
+<li>Running the eval on each missing-section fixture fails with an error naming the missing section's slug.</li>
+<li>The drift-by-addition fixture fails with an 'unexpected section' error.</li>
+<li>The vague-TBD fixture fails with a 'vague section content' error (distinguishable from missing-section).</li>
+</ul>
+<h3 id="epic-3-s3--wire-eval-into-ci--red-green-paper-trail----priority-high">EPIC-3-S3 · Wire eval into CI / RED-GREEN paper trail  ·  <code>priority: high</code></h3>
+<p>Run the eval before and after the <code>/plan</code> command changes land to produce the RED→GREEN paper trail required by CLAUDE.md. Capture both runs in the implementation PR description.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Before any <code>/plan</code> command changes: run the eval and confirm RED (positive fixture missing <code>trd.md</code> → expected fail).</li>
+<li>After <code>/plan</code> changes land: run the eval and confirm GREEN (3 positive fixtures pass; all 16 negatives — 14 missing-section + 1 drift + 1 vague-TBD — fail with the right named errors).</li>
+<li>Capture both run outputs in the PR description.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>PR body contains a 'RED' section showing the eval failing before the changes.</li>
+<li>PR body contains a 'GREEN' section showing the eval passing 3 positives + failing all 16 negatives with named errors after the changes.</li>
+<li>The eval is invocable via <code>uv run shield/evals/run.py plan-trd</code> (or equivalent existing eval runner).</li>
+</ul>
+<hr />
+<h2 id="epic-4--plan-review-and-pm-sync-wiring----m2">EPIC-4 · /plan-review and /pm-sync wiring  ·  M2</h2>
+<h3 id="epic-4-s0--scaffold-jira--confluence--notion-adapter-packages----priority-high">EPIC-4-S0 · Scaffold Jira / Confluence / Notion adapter packages  ·  <code>priority: high</code></h3>
+<p>Only <code>shield/adapters/clickup/</code> exists today as a <code>uv</code> package. EPIC-4-S3 implies four adapters land in one story but three have no <code>pyproject.toml</code>, no <code>tests/</code>, no MCP server skeleton. Scaffold them first. New per Backend P0-3 (repo-grounded — verified).</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create <code>shield/adapters/jira/</code> with <code>pyproject.toml</code>, <code>server/</code> skeleton, <code>tests/</code> with placeholder contract test, <code>.mcp.json</code> entry.</li>
+<li>Same for <code>shield/adapters/confluence/</code>.</li>
+<li>Same for <code>shield/adapters/notion/</code>.</li>
+<li>Create <code>shield/adapters/_common/design_refs.py</code> exposing <code>DesignRef</code>, <code>ForwardResult</code>, <code>ForwardError</code>, and the <code>forward_design_refs</code> protocol interface.</li>
+<li>Update top-level workspace pyproject if needed.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Each new adapter directory has a working <code>pyproject.toml</code> resolvable by <code>uv sync</code>.</li>
+<li>Each new adapter has a placeholder contract test runnable under <code>uv run pytest shield/adapters/&lt;tool&gt;/tests/</code>.</li>
+<li><code>shield/adapters/_common/design_refs.py</code> exports the named types and protocol.</li>
+<li><code>.mcp.json</code> entries for new adapters are present (even if disabled until EPIC-4-S3).</li>
+</ul>
+<h3 id="epic-4-s1--add-14-section-presence-rule--stale-anchor-rule-to-plan-review----priority-high">EPIC-4-S1 · Add 14-section presence rule + stale-anchor rule to /plan-review  ·  <code>priority: high</code></h3>
+<p>Extend the <code>/plan-review</code> rubric to check that <code>trd.md</code> contains all 14 required sections with the canonical slug anchors. Sections containing <code>n/a — &lt;reason&gt;</code> pass; sections containing only 'TBD' or empty content fail. Report missing or vague sections as Critical severity.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Edit <code>shield/skills/general/plan-review/SKILL.md</code> to add a 'TRD section presence' rule that imports the slug allow-list (14 entries) and checks each anchor exists in <code>trd.md</code>.</li>
+<li>Add a 'TRD section content' rule that, for each section, accepts either real content or a <code>n/a — &lt;reason&gt;</code> line; flags 'TBD'/empty.</li>
+<li>Add corresponding eval fixtures under <code>shield/evals/plan-review-trd/</code> exercising both rules (positive + missing-section + vague-TBD + n/a-without-reason).</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li><code>/plan-review</code> on a feature folder with a TRD missing any required section reports that section by slug as a Critical finding.</li>
+<li><code>/plan-review</code> on a feature folder with all 14 sections present (including any <code>n/a — &lt;reason&gt;</code> escapes) does not flag section presence or content.</li>
+<li><code>/plan-review</code> on a TRD with a section containing only 'TBD' flags it as a vague-content Critical finding.</li>
+<li><code>/plan-review</code> on a TRD with a section containing 'n/a' (no reason) flags it as a missing-reason finding.</li>
+</ul>
+<h3 id="epic-4-s2--add-prdtrd-duplication-detection-rule-to-plan-review----priority-medium">EPIC-4-S2 · Add PRD↔TRD duplication-detection rule to /plan-review  ·  <code>priority: medium</code></h3>
+<p>Detect when a TRD section verbatim-restates content from the linked PRD. Use a substring-overlap heuristic on §2 Problem Statement and §5 Functional Requirements.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Add a 'TRD restates PRD' rule to <code>/plan-review</code> that compares <code>trd.md</code> §2 + §5 against the linked <code>prd.md</code>.</li>
+<li>Define the substring-overlap threshold (e.g., flag if &gt; 80 characters of consecutive verbatim overlap).</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>A fixture pair where <code>trd.md</code> §2 copies <code>prd.md</code> problem section verbatim produces a duplication finding.</li>
+<li>A fixture pair where <code>trd.md</code> §2 paraphrases or summarizes the PRD problem section does not produce a finding.</li>
+</ul>
+<h3 id="epic-4-s3--pm-sync-emits-design_refs-as-web-links-with-idempotent-upsert----priority-high">EPIC-4-S3 · /pm-sync emits design_refs[] as web links with idempotent upsert  ·  <code>priority: high</code></h3>
+<p>Update <code>/pm-sync</code> adapters (ClickUp + Jira/Confluence/Notion from EPIC-4-S0) to forward each story's <code>design_refs[]</code> entries as web links on the synced task with a deterministic idempotency key. Adapter interface contract locked across all four; observability structured; tool/access requirements documented. Per Backend P0-1, P0-3, P0-4 + DX P1-3 + Backend P1-8 + DX P1-13.</p>
+<p><strong>Adapter file paths (P1-3)</strong></p>
+<ul>
+<li><code>shield/adapters/clickup/server/tools/sync.py</code> — extend existing</li>
+<li><code>shield/adapters/jira/server/tools/sync.py</code> — new (per EPIC-4-S0)</li>
+<li><code>shield/adapters/confluence/server/tools/sync.py</code> — new</li>
+<li><code>shield/adapters/notion/server/tools/sync.py</code> — new</li>
+</ul>
+<p><strong>Adapter interface contract (P0-3)</strong></p>
+<p>Each adapter exposes:</p>
+<pre><code class="language-python">def forward_design_refs(task_id: str, refs: list[DesignRef]) -&gt; ForwardResult: ...
+</code></pre>
+<p>where <code>ForwardResult = {created: int, skipped: int, errors: list[ForwardError]}</code>. Both <code>DesignRef</code> and <code>ForwardResult</code> are defined in <code>shield/adapters/_common/design_refs.py</code> (from EPIC-4-S0).</p>
+<p><strong>Idempotency key</strong>: each <code>DesignRef</code> produces <code>idempotency_key = sha256(story_id + anchor_url)[:32]</code>. Adapters use this as:</p>
+<ul>
+<li>Jira: <code>globalId</code> on <code>remote_issue_link</code></li>
+<li>Confluence: <code>name</code> on <code>remote_link</code></li>
+<li>ClickUp: comparison key for URL custom-field dedup before write</li>
+<li>Notion: comparison key for URL property dedup before write</li>
+</ul>
+<p><strong>Observability (P1-8)</strong>: one <code>action_log</code> entry per ref with <code>action='forward_design_ref'</code>, fields <code>{story_id, adapter, anchor_url, outcome, idempotency_key}</code>. Failures emit <code>action='forward_design_ref_failed'</code> with <code>{error_class, http_status, idempotency_key}</code>.</p>
+<p><strong>Tool &amp; access requirements (P1-13)</strong>:</p>
+<ul>
+<li>Integration tests use HTTP mocking via <code>responses</code> (preferred, credential-free CI) OR free-tier sandbox tenants when run live.</li>
+<li>Live credentials come from <code>SHIELD_&lt;ADAPTER&gt;_TOKEN</code> env vars; CI defaults to mocked mode.</li>
+<li>Python deps: Jira → <code>requests</code>; Confluence → <code>requests</code>; ClickUp → existing <code>httpx</code>; Notion → <code>requests</code>. All declared per-adapter.</li>
+</ul>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Edit <code>shield/commands/pm-sync.md</code> to describe the forwarding contract, idempotency key, and per-adapter affordances.</li>
+<li>Implement <code>forward_design_refs</code> in each of the four adapter files above.</li>
+<li>Adapters with no link affordance log <code>'design_refs forwarding skipped — adapter does not support web links'</code> instead of failing.</li>
+<li>Adapter eval fixtures using <code>responses</code> / <code>respx</code> HTTP mocking.</li>
+<li><strong>(P0-4) Per-adapter idempotency test</strong> under <code>shield/adapters/&lt;tool&gt;/tests/test_idempotency.py</code>: run <code>forward_design_refs</code> twice with the same input against a mocked remote; assert second call produces 0 <code>created</code> and N <code>skipped</code>.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Running <code>/pm-sync</code> against each of {Confluence, Jira, ClickUp, Notion} forwards <code>design_refs[]</code> URLs on the synced task.</li>
+<li>Running <code>/pm-sync</code> with empty <code>design_refs[]</code> succeeds with no side effect.</li>
+<li>Adapter fixtures pass in <code>shield/evals/</code>.</li>
+<li><strong>(P0-4)</strong> Running <code>/pm-sync</code> twice on the same plan produces no duplicates — verified by per-adapter idempotency test.</li>
+<li><strong>(P0-3)</strong> All four adapters implement the same <code>forward_design_refs(task_id, refs) → ForwardResult</code> signature from <code>_common/design_refs.py</code>.</li>
+<li><strong>(P1-8)</strong> <code>action_log</code> entries emitted per ref with the documented fields.</li>
+</ul>
+<hr />
+<h2 id="epic-5--drift--duplication-hardening----m3">EPIC-5 · Drift + duplication hardening  ·  M3</h2>
+<h3 id="epic-5-s1--add-last_aligned_with-metadata-to-planjson----priority-medium">EPIC-5-S1 · Add last_aligned_with metadata to plan.json  ·  <code>priority: medium</code></h3>
+<p>Add a top-level <code>last_aligned_with</code> field on <code>plan.json</code> that records the commit SHA of the most recent <code>/implement</code> run that closed a story. Countermeasure for undead-doc drift.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Bump <code>plan.json</code> schema to 1.3 to include <code>last_aligned_with: string | null</code>.</li>
+<li>Update <code>/implement</code> to write <code>last_aligned_with = HEAD-sha</code> after a story status flips to 'done'.</li>
+<li>Document semantics in <code>sidecar-schema.md</code>: <code>null</code> until first <code>/implement</code> run; updated on every subsequent story close.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>Fresh <code>plan.json</code> has <code>last_aligned_with: null</code>.</li>
+<li>After <code>/implement</code> closes a story, <code>plan.json</code> has <code>last_aligned_with: &lt;40-char hex sha&gt;</code>.</li>
+<li><code>/pm-sync</code> surfaces the value in the synced epic description.</li>
+</ul>
+<h3 id="epic-5-s2--add-implementation-manual--pseudo-code-lint-rule-to-plan-review----priority-low">EPIC-5-S2 · Add implementation-manual / pseudo-code lint rule to /plan-review  ·  <code>priority: low</code></h3>
+<p>Detect TRD §7 (HLD) sections that contain code blocks of more than N lines without an Alternatives Considered rationale within the same section — the 'design doc is really an implementation manual' anti-pattern from <code>research.md</code>.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Add a 'implementation-manual detection' rule to <code>/plan-review</code>.</li>
+<li>Threshold: code block &gt; 20 lines triggers; rule passes if §8 Alternatives Considered is non-empty.</li>
+<li>Eval fixture: TRD with 30-line code block and empty §8 → flagged; TRD with 30-line code block and populated §8 → not flagged.</li>
+</ul>
+<p><strong>Acceptance criteria</strong></p>
+<ul>
+<li>A TRD with a &gt;20-line code block and an empty §8 produces a finding.</li>
+<li>A TRD with a &gt;20-line code block and a populated §8 does not produce a finding.</li>
+<li>Threshold is documented in the rule's <code>SKILL.md</code>.</li>
+</ul>
+<hr />
+<h2 id="out-of-scope-locked">Out of scope (locked)</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/lld &lt;component&gt;</code> command</td>
+<td>Template locked at 14 sections per <a href="https://github.com/infraspecdev/tesseract/pull/43">PR #43 sample</a>; authoring command is a separate epic.</td>
+</tr>
+<tr>
+<td>Adapter auto-creation of design-doc pages in Confluence/Notion</td>
+<td>v2 enhancement.</td>
+</tr>
+<tr>
+<td>Structured ClickUp/Notion relationships beyond URL fields</td>
+<td>v2 enhancement.</td>
+</tr>
+<tr>
+<td>Migration tool for existing <code>plan-architecture.md</code></td>
+<td>Direct cutover; files stay readable in old folders.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><code>/plan-review docs/shield/plan-trd-refactor-20260524/plan.json</code> — multi-agent review.</li>
+<li><code>/pm-sync docs/shield/plan-trd-refactor-20260524/plan.json --tool &lt;clickup|jira|notion&gt;</code> — sync to PM tool.</li>
+<li><code>/implement</code> — start with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail per CLAUDE.md.</li>
+</ul>
+
+</body>
+</html>

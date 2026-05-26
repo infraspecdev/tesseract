@@ -7,17 +7,24 @@ description: Use when code changes need review for security, cost, architecture,
 
 ## Output Path — MANDATORY
 
-All review output goes into the feature's code-review directory:
+All review output goes into a per-run, date-keyed folder under the feature's `reviews/code/` directory:
 
 ```
-{output_dir}/{feature}/code-review/{N}-{slug}/
-├── summary.md                       ← consolidated findings (main output)
-├── changes.md                       ← fixes applied (written after step 9)
+{output_dir}/{feature}/reviews/code/{date}{_counter}/   ← {review_dir}
+├── summary.md                       ← {review_summary}  (consolidated findings, main output)
+├── changes.md                       ← applied-fixes log (side-artifact, written after step 9)
 └── detailed/
-    └── <agent-name>.md              ← one file per dispatched agent
+    └── <agent>.md                   ← {review_detailed} (one per dispatched agent)
+
+{output_dir}/{feature}/outputs/reviews/code/{date}{_counter}/  ← {review_outputs_dir}
+├── summary.html                     ← {review_summary_html}
+└── detailed/
+    └── <agent>.html                 ← {review_detailed_html} (one per agent)
 ```
 
-Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{N}` is a sequential number, and `{slug}` is a short kebab-case descriptor. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
+Where `{output_dir}` comes from `.shield.json` `output_dir` field (default `docs/shield`), `{feature}` is the feature folder name (`{feature-name}-YYYYMMDD`), `{date}` is today's ISO date (`YYYY-MM-DD`), and `{_counter}` is empty for the first run of the day or `_2`, `_3`, ... on same-day collisions. Numbered-run subfolders (`code-review/{N}-{slug}/`) are gone. Reviews never overwrite prior runs.
+
+**Resolving the counter:** before writing, list `{output_dir}/{feature}/reviews/code/` for entries matching today's date. If `{date}/` does not exist, use `_counter=""`. Otherwise, find the highest `{date}_<N>/` and use `_counter="_<N+1>"`. **Do NOT** use any other path or directory structure. The Write tool creates directories automatically.
 
 ## When to Use
 
@@ -50,8 +57,8 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 ### 1. Load Prior Context
 
 Before reviewing, check for artifacts from prior phases (all optional — proceed without if missing):
-- **Plan sidecar** — `{output_dir}/{feature}/plan.json` for stories and acceptance criteria
-- **Research** — `{output_dir}/{feature}/research/` for domain context
+- **Plan sidecar** — `{plan_json}` = `{output_dir}/{feature}/plan.json` for stories and acceptance criteria
+- **Research** — `{research}` = `{output_dir}/{feature}/research.md` for domain context
 - **Git changes** — `git log --oneline` and `git diff` to see what changed during implementation
 
 ### 2. Determine Context and Scope
@@ -79,7 +86,7 @@ Read `.shield.json` to get active domains. For each active domain, check if a do
 - `terraform` → invoke `shield:terraform:review`
 - `atmos` → invoke `shield:atmos:review`
 - `github-actions` → invoke `shield:github-actions:review`
-- `kubernetes` → invoke `shield:kubernetes:review` (security-audit + cost-review + operational-review). Also dispatch `shield:kubernetes-reviewer` agent. Only if K8s manifests detected (YAML files with K8s `apiVersion`/`kind` fields, `Chart.yaml`, or `kustomization.yaml`).
+- `kubernetes` → invoke `shield:kubernetes:review` (security-audit + cost-review + operational-review). Also dispatch `shield:platform-engineer` agent. Only if K8s manifests detected (YAML files with K8s `apiVersion`/`kind` fields, `Chart.yaml`, or `kustomization.yaml`).
 
 Domain skills run in parallel. Their findings are collected and merged.
 
@@ -105,10 +112,10 @@ Dispatch selected agents in parallel using the appropriate mode:
 For each agent that returned results, write its full raw output to:
 
 ```
-code-review/{N}-{slug}/detailed/<agent-name>.md
+{review_dir}/detailed/<agent>.md         (i.e. {review_detailed} with agent=<dispatched-subagent-slug>)
 ```
 
-Where `<agent-name>` matches the agent (e.g., `security.md`, `cost.md`, `architecture.md`, `operations.md`, `well-architected.md`).
+Where `<agent>` matches the dispatched subagent's slug (e.g., `security-engineer.md`, `finops-analyst.md`, `architect.md`, `platform-engineer.md`, `cloud-architect.md`).
 
 Each detailed file should include a header and back-link:
 
@@ -124,7 +131,7 @@ If an agent fails or times out, omit its detailed file — do not write a placeh
 
 ### 8. Acceptance Criteria Verification (explicit/final only)
 
-If an active story context exists (from the plan sidecar `{output_dir}/{feature}/plan.json`):
+If an active story context exists (from the plan sidecar `{plan_json}` = `{output_dir}/{feature}/plan.json`):
 1. Read acceptance criteria from the plan JSON
 2. Check each criterion against the implementation
 3. Look for evidence in code, tests, and config
@@ -151,9 +158,10 @@ If an active story context exists (from the plan sidecar `{output_dir}/{feature}
 ### 10. Apply Fixes and Update Summary
 
 1. Apply selected fixes
-2. Write review summary to `{output_dir}/{feature}/code-review/{N}-{slug}/summary.md` (exact path from Output Path section above)
-3. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`
-4. Write `changes.md` in the same directory documenting applied fixes:
+2. Write review summary to `{review_summary}` = `{review_dir}/summary.md` (exact path from Output Path section above)
+3. Render `{review_summary_html}` and each `{review_detailed_html}` under `{review_outputs_dir}` via `render-markdown.sh`
+4. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`
+5. Write `changes.md` in `{review_dir}` documenting applied fixes (side-artifact, not in registry):
    ```markdown
    # Code Review Changes
 
@@ -163,24 +171,24 @@ If an active story context exists (from the plan sidecar `{output_dir}/{feature}
    |---|---------|------|--------------------|
    | 1 | <finding from summary> | <file:line> | <what was changed> |
    ```
-5. If any fixes were applied, re-render the plan HTML from sidecar
+6. If any fixes were applied, re-render `{plan_html}` from the updated `{plan_md}` (via `/plan` rendering flow)
 
 ## Output Format
 
 ## Output Structure
 
 ```
-code-review/{N}-{slug}/
-├── summary.md                        ← table below
-├── changes.md                        ← applied fixes log
-└── detailed/<agent>.md               ← full per-agent output
+{review_dir}/
+├── summary.md                        ← {review_summary} (table below)
+├── changes.md                        ← applied-fixes log (side-artifact)
+└── detailed/<agent>.md               ← {review_detailed} (full per-agent output)
 ```
 
 ### Review Summary
 
 | # | Severity | Source | Location | Finding | Recommendation |
 |---|----------|--------|----------|---------|---------------|
-| 1 | Critical | security-reviewer | main.tf:42 | Wildcard IAM policy | Scope to specific ARNs |
+| 1 | Critical | security-engineer | main.tf:42 | Wildcard IAM policy | Scope to specific ARNs |
 | 2 | Important | terraform/review | variables.tf:15 | Missing validation block | Add CIDR validation |
 
 ### Acceptance Criteria Report (if applicable)
@@ -215,4 +223,4 @@ Which fixes would you like to apply?
 | Applying fixes without user confirmation | Always present findings and ask which to apply — never auto-fix, especially for `NEEDS_DISCUSSION` items |
 | Writing detailed agent findings to summary.md instead of separate files | Each agent gets its own file in `detailed/<agent>.md` — summary.md only has the merged table |
 | Skipping AC verification because no plan sidecar exists | If there's no `plan.json`, skip AC verification silently — don't error or ask the user to create one |
-| Not deduplicating findings from multiple sources | If security-reviewer and terraform/security-audit flag the same issue, keep the most detailed one |
+| Not deduplicating findings from multiple sources | If security-engineer and terraform/security-audit flag the same issue, keep the most detailed one |

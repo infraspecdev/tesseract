@@ -9,8 +9,8 @@ Derive expected user stories from personas + goals + feature domain. Cross-refer
 
 ## When to Use
 
-- `shield:agile-coach-reviewer` calls this skill while grading dim 4 eval points 4f and 4g of a PRD
-- `/prd` command (Phase B) calls this skill between PRD Sections 4 (Goals) and 6 (Stories) to scaffold expected stories
+- `shield:agile-coach` calls this skill while grading dim 4 eval points 4f and 4g of a PRD
+- `/prd` command (Phase B) calls this skill between PRD Sections 6 (Goals) and 8 (Stories) to scaffold expected stories
 
 ## Input contract
 
@@ -110,6 +110,8 @@ Return JSON with one entry per expected-but-missing story:
   ]
 }
 ```
+
+**Default story Type.** Scaffolded stories are created with `Type: new` as a placeholder. The user overrides this during `/prd`'s §8 walk — particularly for rewrites of existing services, where some stories will be retyped to `enhancement` or `existing`.
 
 ## See Also
 

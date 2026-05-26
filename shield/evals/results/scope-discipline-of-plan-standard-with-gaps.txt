@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM3",
+  "name": "Scope discipline (plan)",
+  "persona": "product-manager",
+  "grade": "C",
+  "severity": "Important",
+  "evidence_quote": "- Cross-organization sharing (different tenant accounts)\n- Public/anonymous sharing (no public links in v1)",
+  "gap": "The plan lists two narrow non-goals but treats all 10 functional requirements (including email notifications, audit log, admin-panel sharing view, and edit permissions) as must-have for v1 with no defensible MVP cut separating 'must have to deliver core value' from 'could have, deferred'.",
+  "suggestion": "Split the FR table into MVP (e.g., FR1–FR4, FR6, FR9 — share + view with permissions) versus deferred (FR5 email, FR8 audit log, FR10 admin panel, Editor role) with explicit rationale for each cut."
+}
+```

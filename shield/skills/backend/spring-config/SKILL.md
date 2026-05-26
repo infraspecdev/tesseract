@@ -86,5 +86,5 @@ To add full SB2 coverage, follow Pattern A (broaden the rubric) per `shield/skil
 ## Related Skills
 
 - For multi-instance config divergence and rollout safety → `backend-deployment-safety-review`
-- For secrets at the infrastructure layer → `security-reviewer` agent (cross-cutting)
+- For secrets at the infrastructure layer → `security-engineer` agent (cross-cutting)
 - For config-driven feature flags → `backend-deployment-safety-review` (S1)

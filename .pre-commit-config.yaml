@@ -1,9 +1,82 @@
 repos:
+  # ── 1. Standard file hygiene ─────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        files: '^shield/evals/expected/.*\.yaml$'
+      - id: check-json
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+
+  # ── 2–4. Local hooks ─────────────────────────────────────────────────────
   - repo: local
     hooks:
-      - id: shield-tests
-        name: Shield test suite
-        entry: shield/tests/run-all.sh
-        language: script
+      # ── 2. Bash syntax ────────────────────────────────────────────────────
+      - id: bash-syntax
+        name: bash syntax check
+        entry: bash -n
+        language: system
+        files: '\.sh$'
+
+      # ── 3. End-to-end eval format check ──────────────────────────────────
+      - id: eval-format
+        name: end-to-end eval format check
+        entry: python3 shield/evals/_parse_eval.py --check
+        language: system
+        files: '^shield/evals/.*\.md$'
+        exclude: '^shield/evals/(README\.md|inputs/)'
+
+      # ── 4. render-markdown pytest (only when relevant files change) ───────
+      - id: render-markdown-tests
+        name: render-markdown pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest --with "markdown-it-py>=3,<4" --with "mdit-py-plugins>=0.4,<1" pytest test_render_markdown_toc.py'
+        language: system
+        files: '^shield/scripts/(render-markdown\.py|test_render_markdown_toc\.py)$'
         pass_filenames: false
-        always_run: true
+
+      # ── 5. devcontainer Feature ref parse check ──────────────────────────
+      # Catches the 'name:tag@sha256:digest' combined form which the Dev
+      # Containers CLI rejects (its path regex disallows ':'). Pure Python,
+      # no network or Node required — runs in milliseconds.
+      - id: devcontainer-refs
+        name: devcontainer Feature ref parse check
+        entry: python3 shield/scripts/check_devcontainer_refs.py
+        language: system
+        files: '^(\.devcontainer/devcontainer\.json|shield/scripts/(compose_devcontainer|check_devcontainer_refs)\.py|shield/skills/devcontainer/feature-map\.json)$'
+        pass_filenames: false
+
+      # ── 6. shield output-path lint ───────────────────────────────────────
+      # Validates the registry + every command/skill/agent's `outputs:` block:
+      #   - declared outputs resolve to a real registry entry
+      #   - registry placeholders are declared variables or sibling paths
+      #   - every registry path is declared by ≥1 asset OR marked `derived:`
+      #   - frontmatter is well-formed YAML
+      # Whole-repo check (pass_filenames: false) — fast (~1.5s) and catches
+      # cross-file drift that a per-file check would miss.
+      - id: shield-path-lint
+        name: shield output-path lint
+        entry: bash -c 'uv run --quiet --with pyyaml shield/scripts/lint_output_paths.py --root .'
+        language: system
+        files: '^(shield/schema/output-paths\.yaml|shield/commands/.*\.md|shield/skills/.*/SKILL\.md|shield/agents/.*\.md)$'
+        pass_filenames: false
+
+      # ── 7. shield path-resolver tests ────────────────────────────────────
+      # Resolver behavior is load-bearing for every shield command; fast (<1s).
+      - id: shield-resolver-tests
+        name: shield path-resolver pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pyyaml --with pytest pytest test_path_resolver.py'
+        language: system
+        files: '^shield/(scripts/(path_resolver|test_path_resolver)\.py|schema/output-paths\.yaml)$'
+        pass_filenames: false
+
+      # ── 8. shield lint-script tests ──────────────────────────────────────
+      # Guards against regressions in the lint script itself.
+      - id: shield-lint-tests
+        name: shield lint-output-paths pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pyyaml --with pytest pytest test_lint_output_paths.py'
+        language: system
+        files: '^shield/scripts/(lint_output_paths|test_lint_output_paths)\.py$'
+        pass_filenames: false

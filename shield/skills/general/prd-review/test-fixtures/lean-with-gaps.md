@@ -19,10 +19,8 @@ Users keep getting locked out and complain.
 - Mobile app password reset
 
 <!--
-EXPECTED REVIEW OUTCOMES (used by RED-GREEN tests, do not delete):
-  P0 expected on dims: 1 (problem clarity - no baseline), 3 (measurable success - no threshold, no counter), 4 (no user stories at all - persona-goal coverage F)
-  P1 expected on dims: 7 (RACI - no named owner; "Owner" header value empty)
-  N/A or informational expected on dims: 5 (NFR), 6 (Rollout), 9 (GTM), 10 (Support), 13 (Cost) - lean PRD structural exemption
-  Composite expected: 0.8 - 1.5 (Not Ready)
-  Verdict expected: Not Ready (P0s on critical dims block verdict regardless)
+Expected review outcomes for this fixture are captured empirically in
+shield/evals/baselines/prd-review-pm-postchange.json (per-dim finding counts; lean-mode
+dim 9/10 informational exemption is recorded there) and in shield/evals/expected/*.yaml.
+Do not restate them inline here — they will drift.
 -->

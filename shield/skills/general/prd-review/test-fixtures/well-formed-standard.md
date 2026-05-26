@@ -404,12 +404,8 @@ Email/password login is preserved unless the Org Owner explicitly sets `sso_fall
 ---
 
 <!--
-EXPECTED REVIEW OUTCOMES (used by RED-GREEN tests, do not delete):
-  P0 expected on dims: none
-  P1 expected on dims: none
-  P2 expected on dims: may flag 2-3 minor polish items (e.g., dashboard plan specificity, beta plan absence)
-  N/A expected on dims: none (all graded)
-  All dim grades expected: A or B
-  Composite expected: 3.0 - 3.8
-  Verdict expected: Ready
+Expected review outcomes for this fixture are captured empirically in
+shield/evals/baselines/prd-review-pm-postchange.json (per-dim finding counts) and in
+shield/evals/expected/*.yaml (per-dim grade + severity assertions). Do not restate them
+inline here — they will drift.
 -->

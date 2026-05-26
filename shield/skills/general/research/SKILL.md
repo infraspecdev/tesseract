@@ -7,21 +7,22 @@ description: Use when starting work on a new feature — gathers product + tech 
 
 Research a technical topic and produce a well-sourced document with direct quotes, industry references, and a clear recommendation.
 
-## Output Path — MANDATORY
+## Output Paths — MANDATORY
 
-Write the final document using the Write tool to **exactly** this path:
+Write outputs using the Write tool to **exactly** these paths (registry-tracked — see `shield/schema/output-paths.yaml`):
 
-```
-{output_dir}/{feature-name}-YYYYMMDD/research/{N}-{slug}/findings.md
-```
+| Registry name | Resolved path | When written |
+|---|---|---|
+| `{research}` | `{output_dir}/{feature}/research.md` | Phase 2 findings; or Phase 1 context if Phase 2 skipped |
+| _(side-artifact)_ | `{output_dir}/{feature}/.session-transcript.md` | Always — Phase 1 Q&A + repo scan context |
 
 Where:
 - `{output_dir}` — read from `.shield.json` `output_dir` field (default: `docs/shield`)
-- `{feature-name}-YYYYMMDD` — the feature folder (ask user if no active feature context: "No active feature context. What feature name should this go under?")
-- `{N}` — run number (count existing folders in `{feature}/research/` + 1)
-- `{slug}` — slugified research topic (lowercase, hyphens only, max 50 chars)
+- `{feature}` — the feature folder name (ask user if no active feature context: "No active feature context. What feature name should this go under?")
 
-**Do NOT** use any other path, filename, or directory. The Write tool creates directories automatically. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
+**Do NOT** use numbered run subfolders (`research/{N}-{slug}/`). The flat paths above are the only valid write targets. The Write tool creates directories automatically. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
+
+> `.session-transcript.md` is a hidden side-artifact (not a deliverable) and is intentionally NOT declared in the command's `outputs:` frontmatter.
 
 ## When to Use
 
@@ -50,7 +51,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 6 | Parallel research agents (3) | Phase 2 | if Phase 2 accepted | Conditional |
 | 7 | Synthesize findings | Phase 2 | if Phase 2 accepted | Conditional |
 | 8 | PM review | Phase 2 | if Phase 2 accepted | Conditional |
-| 9 | Write transcript.md + findings.md | Both | always | Yes |
+| 9 | Write `{research}` (findings) + `.session-transcript.md` (side-artifact) | Both | always | Yes |
 
 ## Workflow
 
@@ -86,13 +87,17 @@ Phase 1 captured your context. These open questions would benefit from external 
 Run Phase 2 (external research)? (yes / no / pick specific)
 ```
 
-If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If no, write transcript.md and finish.
+If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If no, write `.session-transcript.md` to `{output_dir}/{feature}/.session-transcript.md` and finish.
 
 ### Phase 2 — External evidence-gathering (existing behavior preserved)
 
 #### Step 5: PM framing on the chosen questions
 
-(Existing PM-framing logic. Dispatches `shield:product-manager-reviewer` in research-framing mode.)
+Dispatch `shield:research-framer` with the chosen research questions as input. Returns the
+8-section PF1-PF8 markdown framing brief that shapes the parallel research streams in Step 6.
+
+(Post pm-restructure-v0: this replaces the legacy `shield:product-manager` Research-Framing
+dispatch. The output shape is unchanged — markdown brief with PF1-PF8 sections.)
 
 #### Step 6: Three parallel research agents
 
@@ -102,19 +107,47 @@ If user says yes or picks specific questions, proceed to Phase 2 (Step 5+). If n
 
 (Existing synthesis logic.)
 
-#### Step 8: PM review on findings
+#### Step 8: PM review on findings (parallel dispatch)
 
-(Existing PM-review mode.)
+Dispatch the following in parallel, all with the synthesized findings document (and the
+framing brief from Step 5) as input:
 
-#### Step 9: Write findings.md
+- `shield:research-reviewer-narrative` — produces the 4-section markdown narrative review
+  (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary).
+- `shield:user-impact-clarity` (PM1)
+- `shield:problem-solution-fit` (PM2)
+- `shield:scope-discipline-of-plan` (PM3)
+- `shield:prioritization-rationale` (PM4)
+- `shield:stakeholder-communicability` (PM5)
+- `shield:market-competitive-awareness` (PM6)
+- `shield:adoption-rollout-risk` (PM7)
+- `shield:success-metrics-defined` (PM8)
+- `shield:reversibility-exit-cost` (PM9)
+- `shield:business-value-alignment` (PM10)
+- `shield:framing-coverage-honored` (PM11) — passes BOTH `findings_path` AND
+  `framing_brief_path`. PM11 returns `N/A` if no framing brief exists; the orchestrator
+  excludes N/A from the composite.
 
-(Existing write to `{output_dir}/{feature}/research/{N}-{slug}/findings.md`.)
+The orchestrator collects the 10 single-check JSON returns + PM11 + the narrative markdown
+into the legacy `## Product Lens` section shape (narrative + scorecard) so downstream
+`{research}` templates keep working.
+
+(Post pm-restructure-v0: replaces the omnibus `shield:product-manager` Research-Review
+dispatch with one narrative authoring subagent + 10 PM dim grading subagents + 1 PM11
+framing-coverage subagent — 12 parallel calls.)
+
+#### Step 9: Write `{research}` and `.session-transcript.md`
+
+Write findings to `{research}` → `{output_dir}/{feature}/research.md`.
+Write the Phase 1 Q&A context to `{output_dir}/{feature}/.session-transcript.md` (hidden side-artifact, always written).
 
 ### Combined output
 
-After both phases complete, the run folder contains:
-- `transcript.md` — Phase 1 Q&A + repo scan summary + product/tech context (always present)
-- `findings.md` — Phase 2 external evidence with citations (present only if Phase 2 ran)
+After both phases complete, the feature folder contains:
+- `.session-transcript.md` — Phase 1 Q&A + repo scan summary + product/tech context (always present, hidden side-artifact)
+- `research.md` (`{research}`) — Phase 2 external evidence with citations (present only if Phase 2 ran; or Phase 1 context summary if Phase 2 skipped)
+
+> Numbered run subfolders (`research/{N}-{slug}/`) are gone. Git history is the run archive.
 
 ---
 
@@ -130,11 +163,18 @@ Skip if the user already provided enough context. Otherwise ask:
 
 ## PM Framing
 
-Dispatch the PM agent in **research-framing** mode with the research topic as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+Dispatch `shield:research-framer` with the research topic as input. Use the Agent tool with
+`subagent_type: "shield:research-framer"`.
 
-The agent returns a structured brief with: stakeholders, decision(s) to make, success criteria, prioritized research questions, scope boundaries, and timeline constraints.
+The agent returns the 8-section PF1-PF8 markdown framing brief: stakeholders, decision(s) to
+make, must-cite definitional/origin voices (PF7), source-type coverage matrix (PF8), success
+criteria, prioritized research questions, scope boundaries, and timeline & constraints.
 
-This output shapes the research agent prompts in the next step. If PM framing fails or times out, proceed with research without framing context — do not block the workflow.
+This output shapes the research agent prompts in the next step. If framing fails or times
+out, proceed with research without framing context — do not block the workflow.
+
+(Post pm-restructure-v0: replaces the legacy `shield:product-manager` Research-Framing
+dispatch with the focused `shield:research-framer` subagent.)
 
 ## Research (Parallel Agents)
 
@@ -188,15 +228,28 @@ If PM framing was skipped, use the original prompt: `Research [topic] from [sour
 
 ## PM Review
 
-After synthesizing findings, dispatch the PM agent in **research-review** mode with the synthesized findings as input. Use the Agent tool with `subagent_type: "shield:product-manager-reviewer"`.
+After synthesizing findings, dispatch the following IN PARALLEL with the findings doc (and
+the Step 5 framing brief) as input:
 
-The agent returns a hybrid output: narrative sections (User Impact Analysis, Scope Recommendation, Prioritization Framework, Stakeholder Summary) plus a graded scorecard (PM1-PM10).
+- `shield:research-reviewer-narrative` — markdown narrative (4 sections).
+- `shield:user-impact-clarity` ... `shield:business-value-alignment` (PM1-PM10) — single-check
+  JSON, one per dim.
+- `shield:framing-coverage-honored` (PM11) — receives both findings + framing brief paths.
+  Returns `N/A` if no framing brief was produced upstream.
 
-Include this output as a `## Product Lens` section in the final document, placed after `## Summary` and before `## References`.
+The orchestrator merges the narrative markdown with a scorecard synthesized from the 10 PM
+dim returns (plus PM11) into the legacy `## Product Lens` section shape: narrative + PM1-PM11
+scorecard table. Include this output as a `## Product Lens` section in the final document,
+placed after `## Summary` and before `## References`.
+
+(Post pm-restructure-v0: replaces the omnibus `shield:product-manager` Research-Review
+dispatch with one narrative authoring subagent + 11 focused PM dim grading subagents — 12
+parallel calls. Output shape preserved for backward compatibility with `{research}` (`research.md`)
+templates.)
 
 ## Write Document
 
-**Output: `{output_dir}/{feature}/research/{N}-{slug}/findings.md`**
+**Output: `{research}` → `{output_dir}/{feature}/research.md`**
 
 ```markdown
 # [Decision Title]
@@ -272,7 +325,7 @@ Sections may be omitted if no good item exists for that media type — do not pa
 | Skipping PM framing because "the topic is straightforward" | Always run PM framing — it prioritizes research questions and sets scope boundaries, preventing unfocused research |
 | Paraphrasing sources instead of using direct quotes | Use the original wording with attribution — paraphrases lose credibility and make claims harder to verify |
 | All 3 research agents returning the same sources | Each agent has a distinct source type (official docs, industry voices, community) — if they overlap, the prompts need sharper differentiation |
-| Writing Product Lens as a separate document instead of a section | PM review output goes inside findings.md as `## Product Lens` between Summary and References |
+| Writing Product Lens as a separate document instead of a section | PM review output goes inside `{research}` (`research.md`) as `## Product Lens` between Summary and References |
 | Including recommendations without source backing | Every recommendation must trace to at least one cited source — unsupported opinions violate rule 1 |
 | Omitting dissenting views when sources agree | If all sources agree, state that explicitly — the absence of disagreement is itself a finding worth noting |
 | Treating PF7 must-cite voices and PF8 source-type matrix as optional | Stream prompts inherit them verbatim from framing — the originator of a concept (e.g., Karpathy on context engineering, Willison on lethal trifecta, Young/Fowler on event sourcing) MUST appear with a direct quote in the body, and each PF8 required category MUST have a quoted source in the body. PM-review (PM11) will flag missing items as P0/P1 recommendations. |

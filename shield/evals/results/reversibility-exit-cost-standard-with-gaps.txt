@@ -1,0 +1,12 @@
+```json
+{
+  "id": "PM9",
+  "name": "Reversibility & exit cost",
+  "persona": "product-manager",
+  "grade": "F",
+  "severity": "Warning",
+  "evidence_quote": "",
+  "gap": "The PRD never assesses reversibility — there is no discussion of how hard it would be to migrate off the chosen schema (`owner_team_id` + `dashboard_shares`), unwind shared-permission state, or roll back the ACL middleware extension if the bet fails.",
+  "suggestion": "Add a Reversibility section quantifying exit cost: data-migration effort to drop the `dashboard_shares` table and revert ACL changes, number of downstream systems/teams affected, and a realistic ramp (e.g., feature-flag off vs. full rollback) if adoption misses the 30% target."
+}
+```

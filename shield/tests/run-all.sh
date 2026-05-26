@@ -183,7 +183,6 @@ for f in glob.glob('$SHIELD_ROOT/evals/expected/*.yaml'):
     with open(f) as fh:
         data = yaml.safe_load(fh)
     assert 'agent' in data, f'{f}: missing agent'
-    assert 'mode' in data, f'{f}: missing mode'
     assert 'must_find' in data, f'{f}: missing must_find'
     for item in data['must_find']:
         assert 'id' in item, f'{f}: must_find missing id'
@@ -292,6 +291,71 @@ if command -v uv &>/dev/null; then
   run_test_verbose "contract tests pass" bash -c "cd '$ADAPTER_DIR' && uv run --extra test pytest tests/ -q 2>&1"
 else
   echo "  ⚠ uv not installed, skipping adapter tests"
+fi
+echo ""
+
+# --- 10. Markdown Renderer ---
+echo "10. Markdown Renderer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "render-markdown handles CommonMark nested lists" \
+    "$SHIELD_ROOT/tests/test-render-markdown.py"
+else
+  echo "  ⚠ uv not installed, skipping render-markdown test"
+fi
+echo ""
+
+# --- 11. Devcontainer Static Checks ---
+echo "11. Devcontainer Static Checks"
+run_test_verbose "devcontainer files valid" "$SHIELD_ROOT/tests/test-devcontainer-files.sh"
+echo ""
+
+# --- 12. Stack Detection ---
+echo "12. Stack Detection"
+if command -v uv &>/dev/null; then
+  run_test_verbose "detect_stack tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_detect_stack.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping detect_stack tests"
+fi
+echo ""
+
+# --- 13. Devcontainer Feature Map ---
+echo "13. Devcontainer Feature Map"
+if command -v uv &>/dev/null; then
+  run_test_verbose "feature-map.json validates" bash -c \
+    "cd '$SHIELD_ROOT/skills/devcontainer' && uv run --with jsonschema --with pytest pytest -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping feature-map tests"
+fi
+echo ""
+
+# --- 14. Devcontainer Composer ---
+echo "14. Devcontainer Composer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "compose_devcontainer tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_compose_devcontainer.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping composer tests"
+fi
+echo ""
+
+# --- 15. Devcontainer Gate ---
+echo "15. Devcontainer Gate"
+if command -v uv &>/dev/null; then
+  run_test_verbose "devcontainer_gate tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_devcontainer_gate.py -q 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping gate tests"
+fi
+echo ""
+
+# --- 16. Init Devcontainer Integration ---
+echo "16. Init Devcontainer Integration"
+if command -v uv &>/dev/null; then
+  run_test_verbose "init-devcontainer scaffolds fixtures correctly" \
+    "$SHIELD_ROOT/tests/test-init-devcontainer.sh"
+else
+  echo "  ⚠ uv not installed, skipping init-devcontainer integration"
 fi
 echo ""
 

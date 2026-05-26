@@ -2,7 +2,7 @@
 
 ## Overview / Index Template
 
-This page is written to `{output_dir}/index.html` and updated by each skill that produces artifacts. It links to all features and their artifacts.
+This page is written to `{output_dir}/index.html` (registry: `global_index_html`) and regenerated each time `{manifest}` is updated. It links to all features and their artifacts. See `manifest-schema.md` for the full link layout per feature (post-cutover flat paths under `{feature}/` and `{feature}/outputs/`).
 
 ```html
 <!DOCTYPE html>
@@ -34,22 +34,26 @@ a:hover { text-decoration: underline; }
 
 <p>Generated: {date}</p>
 
-<h2>Artifacts</h2>
+<h2>Artifacts (example feature row)</h2>
 
 <table>
   <tr><th>Phase</th><th>Document</th><th>Date</th></tr>
-  <tr><td><span class="badge badge-research">Research</span></td><td><a href="research-{ts}.md">Research Document</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="architecture-{ts}.html">Architecture / ADR</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="plan-{ts}.html">Detailed Execution Plan</a></td><td>{date}</td></tr>
-  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="../plan.json">Plan Sidecar (JSON)</a></td><td>{date}</td></tr>
-  <!-- Add rows as phases complete -->
-  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="analysis-{ts}.md">Plan Review</a></td><td>{date}</td></tr> -->
-  <!-- <tr><td><span class="badge badge-review">Review</span></td><td><a href="review-{ts}.md">Code Review</a></td><td>{date}</td></tr> -->
+  <tr><td><span class="badge badge-research">Research</span></td><td><a href="{feature}/research.md">Research Document</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">PRD</span></td><td><a href="{feature}/prd.md">PRD (Markdown)</a> · <a href="{feature}/outputs/prd.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan-architecture.md">Architecture / ADR</a> · <a href="{feature}/outputs/plan-architecture.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan.md">Detailed Execution Plan</a> · <a href="{feature}/outputs/plan.html">HTML</a></td><td>{date}</td></tr>
+  <tr><td><span class="badge badge-plan">Plan</span></td><td><a href="{feature}/plan.json">Plan Sidecar (JSON)</a></td><td>{date}</td></tr>
+  <!-- Add rows for review run folders as they accumulate under {feature}/reviews/{type}/{date}{_counter}/ -->
+  <!-- <tr><td><span class="badge badge-review">PRD Review</span></td><td><a href="{feature}/reviews/prd/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
+  <!-- <tr><td><span class="badge badge-review">Plan Review</span></td><td><a href="{feature}/reviews/plan/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
+  <!-- <tr><td><span class="badge badge-review">Code Review</span></td><td><a href="{feature}/reviews/code/{date}/summary.md">Summary</a></td><td>{date}</td></tr> -->
 </table>
 
 </body>
 </html>
 ```
+
+The generator should iterate over `manifest.json` → `features[]`, emitting one card or one table-section per feature with rows conditional on `artifacts.<key>` and `reviews.<type>.count > 0`.
 
 ## Architecture / ADR Template
 
@@ -83,8 +87,8 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 <body>
 
 <div class="nav">
-  <a href="index.html">&larr; Overview</a> |
-  <a href="plan-{YYYYMMDD-HHMMSS}.html">Detailed Plan &rarr;</a>
+  <a href="../../index.html">&larr; Overview</a> |
+  <a href="plan.html">Detailed Plan &rarr;</a>
 </div>
 
 <h2>Phase {N}: {Name}</h2>
@@ -209,13 +213,23 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
 
 /* Phase color — only use for inline accents, NOT for h1 or blockquotes */
 .phase-color { color: #1a73e8; }
+
+/* Milestones block */
+.milestones { margin: 24px 0; }
+.milestone { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #1a73e8; background: #f7f9fc; }
+.milestone h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.milestone .rollup { font-size: 0.85rem; color: #5f6368; font-weight: normal; }
+.milestone .outcome { margin: 6px 0; }
+.milestone .exit-criteria { margin: 8px 0; }
+.milestone .exit-criteria ul { margin: 4px 0 0 20px; }
+.milestone .depends-on { font-size: 0.9rem; color: #5f6368; margin: 6px 0; }
 </style>
 </head>
 <body>
 
 <div class="nav">
-  <a href="index.html">&larr; Overview</a> |
-  <a href="architecture-{YYYYMMDD-HHMMSS}.html">&larr; Architecture</a>
+  <a href="../../index.html">&larr; Overview</a> |
+  <a href="plan-architecture.html">&larr; Architecture</a>
 </div>
 
 <h1>Phase {N}: {Name} &mdash; Detailed Plan</h1>
@@ -230,6 +244,51 @@ hr { border: none; border-top: 1px solid #dadce0; margin: 30px 0; }
     <tr><td>Timeline</td><td>Week {X}</td></tr>
   </table>
 </div>
+
+<!-- Milestones block — render this block immediately after the Epic metadata and before the flat Stories summary table.
+     Render the sidecar's `milestones` array only when sidecar.milestones has ≥ 1 entry.
+     When sidecar.milestones is empty (back-compat with plans that pre-date milestone support),
+     skip this entire block and fall through to the flat Stories summary table below. -->
+<section class="milestones">
+  <h2>Milestones</h2>
+
+  <!-- For each milestone in sidecar.milestones[], in array order: -->
+  <section class="milestone" id="milestone-{milestone.id}">
+    <!-- h3: "{id} — {name}" with a right-aligned rollup span showing ready_count / total_count stories ready -->
+    <h3>{milestone.id} — {milestone.name} <span class="rollup">{ready_count}/{total_count} stories ready</span></h3>
+
+    <!-- Outcome paragraph -->
+    <p class="outcome"><strong>Outcome:</strong> {milestone.outcome}</p>
+
+    <!-- Exit criteria: always render the ul; one <li> per item in milestone.exit_criteria[] -->
+    <div class="exit-criteria">
+      <strong>Exit criteria:</strong>
+      <ul>
+        <li>{exit_criterion}</li>
+        <!-- Repeat for each item in milestone.exit_criteria[] -->
+      </ul>
+    </div>
+
+    <!-- Depends-on: render this <p> only when milestone.depends_on is non-empty;
+         join the IDs with ", " (e.g., "M1, M2") -->
+    <p class="depends-on"><strong>Depends on:</strong> {milestone.depends_on joined by ", "}</p>
+
+    <!-- Stories table: list stories where story.milestone_id == milestone.id,
+         ordered by story.week ascending (sprint cadence emerges from week grouping —
+         e.g., week 1–2 = Sprint 1). Columns: ID, Name, Week, Status. -->
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Week</th><th>Status</th></tr></thead>
+      <tbody>
+        <!-- For each story where story.milestone_id == milestone.id, sorted by week asc: -->
+        <tr><td>{story.id}</td><td><a href="#{story.anchor}">{story.name}</a></td><td>{story.week}</td><td><span class="badge badge-{story.status_class}">{story.status}</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Repeat <section class="milestone"> for each entry in sidecar.milestones[] -->
+</section>
+
+<!-- Stories inside each milestone block are ordered by `week` ascending (sprint cadence emerges from week grouping — e.g., week 1–2 = Sprint 1). -->
 
 <!-- Infrastructure -->
 <h2>Infrastructure</h2>
