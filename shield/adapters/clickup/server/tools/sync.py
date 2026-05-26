@@ -23,15 +23,24 @@ FUZZY_LINK_THRESHOLD = 0.6
 # portion. Matches "P3 - Install Istio" or "[Project] EPIC-1-S1: ..." prefixes.
 _EPIC_PREFIX_RE = re.compile(r"^[A-Z]+\d+[a-z]?\s*-\s*")
 
+# Matches the canonical task-name prefix "[Project] EPIC-N[-Sk]: " (the bracket
+# and the -Sk story suffix are both optional). Anchored on the EPIC-N id so a
+# legitimate colon inside a story name (e.g. "Add retry: backoff") is NOT split.
+_NAME_PREFIX_RE = re.compile(r"^(?:\[[^\]]+\]\s*)?EPIC-\d+(?:-S\d+)?:\s*")
+
 
 def _strip_name_prefix(task_name: str) -> str:
     """Strip "[Project] EPIC-N-Sk: " or "Pn - " prefixes so the comparison
-    runs against the bare story name."""
-    if ": " in task_name:
-        return task_name.split(": ", 1)[-1].strip()
-    if _EPIC_PREFIX_RE.match(task_name):
-        return _EPIC_PREFIX_RE.sub("", task_name).strip()
-    return task_name.strip()
+    runs against the bare story name. Only strips a colon-prefix when it's an
+    actual EPIC-N[-Sk] id prefix — story names that merely contain ": " are
+    preserved intact."""
+    name = task_name.strip()
+    m = _NAME_PREFIX_RE.match(name)
+    if m:
+        return name[m.end():].strip()
+    if _EPIC_PREFIX_RE.match(name):
+        return _EPIC_PREFIX_RE.sub("", name).strip()
+    return name
 
 
 def _fuzzy_ratio(plan_name: str, task_name: str) -> float:
@@ -242,10 +251,22 @@ async def pm_sync_sidecar_impl(
                 })
 
     # ----- Orphans (ClickUp backlog tasks not matched to any plan story) -----
+    # When scoped to a single epic we only diffed that epic's stories, so we
+    # can only judge orphan-hood for tasks linked to the in-scope epic(s).
+    # Reporting the full backlog here would mislabel every other epic's tasks
+    # as orphans. Unscoped, the whole backlog is fair game.
     matched_backlog_ids = used_story_ids
+    if epic is not None:
+        in_scope_epic_pm_ids = {r["pm_id"] for r in epic_results if r["pm_id"]}
+        orphan_pool = [
+            t for t in clickup_backlog_tasks
+            if in_scope_epic_pm_ids & _get_linked_epic_ids(t, rel_field_id)
+        ]
+    else:
+        orphan_pool = clickup_backlog_tasks
     orphans = [
         {"id": t["id"], "name": t.get("name", "")}
-        for t in clickup_backlog_tasks
+        for t in orphan_pool
         if t["id"] not in matched_backlog_ids
     ]
 

@@ -286,3 +286,66 @@ async def test_sync_epic_to_link_for_fuzzy_match_on_epic_card(
     assert len(to_link) == 1
     assert to_link[0]["id"] == "EPIC-1"
     assert to_link[0]["candidate"]["clickup_id"] == "EPIC-CARD-X"
+
+
+@pytest.mark.asyncio
+async def test_sync_scoped_epic_does_not_orphan_other_epics_tasks(
+    mock_client: MagicMock, mock_config: MagicMock, tmp_path: Path
+) -> None:
+    """A scoped sync (epic="EPIC-1") must NOT report tasks belonging to other
+    epics as orphans — only tasks linked to the in-scope epic count."""
+    import json
+    plan_data = json.loads(FIXTURE.read_text())
+    plan_data["epics"][0]["pm_id"] = "EPIC-PM-1"
+    plan_data["epics"][1]["pm_id"] = "EPIC-PM-2"
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps(plan_data))
+
+    rel = "REL-FIELD-UUID"
+    mock_client.get_tasks_by_list = AsyncMock(
+        side_effect=[
+            # epics list
+            [
+                {"id": "EPIC-PM-1", "name": "EPIC-1: First epic",
+                 "status": {"status": "open"}},
+                {"id": "EPIC-PM-2", "name": "EPIC-2: Second epic",
+                 "status": {"status": "open"}},
+            ],
+            # backlog list: one task linked to EPIC-2 (out of scope), and one
+            # unknown task linked to EPIC-1 (in scope) matching no plan story.
+            [
+                {"id": "OTHER-EPIC-TASK", "name": "Belongs to epic two",
+                 "status": {"status": "open"},
+                 "custom_fields": [{"id": rel, "value": [{"id": "EPIC-PM-2"}]}]},
+                {"id": "EPIC1-ORPHAN", "name": "Stray task on epic one",
+                 "status": {"status": "open"},
+                 "custom_fields": [{"id": rel, "value": [{"id": "EPIC-PM-1"}]}]},
+            ],
+        ]
+    )
+
+    result = await pm_sync_sidecar_impl(
+        plan_json_path=p, client=mock_client, config=mock_config, epic="EPIC-1"
+    )
+
+    orphan_ids = {o["id"] for o in result["orphans_in_clickup"]}
+    # The EPIC-2-linked task must NOT be flagged as an orphan under EPIC-1 scope.
+    assert "OTHER-EPIC-TASK" not in orphan_ids
+    # The EPIC-1-linked, unmatched task IS a legitimate orphan.
+    assert "EPIC1-ORPHAN" in orphan_ids
+
+
+def test_strip_name_prefix_preserves_colon_in_story_name() -> None:
+    """The prefix stripper must only remove an actual EPIC-N[-Sk] id prefix,
+    not split on a colon that's part of the story name itself."""
+    from server.tools.sync import _strip_name_prefix
+
+    # Real prefix forms get stripped.
+    assert _strip_name_prefix("[SHIELD] EPIC-1-S1: Add retry: backoff logic") == (
+        "Add retry: backoff logic"
+    )
+    assert _strip_name_prefix("EPIC-2: Second epic") == "Second epic"
+    # A bare story name containing a colon is preserved (NOT truncated).
+    assert _strip_name_prefix("Note: do the thing") == "Note: do the thing"
+    # Legacy "Pn - " prefix still stripped.
+    assert _strip_name_prefix("P3 - Install Istio") == "Install Istio"
