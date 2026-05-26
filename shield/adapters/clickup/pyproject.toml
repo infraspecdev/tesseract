@@ -9,13 +9,15 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "pydantic>=2.0",
     "shield-adapters-common",
+    "shield-parsers",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=9.0.3", "jsonschema>=4.0", "respx>=0.21"]
+test = ["pytest>=9.0.3", "jsonschema>=4.0", "respx>=0.21", "pytest-cov>=5"]
 
 [tool.uv.sources]
 shield-adapters-common = { path = "../_common", editable = true }
+shield-parsers = { path = "../../parsers", editable = true }
 
 [build-system]
 requires = ["hatchling"]
