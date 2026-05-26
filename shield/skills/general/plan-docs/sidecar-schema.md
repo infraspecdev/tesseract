@@ -1,5 +1,7 @@
 # Plan Sidecar JSON Schema
 
+> For the purpose of each Shield artifact and how they relate, see [`shield/docs/artifacts.md`](../../../docs/artifacts.md).
+
 The schema versions in lock-step with `/plan` itself. Current version: **1.3**.
 
 ```jsonc
