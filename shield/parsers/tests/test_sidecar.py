@@ -46,7 +46,9 @@ def test_dataclasses_instantiate_with_minimal_args() -> None:
 
 from pathlib import Path
 
-from shield_parsers.sidecar import load_plan
+import pytest
+
+from shield_parsers.sidecar import PlanSchemaError, load_plan
 
 
 def test_load_plan_v14_minimal(tmp_path: Path) -> None:
@@ -64,3 +66,12 @@ def test_load_plan_v14_minimal(tmp_path: Path) -> None:
     assert len(plan.epics[0].stories) == 1
     assert plan.epics[0].stories[0].id == "EPIC-1-S1"
     assert plan.epics[0].stories[0].milestone_id == "M1"
+
+
+def test_load_plan_rejects_invalid_schema() -> None:
+    src = Path(__file__).parent / "fixtures" / "plan-invalid-missing-stories.json"
+    with pytest.raises(PlanSchemaError) as exc_info:
+        load_plan(src)
+    msg = str(exc_info.value)
+    # The error must name the failing field so callers can act on it.
+    assert "stories" in msg

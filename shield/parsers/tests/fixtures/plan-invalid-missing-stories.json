@@ -1,0 +1,8 @@
+{
+  "version": "1.4",
+  "project": "shield",
+  "name": "broken",
+  "epics": [
+    { "id": "EPIC-1", "name": "Missing stories" }
+  ]
+}

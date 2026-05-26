@@ -7,8 +7,24 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import jsonschema
+
 CURRENT_SCHEMA_VERSION = "1.4"
 MIN_SUPPORTED_VERSION = "1.0"
+
+
+class PlanSchemaError(ValueError):
+    """Raised when a plan.json file fails JSON Schema validation."""
+
+
+def _schema_path() -> Path:
+    # shield/parsers/shield_parsers/sidecar.py → shield/schema/plan-sidecar.schema.json
+    # parents[0]=shield_parsers/, parents[1]=parsers/, parents[2]=shield/
+    return Path(__file__).resolve().parents[2] / "schema" / "plan-sidecar.schema.json"
+
+
+def _load_schema() -> dict[str, Any]:
+    return json.loads(_schema_path().read_text(encoding="utf-8"))
 
 
 @dataclass
@@ -146,6 +162,17 @@ def load_plan(path: Path | str) -> Plan:
     """Load a plan.json sidecar from disk into a typed `Plan` object."""
     p = Path(path)
     raw = json.loads(p.read_text(encoding="utf-8"))
+
+    schema = _load_schema()
+    try:
+        jsonschema.validate(raw, schema)
+    except jsonschema.ValidationError as e:
+        # Path is a deque of keys; render it for the error message.
+        loc = "/".join(str(seg) for seg in e.absolute_path) or "<root>"
+        raise PlanSchemaError(
+            f"plan.json at {p} failed schema validation at {loc}: {e.message}"
+        ) from e
+
     known_top = {
         "version", "project", "name", "phase", "source_research", "source_prd",
         "prd_rubric_version_at_planning", "last_aligned_with", "milestones",
