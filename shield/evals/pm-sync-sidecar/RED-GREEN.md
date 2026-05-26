@@ -28,3 +28,10 @@ $ uv run shield/evals/run.py pm-sync-sidecar
   PASS invalid-epic-missing-stories   # schema_violation, exit 1
 === 3/3 cases passed ===
 ```
+
+## Backfill write-path (pm_backfill_ids)
+
+The `pm_backfill_ids` write-back tool has no eval.yaml case: the deterministic
+eval runner only validates static fixtures (validate_plan/validate_trd), not MCP
+tool orchestration. Its write path is regression-covered by unit tests in
+`shield/adapters/clickup/tests/test_backfill.py`.

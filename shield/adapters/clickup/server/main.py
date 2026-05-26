@@ -27,6 +27,7 @@ from server.tools import (
     status,
     bulk_update,
     rename,
+    backfill,
     action_log_tool,
 )
 
@@ -135,6 +136,7 @@ def _register_tools():
     status.register(mcp, client, config)
     bulk_update.register(mcp, client, action_log)
     rename.register(mcp, client, action_log, config)
+    backfill.register(mcp)
     action_log_tool.register(mcp, action_log)
 
 

@@ -17,6 +17,7 @@ def register(mcp):
             "adapter_mode": "hybrid",
             "capabilities": [
                 "pm_sync_sidecar",
+                "pm_backfill_ids",
                 "pm_bulk_create",
                 "pm_bulk_update",
                 "pm_get_status",

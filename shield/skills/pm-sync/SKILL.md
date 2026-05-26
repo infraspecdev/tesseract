@@ -36,6 +36,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
 |------|---------|
 | `pm_get_capabilities` | Check which operations the configured adapter supports |
 | `pm_sync_sidecar` | Diff plan.json sidecar against PM tool state (read-only) — requires plan_json_path arg |
+| `pm_backfill_ids` | Write created ClickUp task ids/urls back into plan.json (makes re-sync idempotent) |
 | `pm_bulk_create` | Create multiple tasks + set EPIC relationships |
 | `pm_link_story_to_epic` | Set list_relationship custom fields directly |
 | `pm_bulk_update` | Batch update status/assignee/priority |
@@ -69,7 +70,12 @@ Orchestrate project management operations through abstract PM adapters — sync 
    - Include orderindex with sequence * 1000 gaps
    - Include full card descriptions with all required sections
 6. Show results table                 → created tasks with IDs and URLs
-7. If pm_sync_sidecar flagged "to_link" items: use pm_link_story_to_epic to set relationship fields.
+7. pm_backfill_ids(plan_json_path=..., epics=[{id, pm_id, pm_url}...], stories=[{id, pm_id, pm_url}...])
+   → writes the new task ids/urls into plan.json so the next sync sees them as `match`
+   - Mapping is built from the pm_bulk_create `created[]` results correlated to the
+     plan epic/story ids the skill just sent (pm_id = task_id, pm_url = task_url).
+   - This fulfills the `outputs: plan_json` (mutated-in-place) contract.
+8. If pm_sync_sidecar flagged "to_link" items: use pm_link_story_to_epic to set relationship fields.
 ```
 
 ### Updating Stories
