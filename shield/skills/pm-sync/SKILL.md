@@ -69,6 +69,7 @@ Orchestrate project management operations through abstract PM adapters — sync 
    - Names auto-formatted as "{epic_id} - {name}" (e.g. "EPIC-1 - Install Istio")
    - Include orderindex with sequence * 1000 gaps
    - Include full card descriptions with all required sections
+   - Include milestone_id from each story in plan.json (e.g. "M1"); omit or null if none. pm_bulk_create turns it into a shield:ms:<id> tag on the ClickUp task.
 6. Show results table                 → created tasks with IDs and URLs
 7. pm_backfill_ids(plan_json_path=..., epics=[{id, pm_id, pm_url}...], stories=[{id, pm_id, pm_url}...])
    → writes the new task ids/urls into plan.json so the next sync sees them as `match`
