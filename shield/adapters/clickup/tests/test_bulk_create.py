@@ -180,7 +180,7 @@ async def test_bulk_create_format_warnings_for_missing_sections() -> None:
     assert len(result["format_warnings"]) == 2
     for warning in result["format_warnings"]:
         assert set(warning["missing_sections"]) == {
-            "Summary", "Tasks", "Context", "Acceptance Criteria"
+            "Tasks", "Context", "Acceptance Criteria"
         }
 
 
@@ -207,21 +207,65 @@ async def test_bulk_create_passes_assignee_priority_orderindex() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bulk_create_auto_prefixes_name_with_epic_id() -> None:
+async def test_bulk_create_formats_name_from_epic_label_and_index() -> None:
     client, action_log, config = _mocks()
+    config.naming.project_prefix = "SHIELD"
+    config.naming.story_format = "[{prefix}] {epic_id}-S{index}: {name}"
     stories = [{
         "name": "Install Istio",
-        "epic_id": "P3",
+        "epic_label": "EPIC-1",
+        "index": "1",
+        "epic_id": "86abc",            # opaque ClickUp id — link target only
         "description": _FULL_DESC,
     }]
 
     await pm_bulk_create_impl(
-        "BACKLOG", stories, False,
+        "BACKLOG", stories, True,
         client=client, action_log=action_log, config=config,
     )
 
     _list_id, task_data = client.create_task.await_args.args
-    assert task_data["name"] == "P3 - Install Istio"
+    assert task_data["name"] == "[SHIELD] EPIC-1-S1: Install Istio"
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_does_not_prefix_with_opaque_epic_id() -> None:
+    """With no epic_label, the caller's name is used verbatim — the opaque
+    relationship epic_id never leaks into the display name."""
+    client, action_log, config = _mocks()
+    stories = [{
+        "name": "[SHIELD] EPIC-1-S1: Already formatted",
+        "epic_id": "86abc",
+        "description": _FULL_DESC,
+    }]
+
+    await pm_bulk_create_impl(
+        "BACKLOG", stories, True,
+        client=client, action_log=action_log, config=config,
+    )
+
+    _list_id, task_data = client.create_task.await_args.args
+    assert task_data["name"] == "[SHIELD] EPIC-1-S1: Already formatted"
+    assert "86abc" not in task_data["name"]
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_heading_less_summary_not_flagged() -> None:
+    client, action_log, config = _mocks()
+    desc = (
+        "This story does a thing and matters because reasons.\n\n"
+        "## Tasks\n- [ ] do it\n\n"
+        "## Context / Notes\n- note\n\n"
+        "## Acceptance Criteria\n- [ ] verified"
+    )
+    stories = [{"name": "Story", "description": desc}]
+
+    result = await pm_bulk_create_impl(
+        "BACKLOG", stories, False,
+        client=client, action_log=action_log, config=config,
+    )
+
+    assert "format_warnings" not in result
 
 
 @pytest.mark.asyncio

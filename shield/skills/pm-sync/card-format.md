@@ -12,6 +12,9 @@ Example: `[My Project] P1a-S1: Create new infrastructure in Production VPC`
 Every story card MUST include a full description with these sections. Never create cards with one-line summaries — they are useless for execution.
 
 1. **Summary paragraph** — What this story does and why (2-3 sentences)
+   (The Summary is a heading-less lead paragraph — `pm_bulk_create` does not require a
+   literal `## Summary` heading. The Tasks, Context, and Acceptance Criteria headings
+   are required.)
 2. **Tasks** — Checklist of concrete actions using `- [ ]` markdown format. Each task should be specific enough to execute without ambiguity.
 3. **Context / Notes** — Key decisions, existing infrastructure IDs, dependencies, gotchas, or references to other stories. Include resource IDs (subnet IDs, ASG names, security group names) where known.
 4. **Acceptance Criteria** — Checklist of verifiable outcomes using `- [ ]` markdown format. These should be testable (e.g., "curl ifconfig.me returns the expected NAT IP" not "networking works").

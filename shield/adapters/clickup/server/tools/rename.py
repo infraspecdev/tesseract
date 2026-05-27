@@ -10,6 +10,7 @@ from shield_parsers.sidecar import load_plan
 from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
+from server.naming import format_epic_name, format_story_name, story_index
 from server.tools._helpers import _get_linked_epic_ids
 
 
@@ -48,6 +49,18 @@ async def pm_bulk_rename_impl(
     default_epic_fmt = epic_format or config.naming.epic_format
 
     plan = load_plan(plan_json_path)
+
+    # Correlate ClickUp story tasks back to plan stories by pm_id so we can
+    # recover the canonical bare name and the true S-index for {index} formats.
+    story_by_pm_id: dict[str, tuple[str, str]] = {}  # pm_id -> (index, name)
+    for plan_epic in plan.epics:
+        for plan_story in plan_epic.stories:
+            if plan_story.pm_id:
+                story_by_pm_id[plan_story.pm_id] = (
+                    story_index(plan_story.id),
+                    plan_story.name,
+                )
+
     epics_to_check = plan.epics
     if epic:
         epics_to_check = [e for e in plan.epics if e.id == epic]
@@ -90,7 +103,9 @@ async def pm_bulk_rename_impl(
         if epic_task:
             name = epic_task.get("name", "")
             clean_name = strip_re.sub("", name).strip() if strip_re else name
-            new_name = epic_epic_fmt.format(
+            new_name = format_epic_name(
+                epic_epic_fmt,
+                prefix=config.naming.project_prefix,
                 epic_id=epic_cfg.id,
                 name=clean_name,
                 epic_name=epic_cfg.name,
@@ -112,9 +127,17 @@ async def pm_bulk_rename_impl(
         for task in linked_tasks:
             name = task.get("name", "")
             clean_name = strip_re.sub("", name).strip() if strip_re else name
-            new_name = epic_story_fmt.format(
+            correlated = story_by_pm_id.get(task["id"])
+            if correlated:
+                idx, canonical_name = correlated
+            else:
+                idx, canonical_name = "", clean_name
+            new_name = format_story_name(
+                epic_story_fmt,
+                prefix=config.naming.project_prefix,
                 epic_id=epic_cfg.id,
-                name=clean_name,
+                index=idx,
+                name=canonical_name,
             )
             if name != new_name:
                 renames.append({

@@ -31,6 +31,8 @@ This command mutates `{plan_json}` = `{output_dir}/{feature}/plan.json` in place
    - Presents diff as table (match/new/updated/unlinked)
    - Asks user: apply all / pick which / cancel
    - For new stories: calls `pm_bulk_create`
+     - Stories are sent with `epic_label` + `index` + bare `name` (display name formatted
+       adapter-side); `epic_id` is the relationship link target only.
    - For updates: calls `pm_bulk_update`
    - **For each story with `design_refs[]`:** calls the adapter's
      `forward_design_refs(task_id, refs) -> ForwardResult`. Anchorless

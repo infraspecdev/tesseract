@@ -66,7 +66,13 @@ Orchestrate project management operations through abstract PM adapters — sync 
 3. Present diff table to user         → match / to_create / to_update / to_link
 4. User confirms which to create
 5. pm_bulk_create(list_id=config.lists.backlog.id, stories=[...], set_relationships=true)
-   - Names auto-formatted as "{epic_id} - {name}" (e.g. "EPIC-1 - Install Istio")
+   - Pass each story with: `name` (bare story title), `epic_label` (human epic id,
+     e.g. "EPIC-1"), `index` (story index, e.g. 1), and `epic_id` (the **ClickUp epic
+     task id** — used only to set the relationship link, never as a display prefix).
+   - The adapter formats the display name via `config.naming.story_format`
+     (e.g. `[{prefix}] {epic_id}-S{index}: {name}`). Do NOT pre-format the name yourself.
+   - For epic cards, pre-format the name with `config.naming.epic_format` so create
+     and a later `pm_bulk_rename` agree.
    - Include orderindex with sequence * 1000 gaps
    - Include full card descriptions with all required sections
    - Include milestone_id from each story in plan.json (e.g. "M1"); omit or null if none. pm_bulk_create turns it into a shield:ms:<id> tag on the ClickUp task.
