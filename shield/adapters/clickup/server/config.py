@@ -40,6 +40,7 @@ class TeamMember(BaseModel):
 
 
 class NamingConfig(BaseModel):
+    project_prefix: str = ""
     story_format: str = "[{epic_id}] {name}"
     epic_format: str = "[EPIC] {name} | [{epic_id}]"
 
@@ -148,6 +149,7 @@ def load_shield_config() -> SprintPlannerConfig | None:
             ),
         ),
         naming=NamingConfig(
+            project_prefix=naming.get("project_prefix", ""),
             story_format=naming.get("story_format", "[{epic_id}] {name}"),
             epic_format=naming.get("epic_format", "[EPIC] {name} | [{epic_id}]"),
         ),
