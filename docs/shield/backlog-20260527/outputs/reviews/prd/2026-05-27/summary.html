@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield PRD Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield PRD Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/prd/2026-05-27/</code>)</div>
+<h1 id="prd-review--shield-backlog">PRD Review — Shield Backlog</h1>
+<p><strong>Source:</strong> <code>docs/shield/backlog-20260527/prd.md</code> (snapshot: <code>source-prd.md</code>)
+<strong>PRD type:</strong> Lean (confirmed) · <strong>Date:</strong> 2026-05-27 · <strong>Reviewers:</strong> 13 dispatches (9 PM dims + agile-coach + tech-lead + dx-engineer + finops-analyst)</p>
+<h2 id="verdict-needs-work-composite-27-blocked-by-1-p0">Verdict: <strong>Needs Work</strong> (composite 2.7, blocked by 1 P0)</h2>
+<p>Strong, well-scoped lean PRD with an unusually clean conceptual model (manifest = reconciliation key, epic = removal gate, no ids). It's held back by one Critical gap (no risks/assumptions treatment) and a cluster of consistency issues — several introduced by the recent rapid edits (the reconciliation trigger and &quot;automatically&quot; wording).</p>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Weight</th>
+<th>Grade</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>product-manager (dims 1,2,3,7,8,11,12)</td>
+<td>1.0</td>
+<td><strong>C (2.17)</strong></td>
+<td>dim 1 &amp; 12 drag it down</td>
+</tr>
+<tr>
+<td>agile-coach (dim 4)</td>
+<td>1.0</td>
+<td><strong>B (3.0)</strong></td>
+<td>happy-path-only coverage</td>
+</tr>
+<tr>
+<td>tech-lead (dims 5,6)</td>
+<td>1.0</td>
+<td><strong>Informational</strong></td>
+<td>lean-exempt (real NFR notes below)</td>
+</tr>
+<tr>
+<td>dx-engineer (anti-patterns)</td>
+<td>0.7</td>
+<td><strong>B (3.0)</strong></td>
+<td>found edit-induced contradictions</td>
+</tr>
+<tr>
+<td>finops-analyst (dim 13)</td>
+<td>0.7</td>
+<td><strong>N/A</strong></td>
+<td>internal tool, no cost surface</td>
+</tr>
+<tr>
+<td><strong>Composite</strong></td>
+<td></td>
+<td><strong>2.69</strong></td>
+<td>≥2.5 but P0-gated → Needs Work</td>
+</tr>
+</tbody>
+</table>
+<h3 id="per-dimension-grades">Per-dimension grades</h3>
+<table>
+<thead>
+<tr>
+<th>Dim</th>
+<th>Name</th>
+<th>Grade</th>
+<th></th>
+<th>Dim</th>
+<th>Name</th>
+<th>Grade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Problem clarity</td>
+<td><strong>D</strong></td>
+<td></td>
+<td>8</td>
+<td>Legal/privacy</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Scope boundaries</td>
+<td>B</td>
+<td></td>
+<td>9</td>
+<td>GTM</td>
+<td>informational</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Measurable success</td>
+<td>C</td>
+<td></td>
+<td>10</td>
+<td>Support/CX</td>
+<td>informational</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Scenario coverage &amp; AC</td>
+<td>B</td>
+<td></td>
+<td>11</td>
+<td>Why now</td>
+<td>C</td>
+</tr>
+<tr>
+<td>5</td>
+<td>NFR coverage</td>
+<td>informational</td>
+<td></td>
+<td>12</td>
+<td>Risks &amp; assumptions</td>
+<td><strong>D</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Rollout &amp; ops</td>
+<td>informational</td>
+<td></td>
+<td>13</td>
+<td>Cost</td>
+<td>informational</td>
+</tr>
+<tr>
+<td>7</td>
+<td>RACI &amp; approvals</td>
+<td>A</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="p0--must-fix-before-plan-1">P0 — must fix before <code>/plan</code> (1)</h2>
+<p><strong>P0-1 · Dim 12a · Risks &amp; assumptions (Critical, F).</strong> No risks section: failure modes appear only as §7 counter-metrics, with no mitigations or named owners, and no validated/unvalidated assumptions framing.
+→ <em>Add a short lean risks table — each risk + mitigation + owner — and an assumptions list. The load-bearing unvalidated assumption is the whole no-hooks bet: &quot;agents reliably surface follow-ups conversationally.&quot; Mitigations mostly already exist (reconciliation-on-view → graveyard risk; atomic write → corruption).</em></p>
+<h2 id="p1--should-fix-for-quality-8">P1 — should fix for quality (8)</h2>
+<ul>
+<li><strong>P1-1 · Dim 1b (Important, F).</strong> Problem stated with zero baseline numbers. → Add one figure, e.g. &quot;~N follow-ups lost across the last M <code>/implement</code> runs.&quot;</li>
+<li><strong>P1-2 · Dim 1a (Critical, C).</strong> Personas are role categories, not a named persona. → Name P1 concretely (e.g. &quot;Ashwini, Shield maintainer running <code>/implement</code> daily&quot;).</li>
+<li><strong>P1-3 · Dim 3a (Critical, C).</strong> Three of four metrics use vague targets (&quot;Majority&quot;, &quot;often enough&quot;, &quot;one step&quot;). → Attach numbers + a time horizon (e.g. &quot;≥70% reach a terminal state within 30 days&quot;).</li>
+<li><strong>P1-4 · Dim 3d (Warning, F).</strong> No tracking owner/cadence for the metrics. → Name how it's measured (e.g. periodic <code>/backlog</code> audit, or git history of <code>backlog.json</code>).</li>
+<li><strong>P1-5 · Dim 11a/11b (Critical/Important, C).</strong> Why-now describes a standing gap, not a concrete trigger; cost-of-inaction unquantified. → Anchor to a real recent instance of lost follow-up work.</li>
+<li><strong>P1-6 · Dim 12b (Important, D).</strong> No validated-vs-unvalidated assumptions split. → See P0-1 fix.</li>
+<li><strong>P1-7 · Dim 4a (Critical, C) + 4b (Important, C).</strong> Flows are happy-path only; edge cases (missing <code>plan.json</code>, abandoned capture, concurrent writes to the single global <code>backlog.json</code>, two features sharing an epic id) unaddressed. → Add ≥1 error path per core flow; resolve the ordering-collision open question.</li>
+<li><strong>P1-8 · DX / matching rule (P1).</strong> With ids removed, the PRD never says <strong>how a proposed-new epic name is matched to the eventual real epic in <code>plan.json</code></strong> — this is the central removal-correctness decision and is left implicit. → Specify the match key (string match? user-confirmed at promotion?).</li>
+</ul>
+<h2 id="p2--nice-to-have-4">P2 — nice to have (4)</h2>
+<ul>
+<li><strong>Dim 2b (Critical, B).</strong> Several §10 out-of-scope items are bare; add a one-line why-deferred each.</li>
+<li><strong>Dim 2c (Warning, F).</strong> No scope-creep guard naming the likely creep ask + decision authority (@ashwinimanoj).</li>
+<li><strong>Dim 7c (Important, B).</strong> Sign-off N/A names no confirmer → &quot;N/A — internal tooling (confirmed by @ashwinimanoj)&quot;.</li>
+<li><strong>Dim 12c (Warning, B).</strong> Promote resolved §9 open questions into a short decision log.</li>
+</ul>
+<hr />
+<h2 id="dx-anti-patterns-cross-cutting">DX anti-patterns (cross-cutting)</h2>
+<p>Two of these were introduced by the recent edits — worth fixing before <code>/plan</code>:</p>
+<ol>
+<li><strong>(P1) M3 vs §9 contradiction.</strong> §8 M3 states &quot;<code>/backlog</code> reconciles on view&quot; as settled, but §9 still lists the reconciliation trigger as <strong>Open</strong> (&quot;on view / end of <code>/plan</code> / both&quot;). A developer can't implement M3 against an unsettled trigger. → Resolve §9 or soften M3.</li>
+<li><strong>(P2) &quot;removed automatically&quot; vs user-triggered.</strong> §6 says entries are &quot;removed <strong>automatically</strong>,&quot; but reconciliation runs on <code>/backlog</code> view (a user action) — and §6's own non-goal disclaims &quot;automatic surfacing machinery.&quot; → Replace &quot;automatically&quot; with &quot;on next <code>/backlog</code> view.&quot;</li>
+<li><strong>(P1) <code>kind</code> field undefined but assumed settled.</strong> §6 + M1 commit to &quot;epic/story/task granularity&quot; and M1 says &quot;schema defined,&quot; yet §9 leaves the backing <code>kind</code> field open. → Decide <code>kind</code> before M1.</li>
+<li><strong>(P1) Capture-from-skill interface undefined.</strong> M1 requires capture &quot;usable from any Shield skill&quot; but no command/helper/write-contract is specified. → Define the capture entrypoint.</li>
+<li><strong>(P1) Reconciliation match key</strong> — see P1-8.</li>
+<li><strong>(P1) Unfalsifiable metrics</strong> — see P1-3.</li>
+</ol>
+<p><strong>Clarity strengths (keep):</strong> problem-first ordering; the feature=key / epic=gate distinction is load-bearing and well-defined; non-goals are thorough with rationale; lean exemptions are explicit and correct.</p>
+<h2 id="tech-lead-nfr-notes-informational-lean-exempt--but-real">Tech-lead NFR notes (informational, lean-exempt — but real)</h2>
+<p>Not gating, but cheap to fold in now since the plan will need them:</p>
+<ul>
+<li><strong>Atomic write + concurrency</strong> for <code>backlog.json</code> (write-temp-then-rename; concurrent capture vs reconcile-rewrite is the primary failure case).</li>
+<li><strong>Schema versioning</strong> — add <code>schema_version</code> so the open §9 shape decisions (ordering, <code>kind</code>) can evolve via read-old/write-new.</li>
+<li><strong>Read-contract drift</strong> — reconciliation should no-op (never remove) if <code>manifest.json</code>/<code>plan.json</code> are missing or an older shape, not error.</li>
+<li><strong>Recovery posture</strong> — <code>backlog.json</code> is git-tracked, so a bad reconciliation is <code>git revert</code>-able; consider a dry-run/confirm before reconcile removals in v1.</li>
+</ul>
+<hr />
+<h2 id="recommended-next-steps">Recommended next steps</h2>
+<ol>
+<li>Fix <strong>P0-1</strong> (risks/assumptions) and the two edit-induced contradictions (#1, #2) — all small.</li>
+<li>Resolve the three M1-gating open questions (<code>kind</code>, ordering, reconciliation trigger) or mark them deferred-with-default.</li>
+<li>Specify the <strong>epic match key</strong> (P1-8) — it's the correctness heart of reconciliation.</li>
+<li>Re-run <code>/prd-review</code> or proceed to <code>/plan</code> once P0 is cleared.</li>
+</ol>
+<p><em>Files: <code>summary.md</code> (this), <code>enhanced-prd.md</code> (annotated), <code>review-comments.json</code>, <code>detailed/*.md</code> ×5.</em></p>
+
+</body>
+</html>

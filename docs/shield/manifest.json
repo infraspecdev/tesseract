@@ -76,6 +76,40 @@
         }
       },
       "updated": "2026-05-25T11:00:00+00:00"
+    },
+    {
+      "name": "backlog-20260527",
+      "artifacts": {
+        "research": false,
+        "prd": true,
+        "plan_json": false,
+        "plan_md": false,
+        "plan_arch_md": false
+      },
+      "reviews": {
+        "prd": {
+          "count": 2,
+          "latest": {
+            "date": "2026-05-27",
+            "path": "reviews/prd/2026-05-27_2",
+            "prd_type": "lean",
+            "composite_grade": "B",
+            "composite": 3.12,
+            "verdict": "Ready",
+            "reviewers": ["product-manager", "agile-coach", "tech-lead", "dx-engineer", "finops-analyst"],
+            "p0_count": 0,
+            "p1_count": 3,
+            "p2_count": 4
+          }
+        },
+        "plan": {
+          "count": 0
+        },
+        "code": {
+          "count": 0
+        }
+      },
+      "updated": "2026-05-27T00:00:00+00:00"
     }
   ]
 }

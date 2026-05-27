@@ -1,0 +1,71 @@
+{
+  "review_type": "prd",
+  "feature": "backlog-20260527",
+  "date": "2026-05-27",
+  "run": "_2",
+  "prd_type": "lean",
+  "source_prd": "source-prd.md",
+  "prior_run": "reviews/prd/2026-05-27",
+  "verdict": "Ready",
+  "composite": 3.12,
+  "p0_count": 0,
+  "p1_count": 3,
+  "p2_count": 4,
+  "personas": [
+    {"persona": "product-manager", "weight": 1.0, "grade": "B", "numeric": 3.33},
+    {"persona": "agile-coach", "weight": 1.0, "grade": "B", "numeric": 3.0},
+    {"persona": "tech-lead", "weight": 1.0, "grade": "informational", "numeric": null},
+    {"persona": "dx-engineer", "weight": 0.7, "grade": "B", "numeric": 3.0},
+    {"persona": "finops-analyst", "weight": 0.7, "grade": "N/A", "numeric": null}
+  ],
+  "dimensions": [
+    {"id": 1, "name": "Problem clarity", "grade": "C", "prev": "D"},
+    {"id": 2, "name": "Scope boundaries", "grade": "A", "prev": "B"},
+    {"id": 3, "name": "Measurable success", "grade": "A", "prev": "C"},
+    {"id": 4, "name": "Scenario coverage & AC", "grade": "B", "prev": "B"},
+    {"id": 5, "name": "NFR coverage", "grade": "informational"},
+    {"id": 6, "name": "Rollout & ops", "grade": "informational"},
+    {"id": 7, "name": "RACI & approvals", "grade": "A", "prev": "A"},
+    {"id": 8, "name": "Legal / privacy / compliance", "grade": "N/A"},
+    {"id": 9, "name": "GTM / customer-comms", "grade": "informational"},
+    {"id": 10, "name": "Support / CX impact", "grade": "informational"},
+    {"id": 11, "name": "Why now & cost-of-inaction", "grade": "C", "prev": "C"},
+    {"id": 12, "name": "Risks & assumptions", "grade": "A", "prev": "D"},
+    {"id": 13, "name": "Cost & resource impact", "grade": "N/A"}
+  ],
+  "gaps": [
+    {"priority": "P1", "id": "dx-only-when", "dim": null, "persona": "dx-engineer", "severity": "P1", "section": "§2", "evidence_line": 23,
+     "gap": "§2 Epic association says the entry is removed 'only when' its epic's work appears in plan.json — contradicts the manual-remove trigger added in §5/§6/§9.",
+     "suggestion": "Change 'only when' to 'when', or add '(or removed manually)'. Residual from the earlier gate-only model."},
+    {"priority": "P1", "id": "dx-capture-iface", "dim": null, "persona": "dx-engineer", "severity": "P1", "section": "§5/§8", "evidence_line": 97,
+     "gap": "Capture 'usable from any Shield skill' but no command/helper/write-contract specified.",
+     "suggestion": "Define the capture entrypoint; main /plan-level unknown."},
+    {"priority": "P1", "id": "1b", "dim": 1, "persona": "product-manager", "severity": "Important", "grade": "C", "section": "§3/§10",
+     "gap": "No quantified problem baseline; honestly logged as an unvalidated assumption.",
+     "suggestion": "Add one real figure from past /implement transcripts to harden why-now (1b/11a/11b)."},
+    {"priority": "P2", "id": "dx-ref-mechanism", "dim": null, "persona": "dx-engineer", "severity": "P2", "section": "§5/§9", "evidence_line": 104,
+     "gap": "Eager-removal 'transient promotion reference' mechanism is prose-only (how /plan//implement receive + act on it).",
+     "suggestion": "Pin the reference-passing mechanism in /plan/TRD."},
+    {"priority": "P2", "id": "dx-idempotent", "dim": null, "persona": "dx-engineer", "severity": "P2", "section": "§6", "evidence_line": 74,
+     "gap": "Eager prune and /backlog sweep overlap; interaction undefined.",
+     "suggestion": "State both triggers are idempotent (remove-if-present) so re-evaluation is a no-op."},
+    {"priority": "P2", "id": "2c", "dim": 2, "persona": "product-manager", "severity": "Warning", "grade": "C", "section": "§6/§11",
+     "gap": "No explicit scope-creep guard naming the likely creep ask + decision authority.",
+     "suggestion": "One-line guard: e.g. per-feature backlogs gated by @ashwinimanoj."},
+    {"priority": "P2", "id": "7c", "dim": 7, "persona": "product-manager", "severity": "Important", "grade": "B", "section": "§1",
+     "gap": "Sign-off N/A names no confirmer.",
+     "suggestion": "'N/A — internal tooling, confirmed by @ashwinimanoj'."}
+  ],
+  "informational_nfr_notes": [
+    "Schema versioning (6e): add schema_version to backlog.json + migration policy now.",
+    "Read-contract drift (6f): reconciliation treats unrecognized manifest.json/plan.json shapes as 'doubt → entry stays', never crash.",
+    "Perf budget (5a): state a /backlog sweep budget (e.g. <1s up to ~50 features) to trigger the §9 index decision.",
+    "Rollback (6c): name a trigger to fall back to manual-remove-only if eager prune wrongly removes."
+  ],
+  "delta_from_prior": {
+    "verdict": "Needs Work -> Ready",
+    "composite": "2.69 -> 3.12",
+    "p0": "1 -> 0",
+    "resolved": ["12a F->A (risks section added)", "12b ->A (assumptions tagged)", "3a/3d C->A (numeric targets + owner)", "1a ->A (named persona)", "2 B->A (scope rationale)"]
+  }
+}
