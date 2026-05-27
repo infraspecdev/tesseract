@@ -35,3 +35,16 @@ The `pm_backfill_ids` write-back tool has no eval.yaml case: the deterministic
 eval runner only validates static fixtures (validate_plan/validate_trd), not MCP
 tool orchestration. Its write path is regression-covered by unit tests in
 `shield/adapters/clickup/tests/test_backfill.py`.
+
+## Milestone tags (shield:ms:<id>)
+
+`pm_bulk_create` tags created story tasks with `shield:ms:<milestone_id>` (e.g.
+`shield:ms:m1`) when the story carries a `milestone_id`. This has no deterministic
+eval case for the same reason as backfill — the runner validates static plan.json
+fixtures, it does not execute `pm_bulk_create` to inspect the emitted ClickUp
+create payload. The tag-injection behavior (set / missing / null) is
+regression-covered by unit tests in
+`shield/adapters/clickup/tests/test_bulk_create.py`. The suite fixtures already
+carry `milestone_id: "M1"` on their stories, so the schema surface that feeds the
+tag (a valid `milestone_id` referencing a declared milestone) is exercised by the
+existing `v14-unsynced` / `v14-synced` cases.
