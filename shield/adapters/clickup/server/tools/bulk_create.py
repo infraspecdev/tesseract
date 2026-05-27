@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
+from server.tools._helpers import milestone_tag
 
 # Matches names already prefixed like "P3 - ", "P1a - ", "P2b - "
 _EPIC_PREFIX_RE = re.compile(r"^[A-Z]\d+[a-z]?\s*-\s*")
@@ -86,6 +87,8 @@ async def pm_bulk_create_impl(
             task_data["priority"] = priority_map[story["priority"]]
         if story.get("orderindex") is not None:
             task_data["orderindex"] = str(story["orderindex"])
+        if story.get("milestone_id"):
+            task_data["tags"] = [milestone_tag(story["milestone_id"])]
 
         try:
             result = await client.create_task(list_id, task_data)
