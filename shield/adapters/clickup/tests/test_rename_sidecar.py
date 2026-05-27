@@ -52,6 +52,22 @@ def _plan_with_pm_ids(tmp_path: Path, pm_ids: dict[int, str | None]) -> Path:
     return p
 
 
+def _plan_with_story_pm_ids(
+    tmp_path: Path,
+    epic_pm_ids: dict[int, str | None],
+    story_pm_ids: dict[tuple[int, int], str],
+) -> Path:
+    """Set epic and story pm_ids on the fixture, write to tmp_path."""
+    plan_data = json.loads(FIXTURE.read_text())
+    for idx, value in epic_pm_ids.items():
+        plan_data["epics"][idx]["pm_id"] = value
+    for (e_idx, s_idx), value in story_pm_ids.items():
+        plan_data["epics"][e_idx]["stories"][s_idx]["pm_id"] = value
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps(plan_data))
+    return p
+
+
 @pytest.mark.asyncio
 async def test_rename_previews_noncompliant_story_names(
     mock_client: MagicMock,
@@ -328,3 +344,79 @@ async def test_rename_apply_partial_failure_lands_in_failed(
     assert "update boom" in result["failed"][0]["error"]
     log_kwargs = mock_action_log.log_action.call_args.kwargs
     assert log_kwargs["status"] == "partial"
+
+
+@pytest.mark.asyncio
+async def test_rename_does_not_crash_on_prefix_index_format(
+    mock_client: MagicMock,
+    mock_config: MagicMock,
+    mock_action_log: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """A story_format using {prefix} and {index} must not raise KeyError."""
+    mock_config.naming.project_prefix = "SHIELD"
+    mock_config.naming.story_format = "[{prefix}] {epic_id}-S{index}: {name}"
+    # Story EPIC-1-S1 synced to STORY-PM-1.
+    p = _plan_with_story_pm_ids(
+        tmp_path, {0: "EPIC-PM-1"}, {(0, 0): "STORY-PM-1"}
+    )
+
+    backlog_tasks = [
+        {
+            "id": "STORY-PM-1",
+            "name": "Story one",
+            "custom_fields": [
+                {"id": "REL-FIELD-UUID", "value": [{"id": "EPIC-PM-1"}]}
+            ],
+        }
+    ]
+    mock_client.get_tasks_by_list = AsyncMock(side_effect=[backlog_tasks, []])
+
+    result = await pm_bulk_rename_impl(
+        plan_json_path=str(p),
+        client=mock_client,
+        config=mock_config,
+        action_log=mock_action_log,
+        apply=False,
+    )
+
+    story_renames = [r for r in result["renames"] if r["type"] == "story"]
+    assert len(story_renames) == 1
+    # index recovered from plan story id EPIC-1-S1 -> "1", name from plan.
+    assert story_renames[0]["new_name"] == "[SHIELD] EPIC-1-S1: Story one"
+
+
+@pytest.mark.asyncio
+async def test_rename_uncorrelated_task_falls_back_to_stripped_name(
+    mock_client: MagicMock,
+    mock_config: MagicMock,
+    mock_action_log: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """A linked task with no matching plan story (pm_id) keeps working off its
+    stripped current name, with empty index."""
+    mock_config.naming.story_format = "{epic_id}: {name}"
+    p = _plan_with_pm_ids(tmp_path, {0: "EPIC-PM-1"})  # story pm_ids stay null
+
+    backlog_tasks = [
+        {
+            "id": "UNKNOWN-TASK",
+            "name": "Story one",
+            "custom_fields": [
+                {"id": "REL-FIELD-UUID", "value": [{"id": "EPIC-PM-1"}]}
+            ],
+        }
+    ]
+    mock_client.get_tasks_by_list = AsyncMock(side_effect=[backlog_tasks, []])
+
+    result = await pm_bulk_rename_impl(
+        plan_json_path=str(p),
+        client=mock_client,
+        config=mock_config,
+        action_log=mock_action_log,
+        apply=False,
+    )
+
+    story_renames = [r for r in result["renames"] if r["type"] == "story"]
+    assert len(story_renames) == 1
+    assert story_renames[0]["new_name"] == "EPIC-1: Story one"
