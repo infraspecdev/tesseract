@@ -2,33 +2,41 @@
 
 from __future__ import annotations
 
-import re
-
 from mcp.server.fastmcp import FastMCP
 
 from server.action_log import ActionLog
 from server.clickup_client import ClickUpClient, ClickUpAPIError
 from server.config import SprintPlannerConfig
+from server.naming import format_story_name
 from server.tools._helpers import milestone_tag
 
-# Matches names already prefixed like "P3 - ", "P1a - ", "P2b - "
-_EPIC_PREFIX_RE = re.compile(r"^[A-Z]\d+[a-z]?\s*-\s*")
-
-# Required sections in card descriptions
-_REQUIRED_SECTIONS = ["Summary", "Tasks", "Context", "Acceptance Criteria"]
+# Required *headings* in card descriptions. "Summary" is intentionally absent:
+# per card-format.md the summary is a heading-less lead paragraph.
+_REQUIRED_SECTIONS = ["Tasks", "Context", "Acceptance Criteria"]
 
 
-def _auto_format_name(story: dict) -> str:
-    """Auto-prefix task name with epic_id if not already prefixed."""
+def _display_name(story: dict, config: SprintPlannerConfig) -> str:
+    """Canonical display name.
+
+    When the caller supplies a human epic label, format via the shared
+    formatter; otherwise use the caller's name verbatim. The relationship
+    target ``epic_id`` (an opaque ClickUp task id) is never used as a prefix.
+    """
     name = story["name"]
-    epic_id = story.get("epic_id")
-    if epic_id and not _EPIC_PREFIX_RE.match(name):
-        return f"{epic_id} - {name}"
+    epic_label = story.get("epic_label")
+    if epic_label:
+        return format_story_name(
+            config.naming.story_format,
+            prefix=config.naming.project_prefix,
+            epic_id=epic_label,
+            index=story.get("index", ""),
+            name=name,
+        )
     return name
 
 
 def _check_description_sections(description: str | None) -> list[str]:
-    """Check for required sections in a card description. Returns missing section names."""
+    """Return required-heading names missing from a card description."""
     if not description:
         return list(_REQUIRED_SECTIONS)
     desc_lower = description.lower()
@@ -67,8 +75,8 @@ async def pm_bulk_create_impl(
     format_warnings = []
 
     for story in stories:
-        # Auto-format name with epic prefix
-        formatted_name = _auto_format_name(story)
+        # Canonical display name via the shared formatter
+        formatted_name = _display_name(story, config)
         task_data: dict = {"name": formatted_name}
 
         # Validate description sections
