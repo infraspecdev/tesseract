@@ -1,0 +1,16 @@
+[project]
+name = "shield-adapters-common"
+version = "0.1.0"
+description = "Shared types and protocols for Shield PM adapters (Jira, Confluence, ClickUp, Notion)"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=9.0.3"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["shield_adapters_common"]

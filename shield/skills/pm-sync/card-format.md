@@ -83,3 +83,19 @@ The following custom fields may exist depending on the PM adapter configuration.
 | `POD` | Both | Infra, Platform, Experience, etc. |
 
 Field IDs are in the config under `custom_fields`.
+
+## Milestone tags
+
+`/pm-sync` tags each created story task with its milestone using a Shield-owned
+namespace:
+
+    shield:ms:<milestone_id>      e.g.  shield:ms:m1
+
+- Set at **creation time** by `pm_bulk_create` when the story dict carries a
+  `milestone_id`. Keyed on the stable `milestone_id` (not the mutable milestone
+  name), and lowercased because ClickUp lowercases tag names.
+- The `shield:ms:` prefix marks the tag as machine-managed — do not hand-edit.
+- **Deferred (not yet implemented):** reassignment (a story moving M1 → M2 on a
+  re-sync) and clear (milestone_id → null) are NOT reconciled. Milestone tags are
+  applied at creation only. A future reconcile step would find existing tags by
+  the `shield:ms:` prefix.

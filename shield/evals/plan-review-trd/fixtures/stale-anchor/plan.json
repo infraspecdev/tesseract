@@ -1,0 +1,35 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "stale",
+  "phase": "v1",
+  "milestones": [
+    {"id": "M1", "name": "x", "outcome": "y", "exit_criteria": ["z"], "depends_on": []}
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Refund endpoint",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Story with stale anchor",
+          "status": "ready",
+          "milestone_id": "M1",
+          "description": "Anchor points at a deleted section.",
+          "tasks": ["task"],
+          "acceptance_criteria": ["fails the gate"],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "section_id": "api-create-user",
+              "anchor_url": "trd.md#api-create-user",
+              "label": "§7"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {"created_at": "2026-05-25", "domains": ["backend"]}
+}

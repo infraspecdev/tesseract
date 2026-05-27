@@ -1,5 +1,7 @@
 # Manifest & Index Schema
 
+> For the purpose of each Shield artifact and how they relate, see [`shield/docs/artifacts.md`](../../docs/artifacts.md).
+
 All Shield skills MUST update `{manifest}` = `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html` (the `global_index_html` registry entry) after writing any output.
 
 ## manifest.json (v2)

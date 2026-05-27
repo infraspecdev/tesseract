@@ -1,0 +1,45 @@
+{
+  "version": "1.4",
+  "project": "shield",
+  "name": "pm-sync-sidecar",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "MS one",
+      "outcome": "ships X",
+      "exit_criteria": ["X exists"]
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Epic name",
+      "pm_id": null,
+      "pm_url": null,
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Do the first thing",
+          "status": "ready",
+          "description": "Does the first thing.",
+          "tasks": ["step 1"],
+          "acceptance_criteria": ["it works"],
+          "milestone_id": "M1",
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Do the second thing",
+          "status": "ready",
+          "description": "Does the second thing.",
+          "tasks": ["step 1"],
+          "acceptance_criteria": ["it works"],
+          "milestone_id": "M1",
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ]
+}

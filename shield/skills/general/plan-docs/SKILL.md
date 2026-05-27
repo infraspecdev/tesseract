@@ -13,11 +13,13 @@ Write each artifact using the Write tool to **exactly** these paths:
 
 | Registry key | Resolved path | Purpose |
 |---|---|---|
-| `plan_json` | `{output_dir}/{feature}/plan.json` | Machine-readable sidecar (source of truth for stories/tasks/ACs, PM-sync target) |
-| `plan_arch_md` | `{output_dir}/{feature}/plan-architecture.md` | Canonical architecture markdown — the "why and how" |
+| `plan_json` | `{output_dir}/{feature}/plan.json` | Machine-readable sidecar (source of truth for stories/tasks/ACs/design_refs, PM-sync target) |
+| `plan_trd_md` | `{output_dir}/{feature}/trd.md` | Canonical Technical Requirements Document — 14 sections, domain-aware. Replaces the legacy `plan-architecture.md`. |
 | `plan_md` | `{output_dir}/{feature}/plan.md` | Canonical detailed-plan markdown — the "what to do" (narrative view of plan.json) |
-| `plan_arch_html` | `{output_dir}/{feature}/outputs/plan-architecture.html` | Rendered architecture HTML (rendered from `{plan_arch_md}`) |
+| `plan_trd_html` | `{output_dir}/{feature}/outputs/trd.html` | Rendered TRD HTML (rendered from `{plan_trd_md}`) |
 | `plan_html` | `{output_dir}/{feature}/outputs/plan.html` | Rendered detailed plan HTML (rendered from `{plan_md}`) |
+
+**Legacy keys** (`plan_arch_md`, `plan_arch_html`): kept in `shield/schema/output-paths.yaml` with `deprecated: true` for a transition window. `/plan` no longer writes to them. Existing `plan-architecture.md` files in old feature folders are **never** modified or deleted by `/plan` re-runs — see "Re-run behavior" in `trd-template.md`.
 
 The global dashboard `{output_dir}/index.html` is updated as a side effect of every run (cross-feature artifact, not a per-run deliverable).
 
@@ -31,9 +33,9 @@ Numbered run subfolders (`plan/{N}-{slug}/`) are gone — each plan is a single 
 
 ## Critical: Sidecar First, Markdown Second, HTML Last
 
-**Always generate the sidecar JSON first, then the markdown sources, then render HTML.** The sidecar (`{plan_json}`) is the structured source of truth for stories/tasks/ACs (used by PM-sync and tooling). The markdown files (`{plan_md}`, `{plan_arch_md}`) are the human-readable narrative deliverables — `plan.md` is a markdown render of plan.json's stories with prose context, and `plan-architecture.md` is the hand-authored "why and how" document. The HTML files are rendered from the markdown via `scripts/render-markdown.sh` (the same helper `/prd` uses), so they share the strict CommonMark guarantees.
+**Always generate the sidecar JSON first, then the markdown sources, then render HTML.** The sidecar (`{plan_json}`) is the structured source of truth for stories/tasks/ACs/design_refs (used by PM-sync and tooling). The markdown files (`{plan_md}`, `{plan_trd_md}`) are the human-readable narrative deliverables — `plan.md` is a markdown render of plan.json's stories with prose context, and `trd.md` is the canonical Technical Requirements Document (14 sections, see `trd-template.md`). The HTML files are rendered from the markdown via `scripts/render-markdown.sh` (the same helper `/prd` uses), so they share the strict CommonMark guarantees.
 
-When anything changes (AC edits, status updates, PM sync), the sidecar is updated, the markdown is regenerated from the sidecar (plus preserved architecture prose), and the HTML is re-rendered.
+When anything changes (AC edits, status updates, PM sync), the sidecar is updated, the markdown is regenerated from the sidecar (plus preserved TRD prose), and the HTML is re-rendered.
 
 ## Plan Sidecar JSON
 
@@ -57,18 +59,29 @@ The sidecar MUST be written to `{plan_json}` = `{output_dir}/{feature}/plan.json
 
 After the sidecar is created, generate the two markdown source files. These are the canonical, human-readable deliverables. HTML is rendered from them.
 
-### 1. `{plan_arch_md}` — Architecture / ADR
+### 1. `{plan_trd_md}` — Technical Requirements Document
 
-The "why and how" — explains the problem, current state, proposed solution, and key decisions.
+The 14-section TRD that replaces the legacy `plan-architecture.md`. **See
+`trd-template.md` for the full template, per-section domain-aware authoring
+guidance, the `n/a — <reason>` escape pattern, the anchor convention, and the
+provenance-stamp + atomic-write rules.**
 
-**Structure:**
-1. Phase heading with timeline
-2. Problem — what's broken or missing
-3. Context — existing infrastructure, current state
-4. Solution — approach, diagrams, "what changes" table
-5. Key decisions and trade-offs
-6. Deliverables
-7. Rollback strategy
+**Authoring loop:**
+1. Detect the dominant domain (read `.shield.json` `plan.template_override` first;
+   otherwise scan repo markers per `shield/commands/plan.md`).
+2. For each of the 14 sections in `shield/schema/trd-sections.yaml` (in canonical
+   order §1 → §14):
+   - Emit `## §N Title {#section-id}` with the exact slug from the YAML.
+   - Choose the per-section authoring guidance from `trd-template.md`:
+     - backend / infra / mixed (mixed emits `[backend]` and `[infra]` labeled
+       subsections inside `domain_divergent` sections).
+   - Fill the body with concrete content. If a section genuinely does not apply,
+     write `n/a — <reason>` on a single line (no vague TBDs, no silent omissions).
+3. Stamp the first line after frontmatter:
+   `<!-- generated by /plan v{shield-plugin-version} on {YYYY-MM-DD} -->`.
+4. Write `trd.md.tmp` first, then rename to `trd.md` (atomic write — never leave
+   a partial file behind).
+5. **Do not delete** any existing `plan-architecture.md` in the same folder.
 
 ### 2. `{plan_md}` — Detailed Execution Plan
 
@@ -89,11 +102,11 @@ After the markdown sources are written, render both into `{output_dir}/{feature}
 cd "{output_dir}/{feature}"
 mkdir -p outputs
 
-# Architecture
+# TRD
 "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
-  --md    plan-architecture.md \
-  --shell plan-architecture.shell.html \
-  --out   outputs/plan-architecture.html
+  --md    trd.md \
+  --shell trd.shell.html \
+  --out   outputs/trd.html
 
 # Detailed plan
 "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
@@ -145,10 +158,11 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 1a | Detect prior PRD in feature folder | skip if no PRD exists | No |
 | 2 | Check for prior research / gather context | skip if no research exists | No |
 | 2a | Milestone resolution — extract from PRD §15/§8 or invoke `shield:milestone-coverage` as fallback; user refines | always | Yes |
-| 3 | Generate `{plan_json}` sidecar | always | Yes |
-| 4 | Generate `{plan_arch_md}` (architecture markdown) | always | Yes |
+| 2b | Detect dominant domain — `.shield.json` `plan.template_override` first, then repo markers (backend / infra / mixed) | always | Yes |
+| 3 | Generate `{plan_json}` sidecar (stories include `design_refs[]` pointing into the TRD) | always | Yes |
+| 4 | Generate `{plan_trd_md}` per the 14-section TRD template (atomic write, provenance stamp) | always | Yes |
 | 5 | Generate `{plan_md}` (detailed plan markdown) | always | Yes |
-| 6 | Render `{plan_arch_html}` and `{plan_html}` via render-markdown.sh | always | Yes |
+| 6 | Render `{plan_trd_html}` and `{plan_html}` via render-markdown.sh | always | Yes |
 | 7 | Update manifest + index.html | always | Yes |
 
 ## Workflow
@@ -180,15 +194,17 @@ Before generating stories, resolve milestones:
 
 - **If the user explicitly opts out of milestones:** sidecar stores `milestones: []`. All subsequent stories will have `milestone_id: null`. This is the back-compat single-implicit-milestone case (see `sidecar-schema.md`).
 
-3. **Read `.shield.json`** — get project name and active domains
+3. **Read `.shield.json`** — get project name, active domains, and `plan.template_override` (`backend` | `infra` | `mixed` | unset → auto-detect)
+3a. **Resolve domain** — if `plan.template_override` is set, use it; otherwise walk repo markers per `shield/commands/plan.md` §Domain detection. If both infra and backend markers are present, domain is `mixed`. The chosen domain selects per-section TRD guidance (see `trd-template.md`).
 4. **Generate sidecar JSON first (milestone-by-milestone)** — write `{plan_json}`:
    - For each milestone in `milestones[]` (resolved in §2a), generate the epics and stories needed to satisfy that milestone's exit criteria. Each story is born with `milestone_id` set to the milestone's `id`.
+   - For each story, populate `design_refs[]`: at minimum one entry pointing at the TRD section the story implements (typically §7 high-level-design, §10 milestones, or §11 apis-involved). For LLD references, emit a placeholder with `doc='lld'`, `component=null`, `anchor_url=null`, `label='TODO: link when /lld <component> lands'`. See `sidecar-schema.md` "design_refs[]" for the exact field shape and merge rules.
    - When `milestones: []` (opt-out case), generate stories flat with `milestone_id: null` on each — the back-compat path.
    - Acceptance criteria per story remain the same testable standard; exit criteria on the milestone are the higher-level rollup.
-5. **Verify sidecar quality** — every story has tasks and testable acceptance criteria
-6. **Generate `{plan_arch_md}`** (architecture markdown) — the "thinking" document, hand-authored from gathered context + PRD + research
+5. **Verify sidecar quality** — every story has tasks, testable acceptance criteria, and at least one `design_refs[]` entry (TRD anchor or LLD placeholder)
+6. **Generate `{plan_trd_md}`** — emit the 14-section TRD per `trd-template.md`. Atomic write (`trd.md.tmp` → rename). Provenance stamp on the first line after frontmatter. **Do not delete or modify any existing `plan-architecture.md`.**
 7. **Generate `{plan_md}`** (detailed plan markdown) — renders stories from the sidecar as markdown sections; includes a `<!-- sidecar: ./plan.json -->` reference at top
-8. **Render HTML** — invoke `render-markdown.sh` per the "HTML Render" section above to produce `{plan_arch_html}` and `{plan_html}` under `{output_dir}/{feature}/outputs/`
+8. **Render HTML** — invoke `render-markdown.sh` per the "HTML Render" section above to produce `{plan_trd_html}` and `{plan_html}` under `{output_dir}/{feature}/outputs/`
 9. **Invoke `shield:summarize`** — produce a plan summary
 10. **Offer next steps:**
    - `/plan-review` — multi-agent review of the plan
@@ -198,12 +214,17 @@ Before generating stories, resolve milestones:
 
 | Mistake | Fix |
 |---|---|
-| Writing only the markdown without HTML render | You MUST produce all 5 artifacts: `{plan_json}` + `{plan_md}` + `{plan_arch_md}` + `{plan_html}` + `{plan_arch_html}` |
+| Writing only the markdown without HTML render | You MUST produce all 5 artifacts: `{plan_json}` + `{plan_md}` + `{plan_trd_md}` + `{plan_html}` + `{plan_trd_html}` |
 | Skipping HTML because "it's simpler" | HTML is required. Render from the markdown via `render-markdown.sh`. Hand-rendered HTML or pandoc/python-markdown output is NOT acceptable (same rules as `/prd`) |
 | Generating markdown or HTML without the sidecar | Always write `{plan_json}` first; markdown is derived from it, HTML is derived from markdown |
+| Writing `plan-architecture.md` instead of `trd.md` | The plan-architecture.md path is deprecated. Always write the 14-section TRD to `{plan_trd_md}` = `{output_dir}/{feature}/trd.md`. Existing `plan-architecture.md` files are left in place but never created or overwritten by `/plan`. |
+| Omitting the `{#section-id}` anchor on TRD headers | Every TRD section header MUST carry the kebab-case anchor from `shield/schema/trd-sections.yaml`. The validator and `/plan-review` reject TRDs without anchors. |
+| Leaving a TRD section body as "TBD" or empty | Either fill the section with concrete content OR write `n/a — <reason>` on a single line. Vague TBDs and silent omissions fail the eval. |
+| Writing an extra (15th+) section in the TRD | The slug allow-list in `trd-sections.yaml` is exhaustive. Drift-by-addition fails the eval. |
 | Writing under a numbered run folder (`plan/{N}-{slug}/`) | Numbered run subfolders are gone — write the markdown sources flat at `{output_dir}/{feature}/` and render HTML under `{output_dir}/{feature}/outputs/` |
 | Vague acceptance criteria | Testable: specific commands, measurable states |
 | Missing acceptance criteria on stories | Every story MUST have at least 1 criterion |
+| Missing `design_refs[]` on stories | Every story SHOULD carry at least one TRD design_ref. LLD refs may be TODO placeholders until `/lld` lands. |
 | Empty tasks list | Every story needs concrete, actionable tasks |
-| Not reading .shield.json | Project name and domains come from the marker |
+| Not reading .shield.json | Project name, domains, and `plan.template_override` come from the marker |
 | Writing to `shield/plan.json` (old path) | Write to `{plan_json}` = `{output_dir}/{feature}/plan.json` — plan sidecar at feature root |

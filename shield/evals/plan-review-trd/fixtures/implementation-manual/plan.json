@@ -1,0 +1,35 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "imp-manual",
+  "phase": "v1",
+  "milestones": [
+    {"id": "M1", "name": "x", "outcome": "y", "exit_criteria": ["z"], "depends_on": []}
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Add helper",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement add() helper",
+          "status": "ready",
+          "milestone_id": "M1",
+          "description": "Write the function.",
+          "tasks": ["task"],
+          "acceptance_criteria": ["test passes"],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "section_id": "high-level-design",
+              "anchor_url": "trd.md#high-level-design",
+              "label": "§7"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {"created_at": "2026-05-25", "domains": ["backend"]}
+}

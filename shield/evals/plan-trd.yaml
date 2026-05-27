@@ -1,0 +1,81 @@
+# shield/evals/plan-trd.yaml
+# Eval suite wiring TRD fixtures to the deterministic validators.
+# Invoked by `uv run shield/evals/run.py plan-trd`.
+
+name: plan-trd
+description: >
+  Deterministic eval for the /plan TRD emitter. Each case binds a fixture
+  directory to an expected outcome (PASS or a named error code from
+  validate_trd.py / validate_plan.py).
+
+cases:
+  # Positive fixtures — must pass both validators.
+  - name: positive-backend
+    fixture: fixtures/positive-backend
+    expect:
+      trd: PASS
+      plan: PASS
+  - name: positive-infra
+    fixture: fixtures/positive-infra
+    expect:
+      trd: PASS
+      plan: PASS
+  - name: positive-mixed
+    fixture: fixtures/positive-mixed
+    expect:
+      trd: PASS
+      plan: PASS
+
+  # Missing-section negatives — one per required slug.
+  - name: missing-document-overview
+    fixture: fixtures/missing-document-overview
+    expect: { trd: "missing_section:document-overview" }
+  - name: missing-problem-statement
+    fixture: fixtures/missing-problem-statement
+    expect: { trd: "missing_section:problem-statement" }
+  - name: missing-objective-scope
+    fixture: fixtures/missing-objective-scope
+    expect: { trd: "missing_section:objective-scope" }
+  - name: missing-product-journey
+    fixture: fixtures/missing-product-journey
+    expect: { trd: "missing_section:product-journey" }
+  - name: missing-functional-requirements
+    fixture: fixtures/missing-functional-requirements
+    expect: { trd: "missing_section:functional-requirements" }
+  - name: missing-non-functional-requirements
+    fixture: fixtures/missing-non-functional-requirements
+    expect: { trd: "missing_section:non-functional-requirements" }
+  - name: missing-high-level-design
+    fixture: fixtures/missing-high-level-design
+    expect: { trd: "missing_section:high-level-design" }
+  - name: missing-alternatives-considered
+    fixture: fixtures/missing-alternatives-considered
+    expect: { trd: "missing_section:alternatives-considered" }
+  - name: missing-cross-cutting-concerns
+    fixture: fixtures/missing-cross-cutting-concerns
+    expect: { trd: "missing_section:cross-cutting-concerns" }
+  - name: missing-milestones
+    fixture: fixtures/missing-milestones
+    expect: { trd: "missing_section:milestones" }
+  - name: missing-apis-involved
+    fixture: fixtures/missing-apis-involved
+    expect: { trd: "missing_section:apis-involved" }
+  - name: missing-open-questions
+    fixture: fixtures/missing-open-questions
+    expect: { trd: "missing_section:open-questions" }
+  - name: missing-references
+    fixture: fixtures/missing-references
+    expect: { trd: "missing_section:references" }
+  - name: missing-rollback-strategy
+    fixture: fixtures/missing-rollback-strategy
+    expect: { trd: "missing_section:rollback-strategy" }
+
+  # Drift-by-addition negative.
+  - name: extra-section
+    fixture: fixtures/extra-section
+    expect: { trd: "unexpected_section:drift-section" }
+
+  # Vague-TBD negative.
+  - name: vague-tbd
+    fixture: fixtures/vague-tbd
+    expect: { trd: "vague_section:non-functional-requirements" }

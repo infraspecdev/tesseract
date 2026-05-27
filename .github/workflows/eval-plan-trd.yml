@@ -1,0 +1,57 @@
+name: Eval — plan-trd + plan-review-trd
+# Recurring CI gate for the /plan TRD emitter and /plan-review TRD gates. Runs
+# on every PR or push that touches the TRD template, sidecar schema,
+# validators, eval fixtures, or plan-review gates.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shield/skills/general/plan-docs/**'
+      - 'shield/skills/general/plan-review/**'
+      - 'shield/schema/**'
+      - 'shield/scripts/validate_trd.py'
+      - 'shield/scripts/validate_plan.py'
+      - 'shield/scripts/check_plan_review_trd.py'
+      - 'shield/evals/run.py'
+      - 'shield/evals/plan-trd.yaml'
+      - 'shield/evals/plan-trd/**'
+      - 'shield/evals/plan-review-trd.yaml'
+      - 'shield/evals/plan-review-trd/**'
+      - '.github/workflows/eval-plan-trd.yml'
+  pull_request:
+    paths:
+      - 'shield/skills/general/plan-docs/**'
+      - 'shield/skills/general/plan-review/**'
+      - 'shield/schema/**'
+      - 'shield/scripts/validate_trd.py'
+      - 'shield/scripts/validate_plan.py'
+      - 'shield/scripts/check_plan_review_trd.py'
+      - 'shield/evals/run.py'
+      - 'shield/evals/plan-trd.yaml'
+      - 'shield/evals/plan-trd/**'
+      - 'shield/evals/plan-review-trd.yaml'
+      - 'shield/evals/plan-review-trd/**'
+      - '.github/workflows/eval-plan-trd.yml'
+
+jobs:
+  plan-trd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run plan-trd eval
+        # 3 positive fixtures must PASS; 16 negatives must FAIL with named
+        # error codes. Any drift in the slug allow-list or the /plan emitter
+        # surfaces here before merge.
+        run: uv run --with pyyaml --with jsonschema shield/evals/run.py plan-trd
+
+  plan-review-trd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run plan-review-trd eval
+        # 5 cases: clean / stale-anchor / duplication / paraphrased / impl-manual.
+        # Asserts /plan-review's deterministic gates 0a–0e flag the right
+        # inputs and pass clean fixtures.
+        run: uv run --with pyyaml --with jsonschema shield/evals/run.py plan-review-trd

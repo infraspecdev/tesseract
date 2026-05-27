@@ -23,13 +23,15 @@ paths:
   prd_meta_json:      "{feature_dir}/prd.meta.json"
   plan_json:          "{feature_dir}/plan.json"
   plan_md:            "{feature_dir}/plan.md"
-  plan_arch_md:       "{feature_dir}/plan-architecture.md"
+  plan_trd_md:        "{feature_dir}/trd.md"
+  plan_arch_md:       "{feature_dir}/plan-architecture.md"   # deprecated — superseded by plan_trd_md
 
   # Per-feature rendered
   feature_outputs:    "{feature_dir}/outputs"
   prd_html:           "{feature_outputs}/prd.html"
   plan_html:          "{feature_outputs}/plan.html"
-  plan_arch_html:     "{feature_outputs}/plan-architecture.html"
+  plan_trd_html:      "{feature_outputs}/trd.html"
+  plan_arch_html:     "{feature_outputs}/plan-architecture.html"  # deprecated — superseded by plan_trd_html
 
   # Reviews (source)
   review_dir:           "{feature_dir}/reviews/{review_type}/{date}{_counter}"
@@ -60,3 +62,11 @@ derived:
   - review_outputs_dir  # parent dir for rendered review HTML
   - global_outputs_dir  # top-level rendered output dir
   - global_index_html   # top-level dashboard, regenerated on every write
+
+# Deprecated keys — declared above with `deprecated:` comment markers.
+# Listed here so the lint-coverage check accepts them as "intentionally
+# unwritten" by /plan. Remove from this list and from the path block when
+# the deprecation window closes (target: shield 3.0 or a follow-up PR).
+deprecated:
+  - plan_arch_md        # superseded by plan_trd_md (shield 2.20 cutover)
+  - plan_arch_html      # superseded by plan_trd_html (shield 2.20 cutover)

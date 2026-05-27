@@ -44,31 +44,6 @@ class NamingConfig(BaseModel):
     epic_format: str = "[EPIC] {name} | [{epic_id}]"
 
 
-class EpicConfig(BaseModel):
-    id: str
-    name: str
-    plan_doc: str
-    epic_id: str
-    naming: NamingConfig | None = None
-
-
-class PlanDocsConfig(BaseModel):
-    format: str = "html"
-    base_path: str = "./phases"
-    epics: list[EpicConfig]
-
-
-class HtmlExtractionConfig(BaseModel):
-    story_selector: str = "div.story[id^='story-']"
-    name_pattern: str = r"Story \d+: (.+)"
-    clickup_id_selector: str = "a.badge-clickup"
-    status_selector: str = ".badge:not(.badge-clickup):not(.badge-to-create)"
-
-
-class StoryExtractionConfig(BaseModel):
-    html: HtmlExtractionConfig = Field(default_factory=HtmlExtractionConfig)
-
-
 class ActionLogConfig(BaseModel):
     path: str = "./clickup_actions.json"
 
@@ -77,8 +52,6 @@ class SprintPlannerConfig(BaseModel):
     version: str = "1"
     clickup: ClickUpConfig
     team: list[TeamMember] = Field(default_factory=list)
-    plan_docs: PlanDocsConfig
-    story_extraction: StoryExtractionConfig = Field(default_factory=StoryExtractionConfig)
     naming: NamingConfig = Field(default_factory=NamingConfig)
     action_log: ActionLogConfig = Field(default_factory=ActionLogConfig)
 
@@ -147,18 +120,6 @@ def load_shield_config() -> SprintPlannerConfig | None:
     folder_cfg = pm_config.get("folder", {})
     relationship_cfg = pm_config.get("relationship_field", {})
 
-    # Build epic configs from pm.json
-    epic_entries = pm_config.get("epics", [])
-    epics = [
-        EpicConfig(
-            id=e.get("id", ""),
-            name=e.get("name", ""),
-            plan_doc=e.get("plan_doc", ""),
-            epic_id=e.get("epic_id", ""),
-        )
-        for e in epic_entries
-    ]
-
     return SprintPlannerConfig(
         clickup=ClickUpConfig(
             api_token_env="CLICKUP_API_TOKEN",
@@ -189,11 +150,6 @@ def load_shield_config() -> SprintPlannerConfig | None:
         naming=NamingConfig(
             story_format=naming.get("story_format", "[{epic_id}] {name}"),
             epic_format=naming.get("epic_format", "[EPIC] {name} | [{epic_id}]"),
-        ),
-        plan_docs=PlanDocsConfig(
-            format=pm_config.get("plan_docs", {}).get("format", "json"),
-            base_path=pm_config.get("plan_docs", {}).get("base_path", "./phases"),
-            epics=epics,
         ),
     )
 

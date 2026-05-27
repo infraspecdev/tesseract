@@ -1,0 +1,41 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "clean",
+  "phase": "v1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "ship it",
+      "outcome": "thing shipped",
+      "exit_criteria": ["done"],
+      "depends_on": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Refund endpoint",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement POST refunds",
+          "status": "ready",
+          "milestone_id": "M1",
+          "description": "Wire up endpoint.",
+          "tasks": ["task"],
+          "acceptance_criteria": ["test passes"],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "section_id": "apis-involved",
+              "anchor_url": "trd.md#apis-involved",
+              "label": "§11"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {"created_at": "2026-05-25", "domains": ["backend"]}
+}

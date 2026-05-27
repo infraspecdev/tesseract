@@ -180,6 +180,20 @@ If implementing from a sidecar story, update the story status:
 - When complete: `"status": "in-review"`
 Re-render HTML after status change.
 
+### 5f. Update last_aligned_with on story close
+When a story transitions to `"status": "done"` (or, in the in-review path, when
+its acceptance criteria are all met and the PR merges), update the plan-level
+`last_aligned_with` field to the current `HEAD` commit SHA:
+
+```bash
+last_aligned_with=$(git rev-parse HEAD)
+# write into {plan_json}.last_aligned_with
+```
+
+This satisfies the schema 1.3 drift-accountability contract — `/plan-review`
+and `/pm-sync` surface the value so reviewers can compare plan and code as of
+the same commit. The field stays `null` until the first close.
+
 ## Phase 6: Verify Against Acceptance Criteria
 
 After all steps complete:

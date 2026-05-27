@@ -21,12 +21,16 @@ jobs:
 
   adapter-contract-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter: [_common, clickup, jira, confluence, notion]
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
-      - name: Run contract tests
+      - name: Run contract + idempotency tests
         run: |
-          cd shield/adapters/clickup
+          cd shield/adapters/${{ matrix.adapter }}
           uv run --extra test pytest tests/ -v
 
   mcp-server-tests:

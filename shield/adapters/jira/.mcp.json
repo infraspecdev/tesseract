@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "shield-jira-adapter": {
+      "_disabled": true,
+      "_disabled_reason": "Scaffold only — wired in EPIC-4-S3. Remove _disabled keys when ready.",
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}/adapters/jira", "python", "server/main.py"]
+    }
+  }
+}

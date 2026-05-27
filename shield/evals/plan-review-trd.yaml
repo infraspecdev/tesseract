@@ -1,0 +1,31 @@
+# shield/evals/plan-review-trd.yaml
+# Eval suite for /plan-review deterministic gates 0a–0e (TRD section presence,
+# stale-anchor, PRD↔TRD duplication, implementation-manual).
+# Invoked by `uv run shield/evals/run.py plan-review-trd`.
+
+name: plan-review-trd
+description: >
+  Asserts that /plan-review's TRD-specific gates flag the right inputs as
+  Critical findings and pass clean fixtures.
+
+cases:
+  - name: clean
+    fixture: fixtures/clean
+    expect:
+      gates: PASS
+  - name: stale-anchor
+    fixture: fixtures/stale-anchor
+    expect:
+      gates: "stale_anchor:EPIC-1-S1:api-create-user"
+  - name: duplication
+    fixture: fixtures/duplication
+    expect:
+      gates: "prd_trd_duplication:problem-statement"
+  - name: duplication-paraphrased
+    fixture: fixtures/duplication-paraphrased
+    expect:
+      gates: PASS
+  - name: implementation-manual
+    fixture: fixtures/implementation-manual
+    expect:
+      gates: "implementation_manual"

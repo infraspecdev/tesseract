@@ -1,0 +1,68 @@
+# shield/schema/trd-sections.yaml
+# Canonical 14-section TRD template slug allow-list.
+# Source of truth for the /plan TRD emitter and the plan-trd eval.
+# Consumers must not edit — modify trd template in plan-docs/SKILL.md first.
+
+version: 1
+description: >
+  Stable kebab-case section anchors that every /plan-generated trd.md must carry.
+  Order is canonical: emitters and validators MUST preserve §1 → §14 order.
+  Any section may carry `n/a — <reason>` when it genuinely does not apply
+  (typical use: §4 on pure-infra plans). Vague TBDs and silent omissions are
+  rejected by the eval.
+
+sections:
+  - id: document-overview
+    number: 1
+    title: Document Overview
+  - id: problem-statement
+    number: 2
+    title: Problem Statement
+  - id: objective-scope
+    number: 3
+    title: Objective & Scope
+  - id: product-journey
+    number: 4
+    title: Product Journey
+  - id: functional-requirements
+    number: 5
+    title: Functional Requirements
+  - id: non-functional-requirements
+    number: 6
+    title: Non-Functional Requirements
+  - id: high-level-design
+    number: 7
+    title: High-Level Design
+  - id: alternatives-considered
+    number: 8
+    title: Alternatives Considered
+  - id: cross-cutting-concerns
+    number: 9
+    title: Cross-Cutting Concerns
+  - id: milestones
+    number: 10
+    title: Milestones
+  - id: apis-involved
+    number: 11
+    title: APIs Involved
+  - id: open-questions
+    number: 12
+    title: Open Questions
+  - id: references
+    number: 13
+    title: References
+  - id: rollback-strategy
+    number: 14
+    title: Rollback Strategy
+
+# Sections whose interpretation differs materially between backend and infra
+# domains. The /plan emitter MUST surface domain-specific authoring guidance
+# for these. For mixed-domain plans, the emitter MUST emit [backend] and
+# [infra] labeled subsections within each.
+domain_divergent:
+  - product-journey          # §4: end-user flow vs. operator/state-transition path
+  - functional-requirements  # §5: behaviors of an HTTP service vs. declared resource set
+  - non-functional-requirements  # §6: p99 latency / throughput vs. blast radius / RTO/RPO
+  - high-level-design        # §7: components + sequence diagrams vs. module graph + topology
+  - apis-involved            # §11: HTTP/RPC surface vs. module interfaces / cloud-API surface
+  - rollback-strategy        # §14: deploy revert vs. terraform destroy / state restore
