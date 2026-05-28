@@ -26,6 +26,10 @@ paths:
   plan_trd_md:        "{feature_dir}/trd.md"
   plan_arch_md:       "{feature_dir}/plan-architecture.md"   # deprecated — superseded by plan_trd_md
 
+  # LLD (Low-Level Design)
+  lld_draft_md:       "{feature_dir}/lld-{component}.md"     # Path B draft (one per lld_components[] entry) — written by /plan; promoted by /implement step 5h
+  lld_canonical_md:   "docs/lld/{component}.md"              # canonical LLD — written by /lld (Path A) or promoted from drafts by /implement (Path B). NOT under {output_dir}; docs/lld/ is project-level.
+
   # Per-feature rendered
   feature_outputs:    "{feature_dir}/outputs"
   prd_html:           "{feature_outputs}/prd.html"
@@ -62,6 +66,7 @@ derived:
   - review_outputs_dir  # parent dir for rendered review HTML
   - global_outputs_dir  # top-level rendered output dir
   - global_index_html   # top-level dashboard, regenerated on every write
+  - lld_canonical_md    # canonical LLDs live outside output_dir (project-level docs/lld/); written by /lld + /implement, multi-instance over {component}
 
 # Deprecated keys — declared above with `deprecated:` comment markers.
 # Listed here so the lint-coverage check accepts them as "intentionally

@@ -211,6 +211,152 @@ Before generating stories, resolve milestones:
    - `/plan-review` — multi-agent review of the plan
    - `/pm-sync` — sync stories to project management tool
 
+## Step: Derive `lld_components[]` and `milestones[].touches_lld[]`
+
+After all stories are written into the plan.json sidecar (with their
+`design_refs[]` arrays), but BEFORE writing the sidecar to disk, derive
+the two new 1.5 fields:
+
+### `lld_components[]` derivation
+
+```python
+# Pseudocode — actual implementation lives in the /plan generator.
+seen_names: dict[str, str] = {}    # name → type
+for epic in plan["epics"]:
+    for story in epic["stories"]:
+        for ref in story.get("design_refs", []):
+            if ref.get("doc") == "lld":
+                name = ref["component"]   # required for doc==lld in 1.5
+                if name in seen_names:
+                    continue
+                seen_names[name] = _infer_type_for_component(name)
+plan["lld_components"] = [
+    {"name": n, "type": t, "fork_blob_sha": None}
+    for n, t in seen_names.items()
+]
+```
+
+`_infer_type_for_component(name)` walks the repo for markers at the directory
+matching `name`:
+
+1. If `<name>/pyproject.toml` or `<name>/package.json` or `<name>/pom.xml` or
+   `<name>/go.mod` exists → `"backend"`.
+2. Else if `<name>/*.tf` files exist, or `<name>/Chart.yaml`, or
+   `<name>/kustomization.yaml`, or `<name>/atmos.yaml` → `"infra"`.
+3. Else if both backend and infra markers exist in the same dir → ask the
+   user which template to use; remember the choice.
+4. Else (no directory match — pure planning case, component doesn't exist
+   yet) → default to the feature's overall domain (per the existing
+   `.shield.json plan.template_override` or repo-marker detection).
+
+### `milestones[].touches_lld[]` derivation
+
+```python
+# Pseudocode — emits the persisted rollup the drift gate checks.
+stories_by_milestone: dict[str, list] = {}
+for epic in plan["epics"]:
+    for story in epic["stories"]:
+        mid = story.get("milestone_id")
+        if mid:
+            stories_by_milestone.setdefault(mid, []).append(story)
+
+for milestone in plan["milestones"]:
+    rollup = set()
+    for story in stories_by_milestone.get(milestone["id"], []):
+        for ref in story.get("design_refs", []):
+            if ref.get("doc") == "lld" and ref.get("component"):
+                rollup.add(ref["component"])
+    milestone["touches_lld"] = sorted(rollup)
+```
+
+The persisted result must always equal this rollup. `validate_plan.py` and
+M3-plan's `/plan-review touches_lld_drift` rule both enforce this.
+
+### Re-run semantics
+
+When `/plan` is re-run on a feature folder with an existing `plan.json`:
+
+- For each entry in the existing `lld_components[]`, if the same `name`
+  appears in the newly-derived registry, **preserve** its `fork_blob_sha`
+  (avoid re-computing — the canonical may have moved on, breaking the
+  prior fork point).
+- For each name in the newly-derived registry NOT in the existing
+  registry, append with `fork_blob_sha = None`.
+- For each name in the existing registry NOT in the newly-derived registry,
+  log a non-blocking warning: `"orphan: lld_components[] entry '<name>' has no design_refs[] reference; review intentional?"` — but keep it in the registry (don't silently drop).
+
+## Step: Emit feature-folder LLD drafts (Path B)
+
+After `plan.json` and `trd.md` are finalised, `/plan` invokes the
+[`lld-docs` skill](../lld-docs/SKILL.md) once per `lld_components[]` entry
+to write the feature-folder LLD draft.
+
+### Inputs
+
+From the just-finalised `plan.json`:
+
+- `lld_components[]` — registry of `{name, type, fork_blob_sha}`.
+- `epics[].stories[].design_refs[]` — used to map each component back to the
+  stories that touch it (passed into the lld-docs skill as `story_design_refs`).
+
+From the feature folder:
+
+- `prd.md` (if present) — passed as `context.prd_path`.
+- `research.md` (if present) — passed as `context.research_path`.
+- `trd.md` (always present at this point) — passed as `context.trd_path`.
+
+### Algorithm
+
+For each `{name, type, fork_blob_sha}` in `lld_components[]`:
+
+1. Let `draft_path = docs/shield/{feature}/lld-{name}.md`.
+2. Let `canonical_path = docs/lld/{name}.md`.
+3. Determine mode:
+   - If `canonical_path` exists on disk: this is an enhancement.
+     - `mode = "merge"`.
+     - Copy `canonical_path` → `draft_path` (this becomes the merge base).
+     - Compute `new_fork_blob_sha = blob_sha(canonical_path)` via
+       `shield/scripts/lld_blob_sha.py`.
+   - Else: this is net-new.
+     - `mode = "draft"`.
+     - `new_fork_blob_sha = None`.
+4. Build the lld-docs invocation context:
+   - `component = name`.
+   - `type = type`.
+   - `mode = mode`.
+   - `target_path = draft_path`.
+   - `context = { prd_path, research_path, trd_path, story_design_refs }`
+     where `story_design_refs` is the filtered list of `design_refs[]`
+     entries from any story with `doc == "lld"` and `component == name`.
+5. Invoke the lld-docs skill. On success:
+   - Update `plan.json lld_components[<this-entry>].fork_blob_sha = new_fork_blob_sha`.
+   - Record the section count for the summary table.
+6. After processing all registry entries, write the updated `plan.json` back.
+
+### Summary output
+
+`/plan` prints one row per drafted LLD:
+
+```
+LLD drafts emitted:
+  docs/shield/{feature}/lld-foo.md     | draft  | backend | n/a — net-new
+  docs/shield/{feature}/lld-bar.md     | merge  | infra   | fork=abc123…
+```
+
+### Failure modes
+
+- **lld-docs skill raises during drafting** — `/plan` removes any partial
+  `.tmp` file for that draft (lld-docs's own atomic-write contract) and
+  surfaces the error. Other registry entries' drafts that already succeeded
+  remain on disk; the run is partial. Re-running `/plan` re-attempts the
+  failed draft.
+- **Canonical file unreadable** (permission / IO error) — abort the draft
+  step for that component; mark it as failed in the summary; continue with
+  remaining entries.
+- **plan.json write-back fails after drafting** — re-attempt once; if still
+  failing, abort and surface "drafts written but plan.json fork_blob_sha
+  not updated; re-run /plan to refresh."
+
 ## Common Mistakes
 
 | Mistake | Fix |
