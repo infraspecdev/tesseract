@@ -1,0 +1,19 @@
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --with pyyaml ${CLAUDE_PROJECT_DIR}/.claude/hooks/check-doc-drift.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
