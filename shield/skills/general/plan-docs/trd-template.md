@@ -202,8 +202,25 @@ shipping, drift detection, state-file encryption, change-window/maintenance post
 
 ## §10 Milestones {#milestones}
 
-**Purpose:** The ship plan — milestones, exit criteria, DAG. Mirrors the
-`plan.json` `milestones[]` array.
+**Purpose:** The ship plan — milestones, exit criteria, DAG.
+
+**Source of truth:** `plan.json` `milestones[]` is the **structured upstream**
+and §10's body is **rendered** from it, not hand-written. The skill emits the
+section by calling:
+
+```bash
+uv run shield/scripts/render_trd_section.py milestones <plan.json>
+```
+
+and injecting the marker-wrapped output verbatim under this heading. The bytes
+between `<!-- BEGIN rendered:milestones … -->` and `<!-- END rendered:milestones -->`
+are re-rendered every time `/plan` runs; `validate_trd.py` emits a
+**`milestone_drift`** Critical error if the live region diverges from what the
+renderer would produce now (mirrors gate 0c's stale-anchor strictness).
+
+**Do not hand-edit the rendered region.** To change a milestone — its name,
+outcome, exit criteria, or `depends_on` — edit `plan.json` `milestones[]` and
+re-run `/plan`; the §10 body refreshes on the next emit.
 
 **Backend interpretation:** Phases like "service compiles", "feature flag default
 off ships", "feature flag enabled in prod", "old code path removed". Exit criteria
