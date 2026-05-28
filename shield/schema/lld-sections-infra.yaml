@@ -1,0 +1,91 @@
+# shield/schema/lld-sections-infra.yaml
+# Canonical 14-section infra LLD template slug allow-list.
+# Source of truth for the /lld emitter (lld-docs SKILL.md) and the lld-docs eval.
+# Adapted to declarative IaC (terraform / k8s / helm).
+# Consumers must not edit — modify lld-template-infra.md first.
+
+version: 1
+domain: infra
+description: >
+  Stable kebab-case section anchors that every /lld-generated infra LLD must
+  carry. Order is canonical: emitters and validators MUST preserve §1 → §14 order.
+  Sections marked promote_on_demand default to collapsed <details> blocks and are
+  lifted only when the component's nature warrants it.
+
+sections:
+  - id: overview
+    number: 1
+    title: Overview
+    promote_on_demand: false
+  - id: scope-and-non-goals
+    number: 2
+    title: Scope & non-goals
+    promote_on_demand: false
+  - id: module-topology
+    number: 3
+    title: Module topology
+    promote_on_demand: false
+  - id: variable-interface
+    number: 4
+    title: Variable interface
+    promote_on_demand: false
+    sub_anchor_prefix: var
+  - id: state-model-and-lifecycle
+    number: 5
+    title: State model & lifecycle
+    promote_on_demand: false
+  - id: drift-and-destructive-surface
+    number: 6
+    title: Drift / idempotency / destructive-change surface
+    promote_on_demand: false
+  - id: security-posture
+    number: 7
+    title: Security posture
+    promote_on_demand: true
+  - id: cost-surface
+    number: 8
+    title: Cost surface
+    promote_on_demand: false
+  - id: reliability-and-blast-radius
+    number: 9
+    title: Reliability & blast radius
+    promote_on_demand: false
+  - id: observability-and-tagging
+    number: 10
+    title: Observability & tagging
+    promote_on_demand: false
+  - id: migration-and-cutover
+    number: 11
+    title: Migration & cutover
+    promote_on_demand: true
+  - id: validation
+    number: 12
+    title: Validation
+    promote_on_demand: false
+    forced_subsections:
+      - id: plan-invariants
+        number: "12.1"
+        title: Plan invariants
+      - id: policy-checks
+        number: "12.2"
+        title: Policy checks
+      - id: apply-checks
+        number: "12.3"
+        title: Apply checks
+      - id: drift-detection
+        number: "12.4"
+        title: Drift detection
+      - id: smoke-test
+        number: "12.5"
+        title: Smoke test
+      - id: rollback-verify
+        number: "12.6"
+        title: Rollback verify
+  - id: open-questions
+    number: 13
+    title: Open questions
+    promote_on_demand: false
+  - id: changelog
+    number: 14
+    title: Changelog
+    promote_on_demand: false
