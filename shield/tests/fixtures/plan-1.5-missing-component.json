@@ -1,0 +1,59 @@
+{
+  "version": "1.5",
+  "project": "Sample",
+  "name": "schema-test-negative",
+  "phase": "test",
+  "source_research": null,
+  "source_prd": null,
+  "prd_rubric_version_at_planning": null,
+  "last_aligned_with": null,
+  "lld_components": [],
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Test",
+      "outcome": "Test.",
+      "exit_criteria": ["Test"],
+      "depends_on": [],
+      "touches_lld": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Test",
+      "pm_id": null,
+      "pm_url": null,
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Test story",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Test.",
+          "tasks": ["Test"],
+          "acceptance_criteria": ["Test"],
+          "design_refs": [
+            {
+              "doc": "lld",
+              "component": null,
+              "section_id": null,
+              "anchor_url": null,
+              "label": "TODO: link when /lld lands"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-28",
+    "domains": ["python"],
+    "reviewer_grades": {}
+  }
+}

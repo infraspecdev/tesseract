@@ -48,7 +48,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "shield" / "schema" / "plan-sidecar.schema.json"
 TRD_SECTIONS_PATH = REPO_ROOT / "shield" / "schema" / "trd-sections.yaml"
 
-CURRENT_VERSION = (1, 4)
+CURRENT_VERSION = (1, 5)
 
 
 def _parse_version(v: str) -> tuple[int, int]:
@@ -160,7 +160,72 @@ def validate(plan_path: Path, *, strict_design_refs: bool = False) -> int:
                 if strict_design_refs:
                     fail = True
 
+    # 1.5 structural checks — rollup invariants.
+    drift_failures = _check_touches_lld_drift(plan)
+    for mid, persisted, rollup in drift_failures:
+        _emit("FAIL", "touches_lld_drift", f"milestone {mid}: persisted={persisted} rollup={rollup}")
+        fail = True
+
+    missing_failures = _check_lld_component_missing(plan)
+    for sid, name in missing_failures:
+        _emit(
+            "FAIL",
+            "lld_component_missing",
+            f"story {sid} references component '{name}' which is not in lld_components[]",
+        )
+        fail = True
+
     return 1 if fail else 0
+
+
+def _check_touches_lld_drift(plan: dict[str, Any]) -> list[tuple[str, list[str], list[str]]]:
+    """Verify persisted milestones[i].touches_lld[] equals the rollup of
+    unique(design_refs[].component for stories where doc=='lld').
+
+    Returns a list of (milestone_id, persisted, rollup) tuples for failures.
+    """
+    failures: list[tuple[str, list[str], list[str]]] = []
+    stories_by_milestone: dict[str, list[dict[str, Any]]] = {}
+    for epic in plan.get("epics") or []:
+        for story in epic.get("stories") or []:
+            mid = story.get("milestone_id")
+            if mid is None:
+                continue
+            stories_by_milestone.setdefault(mid, []).append(story)
+    for milestone in plan.get("milestones") or []:
+        # touches_lld is 1.5+ — absent in older sidecars; skip drift check then.
+        if "touches_lld" not in milestone:
+            continue
+        mid = milestone["id"]
+        persisted = set(milestone.get("touches_lld") or [])
+        rollup: set[str] = set()
+        for story in stories_by_milestone.get(mid, []):
+            for ref in story.get("design_refs") or []:
+                if ref.get("doc") == "lld" and ref.get("component"):
+                    rollup.add(ref["component"])
+        if persisted != rollup:
+            failures.append((mid, sorted(persisted), sorted(rollup)))
+    return failures
+
+
+def _check_lld_component_missing(plan: dict[str, Any]) -> list[tuple[str, str]]:
+    """Verify every design_refs[].component (where doc=='lld') appears in
+    lld_components[].name. Skipped when lld_components is absent (back-compat).
+
+    Returns a list of (story_id, component_name) tuples for failures.
+    """
+    if "lld_components" not in plan:
+        return []
+    registered = {c["name"] for c in plan.get("lld_components") or []}
+    failures: list[tuple[str, str]] = []
+    for epic in plan.get("epics") or []:
+        for story in epic.get("stories") or []:
+            for ref in story.get("design_refs") or []:
+                if ref.get("doc") == "lld":
+                    name = ref.get("component")
+                    if name and name not in registered:
+                        failures.append((story["id"], name))
+    return failures
 
 
 def main(argv: list[str]) -> int:
