@@ -1,0 +1,76 @@
+{
+  "version": "1.5",
+  "project": "FixtureTest",
+  "name": "pathb-just-in-time",
+  "phase": "test",
+  "source_research": null,
+  "source_prd": null,
+  "prd_rubric_version_at_planning": null,
+  "last_aligned_with": null,
+  "lld_components": [
+    {
+      "name": "foo",
+      "type": "backend",
+      "fork_blob_sha": null
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "User-service v1",
+      "outcome": "user-service is live.",
+      "exit_criteria": [
+        "Signup endpoint returns 201"
+      ],
+      "depends_on": [],
+      "touches_lld": [
+        "foo"
+      ]
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "user-service",
+      "pm_id": null,
+      "pm_url": null,
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement API contracts for signup",
+          "status": "done",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Implement POST /signup.",
+          "tasks": [
+            "Wire route",
+            "Add bcrypt hashing"
+          ],
+          "acceptance_criteria": [
+            "POST /signup returns 201 with valid input"
+          ],
+          "design_refs": [
+            {
+              "doc": "lld",
+              "component": "foo",
+              "section_id": "api-contracts",
+              "anchor_url": "lld-foo.md#api-contracts",
+              "label": "\u00a75 API contracts"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-28",
+    "domains": [
+      "python"
+    ],
+    "reviewer_grades": {}
+  }
+}
