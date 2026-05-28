@@ -1,5 +1,72 @@
 # Shield — Changelog
 
+## 2.21.0 — 2026-05-28 — `/lld` command + Path B drafting + step 5h promotion + plan-sidecar 1.5 + LLD plan-review rules
+
+### Added
+
+- **`/lld <component>` command (Path A)** — generate or update a
+  component-scoped Low-Level Design at `docs/lld/<component>.md`. Two
+  templates (backend pinned to PR #43, infra adapted to declarative IaC),
+  selected automatically per repo markers or via `--type` flag. Bare
+  `/lld` lists undocumented components.
+- **TRD-driven LLD authoring (Path B)** — `/plan` now derives an
+  `lld_components[]` registry from stories' `design_refs[]` (where
+  `doc=="lld"`), computes a persisted `milestones[].touches_lld[]` rollup
+  per milestone, and emits feature-folder drafts at
+  `docs/shield/{feature}/lld-{component}.md` via the new `lld-docs` skill.
+- **`/implement` step 5h — milestone-close promotion** — when the last
+  story of a milestone closes, /implement walks `touches_lld[]`, performs
+  a fork-drift concurrency check (with auto-heal re-merge), appends §14
+  Changelog rows tying back to story IDs, atomic-renames each draft to
+  `docs/lld/{component}.md`, and back-fills `design_refs[].anchor_url`
+  via a token-overlap heuristic with `[exact-match] | [heuristic] | [fallback]`
+  match-type labels.
+- **`plan-sidecar.schema.json` 1.5** — adds the `lld_components[]` registry
+  (`{name, type, fork_blob_sha}`) at the root and the persisted
+  `milestones[].touches_lld[]` field. Tightens `design_refs[]` so
+  `component` is required when `doc=="lld"`. Older sidecars (1.0–1.4)
+  remain valid for read.
+- **`/plan-review` rules** — four new rules: `touches_lld_drift` (High),
+  `lld_components_integrity` (High; covers missing-registry-entry, type-enum,
+  duplicate-name, and `lld_fork_drift_uncaught`), `undocumented_lld`
+  (Medium; canonical exists but anchor_url null), `lld_draft_review`
+  (High/Medium/Review depending on what's missing).
+- **Eval coverage** — `shield/evals/lld-docs.yaml` ships 3 positive
+  fixtures (backend LLD, infra LLD, 1.5 plan.json), 6 Path B fixtures
+  (happy/fork-drift-clean/fork-drift-conflict/backfill-exact/backfill-fallback/
+  just-in-time), and 19 negative fixtures covering every named error.
+  `.github/workflows/eval-lld.yml` runs the suite on every relevant PR.
+
+### Changed
+
+- `shield/skills/general/plan-docs/SKILL.md` — `/plan` flow includes the
+  new Path B emission step (derive registry, compute rollup, draft per
+  registry entry, capture fork_blob_sha).
+- `shield/skills/general/implement-feature/SKILL.md` — adds step 5h
+  (milestone-close promotion) after step 5f (last_aligned_with update).
+- `shield/skills/general/plan-review/SKILL.md` — new rule entries 0f–0i
+  for the LLD surface.
+- `shield/schema/output-paths.yaml` — registers `lld_draft_md` and
+  `lld_canonical_md`.
+
+### Back-compat
+
+- 1.4 sidecars without `lld_components[]` validate as 1.5 (missing arrays
+  default to empty).
+- 1.4 sidecars with `design_refs[].doc=="lld"` and `component==null` are
+  caught by `/plan-review`'s `lld_components_integrity` rule (High); fix
+  the affected refs before upgrading.
+- Path A (`/lld <component>`) works against repos with no plan.json at
+  all — reverse-doc use case is supported without setup.
+
+### Spec
+
+- Brainstorming spec: [`docs/superpowers/specs/2026-05-28-lld-command-design.md`](../docs/superpowers/specs/2026-05-28-lld-command-design.md).
+- Implementation plans:
+  - M1 — Foundation: [`docs/superpowers/plans/2026-05-28-lld-command-m1-foundation.md`](../docs/superpowers/plans/2026-05-28-lld-command-m1-foundation.md)
+  - M2 — TRD-driven authoring + promotion: [`docs/superpowers/plans/2026-05-28-lld-command-m2-trd-driven.md`](../docs/superpowers/plans/2026-05-28-lld-command-m2-trd-driven.md)
+  - M3 — Review wiring + cutover: [`docs/superpowers/plans/2026-05-28-lld-command-m3-review-and-cutover.md`](../docs/superpowers/plans/2026-05-28-lld-command-m3-review-and-cutover.md)
+
 ## 2.20.0 — 2026-05-25 — `/plan` TRD cutover + `/plan-review` TRD gates + `/pm-sync` design_refs forwarding + drift accountability
 
 ### Breaking
