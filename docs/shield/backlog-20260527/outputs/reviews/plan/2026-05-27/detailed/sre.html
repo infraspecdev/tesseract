@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield Plan Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield Plan Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/plan/2026-05-27/</code>)</div>
+<h1 id="sre--detailed-findings">SRE — Detailed Findings</h1>
+<blockquote>
+<p>Back to <a href="../summary.md">summary</a></p>
+</blockquote>
+<h2 id="operations-review--plan-grade-b">Operations Review — Plan (Grade: B)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Evaluation Point</th>
+<th>Grade</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OP1</td>
+<td>Observability plan</td>
+<td>B</td>
+<td>N6 explicitly chooses no telemetry in v1; observability = the <strong>logged warning on doubt</strong> (N3, EPIC-3-S2) plus git history of <code>backlog.json</code> (N4) as the audit trail. Removals are auditable via git commits. Two real gaps: (a) the <em>positive</em> removal path (eager prune / lazy sweep actually removing an entry) is never specified to log <em>what</em> it removed and <em>why</em> it matched — only the doubt path logs. A wrong-but-confident removal leaves no breadcrumb except a git diff with no rationale. (b) No log destination/format defined (stdout? a log file? structured?). For a 3am &quot;why did my entry vanish&quot; investigation, git-revert recovers the data but not the reasoning.</td>
+</tr>
+<tr>
+<td>OP2</td>
+<td>Monitoring &amp; alerting</td>
+<td>C</td>
+<td>Appropriately translated: there's no daemon to alert on, and §7 success metrics define a <strong>manual <code>/backlog</code> audit</strong> cadence as the &quot;health check.&quot; But thresholds that should trigger action are named in the PRD (≥70% reach terminal state, &lt;20% untouched &gt;60d, ≥60% suggestion-acceptance) with <strong>no defined owner cadence or trigger</strong> beyond &quot;periodic&quot; — nobody is told <em>when</em> to audit or <em>what reading</em> means &quot;intervene.&quot; The N2 ~1s budget (the one real performance signal) has a defined breach action (Q1, revisit epic index) which is good, but no way to <em>measure</em> latency is specified — the budget is unmonitorable as written.</td>
+</tr>
+<tr>
+<td>OP3</td>
+<td>Failure mode analysis</td>
+<td>A</td>
+<td>Strongest area. The destructive path (reconciliation removal) is analyzed thoroughly: wrong/over-broad removal via epic-name collision (Risk table + §14 trigger), never-remove-on-doubt as the default-safe stance (F7, N3, EPIC-3-S2), concurrent-write corruption (N1, atomic temp-then-rename + validate-or-refuse), crash-mid-write leaving at most a <code>.tmp</code> (N1), malformed/old upstream shapes degrading to entry-stays not exception (N3). Cascading-failure analog (a manifest/plan shape change silently breaking reconciliation) is named as read-contract coupling (§9, §11) with a &quot;flag this consumer&quot; note. Recovery time is implicit (git revert) but the failure enumeration is excellent.</td>
+</tr>
+<tr>
+<td>OP4</td>
+<td>Backup &amp; recovery</td>
+<td>B</td>
+<td>RPO/RTO analog handled by N4: <code>backlog.json</code> is git-tracked, so any wrong removal is recoverable via <code>git revert</code> — RPO = last commit, recovery is a documented one-liner. §14 adds a real fallback (disable eager prune, fall back to manual-remove-only). Gap: recovery assumes the file is <strong>committed</strong> — there is no statement about <em>when</em> <code>backlog.json</code> gets committed. If capture/removal happen between commits, an uncommitted wrong-removal during a working session is <strong>not</strong> recoverable by git revert (it'd need reflog/stash luck, and the eager prune fires automatically at end-of-run, possibly before any commit). The restore procedure is named but never tested/rehearsed (no eval asserts &quot;revert restores a wrongly-pruned entry&quot;).</td>
+</tr>
+<tr>
+<td>OP5</td>
+<td>Capacity planning</td>
+<td>B</td>
+<td>Directly addressed and well-scoped for a local tool. N2 sets a concrete budget (~1s at ≤~50 features / ~200 entries) with a smart optimization already baked in (open only <code>plan.json</code> files the manifest flags as having a plan, not all of them). The scaling trigger and manual-intervention path are explicit: Q1 + N2 say &quot;above that scale, revisit a project-level epic index,&quot; resolved data-driven post-M3. Gap: as noted in OP2, the budget has <strong>no measurement mechanism</strong> — &quot;revisit if breached&quot; is unfalsifiable without timing instrumentation, and the breach is something a human would only notice as &quot;feels slow.&quot; The N2 numbers are also asserted, not derived from Q2's still-unmeasured volume baseline.</td>
+</tr>
+<tr>
+<td>OP6</td>
+<td>Change management</td>
+<td>A</td>
+<td>The staged rollout is the standout operational decision: M1 ships read/append + manual-remove only; the <strong>destructive automatic reconciliation lands last in M3</strong>, deliberately so the risky path is introduced after the store is proven (§14, milestone deps M1→M2→M3). This is the file-tool equivalent of a canary — the blast-radius feature is gated behind two proven milestones. Rollback trigger is explicit (§14). &quot;Not invoking <code>/backlog</code> is a complete disable&quot; is a clean feature-flag analog. Eval gate (EPIC-4-S1) with RED→GREEN before release is a real merge gate. Minor: no per-trigger kill switch granularity beyond &quot;disable eager prune&quot; (lazy sweep on view has no independent off-switch documented).</td>
+</tr>
+<tr>
+<td>OP7</td>
+<td>On-call readiness</td>
+<td>C</td>
+<td>Translated to &quot;can a future maintainer respond when reconciliation misbehaves.&quot; Partial: §14 gives a runbook-shaped recovery (git revert; disable eager prune; fall back to manual). EPIC-4-S2 commits to documenting capture/view/promote/remove + the three triggers + match key in the command and SKILL.md. Gaps: (a) the operator-facing <strong>diagnostic story is thin</strong> — when an entry wrongly vanishes, there's no documented &quot;how to tell <em>which</em> trigger removed it and why&quot; because the removal path doesn't log its rationale (see OP1). (b) &quot;disable eager prune&quot; is named as the mitigation but <strong>no mechanism</strong> for that toggle is specified anywhere in the plan/stories — it's an aspiration, not a shipped switch. (c) Owner is named (@ashwinimanoj, single maintainer) but there's no escalation analog and the manual-audit cadence is undefined.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Finding:</strong> The destructive path is thoughtfully de-risked by design (never-remove-on-doubt, staged M3-last rollout, git-revert recovery) — but the operational <em>instrumentation</em> around it is missing: successful removals aren't logged with rationale, the N2 latency budget has no measurement mechanism, and the §14 &quot;disable eager prune&quot; mitigation is named without any toggle actually being specified as a story.</p>
+<h4 id="recommendations">Recommendations</h4>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Point</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>OP7</td>
+<td>Add a story (or task under EPIC-3-S3) for an explicit kill switch — a <code>.shield.json</code> flag (e.g. <code>backlog.auto_reconcile: false</code>) that disables eager prune and lazy sweep independently, leaving manual-remove only. §14 <em>names</em> this fallback as the rollback action but no story ships the toggle, so the documented mitigation is currently unactionable.</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>OP1</td>
+<td>Make successful removals auditable, not just the doubt path. EPIC-3-S2/S3 should log every removal with <code>{entry id, feature, epic, match-kind (id vs name), triggering run, the plan.json path that gated it}</code>. Today only never-remove-on-doubt logs (N3); a confident-but-wrong removal leaves a git diff with no rationale — exactly the 3am case. Define the log destination/format too.</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>OP4</td>
+<td>Close the uncommitted-state recovery gap. Eager prune fires automatically at end-of-<code>/plan</code>/<code>/implement</code>, potentially before <code>backlog.json</code> is committed — at which point <code>git revert</code> (N4) cannot recover the entry. Either (a) commit <code>backlog.json</code> before the destructive prune, or (b) write the pruned entry to a transient <code>.shield/backlog-removed.log</code> so it's recoverable independent of git.</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>OP2 / OP5</td>
+<td>Instrument the N2 ~1s budget. The budget and its breach action (Q1 epic-index) are well-specified but unmeasurable — add lightweight timing to <code>/backlog</code> view (even a debug-gated stderr line) so &quot;revisit if breached&quot; is falsifiable. Without it, the only signal is a human noticing slowness.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>OP2 / OP7</td>
+<td>Give the manual audit a concrete cadence and trigger. §7 names threshold metrics (≥70% terminal, &lt;20% &gt;60d) but only &quot;periodic&quot; audit — specify <em>when</em> (e.g. monthly) and <em>what reading triggers action</em> so the single owner has an actual on-call procedure rather than an open-ended chore.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>OP4</td>
+<td>Add an eval that rehearses recovery: assert that after a (simulated) wrong removal, <code>git revert</code> / file-restore brings the entry back. EPIC-4-S1 covers remove/prune/sweep behavior but never exercises the recovery procedure N4 relies on — an untested restore path is a latent 3am surprise.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overall persona grade: B</strong> (point grades: A, C, A, B, B, A, C → average 3.0 → B). The plan is operationally mature where it matters most — failure-mode analysis (OP3) and staged change management (OP6) are A-grade, and the destructive path is genuinely well-contained. It loses ground on day-2 <em>instrumentation</em>: removals aren't logged with rationale, the performance budget can't be measured, and the headline rollback mitigation (&quot;disable eager prune&quot;) is named but not shipped as a toggle.</p>
+
+</body>
+</html>

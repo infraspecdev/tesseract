@@ -65,7 +65,13 @@
             "path": "reviews/plan/2026-05-25",
             "composite_grade": "B",
             "verdict": "Ready",
-            "reviewers": ["agile-coach", "dx-engineer", "architect", "backend-engineer", "sre"],
+            "reviewers": [
+              "agile-coach",
+              "dx-engineer",
+              "architect",
+              "backend-engineer",
+              "sre"
+            ],
             "p0_count": 6,
             "p1_count": 15,
             "p2_count": 18
@@ -82,8 +88,9 @@
       "artifacts": {
         "research": false,
         "prd": true,
-        "plan_json": false,
-        "plan_md": false,
+        "plan_json": true,
+        "plan_md": true,
+        "plan_trd_md": false,
         "plan_arch_md": false
       },
       "reviews": {
@@ -96,14 +103,38 @@
             "composite_grade": "B",
             "composite": 3.12,
             "verdict": "Ready",
-            "reviewers": ["product-manager", "agile-coach", "tech-lead", "dx-engineer", "finops-analyst"],
+            "reviewers": [
+              "product-manager",
+              "agile-coach",
+              "tech-lead",
+              "dx-engineer",
+              "finops-analyst"
+            ],
             "p0_count": 0,
             "p1_count": 3,
             "p2_count": 4
           }
         },
         "plan": {
-          "count": 0
+          "count": 1,
+          "latest": {
+            "date": "2026-05-27",
+            "path": "reviews/plan/2026-05-27",
+            "composite_grade": "B",
+            "composite": 3.14,
+            "verdict": "Ready",
+            "reviewers": [
+              "dx-engineer",
+              "agile-coach",
+              "backend-engineer",
+              "security-engineer",
+              "sre",
+              "product-manager"
+            ],
+            "p0_count": 1,
+            "p1_count": 12,
+            "p2_count": 13
+          }
         },
         "code": {
           "count": 0

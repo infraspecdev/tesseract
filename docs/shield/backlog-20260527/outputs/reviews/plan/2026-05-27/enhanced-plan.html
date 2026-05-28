@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield Plan Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield Plan Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/plan/2026-05-27/</code>)</div>
+<h1 id="plan--shield-backlog">Plan — Shield Backlog</h1>
+<p><strong>Project:</strong> Shield · <strong>Phase:</strong> v1 · <strong>Domain:</strong> backend (Python)
+<strong>PRD:</strong> <a href="./prd.md"><code>./prd.md</code></a> (reviewed <strong>Ready</strong>, composite 3.1) · <strong>TRD:</strong> <a href="./trd.md"><code>./trd.md</code></a> · <strong>Sidecar:</strong> <code>./plan.json</code></p>
+<!-- [from: PM5] Add a 2–3 sentence plain-language executive summary atop trd.md and plan.md before the schema-/pipeline-heavy detail, for non-technical readers who hit these artifacts first. -->
+<p>A project-level Shield backlog: capture (user/agent) → user-driven promotion → reconciliation. Entries are removed when their work commits — eagerly at the end of a promoted <code>/plan</code> or <code>/implement</code> run, lazily on the <code>/backlog</code> view sweep, or manually. Matching is by feature (<code>manifest.json</code> index) + epic (<code>plan.json</code> gate); no ids are stamped.</p>
+<blockquote>
+<p><strong>Review note (P0 — gate 0d):</strong> Before this plan ships, paraphrase TRD §2 so it no longer
+restates PRD §3 verbatim (current 92-char overlap exceeds the 80-char duplication threshold).
+Summarize the problem in technical-framing terms and link to PRD §3 instead of repeating it.</p>
+<!-- [from: Deterministic gate 0d] -->
+</blockquote>
+<h2 id="milestones">Milestones</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Depends on</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>Capture + store + view</td>
+<td>—</td>
+<td><code>backlog.json</code> + schema/validator; capture (user + skill, atomic); <code>/backlog</code> ordered view with manifest status badges; manual remove.</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Feature + epic association + suggestion</td>
+<td>M1</td>
+<td>Every entry carries feature + epic (existing or proposed-new); agent suggests from manifest/plan; user accept/replace/create-new.</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>Promotion + reconciliation</td>
+<td>M2</td>
+<td>Promotion via transient reference; reconciliation engine (match key, never-remove-on-doubt, drift tolerance); eager + lazy idempotent triggers; eval suite + version bump.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="epic-1--store-schema--capture--m1">EPIC-1 — Store, schema &amp; capture  <em>(M1)</em></h2>
+<h3 id="epic-1-s1--define-backlogjson-schema-and-validator-high">EPIC-1-S1 · Define backlog.json schema and validator <em>(high)</em></h3>
+<p>Define <code>backlog.json</code> shape + JSON Schema with a top-level <code>schema_version</code>, plus a Python validator. Entry: <code>{id, order:int, kind∈{epic,story,task}, source∈{user,agent}, feature, epic, text}</code>. <code>schema_version</code> is set now so future shape changes migrate read-old/write-new.</p>
+<ul>
+<li><strong>Tasks:</strong> author <code>shield/schema/backlog.schema.json</code>; document entry shape + migration policy in <code>shield/skills/general/backlog/SKILL.md</code>; create <code>shield/scripts/validate_backlog.py</code>; ordering = single integer <code>order</code>.
+<ul>
+<li>
+<!-- [from: Backend P1-a] --> **Specify the `id` contract:** type (string), generation strategy (uuid4 / monotonic / slug — pick one and document it), and a schema-level **uniqueness** constraint across `entries[]`. Remove/promote/prune all key off `id`.
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> schema rejects unknown <code>kind</code> (named error); <code>validate_backlog.py</code> exits 0/non-zero correctly; <code>schema_version</code> + migration policy present; enums constrained.
+<ul>
+<li>
+<!-- [from: Backend P1-a] --> **+ AC:** schema rejects an `entries[]` array containing duplicate `id` values, naming the error.
+</li>
+<li>
+<!-- [from: Backend P2-c] --> Either add a no-op `migrate(doc) -> doc` seam with a unit test, **or** reword the migration AC to "migration *policy* documented (doc-only until schema_version 2)" so it isn't mistaken for working code.
+</li>
+</ul>
+</li>
+<li><strong>Design:</strong> §11 APIs Involved · LLD <code>backlog-store</code> (TODO) <!-- [from: Agile P2] land or stub /lld backlog-store before sprint so this design_ref resolves --></li>
+</ul>
+<h3 id="epic-1-s2--capture-entrypoint-user--skill-with-atomic-write-high">EPIC-1-S2 · Capture entrypoint (user + skill) with atomic write <em>(high)</em></h3>
+<p>Capture usable by the user (<code>/backlog add</code>) and any skill (documented write helper). Atomic temp-then-rename + validate-or-refuse so concurrent capture vs reconciliation can't corrupt the file. <em>Resolves PRD-review P1 (capture interface).</em></p>
+<ul>
+<li><strong>Tasks:</strong> <code>/backlog add</code> (assigns next <code>order</code>); skill-callable write helper (text, kind, feature?, epic?, source); atomic write; validate-or-refuse.
+<ul>
+<li>
+<!-- [from: Backend P1-b, DX P1] --> **Lock the write-helper signature here (do not defer to LLD):** pin name, module path, parameters, return type, and raise-on-invalid behavior — e.g. `capture(text, *, kind="task", feature=None, epic=None, source) -> entry_id` in `shield/scripts/backlog_store.py`. This is the carried-forward PRD-review P1 and the contract every capturing skill builds against; it cannot stay open as TRD §12 Q3.
+</li>
+<li>
+<!-- [from: Backend P1-c, Security P1] --> **Name the concurrency strategy.** Temp-then-rename prevents a *torn* file but not lost updates (two read-modify-writes → last-writer-wins drops an entry). Either document the single-writer assumption explicitly *next to* the N1 threat statement (N5 already says "single actor"), or implement a lockfile / re-read-and-merge / `O_EXCL` temp. Name the atomic primitive used (`os.replace`).
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> user + skill capture both work; interface documented; mid-write kill leaves no corruption; next <code>order</code>/default <code>kind</code> assigned.
+<ul>
+<li>
+<!-- [from: Security P1] --> **+ AC:** a malformed/partial `backlog.json` on read is **refused with a named error** (validate-or-refuse refusal path), never silently read or truncated.
+</li>
+</ul>
+</li>
+<li><strong>Design:</strong> §5 Functional Requirements · LLD <code>backlog-store</code> (TODO)</li>
+</ul>
+<h3 id="epic-1-s3--backlog-view--ordered-list-high">EPIC-1-S3 · /backlog view — ordered list <em>(high)</em></h3>
+<p><code>/backlog</code> command + skill rendering entries sorted by <code>order</code> with feature + epic + source.</p>
+<ul>
+<li><strong>Tasks:</strong> author <code>shield/commands/backlog.md</code> + <code>backlog/SKILL.md</code>; render sorted; empty-backlog message.</li>
+<li><strong>AC:</strong> ascending-<code>order</code> list with feature/epic/source; clean empty message; command registered.</li>
+<li><strong>Design:</strong> §4 Product Journey</li>
+</ul>
+<!-- [from: DX P2] Specify the badge render format once (EPIC-2-S1 shows 'research ✓ prd ✓ plan –' only as an example) and document a local-dev/dry-run loop in backlog SKILL.md. -->
+<h3 id="epic-1-s4--manual-remove-from-backlog-medium">EPIC-1-S4 · Manual remove from /backlog <em>(medium)</em></h3>
+<p><code>/backlog remove &lt;id&gt;</code> — plain delete for ideas decided against / entries no run will clear.</p>
+<ul>
+<li><strong>Tasks:</strong> <code>remove &lt;id&gt;</code> via atomic helper; confirm-before-delete; clear error on absent id.</li>
+<li><strong>AC:</strong> deletes + persists atomically; absent id = clear no-op error; no history retained.
+<ul>
+<li>
+<!-- [from: Security P2/SE3] --> Note (doc): `git revert` recoverability (N4) covers only entries that reached a commit; a manual remove of an *uncommitted* entry is unrecoverable by design.
+</li>
+</ul>
+</li>
+<li><strong>Design:</strong> §5 Functional Requirements</li>
+</ul>
+<hr />
+<h2 id="epic-2--association--pipeline-status">EPIC-2 — Association &amp; pipeline status</h2>
+<h3 id="epic-2-s1--per-entry-pipeline-status-from-manifestjson-high-m1">EPIC-2-S1 · Per-entry pipeline status from manifest.json <em>(high, M1)</em></h3>
+<p><code>/backlog</code> view shows each entry's feature pipeline status (research/prd/plan) read live from <code>manifest.json</code> — so &quot;prd done, not yet planned&quot; is visible without removal.</p>
+<ul>
+<li><strong>Tasks:</strong> read manifest; render status badges per entry; <code>not started</code> when feature absent; compute at view time (no stored status).</li>
+<li><strong>AC:</strong> badges derived from manifest; prd-but-no-plan shows <code>prd ✓ plan –</code> and stays; absent feature → <code>not started</code>.</li>
+<li><strong>Design:</strong> §7 High-Level Design</li>
+</ul>
+<h3 id="epic-2-s2--feature--epic-association--agent-suggestion-high-m2">EPIC-2-S2 · Feature + epic association + agent suggestion <em>(high, M2)</em></h3>
+<p>Associate every entry with a feature (reconciliation key) + epic (removal gate), either proposed-new; agent suggests feature (manifest) + epic (plan.json); user accept/replace/create-new.</p>
+<ul>
+<li><strong>Tasks:</strong> prompt/accept feature + epic (allow proposed-new); suggest by scanning manifest + candidate plan.json; never block capture.
+<ul>
+<li>
+<!-- [from: DX P1, Agile P1, Backend P2-b] --> **Define the suggestion + match heuristic concretely** (no "best match" hand-wave): the matching method (e.g. case-insensitive, whitespace-normalized substring + token-overlap ranking on feature/epic names), the tie-break/ambiguity rule (→ entry stays, never auto-pick on a tie), and epic-rename behavior. Resolve PRD §9's open "discovery cost" question or land `/lld epic-suggester`.
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> every entry has feature + epic; ≥1 feature + ≥1 epic candidate proposed when matches exist; capture succeeds with proposed-new when none.
+<ul>
+<li>
+<!-- [from: Agile P1] --> **+ measurable AC:** given a fixture manifest with feature `auth`, capturing text mentioning "auth" surfaces `auth` as the top candidate; a 2-way name tie surfaces both and auto-picks neither.
+</li>
+</ul>
+</li>
+<li><strong>Design:</strong> §5 Functional Requirements · LLD <code>epic-suggester</code> (TODO)</li>
+</ul>
+<hr />
+<h2 id="epic-3--promotion--reconciliation--m3">EPIC-3 — Promotion &amp; reconciliation  <em>(M3)</em></h2>
+<h3 id="epic-3-s1--user-driven-promotion-with-transient-reference-high">EPIC-3-S1 · User-driven promotion with transient reference <em>(high)</em></h3>
+<p><code>/backlog promote &lt;id&gt;</code> launches the user-chosen step (<code>/research</code>/<code>/prd</code>/<code>/plan</code>/<code>/implement</code>) and passes the entry id as a transient runtime reference — never stamped into <code>plan.json</code>.</p>
+<ul>
+<li><strong>Tasks:</strong> <code>promote &lt;id&gt;</code> affordance; forward id as transient reference; document non-persistence; shippable work routes through <code>/plan</code>, direct <code>/implement</code> for rare planless one-offs.</li>
+<li><strong>AC:</strong> promotion starts the chosen step + forwards the reference; reference not persisted to plan.json/stories; tool never auto-routes.</li>
+<li><strong>Design:</strong> §4 Product Journey</li>
+</ul>
+<!-- [from: DX P2] Add an explicit intra-epic dependency note: EPIC-3-S3 (triggers) consumes both EPIC-3-S1 (transient reference) and EPIC-3-S2 (engine) and must land after them. -->
+<h3 id="epic-3-s2--reconciliation-engine-match-key--never-remove-on-doubt-high">EPIC-3-S2 · Reconciliation engine (match key + never-remove-on-doubt) <em>(high)</em></h3>
+<p>Locate feature in <code>manifest.json</code>; if it has a <code>plan.json</code>, check the entry's epic. Match: existing epic → by id; proposed-new → by epic name. Ambiguity/no-match → entry stays. Unknown manifest/plan shapes → doubt (stays), never crash.</p>
+<ul>
+<li><strong>Tasks:</strong> <code>shield/scripts/reconcile_backlog.py</code>; match key impl; never-remove-on-doubt; drift tolerance with logged warning.
+<ul>
+<li>
+<!-- [from: Backend P2-a] --> **State the "epic landed" gate as one precise predicate** and use it everywhere: "an entry is removed when an epic with the matching id (existing) or normalized name (proposed-new) is **present in `plan.json.epics[]`**; story `status` is **not** consulted." F7, the EPIC-3-S2 AC, and the schema currently word this three ways.
+</li>
+<li>
+<!-- [from: SRE P1/OP1] --> **Log every removal with rationale** to a defined destination/format: `{entry id, feature, epic, match-kind (id|name), triggering run, gating plan.json path}`. Today only the never-remove-on-doubt path logs (N3); a confident-but-wrong removal must not be a silent git diff.
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> plan-committed epic selected for removal, prd-only not; id/name match per case; malformed/old shapes → entry stays (logged), no exception.
+<ul>
+<li>
+<!-- [from: Security P2] --> **+ fixture/AC:** epic-name collision across two different features → ambiguous → entry stays (the one place a wrong removal is plausible; PRD §10 risk / §14 trigger).
+</li>
+</ul>
+</li>
+<li><strong>Design:</strong> §7 High-Level Design · LLD <code>reconciler</code> (TODO)</li>
+</ul>
+<h3 id="epic-3-s3--eager--lazy-removal-triggers-idempotent-high">EPIC-3-S3 · Eager + lazy removal triggers (idempotent) <em>(high)</em></h3>
+<p>Eager prune at end of promoted <code>/plan</code>/<code>/implement</code> (via the transient reference); lazy sweep on <code>/backlog</code> view. Both idempotent; both call the one reconciliation engine.</p>
+<ul>
+<li><strong>Tasks:</strong> eager prune hook at end of <code>/plan</code> + <code>/implement</code>; lazy sweep on view; idempotent remove-if-present; shared engine.
+<ul>
+<li>
+<!-- [from: SRE P1/OP7] --> **Ship the kill switch.** Add a `.shield.json` flag (e.g. `backlog.auto_reconcile: false`) that disables eager prune and lazy sweep **independently**, leaving manual-remove only. §14 names this as the rollback fallback but no story currently delivers it — without it the documented mitigation is unactionable.
+</li>
+<li>
+<!-- [from: SRE P1/OP4] --> **Close the uncommitted-state recovery gap.** Eager prune fires at end-of-run, possibly before `backlog.json` is committed, so `git revert` (N4) can't recover. Either commit `backlog.json` before the destructive prune, or append pruned entries to a transient `.shield/backlog-removed.log`.
+</li>
+<li>
+<!-- [from: SRE P1/OP2,OP5] --> **Instrument the N2 ~1s budget.** Add a debug-gated latency line to `/backlog` view so "revisit if breached" (Q1 epic-index) is falsifiable, not "a human notices slowness."
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> promotion removes referenced entry at end of run (eager); sweep removes plan-committed entries (lazy); second pass is a no-op (idempotent); shared engine.</li>
+<li><strong>Design:</strong> §7 High-Level Design · LLD <code>reconciler</code> (TODO)</li>
+</ul>
+<hr />
+<h2 id="epic-4--eval-coverage--release--m3">EPIC-4 — Eval coverage &amp; release  <em>(M3)</em></h2>
+<h3 id="epic-4-s1--executable-evals-for-the-backlog-lifecycle-redgreen-high">EPIC-4-S1 · Executable evals for the backlog lifecycle (RED→GREEN) <em>(high)</em></h3>
+<p>Per CLAUDE.md eval mandate: cover capture (user + skill), view + status, manual remove, eager prune, lazy sweep, match-key, never-remove-on-doubt.</p>
+<ul>
+<li><strong>Tasks:</strong> fixtures (prd-only-stays, plan-committed-removed, ambiguous-stays, malformed-stays); evals for each behavior; wire into CI; capture RED + GREEN in PR.
+<ul>
+<li>
+<!-- [from: Backend P1-c, Security P1] --> **+ concurrency eval:** two interleaved captures (and a capture racing a reconciliation write) against the same `backlog.json` assert no corruption **and no lost entry** — the actual N1 threat, distinct from the crash-mid-write test.
+</li>
+<li>
+<!-- [from: Security P1] --> **+ no-stamping eval (F6):** after promotion via `/plan`/`/implement`, assert `plan.json` and story records are **byte-unchanged**. F6 is the load-bearing trust boundary and is currently absent from the eval coverage list.
+</li>
+<li>
+<!-- [from: SRE P2] --> **+ recovery-rehearsal eval:** after a simulated wrong removal, assert `git revert` / file-restore brings the entry back (exercises the N4 recovery path the plan relies on).
+</li>
+<li>
+<!-- [from: DX P2] --> Name the CI entrypoint explicitly (which runner under `shield/evals/`) and the path-filter glob scoping "backlog assets" (e.g. `shield/{schema,scripts,skills/general/backlog}/**`, `shield/commands/backlog.md`).
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> eval suite under <code>shield/evals/</code> covers all behaviors; self-contained (no API/LLM); PR body has RED + GREEN; CI runs on backlog-asset PRs.</li>
+<li><strong>Design:</strong> §10 Milestones</li>
+</ul>
+<h3 id="epic-4-s2--version-bump--commandskill-docs-medium">EPIC-4-S2 · Version bump + command/skill docs <em>(medium)</em></h3>
+<p>Bump the Shield plugin version (marketplace.json + pyproject where touched) in the same commit as asset changes; finalize <code>/backlog</code> + backlog SKILL.md docs.</p>
+<ul>
+<li><strong>Tasks:</strong> bump <code>marketplace.json</code>; bump touched <code>pyproject.toml</code>; finalize command/skill docs (capture, triggers, match key, manual remove, badges); CHANGELOG.
+<ul>
+<li>
+<!-- [from: Agile P2] --> Add explicit DoD lines: "PR reviewed and merged" and "marketplace version published" so 'done' is unambiguous.
+</li>
+<li>
+<!-- [from: SRE P2] --> Document the manual `/backlog` audit cadence (e.g. monthly) and which §7 reading triggers action — the single owner needs a concrete on-call procedure, not "periodic."
+</li>
+</ul>
+</li>
+<li><strong>AC:</strong> version bumped in same commit; command + SKILL document capture/view/promote/remove + 3 triggers; CHANGELOG mentions the feature.</li>
+<li><strong>Design:</strong> §13 References</li>
+</ul>
+<hr />
+<h2 id="pre-build-action-validate-the-bet-p1--pm10">Pre-build action: validate the bet <em>(P1 — PM10)</em></h2>
+<!-- [from: PM10] -->
+<p>Before committing all four milestones, capture a rough baseline of lost / re-derived future-work
+items over a recent week of Shield usage (from git history or chat logs) to ground the
+operational-savings claim. The PRD itself (§10) flags this as the load-bearing <strong>unvalidated</strong>
+assumption; a cheap baseline now de-risks the whole investment and seeds the §7 success metric.</p>
+<hr />
+<h2 id="carried-forward-from-prd-review-ready-run-_2">Carried forward from PRD-review (Ready, run _2)</h2>
+<ul>
+<li>Capture-from-skill interface defined → <strong>EPIC-1-S2</strong> / TRD §11. <em>(Review note: still open as TRD §12 Q3 — P1 #1 closes it.)</em></li>
+<li><code>backlog.json</code> <code>schema_version</code> + migration → <strong>EPIC-1-S1</strong> / TRD §9.</li>
+<li>Reconciliation read-contract drift tolerance → <strong>EPIC-3-S2</strong> / TRD §6 N3.</li>
+<li>Eager-prune + lazy-sweep idempotency → <strong>EPIC-3-S3</strong> / TRD §5 F8.</li>
+</ul>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><code>/pm-sync</code> — sync epics + stories to ClickUp.</li>
+<li><code>/implement</code> — begin TDD implementation (start at M1 / EPIC-1-S1 once the P0 doc-fix and the EPIC-1 P1s are folded in).</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield Plan Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield Plan Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/plan/2026-05-27/</code>)</div>
+<h1 id="agile-coach--detailed-findings">Agile Coach — Detailed Findings</h1>
+<blockquote>
+<p>Back to <a href="../summary.md">summary</a></p>
+</blockquote>
+<h3 id="agile-coach-review-grade-b">Agile Coach Review (Grade: B)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Evaluation Point</th>
+<th>Grade</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC1</td>
+<td>Story sizing</td>
+<td>A</td>
+<td>Ten stories, each a coherent single-sprint unit. Schema+validator, capture, view, remove, status badges, association+suggestion, promotion, reconciliation engine, triggers, evals, release each scoped to days not weeks. None trivial, none multi-week. EPIC-3-S2 (reconciliation engine) is the heaviest but still one focused unit.</td>
+</tr>
+<tr>
+<td>AC2</td>
+<td>Story independence</td>
+<td>B</td>
+<td>Good parallelism within M1 (S1 schema unblocks S2/S3/S4; S3 view and S4 remove can proceed in parallel once helper exists). EPIC-3-S3 hard-depends on EPIC-3-S2 (shared engine) and EPIC-3-S1 (transient reference) — correctly sequenced but tightly coupled; that coupling is inherent, not a defect.</td>
+</tr>
+<tr>
+<td>AC3</td>
+<td>Dependency ordering</td>
+<td>A</td>
+<td>Milestone chain M1→M2→M3 is explicit and acyclic. Blockers are stated: EPIC-3-S3 &quot;share the reconciliation engine&quot; depends on EPIC-3-S2; promotion (S1) precedes eager prune (S3); EPIC-2-S1 view-badges build on EPIC-1-S3 view (called out: &quot;Pipeline status badges are added in EPIC-2-S1&quot;). No circular deps.</td>
+</tr>
+<tr>
+<td>AC4</td>
+<td>Context completeness</td>
+<td>A</td>
+<td>Every story's <code>description</code> states why it exists, not just what. E.g. EPIC-1-S2 ties to a corruption-race rationale and explicitly &quot;resolves the PRD-review P1 'capture interface undefined'&quot;; EPIC-2-S1 explains the goal (&quot;show 'prd done, not yet planned' without being removed&quot;). Carried-forward PRD-review items mapped to stories.</td>
+</tr>
+<tr>
+<td>AC5</td>
+<td>Requirements clarity</td>
+<td>B</td>
+<td>Mostly specific and measurable: named validator errors (<code>unknown_kind_enum</code>, <code>missing_required_field</code>, <code>schema_version_too_new</code>), explicit field list, atomic temp-then-rename. Weaker spot: EPIC-2-S2 &quot;propose the best match&quot; leaves the matching algorithm undefined (no string-distance/heuristic spec) — deferred to a TODO LLD <code>epic-suggester</code>. AC6/AC7 partly compensate but the &quot;best match&quot; criterion is not measurable.</td>
+</tr>
+<tr>
+<td>AC6</td>
+<td>Implementation step quality</td>
+<td>B</td>
+<td>Steps say what and mostly how (e.g. &quot;write backlog.json.tmp then rename; on failure remove .tmp&quot;, &quot;pydantic + jsonschema, run via uv&quot;). Verification is largely pushed into the AC rather than into the steps themselves; e.g. EPIC-3-S2 steps describe behavior but no in-step verification checkpoint. Solid but not exemplary.</td>
+</tr>
+<tr>
+<td>AC7</td>
+<td>Acceptance criteria testability</td>
+<td>B</td>
+<td>Most AC are pass/fail verifiable by a third party (exit 0/non-zero with named error; &quot;killing capture mid-write leaves no corrupted backlog.json&quot;; &quot;second pass is a no-op&quot;). Two soft spots: EPIC-2-S2 &quot;proposes ≥1 feature and ≥1 epic candidate when matches exist&quot; — the &quot;best match&quot; quality isn't asserted; EPIC-3-S3 &quot;before the next /backlog view&quot; is a sequencing claim that's awkward to test deterministically. No vague &quot;performance is good&quot;-style criteria.</td>
+</tr>
+<tr>
+<td>AC8</td>
+<td>Sprint-readiness</td>
+<td>B</td>
+<td>M1 and M3 stories are pullable as-is. EPIC-2-S2 carries an open design question (suggestion match algorithm, TODO <code>/lld epic-suggester</code>) and PRD §9 flags &quot;Feature/epic discovery cost&quot; as still-open — a dev would need a planning conversation on the matching heuristic before estimating S2 confidently. Everything else is ready.</td>
+</tr>
+<tr>
+<td>AC9</td>
+<td>Estimation feasibility</td>
+<td>B</td>
+<td>Eight of ten stories are confidently estimable. EPIC-2-S2 (undefined match heuristic) and EPIC-3-S2 (match-key + drift-tolerance edge space) carry estimation uncertainty until the LLDs land. All LLD design_refs are unresolved <code>TODO</code> links — fine for a plan, but they're the exact detail an estimator wants.</td>
+</tr>
+<tr>
+<td>AC10</td>
+<td>Definition of Done alignment</td>
+<td>B</td>
+<td>Strong on tests (dedicated EPIC-4-S1 eval story with RED→GREEN, CI wiring, self-contained no-LLM fixtures) and docs (EPIC-4-S2: command + SKILL + CHANGELOG) and release (version bump per CLAUDE.md). Not stated anywhere: code review and deploy/ship-to-staging steps in the DoD. For a plugin-asset repo &quot;staging&quot; maps loosely to the marketplace bump, but review is unmentioned.</td>
+</tr>
+<tr>
+<td>AC13</td>
+<td>Milestone coverage</td>
+<td>A</td>
+<td>All three milestones have covering stories. M1: EPIC-1-S1/S2/S3/S4 + EPIC-2-S1 (5). M2: EPIC-2-S2 (1). M3: EPIC-3-S1/S2/S3 + EPIC-4-S1/S2 (5). No empty milestone.</td>
+</tr>
+<tr>
+<td>AC14</td>
+<td>Milestone reference integrity</td>
+<td>A</td>
+<td>Every story <code>milestone_id</code> is M1, M2, or M3 — all present in <code>milestones[]</code>. No null, no dangling reference. <code>milestones[]</code> non-empty.</td>
+</tr>
+<tr>
+<td>AC15</td>
+<td>Milestone exit criteria testability</td>
+<td>B</td>
+<td>Most exit criteria are testable facts (validator exits 0/non-zero with named error; atomic temp-then-rename; &quot;a prd-only feature is NOT removed&quot;; &quot;second pass is idempotent&quot;). M2's &quot;proposes ≥1 candidate ... using a documented match&quot; leans on an undocumented match (mirrors the EPIC-2-S2 AC5/AC8 gap). M1's &quot;renders ... a research/prd/plan status read from manifest.json&quot; is verifiable. Overall testable with one soft item.</td>
+</tr>
+<tr>
+<td>AC16</td>
+<td>Milestone DAG integrity</td>
+<td>A</td>
+<td>Graph: M1→(M2), M2→(M3). Linear, acyclic, fully connected. No cycle, no dangling depends_on (M1 deps [], M2 deps [M1], M3 deps [M2]).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Finding:</strong> A well-structured, sprint-ready backlog with an acyclic milestone DAG and full coverage; the single recurring weakness is the undefined feature/epic suggestion-matching heuristic (EPIC-2-S2 / M2), which is still an open question and undercuts requirements clarity, sprint-readiness, and estimability for that one story.</p>
+<h4 id="story-level-assessment">Story-Level Assessment</h4>
+<table>
+<thead>
+<tr>
+<th>Story</th>
+<th>Sizing</th>
+<th>Has Context</th>
+<th>Has Requirements</th>
+<th>Has Steps</th>
+<th>Has Criteria</th>
+<th>Sprint-Ready?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EPIC-1-S1 · Schema + validator</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-1-S2 · Capture (user+skill) atomic write</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-1-S3 · /backlog ordered view</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-1-S4 · Manual remove</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-2-S1 · Pipeline status from manifest</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-2-S2 · Feature+epic association + suggestion</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Partial (match heuristic undefined)</td>
+<td>Partial</td>
+<td>Partial (&quot;best match&quot; not asserted)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>EPIC-3-S1 · Promotion (transient reference)</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-3-S2 · Reconciliation engine</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-3-S3 · Eager + lazy triggers (idempotent)</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-4-S1 · Executable evals (RED→GREEN)</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>EPIC-4-S2 · Version bump + docs</td>
+<td>OK</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h4 id="milestone-level-assessment">Milestone-Level Assessment</h4>
+<table>
+<thead>
+<tr>
+<th>Milestone</th>
+<th>Has Covering Stories</th>
+<th>Exit Criteria Testable</th>
+<th>Depends-On Valid</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1 · Capture + store + view</td>
+<td>Yes (5: E1-S1..S4, E2-S1)</td>
+<td>Yes</td>
+<td>Yes (root, deps [])</td>
+</tr>
+<tr>
+<td>M2 · Feature + epic association + suggestion</td>
+<td>Yes (1: E2-S2)</td>
+<td>Partial (&quot;documented match&quot; undefined)</td>
+<td>Yes (deps M1)</td>
+</tr>
+<tr>
+<td>M3 · Promotion + reconciliation</td>
+<td>Yes (5: E3-S1..S3, E4-S1, E4-S2)</td>
+<td>Yes</td>
+<td>Yes (deps M2)</td>
+</tr>
+</tbody>
+</table>
+<p>Note on milestone/epic phase alignment: EPIC-2-S1 carries <code>milestone_id: M1</code> while sitting in EPIC-2 (&quot;Association &amp; pipeline status&quot;). This is <strong>intentional and correct</strong>, not a conflict — the story implements the manifest status badge, which M1's outcome explicitly includes (&quot;<code>/backlog</code> renders the ordered list ... with per-entry pipeline status from manifest.json&quot;). The epic groups by theme; the milestone groups by ship-phase. They legitimately cross here. No remediation needed.</p>
+<h4 id="recommendations">Recommendations</h4>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Point</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>AC5 / AC7 / AC8 (EPIC-2-S2)</td>
+<td>Define the feature/epic suggestion match heuristic before the story enters a sprint — specify the matching method (e.g. case-insensitive substring + token-overlap ranking on feature/epic names) and add a measurable AC such as &quot;given fixture manifest with feature <code>auth</code>, capturing text mentioning 'auth' surfaces <code>auth</code> as the top candidate.&quot; Resolve the PRD §9 open &quot;Feature/epic discovery cost&quot; question or land the TODO <code>/lld epic-suggester</code> so S2 is estimable.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>AC15 (M2)</td>
+<td>Tighten M2's exit criterion &quot;using a documented match&quot; — point it at the resolved heuristic above and restate as a testable fact, mirroring the M3 exit criteria's precision.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>AC10</td>
+<td>Add code-review and ship/staging steps to the implied Definition of Done. EPIC-4-S2 covers version bump + docs + CHANGELOG; add &quot;PR reviewed and merged; marketplace version published&quot; as an explicit DoD line so 'done' is unambiguous across the team.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>AC9</td>
+<td>The LLD <code>design_refs</code> for EPIC-1-S1, EPIC-1-S2, EPIC-2-S2, EPIC-3-S2, EPIC-3-S3 are all unresolved <code>TODO</code> links. Land (or stub) <code>/lld backlog-store</code>, <code>/lld epic-suggester</code>, and <code>/lld reconciler</code> before sprint start so estimators have the interface-level detail those stories reference.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overall Persona Grade: B</strong> (point average ≈ 3.36 across 14 evaluation points — six A, eight B — rounds to B). The plan is sprint-ready with strong context, an acyclic and fully-covered milestone DAG, and testable criteria throughout. The one consistent drag is the under-specified suggestion-matching in EPIC-2-S2 / M2, which a single planning clarification (P1) would lift to A-range.</p>
+
+</body>
+</html>
