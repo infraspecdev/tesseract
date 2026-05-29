@@ -1,0 +1,6 @@
+⚠️  DRAFT AUTO-GENERATED AT PROMOTION
+    Component: foo
+    The /plan run did not produce docs/shield/{feature}/lld-foo.md.
+    /implement just-in-time-drafted the LLD; the design bypassed human review
+    before promotion. Review docs/lld/foo.md for content quality before
+    next /plan-review.

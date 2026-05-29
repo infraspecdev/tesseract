@@ -1,0 +1,257 @@
+# shield/evals/lld-docs.yaml
+# Eval coverage for the lld-docs skill, /lld command, and plan-sidecar 1.5 schema.
+#
+# RED → GREEN paper-trail expectation (CLAUDE.md):
+#   - RED: baseline subagent without lld-docs SKILL.md loaded misses §12 forced
+#     subsections, type-aware template selection, atomic .tmp → rename pattern,
+#     and the `n/a — <reason>` escape rule.
+#   - GREEN: subagent with skill loaded produces structurally complete backend
+#     and infra LLDs matching the positive fixtures.
+
+name: lld-docs
+description: >
+  Pins the backend + infra LLD templates and the plan-sidecar 1.5 schema additions.
+  M1 plan ships positive fixtures only; negative fixtures land in M3 plan.
+
+skills_under_test:
+  - shield/skills/general/lld-docs/SKILL.md
+  - shield/commands/lld.md
+  - shield/schema/plan-sidecar.schema.json
+  - shield/schema/lld-sections-backend.yaml
+  - shield/schema/lld-sections-infra.yaml
+  - shield/scripts/validate_plan.py
+
+fixtures:
+  positive:
+    - name: backend-user-service
+      path: fixtures/lld-positive-backend.md
+      template_type: backend
+      expect:
+        all_sections_present: true
+        forced_subsections_present: 8
+        vague_tbds_in_always_on: 0
+        provenance_comment_present: true
+
+    - name: infra-vpc-module
+      path: fixtures/lld-positive-infra.md
+      template_type: infra
+      expect:
+        all_sections_present: true
+        forced_subsections_present: 6
+        vague_tbds_in_always_on: 0
+        provenance_comment_present: true
+
+    - name: plan-1.5-with-lld-components
+      path: fixtures/plan-with-lld-components.json
+      validator: shield/scripts/validate_plan.py
+      expect:
+        exit_code: 0
+        touches_lld_drift: false
+        lld_component_missing: false
+
+  path_b:
+    - name: pathB-happy
+      fixture_dir: fixtures/pathB-happy
+      kind: end-to-end
+      expect:
+        promotion_succeeds: true
+        canonical_present: docs/lld/user-service.md
+        anchor_backfill_count: 1
+        anchor_backfill_match_type: heuristic
+
+    - name: pathB-fork-drift-clean
+      fixture_dir: fixtures/pathB-fork-drift-clean
+      kind: fork-drift
+      expect:
+        promotion_succeeds: true
+        auto_heal_merge: clean
+        canonical_includes: ['Q1', 'Should we batch signups?']
+
+    - name: pathB-fork-drift-conflict
+      fixture_dir: fixtures/pathB-fork-drift-conflict
+      kind: fork-drift
+      expect:
+        promotion_succeeds: false
+        auto_heal_merge: conflict
+        abort_message_contains:
+          - 'ABORT'
+          - 'fork drift'
+          - 'api-contracts'
+
+    - name: pathB-backfill-exact
+      fixture_dir: fixtures/pathB-backfill-exact
+      kind: backfill
+      expect:
+        anchor_backfill_count: 1
+        anchor_backfill_match_type: exact-match
+        backfilled_slug: data-model
+
+    - name: pathB-backfill-fallback
+      fixture_dir: fixtures/pathB-backfill-fallback
+      kind: backfill
+      expect:
+        anchor_backfill_count: 1
+        anchor_backfill_match_type: fallback
+        backfilled_slug: overview
+
+    - name: pathB-just-in-time
+      fixture_dir: fixtures/pathB-just-in-time
+      kind: just-in-time
+      expect:
+        promotion_succeeds: true
+        warning_includes:
+          - 'DRAFT AUTO-GENERATED AT PROMOTION'
+          - 'Component: foo'
+          - 'bypassed human review'
+
+  negative:
+    - name: neg-missing-section-1
+      fixture_dir: fixtures/neg-missing-section-1
+      template_type: backend
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: module-layout
+      severity: High
+
+    - name: neg-missing-section-2
+      fixture_dir: fixtures/neg-missing-section-2
+      template_type: backend
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: data-model
+      severity: High
+
+    - name: neg-missing-section-3
+      fixture_dir: fixtures/neg-missing-section-3
+      template_type: backend
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: error-handling
+      severity: High
+
+    - name: neg-missing-section-4
+      fixture_dir: fixtures/neg-missing-section-4
+      template_type: backend
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: observability
+      severity: High
+
+    - name: neg-missing-section-5
+      fixture_dir: fixtures/neg-missing-section-5
+      template_type: infra
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: module-topology
+      severity: High
+
+    - name: neg-missing-section-6
+      fixture_dir: fixtures/neg-missing-section-6
+      template_type: infra
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: state-model-and-lifecycle
+      severity: High
+
+    - name: neg-missing-section-7
+      fixture_dir: fixtures/neg-missing-section-7
+      template_type: infra
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: cost-surface
+      severity: High
+
+    - name: neg-missing-section-8
+      fixture_dir: fixtures/neg-missing-section-8
+      template_type: infra
+      kind: missing-always-on-section
+      expect_error: missing-section
+      expected_missing_anchor: observability-and-tagging
+      severity: High
+
+    - name: neg-missing-forced-subsection-1
+      fixture_dir: fixtures/neg-missing-forced-subsection-1
+      template_type: backend
+      kind: missing-forced-subsection
+      expect_error: missing-forced-subsection
+      expected_missing_anchor: latency-breakdown
+      severity: Medium
+
+    - name: neg-missing-forced-subsection-2
+      fixture_dir: fixtures/neg-missing-forced-subsection-2
+      template_type: backend
+      kind: missing-forced-subsection
+      expect_error: missing-forced-subsection
+      expected_missing_anchor: degradation
+      severity: Medium
+
+    - name: neg-missing-forced-subsection-3
+      fixture_dir: fixtures/neg-missing-forced-subsection-3
+      template_type: infra
+      kind: missing-forced-subsection
+      expect_error: missing-forced-subsection
+      expected_missing_anchor: policy-checks
+      severity: Medium
+
+    - name: neg-missing-forced-subsection-4
+      fixture_dir: fixtures/neg-missing-forced-subsection-4
+      template_type: infra
+      kind: missing-forced-subsection
+      expect_error: missing-forced-subsection
+      expected_missing_anchor: smoke-test
+      severity: Medium
+
+    - name: neg-vague-tbd
+      fixture_dir: fixtures/neg-vague-tbd
+      template_type: backend
+      kind: vague-tbd
+      expect_error: vague-tbd-in-always-on
+      severity: Review
+
+    - name: neg-pod-lifted-vague
+      fixture_dir: fixtures/neg-pod-lifted-vague
+      template_type: backend
+      kind: pod-lifted-vague
+      expect_error: pod-lifted-vague
+      severity: Review
+
+    - name: neg-component-not-in-registry
+      fixture_dir: fixtures/neg-component-not-in-registry
+      kind: plan-validation
+      expect_error: lld_component_missing
+      severity: High
+
+    - name: neg-touches-lld-drift
+      fixture_dir: fixtures/neg-touches-lld-drift
+      kind: plan-validation
+      expect_error: touches_lld_drift
+      severity: High
+
+    - name: neg-invalid-type
+      fixture_dir: fixtures/neg-invalid-type
+      kind: plan-validation
+      expect_error: schema_violation
+      severity: High
+
+    - name: neg-undocumented-lld
+      fixture_dir: fixtures/neg-undocumented-lld
+      kind: plan-review-finding
+      expect_error: undocumented_lld
+      severity: Medium
+
+    - name: neg-fork-drift-uncaught
+      fixture_dir: fixtures/neg-fork-drift-uncaught
+      kind: plan-review-finding
+      expect_error: lld_fork_drift_uncaught
+      severity: Medium
+
+ci:
+  triggers:
+    - shield/skills/general/lld-docs/**
+    - shield/schema/plan-sidecar.schema.json
+    - shield/schema/lld-sections-backend.yaml
+    - shield/schema/lld-sections-infra.yaml
+    - shield/commands/lld.md
+    - shield/evals/lld-docs/**
+    - shield/evals/lld-docs.yaml
+    - shield/scripts/validate_plan.py

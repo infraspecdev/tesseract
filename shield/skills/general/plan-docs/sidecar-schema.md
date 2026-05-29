@@ -2,15 +2,19 @@
 
 > For the purpose of each Shield artifact and how they relate, see [`shield/docs/artifacts.md`](../../../docs/artifacts.md).
 
-The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
+The schema versions in lock-step with `/plan` itself. Current version: **1.5**.
 
 ```jsonc
 {
-  "version": "1.4",
+  "version": "1.5",
   "project": "<project name from .shield.json>",
   "name": "<kebab-case-plan-name>",
   "phase": "<phase name>",
   "last_aligned_with": null,
+  "lld_components": [
+    { "name": "user-service", "type": "backend", "fork_blob_sha": null },
+    { "name": "vpc-module", "type": "infra", "fork_blob_sha": "abc123def456abc123def456abc123def456abcd" }
+  ],
   "milestones": [
     {
       "id": "M1",
@@ -20,7 +24,8 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
         "<testable fact 1>",
         "<testable fact 2>"
       ],
-      "depends_on": []
+      "depends_on": [],
+      "touches_lld": ["user-service", "vpc-module"]
     }
   ],
   "epics": [
@@ -55,10 +60,10 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
             },
             {
               "doc": "lld",
-              "component": null,
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld <component> lands"
+              "component": "user-service",
+              "section_id": "api-contracts",
+              "anchor_url": "lld-user-service.md#api-contracts",
+              "label": "§5 API contracts"
             }
           ],
           "pm_id": null,
@@ -79,7 +84,7 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
 
 ## Rules
 
-- `version` is `"1.4"`. Older sidecars (`"1.3"`, `"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.4 bump adds `pm_id` / `pm_url` to each epic (see "`epics[].pm_id` / `pm_url`" above); the 1.3 bump added the top-level `last_aligned_with` field (see "`last_aligned_with`" below).
+- `version` is `"1.5"`. Older sidecars (`"1.4"`, `"1.3"`, `"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.5 bump adds `lld_components[]` at the root and `milestones[].touches_lld[]`; it also tightens `design_refs[]` so `component` is required when `doc=="lld"` (was nullable in 1.4). The 1.4 bump added `pm_id` / `pm_url` to each epic; the 1.3 bump added the top-level `last_aligned_with` field.
 - Every epic MUST have at least 1 story.
 - Every story MUST have at least 1 acceptance criterion.
 - Every story SHOULD have at least 1 `design_refs[]` entry pointing at a TRD section. LLD refs may be TODO placeholders until `/lld <component>` lands.
@@ -100,6 +105,18 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.4**.
 - Exit criteria follow the same testable standard as story acceptance criteria.
 - `depends_on` forms a DAG — cycles are rejected by `plan-review`.
 
+#### `touches_lld[]` (1.5+)
+
+Persisted rollup of `lld_components[].name` values referenced by this milestone's stories' `design_refs[]`. Deterministically derived:
+
+```
+touches_lld[M] = unique(component for ref in
+                        stories[milestone_id==M].design_refs[]
+                        where ref.doc == "lld")
+```
+
+`/plan-review` (M3 plan) enforces the drift gate: persisted value ≠ rollup → finding. Persisting lets PM-sync, reviewers, and humans read the field without recomputing. Schema 1.4 sidecars without `touches_lld` are treated as empty.
+
 ### Story → Milestone linkage
 
 - Each story has a `milestone_id` field. It is either a valid `id` from `milestones[]` or `null`.
@@ -117,7 +134,7 @@ stories with no design refs once a TRD is present in the feature folder.
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `doc` | enum (`trd`, `lld`, `prd`) | yes | Which document the ref points at. Unknown values fail validation. |
-| `component` | `string \| null` | no | LLD scoping — the named sub-component (e.g. `payment-orchestrator`). `null` for TRD/PRD refs (which are feature-scoped) and for LLD placeholders. |
+| `component` | `string \| null` | **required when `doc=="lld"` (1.5+)** | LLD scoping — the named sub-component (e.g. `user-service`). `null` permitted for TRD/PRD refs. Must match an entry in `lld_components[].name`. |
 | `section_id` | `string \| null` | no | Canonical kebab-case slug of the target section. For `doc=trd`, MUST come from the TRD slug allow-list (`shield/schema/trd-sections.yaml`). `null` for placeholder entries pending `/lld`. |
 | `anchor_url` | `string \| null` | no | Stable anchor URL relative to the feature folder (e.g. `trd.md#high-level-design`). The anchor token survives heading rename because emitters write explicit `{#section-id}` anchors. `null` for placeholder entries. |
 | `label` | `string` | yes | Human-readable label rendered in `/plan-review` and `/pm-sync` outputs. |
@@ -158,6 +175,25 @@ stories with no design refs once a TRD is present in the feature folder.
 ]
 ```
 
+### `lld_components[]` (1.5+)
+
+Registry of LLD components referenced by any story's `design_refs[]`. Stated once per component, then referenced by name from `design_refs[]` and `milestones[].touches_lld[]`.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string (kebab-case) | yes | Matches the filename `docs/lld/<name>.md`. |
+| `type` | enum (`backend`, `infra`) | yes | Selects the LLD template variant. |
+| `fork_blob_sha` | string (40 hex) \| null | no, default null | `git hash-object docs/lld/<name>.md` at the time `/plan` drafted the feature-folder copy. `null` means the canonical didn't exist at draft time (net-new component). Used by `/implement` at milestone-close for the concurrency check. |
+
+Example:
+
+```json
+"lld_components": [
+  { "name": "user-service", "type": "backend", "fork_blob_sha": null },
+  { "name": "vpc-module", "type": "infra", "fork_blob_sha": "abc123…" }
+]
+```
+
 ### `last_aligned_with`
 
 Top-level field. Stores the git commit SHA of the most recent `/implement` run
@@ -187,6 +223,8 @@ A 1.0/1.1 sidecar with `milestones: []` and every story's `milestone_id: null` i
 treated as a single implicit milestone covering all stories — see "Single implicit
 milestone" below.
 
+**1.4 → 1.5:** A 1.4 sidecar without `lld_components[]` or `touches_lld[]` validates as 1.5; missing arrays default to empty. A 1.4 sidecar with a `design_refs[]` entry where `doc=="lld"` and `component==null` becomes invalid under 1.5 — those entries must be updated before 1.5 validation passes. `/plan-review` will surface this as a finding (see M3 plan).
+
 ### Forward-compat policy
 
 When `/plan-review` or the validator encounters a sidecar with `version` greater than
@@ -210,6 +248,48 @@ catches it early.
 A sidecar with `milestones: []` and every story's `milestone_id: null` is treated as a **single implicit milestone covering all stories**. `plan-review` does not flag this — it is the back-compat path for plans authored before this schema version or for explicit user opt-out.
 
 If `milestones[]` is empty but any story has a non-null `milestone_id`, the sidecar is invalid — `plan-review` flags the dangling reference (see the milestone_id validity check).
+
+## Rollup invariants (1.5+)
+
+The 1.5 schema introduces two persisted-but-derived fields. Tools that read
+or write plan.json must respect the following invariants:
+
+### `milestones[].touches_lld[]` ≡ rollup of `design_refs[]` per milestone
+
+For every milestone `M` in the plan:
+
+```
+persisted_touches_lld(M) == sorted(unique({
+  ref.component
+  for story in stories[milestone_id == M.id]
+  for ref in story.design_refs
+  if ref.doc == "lld"
+}))
+```
+
+When this invariant breaks (a human edits `touches_lld` without updating
+`design_refs`, or vice versa), `/plan-review` surfaces a `touches_lld_drift`
+finding (severity: High).
+
+### `lld_components[].name` is the union of all `design_refs[].component`
+
+For every story's `design_refs[]`:
+
+```
+for ref in design_refs:
+  if ref.doc == "lld":
+    assert ref.component in {c.name for c in lld_components}
+```
+
+When this invariant breaks, `/plan-review` surfaces an `lld_component_missing`
+finding (severity: High).
+
+### `fork_blob_sha` evolution
+
+`lld_components[].fork_blob_sha` is set by `/plan` when drafting a
+feature-folder LLD (only for enhancement components — net-new components
+keep `fork_blob_sha = null`). Updated by `/implement` after a successful
+auto-heal merge at milestone close. Never edited by humans.
 
 ## Validator
 

@@ -66,6 +66,9 @@ Markdown rendering of `plan.json` for human readers. Generated alongside `plan.j
 
 14-section Technical Requirements Document. Written by `/plan`. Successor to the now-deprecated `plan-architecture.md` (see `schema/output-paths.yaml` `deprecated:` list).
 
+- Schema: section slugs + canonical order at [`schema/trd-sections.yaml`](../schema/trd-sections.yaml); validator at [`shield/scripts/validate_trd.py`](../scripts/validate_trd.py).
+- **§10 Milestones is rendered, not hand-written.** Its body is the deterministic output of [`shield/scripts/render_trd_section.py milestones <plan.json>`](../scripts/render_trd_section.py) wrapped between `<!-- BEGIN rendered:milestones … -->` and `<!-- END rendered:milestones -->` markers. `plan.json.milestones[]` is the upstream; §10 is the downstream view. To change a milestone, edit `plan.json` and re-run `/plan` — never hand-edit the rendered region. `validate_trd.py` emits a Critical `milestone_drift` finding if the live region diverges (mirrors `/plan-review` gate 0c stale-anchor severity). Same render seam will fan out to §5 / §7 / §11 in future work.
+
 ### `outputs/{prd,plan,trd}.html`
 
 Rendered HTML siblings of the source markdown. Regenerated on every write of the corresponding source file.
@@ -90,9 +93,43 @@ Per-agent detailed findings. One file per reviewer dispatched (e.g. `architect.m
 
 Frozen copy of the source artifact (e.g. the PRD as reviewed). Lets reviewers see the exact state at review time even after the source evolves.
 
+## Project-internal QA
+
+These artifacts are not Shield outputs — they're tesseract-repo contributor
+tooling that runs locally during development. They don't ship with the Shield
+plugin and don't land under `{output_dir}`.
+
+### `.claude/hooks/check-doc-drift.py` + `.claude/hooks/doc-drift-map.yaml`
+
+A **Stop hook** that prints a soft reminder when a plugin asset moves without its
+docs being co-modified. Wired in `.claude/settings.json` under `hooks.Stop[]`;
+runs after every Claude Code stop in this repo.
+
+- **What it does.** Reads `doc-drift-map.yaml` (the source→docs rule set:
+  skills/SKILL.md, commands, agents, scripts → `artifacts.md` + `shield/README.md`),
+  walks `git diff --name-only HEAD` + untracked files, and emits one stderr block
+  per rule whose source matches a touched file while its listed docs don't.
+- **Severity.** Always exit 0 — advisory, never blocks Claude or `git commit`.
+  Test files (`test_*.py`, `*_test.py`), `*.lock`, `*.tmp`, `__init__.py` are
+  filtered as noise.
+- **New files vs modifications.** Untracked-not-gitignored files are listed
+  via `git ls-files --others --exclude-standard` and treated identically to
+  modified files — a brand-new SKILL.md triggers the same hint a modified one
+  would. Files in directories no rule covers are silently allowed; if you add
+  a new asset *category*, extend `doc-drift-map.yaml`.
+- **Tests.** `.claude/hooks/test_check_doc_drift.py` — pure-function tests for
+  the glob matcher and `compute_hints`, plus one end-to-end integration test
+  against a tempdir git repo. Run via `uv run --with pyyaml .claude/hooks/test_check_doc_drift.py`.
+- **Adding a rule.** Append to `doc-drift-map.yaml` under `rules:` with `source`
+  (fnmatch glob, `**` is cross-directory) and `docs` (list of paths to nag about).
+
+If the reminder fires and you're sure the listed docs don't need touching,
+just ignore it — the hook is checking heuristically, not asserting truth.
+
 ## Pointers
 
 - Path templates: [`schema/output-paths.yaml`](../schema/output-paths.yaml)
 - Manifest schema: [`skills/general/manifest-schema.md`](../skills/general/manifest-schema.md)
 - Plan sidecar schema: [`skills/general/plan-docs/sidecar-schema.md`](../skills/general/plan-docs/sidecar-schema.md)
 - Output-structure design: `docs/superpowers/specs/2026-05-22-shield-output-structure-design.md`
+- Doc-drift hook source: [`.claude/hooks/check-doc-drift.py`](../../.claude/hooks/check-doc-drift.py) + [`doc-drift-map.yaml`](../../.claude/hooks/doc-drift-map.yaml)

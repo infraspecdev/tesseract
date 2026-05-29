@@ -194,6 +194,104 @@ This satisfies the schema 1.3 drift-accountability contract — `/plan-review`
 and `/pm-sync` surface the value so reviewers can compare plan and code as of
 the same commit. The field stays `null` until the first close.
 
+### 5h. Promote feature-folder LLD drafts to canonical (milestone close)
+
+After step 5f (`last_aligned_with` update), check whether the just-closed
+story was the **last** open story in its milestone. If yes, walk the
+milestone's `touches_lld[]` and promote each draft from
+`docs/shield/{feature}/lld-{name}.md` to `docs/lld/{name}.md`.
+
+This step has six sub-steps, executed in order per component:
+
+1. **Look up registry entry.** Read `lld_components[]` for the entry where
+   `name == <component>`. Extract `type` and `fork_blob_sha`.
+
+2. **Locate the draft.** `draft_path = docs/shield/{feature}/lld-{name}.md`.
+   - If the draft is missing, auto-heal by invoking lld-docs in `draft` mode
+     just-in-time; print a loud audit-trail warning (see "Just-in-time
+     auto-heal" below).
+
+3. **Concurrency check.** If `docs/lld/{name}.md` exists AND
+   `fork_blob_sha` is non-null:
+   - Compute `current_sha = blob_sha(docs/lld/{name}.md)` via
+     `shield/scripts/lld_blob_sha.py`.
+   - If `current_sha != fork_blob_sha`: fork drift detected. Invoke
+     lld-docs in `remerge` mode (canonical changed since /plan drafted;
+     merge canonical changes into draft). On clean merge, refresh
+     `fork_blob_sha = current_sha` in plan.json and proceed. On conflict
+     markers in the merged output, **abort** this component's promotion
+     and surface a clear remediation message.
+
+4. **Append §14 Changelog row** to the draft:
+   ```
+   | <milestone_id> | <YYYY-MM-DD> | <milestone.name> | <story_ids touching this component> |
+   ```
+   Insert at the bottom of the §14 table; preserve all existing rows.
+
+5. **Atomic promote.** `os.replace(draft_path, canonical_path)` (writes via
+   `<canonical>.tmp` first, then rename — same atomic contract as lld-docs
+   skill's own writes).
+
+6. **Back-fill `design_refs[]` anchors.** Walk all stories in plan.json;
+   for each `design_refs[]` entry where `doc == "lld"` AND
+   `component == <this component>` AND `anchor_url is null`:
+   - Use `shield/scripts/lld_anchor_heuristic.py select_anchor()` with the
+     story name and the template's slug allow-list (loaded from
+     `shield/schema/lld-sections-<type>.yaml`).
+   - Set `anchor_url = "lld-{name}.md#{slug}"`.
+   - Update `label = "§{n} {title}"` (look up the slug's number+title from
+     the schema).
+   - Write the updated plan.json back atomically.
+
+### Just-in-time auto-heal for missing drafts
+
+If step 5h sub-step 2 finds no draft for a component listed in
+`touches_lld[]`, just-in-time invoke the lld-docs skill to draft. Print a
+loud multi-line warning to the run log AND include it in the run summary:
+
+```
+⚠️  DRAFT AUTO-GENERATED AT PROMOTION
+    Component: <name>
+    The /plan run did not produce docs/shield/{feature}/lld-{name}.md.
+    /implement just-in-time-drafted the LLD; the design bypassed human review
+    before promotion. Review docs/lld/{name}.md for content quality before
+    next /plan-review.
+```
+
+Proceed with steps 3 through 6 normally.
+
+### Milestone-close detection
+
+A milestone is closed iff every story whose `milestone_id == <M>` has
+`status == "done"`. The just-closed story is the trigger; step 5h runs
+when its closure tips the milestone over to all-done.
+
+If multiple stories close in the same /implement session (e.g. batch),
+step 5h runs after the LAST one, not after each — the implementation can
+short-circuit by checking the milestone state once per session-end.
+
+### Summary output
+
+`/implement` prints one block per promoted LLD:
+
+```
+LLD promoted: <component> (<type>)
+  Source draft:    docs/shield/{feature}/lld-{component}.md
+  Canonical:       docs/lld/{component}.md
+  Fork drift:      none | auto-healed | aborted
+  Changelog row:   | <M> | <date> | <milestone name> | <story_ids> |
+  Anchor backfill: <count> entries updated (<exact-match: X, heuristic: Y, fallback: Z>)
+```
+
+### Failure modes
+
+| Failure | Behavior |
+|---|---|
+| Draft missing AND auto-heal lld-docs invocation fails | Abort this component's promotion; continue with remaining `touches_lld[]` entries; surface as run-end error. |
+| Concurrency check produces conflict markers | Abort this component's promotion; print `re-run /plan to refresh fork` and the conflicting section IDs; continue with remaining entries. |
+| Atomic rename fails | Abort this component's promotion; the draft and the canonical both remain in their pre-step state (the `.tmp` is cleaned up); surface error. |
+| Anchor back-fill: plan.json write-back fails | Roll back the changelog row append (re-read draft from prior state) is NOT attempted — the promotion already happened. Surface "promotion succeeded but design_refs[] back-fill failed; re-run /implement to retry back-fill." |
+
 ## Phase 6: Verify Against Acceptance Criteria
 
 After all steps complete:

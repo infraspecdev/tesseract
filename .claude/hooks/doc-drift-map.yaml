@@ -1,0 +1,43 @@
+# Source → docs map for the check-doc-drift Stop hook.
+#
+# When a working-tree change touches a `source` glob but doesn't also touch any
+# of the listed `docs`, the hook prints a soft reminder to stderr. Exit code is
+# always 0 — advisory; never blocks.
+#
+# Scope (decision from feat/shield-plan-fix planning): wide — every plugin asset
+# (skills, commands, agents, scripts) paired with the docs that catalog them.
+# Test files (test_*.py, *_test.py) and lock/temp files are ignored — see
+# NOISE_PATTERNS in check-doc-drift.py.
+#
+# To add a rule: pick a source glob (fnmatch-style, `**` supported) and the
+# docs that mention the asset surface that source belongs to.
+
+rules:
+  # Every skill SKILL.md is potentially mentioned in artifacts.md and the
+  # Shield plugin README's commands/skills overview.
+  - source: shield/skills/**/SKILL.md
+    docs:
+      - shield/docs/artifacts.md
+      - shield/README.md
+
+  # plan-docs is rendered through the SSoT renderer + validator; its templates
+  # and schema docs land in artifacts.md.
+  - source: shield/skills/general/plan-docs/*.md
+    docs:
+      - shield/docs/artifacts.md
+
+  # Slash commands are listed in the Shield README's command table.
+  - source: shield/commands/*.md
+    docs:
+      - shield/README.md
+
+  # Specialist agents are surfaced in the README.
+  - source: shield/agents/*.md
+    docs:
+      - shield/README.md
+
+  # Python helper scripts (validators, renderers, migrate tools) are catalogued
+  # in artifacts.md alongside the artifacts they read/write.
+  - source: shield/scripts/*.py
+    docs:
+      - shield/docs/artifacts.md

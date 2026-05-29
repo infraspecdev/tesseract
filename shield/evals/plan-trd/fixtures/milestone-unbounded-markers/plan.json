@@ -1,0 +1,67 @@
+{
+  "version": "1.2",
+  "project": "bytebite",
+  "name": "order-refund",
+  "phase": "v1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "API compiles + contract tests pass",
+      "outcome": "Refund endpoint compiles in the orders module with Pact contract published",
+      "exit_criteria": [
+        "mvn verify green on the orders module",
+        "Pact contract published to broker"
+      ],
+      "depends_on": []
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Refund endpoint",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement POST /v1/orders/{id}/refunds",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Add the refund endpoint with idempotency, state-machine validation, audit logging.",
+          "tasks": [
+            "Add OrdersController.refundOrder handler",
+            "Extend OrderStatusMachine with refund_requested transition",
+            "Add migration for order_refunds table"
+          ],
+          "acceptance_criteria": [
+            "POST returns 200 with duplicate Idempotency-Key",
+            "Refund on non-fulfilled line returns 409 order_line_not_refundable"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "apis-involved",
+              "anchor_url": "trd.md#apis-involved",
+              "label": "§11 APIs Involved"
+            },
+            {
+              "doc": "lld",
+              "component": "orders-refund-handler",
+              "section_id": null,
+              "anchor_url": null,
+              "label": "TODO: link when /lld orders-refund-handler lands"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-05-25",
+    "domains": ["backend"]
+  }
+}

@@ -79,3 +79,18 @@ cases:
   - name: vague-tbd
     fixture: fixtures/vague-tbd
     expect: { trd: "vague_section:non-functional-requirements" }
+
+  # §10 single-source-of-truth cases — the rendered region inside §10 must
+  # match what shield/scripts/render_trd_section.py produces from the sibling
+  # plan.json milestones[]. See that script + the trd-template.md §10 directive.
+  - name: milestone-rendered-pass
+    fixture: fixtures/milestone-rendered-pass
+    expect:
+      trd: PASS
+      plan: PASS
+  - name: milestone-drift
+    fixture: fixtures/milestone-drift
+    expect: { trd: "milestone_drift" }
+  - name: milestone-unbounded-markers
+    fixture: fixtures/milestone-unbounded-markers
+    expect: { trd: "unbounded_markers:milestones" }
