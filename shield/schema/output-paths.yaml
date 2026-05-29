@@ -9,6 +9,7 @@ variables:
   date:         "YYYY-MM-DD of the review run"
   _counter:     "Empty for first run on a date; '_2', '_3', ... on same-day collisions"
   agent:        "Agent slug for per-agent detail files (e.g. 'backend-engineer')"
+  component:    "Per-LLD component identifier (kebab-case, e.g. 'user-service', 'vpc-module'); multi-instance over lld_components[]"
 
 paths:
   # Top-level

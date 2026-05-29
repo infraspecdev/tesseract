@@ -8,6 +8,7 @@ outputs:
   - plan_html
   - plan_trd_html
   - prd_meta_json   # updates the PRD sidecar's linked_plans field
+  - lld_draft_md    # one per lld_components[] entry (Path B); promoted to docs/lld/<component>.md by /implement step 5h
 ---
 
 # Plan

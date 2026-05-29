@@ -1,3 +1,13 @@
+---
+name: lld
+description: Generate or update a component-scoped Low-Level Design document. Path A — writes to docs/lld/<component>.md. Backend + infra templates with stable kebab-case anchors and §14 Changelog.
+args: "[<component>] [--type backend|infra]"
+# No outputs declared: /lld writes to docs/lld/<component>.md at the repo root,
+# which is project-level and intentionally outside output_dir (shield/schema/output-paths.yaml
+# registers lld_canonical_md as such). Path B drafts at docs/shield/{feature}/lld-{component}.md
+# are emitted by /plan, not /lld.
+---
+
 # LLD
 
 Generate or update a component-scoped Low-Level Design document.
