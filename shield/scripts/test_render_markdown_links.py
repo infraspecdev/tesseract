@@ -84,3 +84,49 @@ def test_query_only_url_untouched():
     # ?query-only hrefs should pass through unchanged.
     out = _run("[x](?q=1)\n", out_subdir="outputs")
     assert 'href="?q=1"' in out
+
+
+TRD_FIXTURE = """# T
+
+## §7 High-Level Design {#high-level-design}
+
+```mermaid
+flowchart LR
+  A --> B
+```
+
+```mermaid
+sequenceDiagram
+  A->>B: quote
+```
+
+```mermaid
+flowchart TB
+  subgraph ap-south-1
+    L[ledger]
+  end
+```
+
+## §10 Milestones {#milestones}
+
+### M1 — Foundation  *(no deps)*
+
+**Detailed design:** [`core-svc`](lld-core-svc.md)
+
+## §13 References {#references}
+
+- LLD: [`core-svc`](./lld-core-svc.md) — drafted by /plan.
+"""
+
+
+def test_section7_emits_three_mermaid_diagrams():
+    out = _run(TRD_FIXTURE, out_subdir="outputs")
+    assert out.count('<pre class="mermaid">') == 3
+
+
+def test_milestone_and_reference_lld_links_rewritten_into_outputs():
+    out = _run(TRD_FIXTURE, out_subdir="outputs")
+    # §10 link 'lld-core-svc.md' and §13 './lld-core-svc.md' both land one dir up
+    assert 'href="../lld-core-svc.md"' in out
+    assert 'href="lld-core-svc.md"' not in out
+    assert 'href="./lld-core-svc.md"' not in out
