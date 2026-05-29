@@ -1,0 +1,47 @@
+# shield/evals/backlog.yaml — eval suite for the backlog lifecycle (EPIC-4-S1).
+#
+# Run with:   uv run --with jsonschema shield/evals/run-backlog.py
+# CI gate:    .github/workflows/eval-backlog.yml
+#
+# This suite asserts the end-to-end behavior of capture / view / promote /
+# manual-remove / eager-prune / lazy-sweep / kill-switch / recovery. Each case
+# is a self-contained Python scenario in run-backlog.py.
+
+name: backlog
+description: >
+  Deterministic end-to-end eval for the Shield backlog feature. Each case
+  scaffolds a tiny Shield-shaped tree under tmp_path (backlog.json, manifest.json,
+  one or more docs/shield/<feature>/plan.json, .shield.json) and exercises one
+  invariant. Fixtures are inline (built in code) for tight feedback.
+
+cases:
+  - capture_user_and_agent_both_succeed
+  - view_renders_with_status_badges_pinned_format
+  - empty_view_message
+  - manual_remove_deletes_entry
+  - eager_prune_removes_when_epic_landed
+  - eager_prune_idempotent_on_already_gone
+  - eager_prune_respects_kill_switch
+  - lazy_sweep_removes_landed_entries
+  - eager_then_sweep_no_double_remove
+  - epic_renumber_across_replan_still_resolves          # P0-2
+  - cross_feature_epic_collision_stays_ambiguous        # PRD §10 / §14
+  - malformed_manifest_stays_doubt_no_crash             # drift tolerance
+  - concurrency_lost_update_refused                      # security P1-a
+  - write_side_schema_refusal_leaves_store_unchanged    # security P1-b
+  - no_stamping_plan_json_byte_unchanged_post_promotion # F6
+  - ordering_seam_recovery_rehearsal                     # security P1-c
+  - validator_rejects_duplicate_entry_id                # EPIC-1-S1 AC
+
+ci:
+  triggers:
+    # Path-filter glob scoping 'backlog assets' (EPIC-4-S1 task).
+    - shield/schema/backlog.schema.json
+    - shield/scripts/validate_backlog.py
+    - shield/scripts/backlog_store.py
+    - shield/backlog/**
+    - shield/skills/general/backlog/**
+    - shield/commands/backlog.md
+    - shield/evals/backlog.yaml
+    - shield/evals/run-backlog.py
+    - .github/workflows/eval-backlog.yml

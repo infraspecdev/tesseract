@@ -1,0 +1,57 @@
+name: Eval — backlog
+# Recurring CI gate for the Shield backlog feature (capture, view, promote,
+# eager prune, lazy sweep, kill switch, recovery). Runs on every PR or push
+# that touches the backlog-asset path glob (EPIC-4-S1, plan-review 2026-05-29
+# P1 DX).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shield/schema/backlog.schema.json'
+      - 'shield/scripts/validate_backlog.py'
+      - 'shield/scripts/backlog_store.py'
+      - 'shield/backlog/**'
+      - 'shield/skills/general/backlog/**'
+      - 'shield/commands/backlog.md'
+      - 'shield/evals/backlog.yaml'
+      - 'shield/evals/run-backlog.py'
+      - 'shield/tests/test_validate_backlog.py'
+      - '.github/workflows/eval-backlog.yml'
+  pull_request:
+    paths:
+      - 'shield/schema/backlog.schema.json'
+      - 'shield/scripts/validate_backlog.py'
+      - 'shield/scripts/backlog_store.py'
+      - 'shield/backlog/**'
+      - 'shield/skills/general/backlog/**'
+      - 'shield/commands/backlog.md'
+      - 'shield/evals/backlog.yaml'
+      - 'shield/evals/run-backlog.py'
+      - 'shield/tests/test_validate_backlog.py'
+      - '.github/workflows/eval-backlog.yml'
+
+jobs:
+  backlog-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run validator + package unit tests
+        # Covers the schema/validator suite and the shield_backlog package
+        # (store / view / suggester / reconciler / triggers).
+        run: |
+          uv run --with jsonschema --with pytest pytest \
+            shield/tests/test_validate_backlog.py \
+            shield/backlog/tests/ -v
+
+  backlog-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run end-to-end backlog eval
+        # 17 cases exercising capture, view, manual remove, eager prune,
+        # lazy sweep, kill switch, name-match key, cross-feature ambiguity,
+        # drift tolerance, lost-update detection, write-side refusal, F6,
+        # and ordering-seam recovery rehearsal.
+        run: uv run --with jsonschema shield/evals/run-backlog.py

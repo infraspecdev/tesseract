@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "not-a-uuid",
+      "order": 1,
+      "kind": "task",
+      "source": "user",
+      "feature": "auth",
+      "epic": "Session management",
+      "text": "Idea with non-uuid id"
+    }
+  ]
+}

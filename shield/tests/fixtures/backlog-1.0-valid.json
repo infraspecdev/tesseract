@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "5b3f1f9c-8e9a-4a31-9d4c-1c2e9e8a4b51",
+      "order": 1,
+      "kind": "task",
+      "source": "user",
+      "feature": "auth",
+      "epic": "Session management",
+      "text": "Rotate refresh tokens every 24h"
+    },
+    {
+      "id": "7a2b3c4d-5e6f-4071-a182-93c4d5e6f7a8",
+      "order": 2,
+      "kind": "story",
+      "source": "agent",
+      "feature": "billing",
+      "epic": "Invoice generation",
+      "text": "PDF invoice template polish"
+    }
+  ]
+}

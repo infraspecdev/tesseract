@@ -1,5 +1,79 @@
 # Shield — Changelog
 
+## 2.22.0 — 2026-05-29 — `/backlog` capture / view / promote / reconcile
+
+### Added
+
+- **`/backlog` command** — single global idea-capture sidecar at
+  `docs/shield/backlog.json`. Each entry pairs an idea with a **feature**
+  (the reconciliation key) and an **epic** (the removal gate); either may
+  be proposed-new at capture. Subcommands: `view`, `add`, `remove`,
+  `promote`, `sweep`. Promotion forwards the entry id as a **transient
+  runtime arg** (`--backlog-ref`) — never stamped into `plan.json` (F6).
+- **`shield-backlog` package** — importable module at
+  `shield/backlog/shield_backlog/` with public API: `capture`,
+  `read_backlog`, `remove`, `eager_prune`, `lazy_sweep`,
+  `kill_switch_enabled`, `BacklogInvalid`. Skills can capture mid-task
+  with `from shield_backlog import capture`.
+- **LOCKED capture() signature** (TRD §11, plan-review 2026-05-27):
+  `capture(text, *, kind='task', feature, epic, source) -> str` returning
+  a uuid4. `source` is keyword-only and required.
+- **Atomic write + compare-before-replace** — every write is full-doc →
+  unique `.tmp` → `fsync` → `os.replace()`. A snapshot of `(schema_version,
+  entry_count)` taken at read time is re-validated against the on-disk
+  state just before the replace; a concurrent change raises
+  `BacklogInvalid(lost_update)` (TRD §6 N1, plan-review 2026-05-29 P1).
+- **Single reconciliation engine** — `reconcile(entry, *, manifest, plans)`
+  in `shield_backlog.reconciler`. Match key is normalized-exact epic NAME
+  for BOTH existing and proposed-new entries (plan-review P0-2); positional
+  `EPIC-N` id is never a cross-plan key. Verdicts: `REMOVE` /
+  `STAY_AMBIGUOUS` / `STAY_NO_MATCH` / `STAY_DOUBT`. Cross-feature epic
+  name collisions and unrecognized manifest/plan shapes both result in
+  `STAY_*` — never on doubt do we remove, never an exception.
+- **Three removal triggers**: manual (`/backlog remove <id>`), eager prune
+  (end of a promoted `/plan` or `/implement` run), and lazy sweep
+  (`/backlog view` or `/backlog sweep`). Eager and lazy share the same
+  engine and are idempotent.
+- **Recovery log** — `.shield/backlog-removed.log` is appended **before**
+  the destructive remove (ordering seam) for both eager and lazy paths.
+  Manual removes do not log; recoverability there is bounded by
+  `git revert` of committed state. The pre-remove entry is recoverable by
+  replaying the log line through `capture()`.
+- **Kill switch** — `.shield.json → backlog.auto_reconcile = false`
+  disables eager prune and lazy sweep; manual `remove` continues to work.
+  An additive `backlog` object in `shield/schemas/shield.schema.json`
+  makes the flag schema-valid (plan-review 2026-05-29 P0-3).
+- **`backlog.schema.json` 1.0** — top-level `schema_version` + `entries[]`
+  with `{id (uuid4), order (int), kind (epic|story|task),
+  source (user|agent), feature, epic, text}`. Uniqueness of `id` is
+  enforced by `validate_backlog.py` (named error `duplicate_entry_id`),
+  not by the schema (draft 2020-12 `uniqueItems` cannot express
+  property-level uniqueness; plan-review 2026-05-29 P1-2).
+- **Pipeline status badges** — `/backlog view` shows per-entry
+  `research / prd / plan` flags read live from `manifest.json` artifact
+  flags. Canonical badge string pinned in the backlog SKILL.md: `research ✓
+  prd ✓  plan –`. A feature absent from manifest renders `not started`.
+- **Eval coverage (mandatory per CLAUDE.md)** —
+  `shield/evals/run-backlog.py` runs 17 end-to-end cases (capture,
+  view+badges, manual remove, eager prune, idempotency, kill switch,
+  lazy sweep, name-match-key, re-/plan epic reorder, cross-feature
+  collision, malformed-shape, compare-before-replace, write-side refusal,
+  F6 no-stamping, ordering-seam recovery rehearsal, validator
+  duplicate-id). Gate wired in `.github/workflows/eval-backlog.yml` with
+  a path-filter glob over backlog assets.
+- **Recovery procedure documented** in `shield/skills/general/backlog/SKILL.md`:
+  flip the kill switch, locate the F9 log line, replay the recovery log
+  record.
+- **Audit cadence** documented (monthly), with concrete numeric revisit
+  triggers lifted from PRD §7: scope review if <70% of entries reach a
+  terminal state within 30 days OR >20% sit untouched >60 days.
+
+### Changed
+
+- `shield/schemas/shield.schema.json` — added optional `backlog` object
+  with `auto_reconcile: bool` (default `true`). The schema's top-level
+  `additionalProperties: false` previously rejected the flag.
+
 ## 2.21.0 — 2026-05-28 — `/lld` command + Path B drafting + step 5h promotion + plan-sidecar 1.5 + LLD plan-review rules
 
 ### Added
