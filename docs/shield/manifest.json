@@ -90,7 +90,7 @@
         "prd": true,
         "plan_json": true,
         "plan_md": true,
-        "plan_trd_md": false,
+        "plan_trd_md": true,
         "plan_arch_md": false
       },
       "reviews": {
@@ -116,12 +116,12 @@
           }
         },
         "plan": {
-          "count": 1,
+          "count": 2,
           "latest": {
-            "date": "2026-05-27",
-            "path": "reviews/plan/2026-05-27",
-            "composite_grade": "B",
-            "composite": 3.14,
+            "date": "2026-05-29",
+            "path": "reviews/plan/2026-05-29",
+            "composite_grade": "B+",
+            "composite": 3.49,
             "verdict": "Ready",
             "reviewers": [
               "dx-engineer",
@@ -131,16 +131,16 @@
               "sre",
               "product-manager"
             ],
-            "p0_count": 1,
-            "p1_count": 12,
-            "p2_count": 13
+            "p0_count": 3,
+            "p1_count": 8,
+            "p2_count": 18
           }
         },
         "code": {
           "count": 0
         }
       },
-      "updated": "2026-05-27T00:00:00+00:00"
+      "updated": "2026-05-29T00:00:00+00:00"
     }
   ]
 }

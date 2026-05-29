@@ -50,6 +50,14 @@
         },
         "additionalProperties": false
       }
+    },
+    "backlog": {
+      "type": "object",
+      "description": "Shield backlog settings (docs/shield/backlog.json)",
+      "properties": {
+        "auto_reconcile": { "type": "boolean", "default": true, "description": "When false, disables eager prune and lazy sweep, leaving manual remove only (kill switch)" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

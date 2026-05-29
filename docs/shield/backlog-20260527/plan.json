@@ -1,23 +1,30 @@
 {
-  "version": "1.4",
+  "version": "1.5",
   "project": "Shield",
   "name": "backlog",
   "phase": "v1",
   "source_research": null,
   "source_prd": "docs/shield/backlog-20260527/prd.md",
+  "prd_rubric_version_at_planning": null,
   "last_aligned_with": null,
+  "lld_components": [
+    { "name": "backlog-store", "type": "backend", "fork_blob_sha": null },
+    { "name": "epic-suggester", "type": "backend", "fork_blob_sha": null },
+    { "name": "reconciler", "type": "backend", "fork_blob_sha": null }
+  ],
   "milestones": [
     {
       "id": "M1",
       "name": "Capture + store + view",
       "outcome": "A global docs/shield/backlog.json exists; entries can be added (user + agent) with order, kind, source, and a feature + epic association; /backlog renders the ordered list with per-entry pipeline status from manifest.json; an entry can be manually removed.",
       "exit_criteria": [
-        "backlog.json has a documented JSON Schema with a top-level schema_version and per-entry {id, order, kind, source, feature, epic, text}; shield/scripts/validate_backlog.py exits 0 on valid and non-zero with a named error on invalid.",
-        "An entry can be captured both from the user (/backlog add) and from a Shield skill via a documented write helper; the write is atomic (temp-then-rename).",
+        "backlog.json has a documented JSON Schema with a top-level schema_version and per-entry {id, order, kind, source, feature, epic, text}; ids are unique across entries[]; shield/scripts/validate_backlog.py exits 0 on valid and non-zero with a named error on invalid.",
+        "An entry can be captured both from the user (/backlog add) and from a Shield skill via the documented write helper; the write is atomic (temp-then-rename) and validate-or-refuse.",
         "/backlog renders entries in order with each entry's feature + epic and a research/prd/plan status read from manifest.json.",
         "/backlog can remove an entry by id (plain delete; no retained history)."
       ],
-      "depends_on": []
+      "depends_on": [],
+      "touches_lld": ["backlog-store"]
     },
     {
       "id": "M2",
@@ -25,27 +32,26 @@
       "outcome": "Every entry references a feature and an epic (existing or proposed-new); the agent suggests a matching feature/epic by scanning manifest.json features and plan.json epics, and the user can accept, pick another, or create-new.",
       "exit_criteria": [
         "Capture prompts for (or accepts) a feature + epic; both may be proposed-new.",
-        "The agent proposes >=1 candidate feature (from manifest.json) and >=1 candidate epic (from the feature's plan.json) using a documented match; the user can accept/replace/create-new.",
-        "Suggestion never blocks capture \u2014 an entry can be captured with a proposed-new feature/epic when no match exists."
+        "The agent proposes >=1 candidate feature (from manifest.json) and >=1 candidate epic (from the feature's plan.json) using exact-normalized match; the user can accept/replace/create-new.",
+        "Suggestion never blocks capture — an entry can be captured with a proposed-new feature/epic when no match exists; a normalized-name tie surfaces all tied candidates and auto-picks none."
       ],
-      "depends_on": [
-        "M1"
-      ]
+      "depends_on": ["M1"],
+      "touches_lld": ["epic-suggester"]
     },
     {
       "id": "M3",
       "name": "Promotion + reconciliation",
-      "outcome": "The user promotes an entry by starting /research, /prd, /plan, or /implement from it; the entry is removed when its work commits \u2014 eagerly at the end of the promoted /plan or /implement run, lazily on the /backlog sweep, or manually. Reconciliation matches by feature (manifest) + epic (plan.json) and never removes on doubt.",
+      "outcome": "The user promotes an entry by starting /research, /prd, /plan, or /implement from it; the entry is removed when its work commits — eagerly at the end of the promoted /plan or /implement run, lazily on the /backlog sweep, or manually. Reconciliation matches by feature (manifest) + epic (plan.json) and never removes on doubt.",
       "exit_criteria": [
         "Promoting an entry passes it as a transient reference to /plan or /implement; on success that entry is pruned (eager).",
         "The /backlog sweep removes any entry whose epic's work now appears in the feature's plan.json (lazy safety net); a prd-only feature is NOT removed.",
-        "Match key: existing-epic entries match by epic id, proposed-new by epic name; on ambiguity or no match the entry stays.",
-        "Eager prune and lazy sweep are idempotent (remove-if-present); reconciliation treats an unrecognized manifest.json/plan.json shape as doubt (entry stays), never crashing.",
-        "An executable eval exercises capture, view+status, manual remove, eager prune, lazy sweep, and match-key behavior with a RED->GREEN trail; the Shield plugin version is bumped per CLAUDE.md."
+        "Match key: both existing and proposed-new entries match by casefold+collapsed-whitespace exact epic NAME (never by positional epic id); on ambiguity or no match the entry stays.",
+        "Eager prune and lazy sweep are idempotent (remove-if-present), share one reconciliation engine, log every removal with rationale, and treat an unrecognized manifest.json/plan.json shape as doubt (entry stays), never crashing.",
+        "A .shield.json kill switch (backlog.auto_reconcile=false), made schema-valid by an additive 'backlog' object in shield.schema.json, disables eager prune and lazy sweep, leaving manual-remove only.",
+        "An executable eval exercises capture (user + skill), view+status, manual remove, eager prune, lazy sweep, match-key, never-remove-on-doubt, concurrency (no lost entry), no-stamping (F6), and recovery-rehearsal with a RED->GREEN trail; the Shield plugin version is bumped per CLAUDE.md."
       ],
-      "depends_on": [
-        "M2"
-      ]
+      "depends_on": ["M2"],
+      "touches_lld": ["reconciler"]
     }
   ],
   "epics": [
@@ -64,15 +70,18 @@
           "description": "Define the docs/shield/backlog.json document shape and a machine-readable JSON Schema with a top-level schema_version, plus a Python validator. Each entry carries id, order (integer), kind (epic|story|task), source (user|agent), feature, epic, and text. schema_version is set now so the open future-scope shape changes (priority buckets, audit trail) can migrate via read-old/write-new.",
           "tasks": [
             "Author shield/schema/backlog.schema.json (draft 2020-12) with top-level schema_version (integer) and an entries[] array; entry required fields: id, order, kind, source, feature, epic, text.",
-            "Document the entry shape and the schema_version migration policy (read-old/write-new) in a new shield/skills/general/backlog/SKILL.md (or backlog-schema.md).",
-            "Create shield/scripts/validate_backlog.py (pydantic + jsonschema, run via uv) \u2014 exits 0 on valid, non-zero with a named error (unknown_kind_enum, missing_required_field, schema_version_too_new) on invalid.",
-            "Define ordering as a single explicit integer `order` field (no priority buckets in v1)."
+            "Specify the id contract: id is a string generated as uuid4 (chosen for collision-free capture with no read-before-write). Remove / promote / prune all key off id. NOTE (plan-review 2026-05-29, P1-2): uniqueness of id across entries[] is enforced by the Python validator, NOT by the JSON Schema — draft 2020-12 uniqueItems is whole-item equality and cannot express property-level uniqueness.",
+            "Document the entry shape, the id contract, the schema_version migration policy (read-old/write-new), AND the invariant 'manifest features[].name == feature folder slug' (the reconciliation key, relied on by suggestion + reconciliation — P1-3) in a new shield/skills/general/backlog/SKILL.md (or backlog-schema.md).",
+            "Create shield/scripts/validate_backlog.py (pydantic + jsonschema, run via uv) — exits 0 on valid, non-zero with a named error (unknown_kind_enum, missing_required_field, duplicate_entry_id, schema_version_too_new) on invalid. The validator (not the schema) owns the duplicate_entry_id check.",
+            "Define ordering as a single explicit integer order field (no priority buckets in v1).",
+            "Migration is doc-only until schema_version 2: word the migration AC as 'migration policy documented' (no live migrate() code shipped in v1) to avoid mistaking documentation for working code."
           ],
           "acceptance_criteria": [
-            "shield/schema/backlog.schema.json validates a well-formed backlog.json and rejects one with an unknown `kind` value, naming the error.",
-            "`uv run shield/scripts/validate_backlog.py <path>` exits 0 on valid sidecars and non-zero with a named error on invalid ones.",
-            "backlog.json carries a top-level schema_version; a documented migration policy (read-old/write-new) is present.",
-            "kind is constrained to {epic, story, task}; source to {user, agent}; order is an integer."
+            "shield/schema/backlog.schema.json validates a well-formed backlog.json and rejects one with an unknown kind value, naming the error.",
+            "The validator (validate_backlog.py) rejects an entries[] array containing duplicate id values, naming the error (duplicate_entry_id) — this check lives in the validator, not the JSON Schema.",
+            "uv run shield/scripts/validate_backlog.py <path> exits 0 on valid sidecars and non-zero with a named error on invalid ones.",
+            "backlog.json carries a top-level schema_version; a documented migration policy (read-old/write-new, doc-only until schema_version 2) and the manifest-name==folder-slug invariant are present in the SKILL.md.",
+            "kind is constrained to {epic, story, task}; source to {user, agent}; order is an integer; id is a uuid4 string."
           ],
           "design_refs": [
             {
@@ -80,14 +89,14 @@
               "component": null,
               "section_id": "apis-involved",
               "anchor_url": "trd.md#apis-involved",
-              "label": "\u00a711 APIs Involved (backlog.json shape)"
+              "label": "§11 APIs Involved (backlog.json shape)"
             },
             {
               "doc": "lld",
               "component": "backlog-store",
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld backlog-store lands"
+              "section_id": "data-model",
+              "anchor_url": "lld-backlog-store.md#data-model",
+              "label": "§4 Data model (entry shape + id contract)"
             }
           ],
           "pm_id": null,
@@ -101,20 +110,22 @@
           "priority": "high",
           "week": null,
           "milestone_id": "M1",
-          "description": "Provide a capture path usable both by the user (`/backlog add`) and by any Shield skill (a documented write helper). Writes are atomic (temp-then-rename) and validate-or-refuse so a concurrent capture racing reconciliation cannot corrupt backlog.json. This resolves the PRD-review P1 'capture interface undefined'.",
+          "description": "Provide a capture path usable both by the user (/backlog add) and by any Shield skill (a documented write helper). Writes are atomic (temp-then-rename), validate-or-refuse, and carry a compare-before-replace check so a concurrent on-disk change cannot silently drop an entry. This resolves the PRD-review P1 'capture interface undefined' and closes TRD §12 Q3.",
           "tasks": [
-            "Add a `/backlog add` path to the backlog command that appends an entry (assigns the next `order`).",
-            "Expose a skill-callable write helper (documented function/contract: the fields a skill must pass \u2014 text, kind, feature?, epic?, source) so an agent can capture mid-task.",
-            "Implement atomic write: write backlog.json.tmp then rename; on failure remove .tmp and surface the error.",
-            "Validate-or-refuse on read/write: a malformed/partial backlog.json never silently truncates.",
-            "LOCKED (plan-review 2026-05-27): write-helper signature `capture(text, *, kind='task', feature=None, epic=None, source) -> entry_id` in shield/scripts/backlog_store.py, raising BacklogInvalid (TRD \u00a711).",
-            "LOCKED: concurrency = single-writer assumption (no lock); build full doc -> .tmp -> os.replace(); reads validate-or-refuse (TRD \u00a76 N1)."
+            "Add a /backlog add path to the backlog command that appends an entry (assigns the next order and a uuid4 id).",
+            "LOCKED (plan-review 2026-05-27): write-helper signature capture(text: str, *, kind: str = 'task', feature: str | None = None, epic: str | None = None, source: str) -> str (returns entry id) in shield/scripts/backlog_store.py, raising BacklogInvalid on a malformed/partial store. Pinned in TRD §11. Every capturing skill builds against this.",
+            "LOCKED (plan-review 2026-05-27): concurrency = single-writer assumption (no lock); build full doc -> .tmp -> os.replace(); reads validate-or-refuse (TRD §6 N1). Revisit with a lockfile only if Shield becomes multi-actor.",
+            "ADDED (plan-review 2026-05-29, P1-1/security P1-a): compare-before-replace — capture()/remove() capture the on-disk schema_version+entry-count (or mtime/hash) at read time and refuse the os.replace() if the file changed underneath, raising BacklogInvalid. Converts a silent lost-update (the real N1/N5 threat) into a loud refusal WITHOUT a lockfile.",
+            "ADDED (plan-review 2026-05-29, P1-4): package backlog_store as an importable module with a pyproject.toml (F3 requires skills to import capture()); document the import path. This makes the EPIC-4-S2 version bump unconditional.",
+            "Validate-or-refuse on read AND write: a malformed/partial backlog.json never silently truncates and is refused with a named error; a capture() that would produce a schema-invalid in-memory doc refuses before os.replace().",
+            "Expose the write helper as the documented contract (fields a skill must pass — text, kind, feature?, epic?, source) so an agent can capture mid-task."
           ],
           "acceptance_criteria": [
-            "A user can capture an entry via `/backlog add`; a skill can capture via the documented write helper with source=agent.",
-            "The capture interface (command + helper signature/fields) is documented in the backlog SKILL.md.",
+            "A user can capture an entry via /backlog add; a skill can capture via the documented write helper with source=agent.",
+            "The capture interface (command + capture() helper signature/fields) is documented in the backlog SKILL.md and pinned in TRD §11.",
             "Killing capture mid-write leaves no corrupted backlog.json (only a .tmp may remain, cleaned up next run).",
-            "A new entry is assigned the next integer `order` and a default kind when unspecified.",
+            "A concurrent on-disk change between read and os.replace() is refused with BacklogInvalid (compare-before-replace) — no entry is silently lost.",
+            "A new entry is assigned the next integer order, a uuid4 id, and a default kind when unspecified.",
             "A malformed/partial backlog.json on read is refused with a named error (BacklogInvalid), never silently read or truncated."
           ],
           "design_refs": [
@@ -123,14 +134,14 @@
               "component": null,
               "section_id": "functional-requirements",
               "anchor_url": "trd.md#functional-requirements",
-              "label": "\u00a75 Functional Requirements (capture)"
+              "label": "§5 Functional Requirements (capture)"
             },
             {
               "doc": "lld",
               "component": "backlog-store",
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld backlog-store lands"
+              "section_id": "api-contracts",
+              "anchor_url": "lld-backlog-store.md#api-contracts",
+              "label": "§5 API contracts (capture() write helper)"
             }
           ],
           "pm_id": null,
@@ -138,22 +149,25 @@
         },
         {
           "id": "EPIC-1-S3",
-          "name": "/backlog view \u2014 ordered list",
+          "name": "/backlog view — ordered list",
           "status": "ready",
           "assignee": null,
           "priority": "high",
           "week": null,
           "milestone_id": "M1",
-          "description": "Implement the `/backlog` command + skill that renders the current backlog ordered by the `order` field, showing each entry's feature + epic association and source. Pipeline status badges are added in EPIC-2-S1.",
+          "description": "Implement the /backlog command + skill that renders the current backlog ordered by the order field, showing each entry's feature + epic association and source. Pipeline status badges are added in EPIC-2-S1.",
           "tasks": [
             "Author shield/commands/backlog.md and shield/skills/general/backlog/SKILL.md.",
-            "Render entries sorted by `order`, each line showing id, feature, epic, source, and text.",
+            "Render entries sorted by order, each line showing id, feature, epic, source, and text.",
+            "Define the per-entry render line format once in the backlog SKILL.md (the canonical badge string is specified in EPIC-2-S1) so every view path renders identically.",
+            "Document a local-dev / dry-run loop in the backlog SKILL.md (how to view against a fixture backlog.json without mutating the project store).",
             "Handle the empty-backlog case with a clear message."
           ],
           "acceptance_criteria": [
-            "`/backlog` lists entries in ascending `order` with feature + epic + source per entry.",
+            "/backlog lists entries in ascending order with feature + epic + source per entry.",
             "An empty backlog renders a clear 'no entries' message, not an error.",
-            "The command is registered and discoverable in the Shield plugin."
+            "The command is registered and discoverable in the Shield plugin.",
+            "The render line format is documented once in the backlog SKILL.md and reused by every view path."
           ],
           "design_refs": [
             {
@@ -161,7 +175,7 @@
               "component": null,
               "section_id": "product-journey",
               "anchor_url": "trd.md#product-journey",
-              "label": "\u00a74 Product Journey (view)"
+              "label": "§4 Product Journey (view)"
             }
           ],
           "pm_id": null,
@@ -175,15 +189,16 @@
           "priority": "medium",
           "week": null,
           "milestone_id": "M1",
-          "description": "Allow explicitly removing an entry from `/backlog` by id \u2014 for ideas decided against and for entries not cleared by a promotion run. Removal is a plain delete (no retained history in v1).",
+          "description": "Allow explicitly removing an entry from /backlog by id — for ideas decided against and for entries not cleared by a promotion run. Removal is a plain delete (no retained history in v1).",
           "tasks": [
-            "Add a `/backlog remove <id>` path that deletes the entry via the atomic write helper.",
-            "Confirm-before-delete for a user-initiated remove; surface a clear message if the id is absent."
+            "Add a /backlog remove <id> path that deletes the entry via the atomic write helper.",
+            "Confirm-before-delete for a user-initiated remove; surface a clear message if the id is absent.",
+            "Document the recoverability boundary: git revert (N4) recovers only entries that reached a commit; a manual remove of an uncommitted entry is unrecoverable by design."
           ],
           "acceptance_criteria": [
-            "`/backlog remove <id>` deletes the entry and the change is persisted atomically.",
+            "/backlog remove <id> deletes the entry and the change is persisted atomically.",
             "Removing a non-existent id reports a clear error and makes no change.",
-            "No history is retained (plain delete), per the v1 decision."
+            "No history is retained (plain delete), per the v1 decision; the uncommitted-entry recoverability caveat is documented."
           ],
           "design_refs": [
             {
@@ -191,7 +206,14 @@
               "component": null,
               "section_id": "functional-requirements",
               "anchor_url": "trd.md#functional-requirements",
-              "label": "\u00a75 Functional Requirements (manual remove)"
+              "label": "§5 Functional Requirements (manual remove)"
+            },
+            {
+              "doc": "lld",
+              "component": "backlog-store",
+              "section_id": "api-contracts",
+              "anchor_url": "lld-backlog-store.md#api-contracts",
+              "label": "§5 API contracts (remove)"
             }
           ],
           "pm_id": null,
@@ -213,15 +235,15 @@
           "priority": "high",
           "week": null,
           "milestone_id": "M1",
-          "description": "Enrich the `/backlog` view so each entry shows its feature's pipeline status (research / prd / plan) read live from manifest.json artifact flags. This lets an entry show 'prd done, not yet planned' without being removed.",
+          "description": "Enrich the /backlog view so each entry shows its feature's pipeline status (research / prd / plan) read live from manifest.json artifact flags. This lets an entry show 'prd done, not yet planned' without being removed.",
           "tasks": [
             "Read manifest.json; for each entry, look up its feature and surface the artifacts.{research,prd,plan_json} flags as status badges.",
-            "Render a badge line per entry (e.g. 'research \u2713  prd \u2713  plan \u2013'); 'not started' when the feature is absent from manifest.json.",
+            "Pin the canonical badge string in the backlog SKILL.md: 'research ✓  prd ✓  plan –' (✓ present, – absent); 'not started' when the feature is absent from manifest.json.",
             "Compute status at view time (no stored status field)."
           ],
           "acceptance_criteria": [
-            "`/backlog` shows research/prd/plan badges per entry derived from manifest.json.",
-            "An entry whose feature has a prd but no plan shows 'prd \u2713 plan \u2013' and remains in the backlog.",
+            "/backlog shows research/prd/plan badges per entry derived from manifest.json using the pinned badge string.",
+            "An entry whose feature has a prd but no plan shows 'prd ✓ plan –' and remains in the backlog.",
             "An entry whose feature is absent from manifest.json shows 'not started'."
           ],
           "design_refs": [
@@ -230,7 +252,7 @@
               "component": null,
               "section_id": "high-level-design",
               "anchor_url": "trd.md#high-level-design",
-              "label": "\u00a77 High-Level Design (manifest as index)"
+              "label": "§7 High-Level Design (manifest as index)"
             }
           ],
           "pm_id": null,
@@ -244,18 +266,20 @@
           "priority": "high",
           "week": null,
           "milestone_id": "M2",
-          "description": "At capture/promotion, associate every entry with a feature (the reconciliation key) and an epic (the removal gate) \u2014 either may be proposed-new. The agent suggests a matching feature (from manifest.json) and epic (from that feature's plan.json), and the user can accept, pick another, or create-new.",
+          "description": "At capture/promotion, associate every entry with a feature (the reconciliation key) and an epic (the removal gate) — either may be proposed-new. The agent suggests a matching feature (from manifest.json) and epic (from that feature's plan.json), and the user can accept, pick another, or create-new.",
           "tasks": [
             "On capture, prompt for / accept a feature + epic; allow proposed-new for either.",
-            "Implement suggestion: scan manifest.json features and the candidate feature's plan.json epics; propose the best match.",
-            "Let the user accept the suggestion, choose another, or create-new; never block capture if no match exists.",
-            "LOCKED (plan-review 2026-05-27): match = exact normalized (casefold + collapsed whitespace); existing epic by id, proposed-new by exact normalized name; no fuzzy/token-overlap ranking in v1."
+            "LOCKED (plan-review 2026-05-27): match = exact normalized (casefold + collapsed whitespace); no fuzzy/token-overlap ranking in v1. UPDATED (plan-review 2026-05-29, P0-2): both existing AND proposed-new epics match by exact normalized NAME (epic id EPIC-N is a positional within-plan slot, not a cross-plan identity). Specified in TRD §5 F7/F8.",
+            "Implement suggestion against the pinned real shapes (P0-1): suggest_feature(text, *, manifest) reads manifest.features[].name; suggest_epic(text, *, feature, plans) reads plans[feature].epics[], where plans is dict[feature-slug -> parsed plan.json] with the path derived as docs/shield/<slug>/plan.json for features whose artifacts.plan_json == true.",
+            "suggest_feature returns features[].name, which IS the folder slug (invariant pinned in EPIC-1-S1, P1-3).",
+            "Let the user accept the suggestion, choose another, or create-new; never block capture if no match exists; a tie (>=2 normalized matches) surfaces all tied candidates and auto-picks none."
           ],
           "acceptance_criteria": [
             "Every captured entry carries a feature + epic association (existing or proposed-new).",
             "The agent proposes >=1 feature and >=1 epic candidate when matches exist; the user can accept/replace/create-new.",
-            "Capture still succeeds with a proposed-new feature/epic when no match exists.",
-            "Suggestion uses exact normalized match only; a 2-way normalized-name tie surfaces both candidates and auto-picks neither."
+            "Given a fixture manifest with feature 'auth', capturing text mentioning 'auth' surfaces 'auth' as the top candidate; a 2-way normalized-name tie surfaces both and auto-picks neither.",
+            "A suggested feature value resolves to an existing docs/shield/<value>/ path (name == folder slug).",
+            "Capture still succeeds with a proposed-new feature/epic when no match exists."
           ],
           "design_refs": [
             {
@@ -263,14 +287,14 @@
               "component": null,
               "section_id": "functional-requirements",
               "anchor_url": "trd.md#functional-requirements",
-              "label": "\u00a75 Functional Requirements (association + suggestion)"
+              "label": "§5 Functional Requirements (association + suggestion)"
             },
             {
               "doc": "lld",
               "component": "epic-suggester",
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld epic-suggester lands"
+              "section_id": "api-contracts",
+              "anchor_url": "lld-epic-suggester.md#api-contracts",
+              "label": "§5 API contracts (suggest)"
             }
           ],
           "pm_id": null,
@@ -294,7 +318,7 @@
           "milestone_id": "M3",
           "description": "Let the user promote an entry by starting the Shield step they choose (/research, /prd, /plan, or /implement) from it. The promoted command carries the entry id as a transient runtime reference (NOT an id stamped into plan.json), used to prune the entry on success.",
           "tasks": [
-            "Add a `/backlog promote <id>` affordance that launches the user-chosen step and passes the entry id as a transient promotion reference.",
+            "Add a /backlog promote <id> affordance that launches the user-chosen step and passes the entry id as a transient promotion reference.",
             "Document that the reference is a runtime command argument, never written into plan.json/story records.",
             "Shippable work routes through /plan; direct /implement stays available for rare planless one-offs."
           ],
@@ -309,7 +333,7 @@
               "component": null,
               "section_id": "product-journey",
               "anchor_url": "trd.md#product-journey",
-              "label": "\u00a74 Product Journey (promotion)"
+              "label": "§4 Product Journey (promotion)"
             }
           ],
           "pm_id": null,
@@ -323,19 +347,21 @@
           "priority": "high",
           "week": null,
           "milestone_id": "M3",
-          "description": "Implement the core reconciliation: locate an entry's feature in manifest.json, and if it has a plan.json, check whether the entry's epic landed. Match key: existing-epic entries by epic id, proposed-new by epic name (names assumed stable). On ambiguity or no match, the entry stays. Treat unrecognized manifest.json/plan.json shapes as doubt (entry stays), never crashing.",
+          "description": "Implement the core reconciliation: locate an entry's feature in manifest.json, and if it has a plan.json, check whether the entry's epic landed. The 'epic landed' gate is one precise predicate, used everywhere: an entry is removed when an epic with the matching normalized-exact NAME is present in plan.json.epics[]; story status is NOT consulted. On ambiguity or no match, the entry stays. Treat unrecognized manifest.json/plan.json shapes as doubt (entry stays), never crashing.",
           "tasks": [
-            "Implement shield/scripts/reconcile_backlog.py: for an entry (feature, epic), read manifest.json (feature present? has plan_json?), then open the flagged plan.json and check for the epic.",
-            "Match key: existing epic id match, else proposed-new epic-name match against plan.json epic titles.",
+            "Implement shield/scripts/reconcile_backlog.py with reconcile(entry, *, manifest: dict, plans: dict[str, dict]) -> RemovalDecision as a pure function over already-read docs (P0-1): manifest is the parsed {schema_version, features:[{name, artifacts:{plan_json: bool, ...}}]}; plans maps feature-slug -> parsed plan.json (path derived as docs/shield/<slug>/plan.json, NOT stored in manifest).",
+            "UPDATED (plan-review 2026-05-29, P0-2): match key = epic by casefold+collapsed-ws exact NAME for BOTH existing and proposed-new entries. Epic id (EPIC-N) is a positional within-plan slot reassigned on every re-/plan, so it is NOT a cross-plan key; never gate removal on epic id. Tie (>=2 name matches) or no match -> entry stays. Story status is never consulted.",
             "Never remove on ambiguity/no-match; a prd-only feature is not removed.",
-            "Read-contract drift tolerance: an unrecognized manifest.json/plan.json shape is treated as doubt (entry stays), with a logged warning \u2014 no crash.",
-            "LOCKED (plan-review 2026-05-27): match key = existing epic by id, proposed-new by casefold+collapsed-ws exact name; tie (>=2 matches) or no match -> entry stays."
+            "Read-contract drift tolerance: an unrecognized manifest.json/plan.json shape is treated as doubt (entry stays), with a logged warning — no crash.",
+            "Define the RemovalDecision dataclass (REMOVE / STAY_AMBIGUOUS / STAY_NO_MATCH / STAY_DOUBT) carrying the F9 log fields. Log every removal with rationale: {entry id, feature, epic, match-kind (name), triggering run, gating plan.json path} — a confident removal must not be a silent git diff."
           ],
           "acceptance_criteria": [
-            "An entry whose epic's stories appear in the feature's plan.json is selected for removal; a prd-only feature is not.",
-            "Existing-epic entries match by epic id; proposed-new by epic name; ambiguous/no-match entries stay.",
+            "An entry is removed only when an epic with normalized-exact NAME is present in plan.json.epics[]; story status is NOT consulted; a prd-only feature is not removed.",
+            "Both existing and proposed-new entries match by normalized-exact epic NAME; removal is never gated on epic id; ambiguous/no-match entries stay.",
+            "An epic reordered or renumbered across a re-/plan (same name, different EPIC-N) still resolves correctly (name-based, not id-based).",
+            "An epic-name collision across two different features is ambiguous → the entry stays (the one place a wrong removal is plausible; PRD §10 risk / §14 trigger).",
             "A malformed or older-shape manifest.json/plan.json results in 'entry stays' (logged), never an exception.",
-            "An entry is removed only when an epic with matching id (existing) or normalized-exact name (proposed-new) is present in plan.json.epics[]; story status is NOT consulted."
+            "Every removal emits a structured log line carrying {entry id, feature, epic, match-kind, triggering run, gating plan.json path}."
           ],
           "design_refs": [
             {
@@ -343,14 +369,14 @@
               "component": null,
               "section_id": "high-level-design",
               "anchor_url": "trd.md#high-level-design",
-              "label": "\u00a77 High-Level Design (reconciliation)"
+              "label": "§7 High-Level Design (reconciliation)"
             },
             {
               "doc": "lld",
               "component": "reconciler",
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld reconciler lands"
+              "section_id": "sequence-flows",
+              "anchor_url": "lld-reconciler.md#sequence-flows",
+              "label": "§6 Sequence flows (reconcile)"
             }
           ],
           "pm_id": null,
@@ -358,24 +384,29 @@
         },
         {
           "id": "EPIC-3-S3",
-          "name": "Eager + lazy removal triggers (idempotent)",
+          "name": "Eager + lazy removal triggers (idempotent) + kill switch",
           "status": "ready",
           "assignee": null,
           "priority": "high",
           "week": null,
           "milestone_id": "M3",
-          "description": "Wire the two automatic removal triggers on top of the reconciliation engine: eager prune at the end of a promoted /plan or /implement run (using the transient reference), and a lazy sweep on /backlog view. Both are idempotent (remove-if-present) so they can't double-remove or race.",
+          "description": "Wire the two automatic removal triggers on top of the reconciliation engine: eager prune at the end of a promoted /plan or /implement run (using the transient reference), and a lazy sweep on /backlog view. Both are idempotent (remove-if-present) so they can't double-remove or race. Depends on EPIC-3-S1 (transient reference) and EPIC-3-S2 (engine) and must land after both. Ships the kill switch and closes the uncommitted-state recovery gap.",
           "tasks": [
             "At the end of /plan and /implement, if the run carried a promotion reference, prune that entry on success (eager).",
             "On /backlog view, run the reconciliation sweep over all entries (lazy safety net).",
-            "Make both paths idempotent: removing an already-absent entry is a no-op.",
-            "Ensure the sweep and eager prune share the reconciliation engine (no divergent logic)."
+            "Make both paths idempotent: removing an already-absent entry is a no-op; ensure the sweep and eager prune share the EPIC-3-S2 reconciliation engine (no divergent logic).",
+            "Ship the kill switch: a .shield.json flag backlog.auto_reconcile (default true) that, when false, disables eager prune and lazy sweep, leaving manual-remove only — the §14 rollback fallback. ADDED (plan-review 2026-05-29, P0-3): extend shield/schemas/shield.schema.json with an optional 'backlog' object ({auto_reconcile: bool, default true}) — the current schema has additionalProperties:false, so the flag fails validation without this. Add a config example.",
+            "RESOLVED (plan-review 2026-05-29, P1-1): the uncommitted-state recovery mechanism for v1 is the transient append-only .shield/backlog-removed.log — append the pruned entry BEFORE the destructive remove; replaying the log restores it. Commit-before-prune is an explicit non-goal (avoids forcing a possibly-dirty-tree commit on every prune).",
+            "A no-op eager prune (entry already removed by the lazy sweep) emits no log line and writes no recovery record.",
+            "Instrument the N2 ~1s budget: add a debug-gated latency line to /backlog view that logs WARN if view+sweep > 1s so 'revisit if breached' is falsifiable."
           ],
           "acceptance_criteria": [
             "Promoting via /plan or /implement removes the referenced entry at end of run (eager), before the next /backlog view.",
             "The /backlog sweep removes any entry whose work has since landed in a plan.json (lazy).",
-            "Running eager prune then the sweep on the same entry is a no-op the second time (idempotent).",
-            "Eager and lazy paths call the same reconciliation engine."
+            "Running eager prune then the sweep on the same entry is a no-op the second time (idempotent); eager and lazy paths call the same reconciliation engine.",
+            "Setting backlog.auto_reconcile=false in .shield.json (now schema-valid) disables both eager prune and lazy sweep, leaving manual-remove functional.",
+            "An end-of-run prune appends the entry to .shield/backlog-removed.log before the destructive remove; replaying the log restores the entry (single recovery mechanism).",
+            "A debug-gated latency line on /backlog view reports view+sweep wall time and logs WARN above the 1s budget."
           ],
           "design_refs": [
             {
@@ -383,14 +414,14 @@
               "component": null,
               "section_id": "high-level-design",
               "anchor_url": "trd.md#high-level-design",
-              "label": "\u00a77 High-Level Design (triggers)"
+              "label": "§7 High-Level Design (triggers)"
             },
             {
               "doc": "lld",
               "component": "reconciler",
-              "section_id": null,
-              "anchor_url": null,
-              "label": "TODO: link when /lld reconciler lands"
+              "section_id": "concurrency-and-state",
+              "anchor_url": "lld-reconciler.md#concurrency-and-state",
+              "label": "§8 Concurrency & state (idempotent triggers)"
             }
           ],
           "pm_id": null,
@@ -406,24 +437,28 @@
       "stories": [
         {
           "id": "EPIC-4-S1",
-          "name": "Executable evals for the backlog lifecycle (RED\u2192GREEN)",
+          "name": "Executable evals for the backlog lifecycle (RED→GREEN)",
           "status": "ready",
           "assignee": null,
           "priority": "high",
           "week": null,
           "milestone_id": "M3",
-          "description": "Per CLAUDE.md's mandatory eval-coverage policy, author executable evals that exercise the new backlog behavior: capture (user + skill), view + pipeline status, manual remove, eager prune, lazy sweep, match-key, and never-remove-on-doubt. Capture the RED\u2192GREEN paper trail in the PR.",
+          "description": "Per CLAUDE.md's mandatory eval-coverage policy, author executable evals that exercise the new backlog behavior: capture (user + skill), view + pipeline status, manual remove, eager prune, lazy sweep, match-key, never-remove-on-doubt, concurrency (no lost entry), no-stamping (F6), and recovery-rehearsal. Capture the RED→GREEN paper trail in the PR.",
           "tasks": [
-            "Author fixtures: a backlog.json + a manifest.json + plan.json set that exercises prd-only-stays, plan-committed-removed, ambiguous-match-stays, and malformed-shape-stays.",
-            "Write evals asserting: validate_backlog rejects bad entries; view renders correct status badges; manual remove deletes; eager prune and lazy sweep remove plan-committed entries idempotently.",
-            "Wire into the recurring eval runner/CI consistent with existing shield/evals/ patterns.",
-            "Capture RED (before) and GREEN (after) outputs in the implementation PR body."
+            "Author fixtures from the REAL artifact schemas (P0-1): a backlog.json + a manifest.json ({schema_version, features:[{name, artifacts:{plan_json: bool,...}}]}) + plan.json set that exercises prd-only-stays, plan-committed-removed, ambiguous-match-stays (epic-name collision across features), malformed-shape-stays, and re-planned-epic-reorder-still-resolves (same epic name, different EPIC-N — P0-2).",
+            "Write evals asserting: validate_backlog rejects bad/duplicate-id entries; view renders correct status badges; manual remove deletes; eager prune and lazy sweep remove plan-committed entries idempotently.",
+            "Add a concurrency/lost-update eval (P1-1/security P1-a): assert a concurrent on-disk change between read and os.replace() is refused with BacklogInvalid (compare-before-replace) — no corruption AND no lost entry. This tests a detectable behavior, not a race the single-writer design forbids.",
+            "Add a write-side validation eval (security P1-b): a capture() that would produce a schema-invalid document raises BacklogInvalid and leaves backlog.json byte-unchanged (no .tmp promoted).",
+            "Add a no-stamping eval (F6): after promotion via /plan or /implement, assert plan.json and story records are byte-unchanged.",
+            "Add a recovery-rehearsal eval (security P1-c): after a simulated crash at the ordering seam (after .shield/backlog-removed.log append, before the destructive remove), assert the entry is recoverable by replaying the log — not just the clean wrong-removal case.",
+            "Name the CI entrypoint as a CONCRETE value (P1/DX): the actual workflow file + runner (e.g. .github/workflows/<file>.yml invoking the shield/evals/ runner), with the path-filter glob scoping 'backlog assets' (shield/{schema,scripts,skills/general/backlog}/**, shield/commands/backlog.md)."
           ],
           "acceptance_criteria": [
-            "An eval suite under shield/evals/ covers capture, view+status, manual remove, eager prune, lazy sweep, match-key, and never-remove-on-doubt.",
+            "An eval suite under shield/evals/ covers capture, view+status, manual remove, eager prune, lazy sweep, name-match-key, never-remove-on-doubt, re-plan epic-reorder, concurrency/lost-update detection, write-side refusal, no-stamping (F6), and ordering-seam recovery-rehearsal.",
+            "Fixtures use the real manifest.json/plan.json shapes (list-keyed features, boolean plan_json flag).",
             "Evals are self-contained (no external API/LLM calls) and run via uv.",
             "The PR body contains RED and GREEN sections demonstrating the behavior before and after.",
-            "CI runs the eval on PRs touching the backlog assets."
+            "The named CI workflow runs the eval on PRs touching the backlog-asset path glob."
           ],
           "design_refs": [
             {
@@ -431,7 +466,7 @@
               "component": null,
               "section_id": "milestones",
               "anchor_url": "trd.md#milestones",
-              "label": "\u00a710 Milestones (eval gate)"
+              "label": "§10 Milestones (eval gate)"
             }
           ],
           "pm_id": null,
@@ -445,16 +480,19 @@
           "priority": "medium",
           "week": null,
           "milestone_id": "M3",
-          "description": "Ship the feature: bump the Shield plugin version per CLAUDE.md (marketplace.json, and pyproject.toml for any Python package touched) in the same commit as the asset changes, and finalize the /backlog command + backlog SKILL.md docs (capture interface, reconciliation triggers, manual remove).",
+          "description": "Ship the feature: bump the Shield plugin version per CLAUDE.md (marketplace.json, and pyproject.toml for any Python package touched) in the same commit as the asset changes, and finalize the /backlog command + backlog SKILL.md docs (capture interface, reconciliation triggers, kill switch, manual remove, audit cadence).",
           "tasks": [
             "Bump .claude-plugin/marketplace.json version for the Shield plugin entry.",
-            "Bump pyproject.toml in any Python package modified (e.g. if backlog scripts are packaged).",
-            "Finalize shield/commands/backlog.md and shield/skills/general/backlog/SKILL.md: capture interface, three removal triggers, match key, manual remove, status badges.",
+            "Bump the backlog_store pyproject.toml — UNCONDITIONAL (P1-4): backlog_store is now a packaged importable module (EPIC-1-S2), so the version bump is not 'if packaged'.",
+            "Commit the shield/schemas/shield.schema.json 'backlog' object change (P0-3) in the same commit as the kill-switch asset changes.",
+            "Finalize shield/commands/backlog.md and shield/skills/general/backlog/SKILL.md: capture interface, three removal triggers, kill switch, name match key, manual remove, status badges, AND the wrong-removal recovery procedure (flip kill switch -> locate F9 log line -> replay .shield/backlog-removed.log).",
+            "Document the manual /backlog audit at a FIXED interval (monthly) with the concrete revisit trigger lifted from PRD §7: revisit scope if <70% of entries reach a terminal state within 30 days or >20% sit untouched >60 days.",
             "Update Shield's CHANGELOG noting the backlog feature."
           ],
           "acceptance_criteria": [
-            "The version is bumped in .claude-plugin/marketplace.json (and pyproject.toml where applicable) in the same commit as the asset changes.",
-            "/backlog command and backlog SKILL.md document capture, view+status, promote, manual remove, and the three removal triggers.",
+            "The version is bumped in .claude-plugin/marketplace.json AND backlog_store's pyproject.toml, and the shield.schema.json backlog change is committed, all in the same commit as the asset changes.",
+            "/backlog command and backlog SKILL.md document capture, view+status, promote, manual remove, the three removal triggers, the kill switch, the wrong-removal recovery procedure, and the fixed monthly audit cadence with numeric revisit triggers.",
+            "Explicit DoD lines are present ('PR reviewed and merged', 'marketplace version published') so 'done' is unambiguous.",
             "CHANGELOG mentions the backlog feature."
           ],
           "design_refs": [
@@ -463,7 +501,7 @@
               "component": null,
               "section_id": "references",
               "anchor_url": "trd.md#references",
-              "label": "\u00a713 References (release)"
+              "label": "§13 References (release)"
             }
           ],
           "pm_id": null,
@@ -476,9 +514,8 @@
   ],
   "metadata": {
     "created_at": "2026-05-27",
-    "domains": [
-      "python"
-    ],
+    "replanned_at": "2026-05-29",
+    "domains": ["python"],
     "reviewer_grades": {},
     "source_prd_review": {
       "path": "reviews/prd/2026-05-27_2",
@@ -500,6 +537,38 @@
         "single_writer_concurrency",
         "exact_normalized_match",
         "pm10_validate_from_v1_data"
+      ],
+      "folded_findings": [
+        "P0 gate-0d: TRD §2 paraphrased, not verbatim PRD §3",
+        "Backend P1-a: id contract (uuid4 + uniqueness) + duplicate-id AC (EPIC-1-S1)",
+        "Backend P2-a: single 'epic landed' predicate, story status not consulted (EPIC-3-S2)",
+        "SRE OP1: log every removal with rationale (EPIC-3-S2)",
+        "SRE OP7: kill switch backlog.auto_reconcile (EPIC-3-S3)",
+        "SRE OP4: uncommitted-state recovery gap (EPIC-3-S3)",
+        "SRE OP2/OP5: N2 latency instrumentation (EPIC-3-S3)",
+        "Security P1: concurrency + no-stamping evals (EPIC-4-S1)",
+        "SRE P2: recovery-rehearsal eval + audit cadence (EPIC-4-S1/S2)",
+        "Agile P2: explicit DoD lines (EPIC-4-S2)"
+      ]
+    },
+    "plan_review_2026_05_29": {
+      "path": "reviews/plan/2026-05-29",
+      "verdict": "Ready",
+      "composite": 3.49,
+      "composite_grade": "B+",
+      "p0_applied": [
+        "P0-1: reconcile/suggest_* typed against real manifest/plan shapes; plans=dict[slug->plan], path derived (EPIC-2-S2/EPIC-3-S2, TRD §11, LLDs)",
+        "P0-2: epic match by normalized NAME not positional EPIC-N id (EPIC-2-S2/EPIC-3-S2, M3 exit, TRD §5 F8, lld-reconciler)",
+        "P0-3: additive 'backlog' object added to shield/schemas/shield.schema.json so the kill switch validates (EPIC-3-S3/EPIC-4-S2)"
+      ],
+      "p1_applied": [
+        "P1-1: recovery mechanism resolved to .shield/backlog-removed.log; commit-before-prune is a non-goal (EPIC-3-S3, TRD §6 N4/§14)",
+        "P1 (backend/security): compare-before-replace lost-update detection (EPIC-1-S2, TRD §6 N1, lld-backlog-store)",
+        "P1-2: duplicate_entry_id enforced by validator not JSON Schema (EPIC-1-S1, TRD §5 F2)",
+        "P1-3: feature name==folder-slug invariant pinned (EPIC-1-S1/EPIC-2-S2)",
+        "P1-4: backlog_store packaged; unconditional pyproject bump (EPIC-1-S2/EPIC-4-S2)",
+        "P1 (DX): concrete CI entrypoint (EPIC-4-S1)",
+        "P1 (security): write-side + ordering-seam recovery evals (EPIC-4-S1)"
       ]
     }
   }
