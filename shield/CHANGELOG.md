@@ -1,5 +1,23 @@
 # Shield — Changelog
 
+## 2.23.0 — 2026-05-29 — TRD rendering & generation fixes
+
+### Fixed
+- **TRD §10 milestone ordering**: milestones now render in dependency-topological
+  then numeric order (M1, M2, … M16) instead of lexical order (M1, M10, M11, …).
+- **Broken relative links in rendered HTML**: body links (plan.json, PRD, plan.md,
+  images) rendered into `outputs/` are now rewritten by the md→out directory delta
+  so they resolve correctly.
+
+### Added
+- **TRD §10 milestone→LLD links**: each milestone renders a "Detailed design:" line
+  linking its `touches_lld[]` components to their `lld-<component>.md` drafts, plus
+  an optional per-milestone `description`.
+- **TRD §7 Mermaid diagrams**: `/plan` guidance now requires Mermaid (topology +
+  sequence + boundary) instead of ASCII art.
+- **TRD §13 LLD references** derived from `lld_components[]` with the draft→promote
+  lifecycle note.
+
 ## 2.22.0 — 2026-05-29 — `/backlog` capture / view / promote / reconcile
 
 ### Added
