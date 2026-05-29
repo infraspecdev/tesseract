@@ -39,7 +39,7 @@ def _rewrite_relative(url: str, prefix: str) -> str:
     """
     if not prefix or prefix == "." or not url:
         return url
-    if url.startswith(("#", "/", "mailto:")) or url.startswith("//") or "://" in url:
+    if url.startswith(("#", "/", "mailto:", "data:")) or url.startswith(("//", "?")) or "://" in url:
         return url
     return posixpath.normpath(posixpath.join(prefix, url))
 

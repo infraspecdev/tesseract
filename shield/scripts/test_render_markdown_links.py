@@ -64,9 +64,23 @@ def test_root_relative_untouched():
 
 def test_no_prefix_when_md_and_out_share_dir():
     out = _run("[plan](./plan.json)\n", out_subdir="")
-    assert 'href="./plan.json"' in out or 'href="plan.json"' in out
+    assert 'href="./plan.json"' in out
 
 
 def test_relative_link_with_fragment_prefixed_and_fragment_kept():
     out = _run("[x](./prd.md#sec)\n", out_subdir="outputs")
     assert 'href="../prd.md#sec"' in out
+
+
+def test_data_uri_untouched():
+    # data: URIs have no :// and no leading / # mailto, so without an explicit
+    # guard they would be mangled into ../data:image/... by the prefixer.
+    md = "![img](data:image/png;base64,iVBOR)\n"
+    out = _run(md, out_subdir="outputs")
+    assert 'src="data:image/png;base64,iVBOR"' in out
+
+
+def test_query_only_url_untouched():
+    # ?query-only hrefs should pass through unchanged.
+    out = _run("[x](?q=1)\n", out_subdir="outputs")
+    assert 'href="?q=1"' in out
