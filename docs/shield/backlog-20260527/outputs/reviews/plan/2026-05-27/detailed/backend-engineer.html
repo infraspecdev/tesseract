@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield Plan Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield Plan Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/plan/2026-05-27/</code>)</div>
+<h1 id="backend-engineer--detailed-findings">Backend Engineer — Detailed Findings</h1>
+<blockquote>
+<p>Back to <a href="../summary.md">summary</a></p>
+</blockquote>
+<h2 id="backend-reviewer--plan-review-shield-backlog">Backend Reviewer — Plan Review: Shield Backlog</h2>
+<p><strong>Scope:</strong> plan.md, trd.md, plan.json (4 epics / 11 stories / 3 milestones), grounded against <code>shield/schema/plan-sidecar.schema.json</code> and <code>docs/shield/manifest.json</code>.
+<strong>Stack:</strong> Python (uv), JSON-schema deliverables, command/skill markdown. No framework skills apply.</p>
+<h3 id="scorecard">Scorecard</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Evaluation Point</th>
+<th>Grade</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Data contract / schema design</td>
+<td>B</td>
+<td><code>backlog.json</code> contract is fully specified (§11, F1, EPIC-1-S1): <code>{schema_version:int, entries:[{id, order:int, kind, source, feature, epic, text}]}</code>, draft-2020-12, named errors. Gap: <code>id</code> has no type/format/uniqueness rule, and the <code>id</code> <em>generation</em> strategy is undefined (see P1-a). <code>epic</code>/<code>feature</code> typed only as bare strings with no &quot;proposed-new vs existing&quot; discriminator.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>API / interface design</td>
+<td>C</td>
+<td>The skill-facing write-helper — explicitly the carried-forward PRD-review P1 — is <strong>still open</strong> (Q3: &quot;exact function signature / module location … Resolution: lock in /lld backlog-store or at EPIC-1-S2 implementation&quot;). §11 describes it only as &quot;documented function/contract taking <code>{text, kind, feature?, epic?, source}</code>; returns the created entry id.&quot; Deferring the <em>signature</em> of the one cross-skill contract to implementation time is the central interface risk (P1-b).</td>
+</tr>
+<tr>
+<td>3</td>
+<td>File I/O correctness &amp; atomicity (N1)</td>
+<td>B</td>
+<td>Strong: temp-then-rename + validate-or-refuse, crash leaves at most <code>.tmp</code> cleaned next run, git-tracked recoverability (N1, N4, EPIC-1-S2). Gaps: (a) no <code>fsync</code>/<code>os.replace</code> durability detail — &quot;rename&quot; on POSIX via <code>os.replace</code> is atomic but the plan doesn't name the primitive; (b) <strong>no concurrency primitive named</strong> — N1 claims &quot;concurrent capture racing reconciliation must never corrupt&quot; but temp-then-rename alone does not prevent <em>lost updates</em> (two writers each read-modify-rename → last-writer-wins drops an entry). No lock/CAS/re-read-under-lock mentioned (P1-c).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Error handling</td>
+<td>A</td>
+<td>Consistently specified: named validator errors (<code>unknown_kind_enum</code>, <code>missing_required_field</code>, <code>schema_version_too_new</code>), absent-id no-op, empty-backlog message, malformed-upstream → entry-stays-with-log, never-crash (N3, F5, §9). Degradation paths are explicit and testable.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Testing strategy</td>
+<td>A</td>
+<td>EPIC-4-S1 mandates self-contained executable evals (no API/LLM) under <code>shield/evals/</code>, named fixtures (prd-only-stays, plan-committed-removed, ambiguous-stays, malformed-stays), RED→GREEN in PR, CI gate. Directly satisfies CLAUDE.md eval mandate. One missing case: no eval for the <strong>lost-update concurrency</strong> path (ties to P1-c) and none for <code>schema_version_too_new</code> migration.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Framework / idiom fit</td>
+<td>A</td>
+<td>Correct for the repo: uv-run scripts, pydantic+jsonschema, schema at <code>shield/schema/</code>, skill at <code>shield/skills/general/backlog/</code>, command at <code>shield/commands/</code>, version bump in marketplace.json + pyproject (EPIC-4-S2). Matches existing <code>validate_*</code>/<code>reconcile_*</code> script conventions.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Schema-grounding check (read-contract, N3 / §11):</strong> I verified the consumed shapes against the live files. <code>manifest.json</code> is <code>features[].{name, artifacts.{research,prd,plan_json,...}}</code> — <strong>§11 is accurate.</strong> <code>plan-sidecar.schema.json</code> has <code>epics[].{id (^EPIC-[0-9]+$), name, stories[]}</code> with <code>story.status ∈ {ready,in-progress,in-review,done,blocked}</code> — <strong>§11's <code>epics[].{id,name,stories[]}</code> is accurate.</strong> The read-contract claim is correct, which lifts N3 from a guess to a verified coupling. Good.</p>
+<hr />
+<h3 id="prioritized-recommendations">Prioritized Recommendations</h3>
+<p><strong>P1 — Important gaps (C/incomplete on important points):</strong></p>
+<ul>
+<li>
+<p><strong>P1-a · <code>id</code> contract underspecified (Eval point 1).</strong> F1 / §11 / the schema task list <code>id</code> as a required field but never define its type, format, or <strong>how it's generated</strong>. Manual-remove (<code>/backlog remove &lt;id&gt;</code>), promotion (<code>promote &lt;id&gt;</code>), and eager-prune all key off <code>id</code>, yet uniqueness and collision behavior are unstated. <em>Action:</em> in EPIC-1-S1, specify <code>id</code> type (string?), generation (uuid4 / monotonic / slug), and a uniqueness constraint in the schema. Add an AC: &quot;schema rejects duplicate <code>id</code>.&quot;</p>
+</li>
+<li>
+<p><strong>P1-b · Write-helper signature still open is a P0-shaped risk parked as Q3 (EvalPoint 2).</strong> This is the <em>exact</em> PRD-review P1 the plan claims to resolve in EPIC-1-S2, but §11 + Q3 punt the signature to &quot;/lld or implementation.&quot; Since EPIC-1-S2 is the contract <em>every capturing skill builds against</em>, an unspecified signature means downstream skills can't be written or tested against a stable shape. <em>Action:</em> lock the helper signature (name, module path, params, return, raise-on-invalid behavior) in EPIC-1-S1/S2 acceptance criteria — not deferred to LLD. At minimum pin: <code>capture(text, *, kind=&quot;task&quot;, feature=None, epic=None, source) -&gt; entry_id</code> and where it lives (<code>shield/scripts/backlog_store.py</code>?).</p>
+</li>
+<li>
+<p><strong>P1-c · Atomicity ≠ isolation; lost-update path unaddressed (EvalPoint 3, N1).</strong> N1's threat model is &quot;concurrent capture racing reconciliation.&quot; Temp-then-rename guarantees no <em>torn</em> file, but two concurrent read-modify-write cycles still silently drop one writer's entry (both read N entries, each writes N+1, second rename wins → one entry lost, no corruption flagged). The plan treats &quot;no corruption&quot; as equivalent to &quot;no data loss.&quot; <em>Action:</em> name the concurrency strategy — single-writer assumption documented as such, OR a lockfile / re-read-and-merge under exclusive open / <code>O_EXCL</code> temp. Add an eval fixture for two interleaved captures. If single-actor is the real assumption (N5 says &quot;single actor&quot;), state it explicitly in N1 and downgrade the &quot;racing reconciliation&quot; language, because eager-prune-at-end-of-/plan can genuinely run while an agent captures.</p>
+</li>
+</ul>
+<p><strong>P2 — Warnings / minor gaps on B items:</strong></p>
+<ul>
+<li>
+<p><strong>P2-a · &quot;Epic landed&quot; gate is ambiguous (EvalPoint 1/5, F7).</strong> F7 says remove &quot;when its epic's work appears in the feature's <code>plan.json</code>,&quot; EPIC-3-S2 AC says &quot;whose epic's <strong>stories</strong> appear,&quot; but the schema guarantees an epic always has <code>stories[] (minItems:1)</code> the moment it's written. So &quot;stories appear&quot; = &quot;epic exists&quot; — meaning an entry is pruned as soon as <code>/plan</code> <em>writes</em> the epic, regardless of whether any story is <code>done</code>. That may be intended (plan-committed = removed) but it's stated three slightly different ways. <em>Action:</em> state the gate as one precise predicate, e.g. &quot;epic with matching id/name is present in <code>plan.json.epics[]</code>&quot; — and explicitly note story <code>status</code> is <strong>not</strong> consulted. Removes reviewer ambiguity and pins the eval assertion.</p>
+</li>
+<li>
+<p><strong>P2-b · Proposed-new &quot;match by epic name&quot; fragility is acknowledged but not bounded (EvalPoint 2).</strong> Match key for proposed-new epics is <code>epic name</code> with &quot;names expected stable&quot; as an <em>unvalidated assumption</em> (PRD §10). The mitigation (§14: &quot;disable eager prune on repeated name collisions&quot;) is reactive. <em>Action:</em> add normalization rules to EPIC-3-S2 (case/whitespace-insensitive? exact?) and an AC for the collision case (&quot;two epics same normalized name → ambiguous → entry stays&quot;), which the &quot;ambiguous-stays&quot; fixture should already exercise — wire it explicitly to name-collision, not just structural ambiguity.</p>
+</li>
+<li>
+<p><strong>P2-c · <code>schema_version</code> migration is policy-only, no executable path (EvalPoint 1/5).</strong> The read-old/write-new policy is documented but EPIC-1-S1 only validates <code>schema_version_too_new</code> (reject). There's no migration <em>function</em> or eval for read-old. Acceptable for v1 (only one version exists), but the AC overstates (&quot;migration policy present&quot; = a doc, not code). <em>Action:</em> either add a no-op <code>migrate(doc)-&gt;doc</code> seam now with a test, or explicitly scope migration as doc-only-until-v2 in the AC so it isn't mistaken for working code.</p>
+</li>
+</ul>
+<hr />
+<h3 id="overall-persona-grade-b-30">Overall Persona Grade: <strong>B (3.0)</strong></h3>
+<p>Average of point grades: (B + C + B + A + A + A) = (3+2+3+4+4+4)/6 = 3.33 → <strong>B</strong>.</p>
+<p>The plan is well-grounded — the reconciliation read-contract is <em>verified accurate</em> against the live schemas (not assumed), error handling and testing strategy are A-grade, and the atomic-write framing is sound. It is held back from A by two important, named-but-unresolved interface/correctness gaps: the <strong>skill-facing write-helper signature is still open (Q3)</strong> despite being the headline PRD-review carry-forward, and <strong>N1 conflates atomicity with isolation</strong>, leaving the lost-update path under a &quot;single actor&quot; assumption that isn't stated where the threat is described. Resolve P1-b (lock the helper signature in EPIC-1-S1/S2 ACs) and P1-c (name the concurrency strategy + add the interleaved-capture eval) and this is an A.</p>
+
+</body>
+</html>

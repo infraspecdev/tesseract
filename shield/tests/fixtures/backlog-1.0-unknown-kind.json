@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "5b3f1f9c-8e9a-4a31-9d4c-1c2e9e8a4b51",
+      "order": 1,
+      "kind": "feature",
+      "source": "user",
+      "feature": "auth",
+      "epic": "Session management",
+      "text": "Rotate refresh tokens every 24h"
+    }
+  ]
+}

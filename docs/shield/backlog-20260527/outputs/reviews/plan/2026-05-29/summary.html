@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="sidecar" content="../../../../plan.json">
+<title>Shield Plan Review — Backlog</title>
+<style>
+ body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+ h1,h2,h3,h4{line-height:1.25;margin-top:1.6em} h1{color:#1a73e8;border-bottom:2px solid #e1e4e8;padding-bottom:.3em} h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+ code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em} pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto} pre code{background:none;padding:0}
+ table{border-collapse:collapse;width:100%;margin:1em 0} th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top} th{background:#f6f8fa}
+ blockquote{border-left:4px solid #1a73e8;margin:1em 0;padding:.2em 1em;color:#57606a}
+</style></head><body>
+<h1 id="plan-review--shield-backlog-backlog-20260527">Plan Review — Shield Backlog (<code>backlog-20260527</code>)</h1>
+<p><strong>Date:</strong> 2026-05-29 · <strong>Run:</strong> 1 · <strong>Source PRD:</strong> prd.md (type: lean) · <strong>Plan:</strong> plan.md + trd.md + plan.json (schema 1.5)
+<strong>Reviewers:</strong> dx-engineer, agile-coach, backend-engineer, sre, security-engineer, product-manager (PM1–PM10)</p>
+<blockquote>
+<p><strong>✅ Resolution (applied 2026-05-29):</strong> the user chose &quot;Apply P0+P1 to the plan.&quot; All <strong>3 P0</strong> and <strong>8 P1</strong> findings have been folded into the canonical artifacts (plan.json, trd.md, the 3 LLD drafts) and <code>shield/schemas/shield.schema.json</code> (additive <code>backlog</code> object). Re-validation: <code>validate_plan.py</code> ✅, <code>validate_trd.py</code> ✅ (milestone-drift clean), kill-switch <code>.shield.json</code> validates ✅, all 3 LLD drafts structurally ✅. The plan is now clear for <code>/implement</code>. See <code>plan.json</code> <code>metadata.plan_review_2026_05_29.{p0_applied,p1_applied}</code> for the per-finding trace. The findings below are retained as the review record.</p>
+</blockquote>
+<h2 id="verdict-ready--composite-349-b--3-p0--8-p1-since-applied--see-resolution-above">Verdict: <strong>Ready — composite 3.49 (B+)</strong> ⚠️ <em>(3 P0 + 8 P1 since applied — see Resolution above)</em></h2>
+<p>The re-plan is a clear improvement on the prior run (3.14 → 3.49): the deferred TRD landed, schema is 1.5, and the prior P0 (gate-0d duplication) + the SRE/Security P1 set are verifiably folded in. <strong>However</strong>, the backend reviewer — checking the design against the <em>live</em> Shield schemas rather than only against itself — surfaced <strong>3 P0 contract defects</strong> that each break a core path at implementation time. The weighted composite lands in &quot;Ready&quot; range, but the P0s gate <code>/implement</code>. All three are localized contract-pinning fixes, not design rework.</p>
+<h2 id="scorecard">Scorecard</h2>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Weight</th>
+<th>Grade</th>
+<th>Numeric</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DX Engineer</td>
+<td>1.0</td>
+<td>A−</td>
+<td>3.7</td>
+</tr>
+<tr>
+<td>Backend Engineer</td>
+<td>1.0</td>
+<td>B−</td>
+<td>2.7</td>
+</tr>
+<tr>
+<td>Security Engineer</td>
+<td>1.0</td>
+<td>A−</td>
+<td>3.7</td>
+</tr>
+<tr>
+<td>Agile Coach</td>
+<td>0.7</td>
+<td>A−</td>
+<td>3.7</td>
+</tr>
+<tr>
+<td>SRE / Operations</td>
+<td>0.7</td>
+<td>A−</td>
+<td>3.7</td>
+</tr>
+<tr>
+<td>Product Manager (PM1–PM10 avg)</td>
+<td>0.7</td>
+<td>A</td>
+<td>3.6</td>
+</tr>
+<tr>
+<td><strong>Composite</strong></td>
+<td></td>
+<td><strong>B+</strong></td>
+<td><strong>3.49 → Ready</strong></td>
+</tr>
+</tbody>
+</table>
+<p>PM dim grades: PM1 A · PM2 A · PM3 A · PM4 B · PM5 B · PM6 B · PM7 A · PM8 A · PM9 A · PM10 B → avg 3.6.</p>
+<h2 id="deterministic-gates-run-before-dispatch">Deterministic gates (run before dispatch)</h2>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0a schema (<code>validate_plan.py</code>)</td>
+<td>✅ exit 0</td>
+</tr>
+<tr>
+<td>0b TRD sections (<code>validate_trd.py</code>)</td>
+<td>✅ exit 0 (incl. milestone-drift)</td>
+</tr>
+<tr>
+<td>0c stale anchors</td>
+<td>✅ none</td>
+</tr>
+<tr>
+<td>0d PRD↔TRD duplication (§2/§5)</td>
+<td>✅ 6-char / 3-char overlap (≤80) — prior P0 resolved</td>
+</tr>
+<tr>
+<td>0e impl-manual (§7 fence &gt;20 lines)</td>
+<td>⚠️ §7 ASCII diagram is 27 lines, but §8 has 5 populated alternatives → escape satisfied (not P0)</td>
+</tr>
+<tr>
+<td>0f touches_lld_drift</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>0g lld_components_integrity</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>0h undocumented_lld</td>
+<td>n/a — no canonical <code>docs/lld/</code> (all net-new)</td>
+</tr>
+<tr>
+<td>0i lld_draft_review (3 drafts)</td>
+<td>✅ all 14 always-on + 8 forced subsections present, no vague TBDs</td>
+</tr>
+</tbody>
+</table>
+<h2 id="p0--blockers-fix-before-implement">P0 — Blockers (fix before <code>/implement</code>)</h2>
+<p>All three independently verified against live schemas (<code>shield/schemas/{shield,plan}.schema.json</code>, <code>docs/shield/manifest.json</code>).</p>
+<ol>
+<li><strong>Reconciler/suggester contracts don't match the real <code>manifest.json</code>/<code>plan.json</code> shapes</strong> <em>(backend P0-1)</em>. <code>manifest.json</code> is <code>{schema_version, features:[{name, artifacts:{…plan_json: bool…}, reviews, updated}]}</code> — a list keyed by <code>name</code>, with a boolean <code>plan_json</code> flag and <strong>no stored plan path</strong>. <code>reconcile(entry, *, manifest, plans)</code> (lld-reconciler §5) never defines <code>plans</code> and never says the path must be <em>derived</em>. <strong>Fix:</strong> pin the real shapes; define <code>plans: dict[slug→plan]</code> populated by reading <code>docs/shield/&lt;feature&gt;/plan.json</code> for each feature with <code>artifacts.plan_json == true</code>; add a fixture from the actual manifest schema. <em>(Also covers DX P1 manifest read-contract.)</em></li>
+<li><strong>Existing-epic matching keys off a positional slot, not an identity</strong> <em>(backend P0-2)</em>. Epic ids are <code>EPIC-N</code> slugs assigned by <code>/plan</code> (<code>EPIC-2</code> = different epics in different plans, verified). After any re-<code>/plan</code>, an existing-epic entry stamped <code>EPIC-2</code> matches the wrong epic or rots. <strong>Fix:</strong> match existing epics by normalized <code>name</code> too (same predicate as proposed-new); treat <code>EPIC-N</code> only as a within-one-plan disambiguator; add a &quot;epic reordered across a re-plan&quot; eval.</li>
+<li><strong>Kill switch <code>backlog.auto_reconcile</code> is unshippable under the current <code>.shield.json</code> schema</strong> <em>(backend P0-3)</em>. <code>shield.schema.json</code> has <code>additionalProperties: false</code> and no <code>backlog</code> key; adding the flag fails validation, and no story includes the schema change. <strong>Fix:</strong> add a task+AC (EPIC-3-S3, version-bump in EPIC-4-S2) extending <code>shield.schema.json</code> with an optional <code>backlog</code> object (<code>{auto_reconcile: bool, default true}</code>) + config example. Without it the documented first-line rollback (TRD §14) cannot ship.</li>
+</ol>
+<h2 id="p1--should-fix-for-plan-quality">P1 — Should fix for plan quality</h2>
+<ol>
+<li><strong>Resolve the EPIC-3-S3 N4 recovery OR</strong> <em>(agile AC7 + sre P1-1)</em>. AC5 encodes &quot;commit-before-prune <strong>or</strong> removed-log&quot; — not writable as one test, and the §14 runbook can't be precise. Pick one v1 default (<strong>recommend <code>.shield/backlog-removed.log</code></strong> — avoids forcing a possibly-dirty-tree commit on every prune, decouples recovery from git state mid-<code>/implement</code>); make the other a non-goal.</li>
+<li><strong>Add lost-update detection (compare-before-replace)</strong> <em>(backend P1-1 + security P1-a)</em>. The concurrency eval tests a race the single-writer design forbids, and N5, if silently violated, yields a silent lost update. Have <code>capture()</code>/<code>remove()</code> carry the schema_version+entry-count (or mtime/hash) read at start and refuse <code>os.replace()</code> if the file changed underneath — a loud <code>BacklogInvalid</code> instead of a lost entry, <strong>no lockfile</strong>. Then the eval tests a real, detectable behavior.</li>
+<li><strong>Reword &quot;schema rejects duplicate id&quot; → validator</strong> <em>(backend P1-2)</em>. JSON Schema 2020-12 can't express property-level array uniqueness; F2 + EPIC-1-S1 AC must say <code>validate_backlog.py</code> enforces it (<code>duplicate_entry_id</code>).</li>
+<li><strong>Pin the feature <code>name</code> == folder-slug invariant</strong> <em>(backend P1-3)</em>. <code>suggest_feature</code> returns manifest <code>features[].name</code>, but the reconciliation key is the folder slug; if they differ, suggestion proposes an unresolvable value. Document the invariant + add a &quot;suggested value resolves to an existing <code>docs/shield/&lt;value&gt;/</code>&quot; fixture.</li>
+<li><strong>Resolve the packaging model</strong> <em>(backend P1-4)</em>. F3 (&quot;every capturing skill builds against this signature&quot;) implies an importable module; EPIC-4-S2 hedges. Decide at plan time — package <code>backlog_store</code> with a <code>pyproject.toml</code> so the version bump is unconditional; document the import path skills use.</li>
+<li><strong>Resolve the CI entrypoint to a concrete value</strong> <em>(dx P1)</em>. EPIC-4-S1 still phrases the runner as a task; name the actual workflow file + runner so the eval-gate AC is verifiable.</li>
+<li><strong>Add a write-side validation eval</strong> <em>(security P1-b)</em>. &quot;validate-or-refuse on read/<strong>write</strong>&quot; is asserted but only read-side + crash-mid-write are tested. Add: <code>capture()</code> producing a schema-invalid doc raises <code>BacklogInvalid</code> and leaves backlog.json byte-unchanged.</li>
+<li><strong>Test the recovery ordering seam</strong> <em>(security P1-c)</em>. Strengthen the recovery-rehearsal eval to assert recoverability across a crash <em>between</em> log-append and remove (and between remove and commit), not just after a clean wrong-removal.</li>
+</ol>
+<h2 id="p2--nice-to-have">P2 — Nice to have</h2>
+<ul>
+<li><strong>DX:</strong> fixed audit interval + numeric trigger (not &quot;e.g. monthly&quot;); state runtime prereqs (Python/uv, pydantic+jsonschema) once in SKILL.md; label the 3.12 (PRD-review) vs 3.14 (plan-review) composites inline.</li>
+<li><strong>Agile:</strong> consider splitting EPIC-3-S3 into S3a (triggers) + S3b (kill switch + recovery + latency); note EPIC-2 deliberately straddles M1/M2; state the N2 WARN threshold (&quot;&gt;1s&quot;).</li>
+<li><strong>SRE:</strong> drop &quot;independently&quot; from the kill-switch description (it's one coupled boolean); add a &quot;N entries removed since last view&quot; notice so wrong-removals aren't pull-only; define the removed-log lifecycle (tracked vs gitignored, rotation); require the wrong-removal recovery procedure in SKILL.md; specify no-op-prune logging.</li>
+<li><strong>Backend:</strong> add <code>os.fsync()</code> + a unique <code>.tmp</code> suffix; consider <code>read() -&gt; BacklogDoc</code> (pydantic) over raw dict; define the <code>RemovalDecision</code> dataclass (the F9 log fields).</li>
+<li><strong>Security:</strong> give <code>.shield/backlog-removed.log</code> a schema/parser + tracked-status decision; make dry-run/fixture mode provably non-destructive (force sweep off) + eval it; add a forward note that a future <code>migrate()</code> must be validate-or-refuse.</li>
+<li><strong>PM:</strong> add coarse effort/impact per milestone (PM4); add a plain-language stakeholder/executive summary to the PRD (PM5); make the buy-vs-build case vs ClickUp/Jira explicit (PM6); quantify the operational cost the tool recovers as a falsifiable v1-audit target (PM10).</li>
+</ul>
+<h2 id="detailed-agent-findings">Detailed agent findings</h2>
+<ul>
+<li><a href="detailed/backend-engineer.md">Backend Engineer</a> — B− (the 3 P0s + 4 P1s)</li>
+<li><a href="detailed/dx-engineer.md">DX Engineer</a> — A−</li>
+<li><a href="detailed/security-engineer.md">Security Engineer</a> — A−</li>
+<li><a href="detailed/agile-coach.md">Agile Coach</a> — A−</li>
+<li><a href="detailed/sre.md">SRE / Operations</a> — A−</li>
+<li><a href="detailed/product-manager.md">Product Manager (PM1–PM10)</a> — A</li>
+</ul>
+<h2 id="recommendation">Recommendation</h2>
+<p>The plan is <strong>Ready in substance</strong> — strong scope discipline, testable ACs, an acyclic milestone DAG, clean trust boundaries, and an honest threat model. But do <strong>not</strong> start <code>/implement</code> until the <strong>3 P0 contract fixes</strong> land: they are the difference between a plan that reads consistently and one whose reconciler, epic-matching, and kill switch actually work against the real Shield artifacts. The P1s (recovery-mechanism choice, lost-update detection, packaging) are best folded in the same revision pass. Estimated effort: one focused editing pass on the TRD §11/§5, the reconciler/epic-suggester LLDs, EPIC-3-S3, and EPIC-4-S1/S2 — no story restructuring required.</p>
+
+</body></html>

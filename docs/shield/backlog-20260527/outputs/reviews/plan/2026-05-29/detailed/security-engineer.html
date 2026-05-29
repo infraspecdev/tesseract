@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="sidecar" content="../../../../plan.json">
+<title>Shield Plan Review — Backlog</title>
+<style>
+ body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+ h1,h2,h3,h4{line-height:1.25;margin-top:1.6em} h1{color:#1a73e8;border-bottom:2px solid #e1e4e8;padding-bottom:.3em} h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+ code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em} pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto} pre code{background:none;padding:0}
+ table{border-collapse:collapse;width:100%;margin:1em 0} th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top} th{background:#f6f8fa}
+ blockquote{border-left:4px solid #1a73e8;margin:1em 0;padding:.2em 1em;color:#57606a}
+</style></head><body>
+<h1 id="security-engineer--detailed-findings">Security Engineer — Detailed Findings</h1>
+<blockquote>
+<p>Back to <a href="../summary.md">summary</a></p>
+</blockquote>
+<p><strong>Persona grade: A−.</strong> Security-mature for its surface (single-actor local tool over a plaintext git-tracked store of developer idea text — no PII/auth/network). Threat model is honest, trust boundaries are clean, and security claims are pinned to executable, falsifiable ACs. The four folded prior-review findings are all present, correctly threat-framed, and sufficient. Lands A− (not A) because the recovery layer (N4) and single-writer claim (N5) rest on ordering/assumption guarantees not yet pinned to tests.</p>
+<h2 id="folded-finding-verification">Folded-finding verification</h2>
+<table>
+<thead>
+<tr>
+<th>Folded finding</th>
+<th>Sufficient?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Malformed/partial read refused with <code>BacklogInvalid</code> (F5)</td>
+<td>Yes — &quot;single integrity primitive&quot; (TRD §9), concrete AC</td>
+</tr>
+<tr>
+<td>Concurrency eval: no corruption AND no lost entry</td>
+<td>Yes — correctly distinguishes lost-entry (RMW race) from corruption (crash mid-write)</td>
+</tr>
+<tr>
+<td>No-stamping eval (F6): plan.json byte-unchanged</td>
+<td>Yes — byte-unchanged is the right assertion</td>
+</tr>
+<tr>
+<td>Epic-name collision across features → ambiguous → stays</td>
+<td>Yes — fixture exists (ambiguous-match-stays)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="evaluation-points-af">Evaluation points (A–F)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Point</th>
+<th>Grade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SE1</td>
+<td>Threat model coverage</td>
+<td>A−</td>
+</tr>
+<tr>
+<td>SE2</td>
+<td>Least-privilege design</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE3</td>
+<td>Data protection</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE4</td>
+<td>Secrets management</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE5</td>
+<td>Network security</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>SE6</td>
+<td>Access control</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>SE7</td>
+<td>Compliance</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>SE8</td>
+<td>Incident response</td>
+<td>A−</td>
+</tr>
+<tr>
+<td>SE9</td>
+<td>Acceptance criteria quality</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE10</td>
+<td>Edge case &amp; rollback coverage</td>
+<td>A−</td>
+</tr>
+<tr>
+<td>SE11</td>
+<td>Integration test strategy</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE12</td>
+<td>Regression risk</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SE13</td>
+<td>Environment validation</td>
+<td>B+</td>
+</tr>
+<tr>
+<td>SE14</td>
+<td>Security validation</td>
+<td>A−</td>
+</tr>
+</tbody>
+</table>
+<h2 id="findings">Findings</h2>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Point</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>SE10/SE1 (P1-a)</td>
+<td>No detection for a violated single-writer assumption (N5). If violated, the outcome is a silent lost update. Add a cheap compare-before-replace: <code>capture()</code>/<code>remove()</code> carry the schema_version+entry-count (or mtime/hash) read at start and refuse <code>os.replace()</code> if the on-disk file changed underneath — converts a silent lost-update into a loud <code>BacklogInvalid</code> refusal <strong>without a lockfile</strong>. (Also resolves backend P1-1.)</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>SE14/SE9 (P1-b)</td>
+<td>Write-side validation is asserted (&quot;validate-or-refuse on read/write&quot;) but only read-side + crash-mid-write are tested. Add AC+eval: &quot;<code>capture()</code> that would produce a schema-invalid document raises <code>BacklogInvalid</code> and leaves backlog.json byte-unchanged (no .tmp promoted).&quot;</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>SE10/SE14 (P1-c)</td>
+<td>The recovery-sink ordering (append-before-remove) is stated in prose but not pinned to a test. Strengthen the recovery-rehearsal eval to assert recoverability across a simulated crash at the ordering seam (after append/before remove; after remove/before commit).</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE1/SE8 (P2-a)</td>
+<td><code>.shield/backlog-removed.log</code> is a new write surface with no integrity story (no schema, no validate-or-refuse, git-tracked status unspecified). Specify tracked/ignored + read it back through a defined parser in the recovery eval.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE13 (P2-b)</td>
+<td>Dry-run isolation is a doc task, not a guarded invariant; the lazy sweep runs on every view. Make dry-run/fixture mode provably non-destructive (force kill switch off, or disable sweep when a fixture path is supplied) + add to the eval matrix.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE1 (P2-c)</td>
+<td>Migration is doc-only (correct for v1); add a forward note that any future <code>migrate()</code> must itself be validate-or-refuse (a half-migrated write is the next corruption vector).</td>
+</tr>
+</tbody>
+</table>
+<p>No P0 findings from security.</p>
+
+</body></html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield Plan Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield Plan Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/plan/2026-05-27/</code>)</div>
+<h1 id="security-engineer--detailed-findings">Security Engineer — Detailed Findings</h1>
+<blockquote>
+<p>Back to <a href="../summary.md">summary</a></p>
+</blockquote>
+<h2 id="security-engineer-review-grade-b">Security Engineer Review (Grade: B)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Evaluation Point</th>
+<th>Grade</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SE1</td>
+<td>Threat model coverage</td>
+<td>B</td>
+<td>Concrete threats are named and mitigated: concurrent-write corruption (N1), wrong removal / epic-name collision (PRD §10 risk table, TRD §14 trigger), read-contract drift (N3). Adversary model is implicit (&quot;single actor, no network&quot;), which is reasonable for the asset, but there's no explicit enumeration of the <em>agent-as-actor</em> threat: an <code>source=agent</code> writer is a semi-trusted automated actor that can inject entries unattended. No threat for malicious/garbage content reaching downstream <code>/plan</code>/<code>/implement</code> via the transient promotion reference.</td>
+</tr>
+<tr>
+<td>SE2</td>
+<td>Least-privilege design</td>
+<td>B+</td>
+<td>Genuinely good for the scope. Promotion deliberately does NOT stamp ids into <code>plan.json</code> (F6/EPIC-3-S1) — minimizes write surface into the trusted artifact. Reconciliation is read-only against <code>manifest.json</code>/<code>plan.json</code> and only writes <code>backlog.json</code>. Removal is gated (never-remove-on-doubt). The only write privilege is to one file.</td>
+</tr>
+<tr>
+<td>SE3</td>
+<td>Data protection</td>
+<td>A−</td>
+<td>Strong for local tooling. N4 makes removal recoverable via <code>git revert</code>; N1 protects integrity; atomic temp-then-rename prevents partial writes. The one gap: &quot;plain delete, no retained history&quot; (F5/EPIC-1-S4) means manual remove of an <em>uncommitted</em> entry that was never git-committed is unrecoverable — N4's recoverability claim only holds for entries that reached a commit. Not called out.</td>
+</tr>
+<tr>
+<td>SE4</td>
+<td>Secrets management</td>
+<td>A</td>
+<td>Correctly scoped: TRD §9 &quot;Secrets/auth: none — local file, no network, single actor.&quot; <code>backlog.json</code> holds work-item text only. No secret storage surface exists. The risk worth one line — free-text capture could <em>accidentally</em> contain a pasted secret that then lands in git history — is not mentioned, but it's a Warning at most.</td>
+</tr>
+<tr>
+<td>SE5</td>
+<td>Network security</td>
+<td>A</td>
+<td>Genuinely out of scope and correctly claimed. No network surface; not penalized per instructions.</td>
+</tr>
+<tr>
+<td>SE6</td>
+<td>Access control</td>
+<td>B</td>
+<td>Single-actor claim is justified for a local dev file. But &quot;access control&quot; here maps to the <strong>agent-vs-user write distinction</strong>, which the plan <em>models</em> (<code>source ∈ {user, agent}</code>) but does not <em>enforce or use as a trust signal</em> — an agent-captured entry is treated identically to a user one at promotion/reconciliation. That's acceptable for v1 but the <code>source</code> field's security purpose (provenance/audit) is undefined.</td>
+</tr>
+<tr>
+<td>SE7</td>
+<td>Compliance requirements</td>
+<td>A</td>
+<td>N5 makes the explicit data-classification claim: internal, non-PII developer work-item text, same trust boundary as <code>plan.json</code>/<code>manifest.json</code>. The claim is justified — the data co-locates with and is no more sensitive than artifacts already in the repo. No regulated data, no compliance regime applies. Well-reasoned, not hand-waved.</td>
+</tr>
+<tr>
+<td>SE8</td>
+<td>Incident response</td>
+<td>B</td>
+<td>TRD §14 has a real rollback/containment story: staged rollout (destructive reconciliation lands last, M3), an explicit <em>trigger</em> (&quot;if eager prune produces a wrong removal git revert can't cheaply recover → disable eager prune, fall back to manual-remove-only&quot;), and a kill switch (not invoking <code>/backlog</code> = full disable). Detection is the weak spot: a wrong removal is detected only by a human noticing a missing entry — N3 logs warnings on drift but nothing alerts on an actual erroneous removal.</td>
+</tr>
+<tr>
+<td>SE9</td>
+<td>Acceptance criteria quality</td>
+<td>B+</td>
+<td>ACs are largely specific and testable. Strong examples: &quot;killing capture mid-write leaves no corrupted backlog.json (only a .tmp may remain)&quot; (EPIC-1-S2), &quot;prd-only feature is NOT removed&quot; (EPIC-3-S2), &quot;second pass is a no-op (idempotent)&quot; (EPIC-3-S3), named validator errors. Gaps: N1's central race (&quot;concurrent capture racing reconciliation&quot;) has no AC that actually <em>exercises concurrency</em> — the mid-write-kill AC tests crash-atomicity, not the two-writer race the NFR claims to defend. &quot;Validate-or-refuse on read&quot; has no AC proving a malformed file is <em>refused</em> rather than silently read.</td>
+</tr>
+<tr>
+<td>SE10</td>
+<td>Edge case &amp; rollback coverage</td>
+<td>A−</td>
+<td>Best-covered area. Edge cases enumerated and turned into fixtures (EPIC-4-S1): prd-only-stays, plan-committed-removed, ambiguous-stays, malformed-stays. Never-remove-on-doubt is the safety default. Rollback is git-revert + staged introduction + documented fallback trigger (§14). Missing edges: the <code>.tmp</code> cleanup (&quot;cleaned on next run&quot;) has no failure-mode coverage if cleanup itself fails; epic-name <em>collision across two features</em> is mentioned as a risk but no fixture asserts it stays.</td>
+</tr>
+<tr>
+<td>SE11</td>
+<td>Integration test strategy</td>
+<td>B</td>
+<td>EPIC-4 evals are self-contained, no-LLM, CI-wired, and cover the cross-file contract (backlog.json × manifest.json × plan.json) — good. But the <em>eager-prune integration point</em> (end of a real <code>/plan</code> / <code>/implement</code> run) is the highest-risk wiring and the eval covers it via fixtures, not via an actual command run. The read-contract coupling to upstream schemas (§11) is acknowledged but there's no contract test that <em>fails</em> when manifest/plan schema drifts.</td>
+</tr>
+<tr>
+<td>SE12</td>
+<td>Regression risk assessment</td>
+<td>A−</td>
+<td>Blast radius is well-bounded and stated: the only destructive behavior is entry removal (§14); <code>/backlog</code> is additive to the plugin; promotion is read-only against <code>plan.json</code> (no stamping → no regression to existing planning). Staged M1→M3 sequencing puts the risky reconciliation last behind a proven store. The unaddressed regression: eager-prune hooks <em>into</em> <code>/plan</code> and <code>/implement</code> — a bug there could affect those commands' exit behavior, and that blast radius isn't explicitly assessed.</td>
+</tr>
+<tr>
+<td>SE13</td>
+<td>Environment validation plan</td>
+<td>C</td>
+<td>Weakest point. No dev/staging/prod distinction (reasonable — it's local tooling), but there's also no smoke-test or first-run validation plan: how does a maintainer verify reconciliation is behaving correctly against their <em>real</em> <code>backlog.json</code> before trusting auto-removal? §14 mentions a fallback but not a &quot;validate before enabling eager prune&quot; canary step. The N2 performance budget (~1s, ≤50 features/200 entries) has no validation method attached.</td>
+</tr>
+<tr>
+<td>SE14</td>
+<td>Security validation</td>
+<td>B−</td>
+<td>The security-relevant behaviors that DO get validated: atomicity (crash test), never-remove-on-doubt (fixtures), validator rejection of bad enums. Missing: no test asserting the <strong>validate-or-refuse refusal path</strong> actually refuses (only that crash leaves no corruption); no concurrency stress test for the N1 race; no negative test that promotion does NOT write to <code>plan.json</code> (F6 is the key trust-boundary guarantee and has an AC but no eval listed in EPIC-4-S1's coverage list).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Finding:</strong> The plan's core integrity and safety design is strong and well-reasoned for its scope (atomic write, never-remove-on-doubt, git-revert recoverability, staged rollout), and the N5 trust-boundary/classification claim is justified — but the N1 concurrency guarantee and the F6 no-stamping trust boundary are asserted without a test that actually exercises them, so the two most security-load-bearing claims are currently unverifiable.</p>
+<h3 id="recommendations">Recommendations</h3>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Point</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>SE9 / SE14</td>
+<td>Add an eval that exercises the <strong>actual N1 race</strong>, not just crash-atomicity: spawn a concurrent capture and a reconciliation write against the same <code>backlog.json</code> and assert no corruption and no lost entry. The mid-write-kill AC tests a different failure mode than the &quot;capture racing reconciliation&quot; the NFR claims to defend. Without it, N1 is an unverified assertion.</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>SE14</td>
+<td>Add a negative eval to EPIC-4-S1's coverage list asserting that promotion via <code>/plan</code>/<code>/implement</code> leaves <code>plan.json</code> and story records <strong>byte-unchanged</strong> (no id stamping). F6 is the load-bearing trust-boundary guarantee; it has an AC but is absent from the listed eval coverage.</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>SE9</td>
+<td>Add an explicit AC (EPIC-1-S2) that a <strong>malformed/partial <code>backlog.json</code> on read is refused with a named error</strong>, not silently read or truncated. &quot;Validate-or-refuse on read&quot; is stated in F2/N1 but no AC proves the refusal path.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE13</td>
+<td>Add a first-run / canary validation step before auto-removal is trusted: e.g. a <code>--dry-run</code> reconciliation mode that reports what <em>would</em> be removed, so a maintainer validates against their real backlog before enabling eager prune. Pairs naturally with the §14 fallback.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE10 / SE14</td>
+<td>Add a fixture for <strong>epic-name collision across two different features</strong> (PRD §10 names it as a risk; §14 names it as the rollback trigger) asserting the entry stays. The proposed-new match-by-name path is the one place a wrong removal is plausible; it deserves a dedicated negative test.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE1 / SE6</td>
+<td>Define the security purpose of the <code>source ∈ {user, agent}</code> field. Either state it is provenance/audit-only (and that agent and user entries are equally trusted at reconciliation), or use it. Right now an unattended <code>source=agent</code> writer is a semi-trusted actor with no distinct handling, and the threat model doesn't address agent-injected entries flowing into <code>/plan</code> via the transient reference.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SE3</td>
+<td>Note in N4/EPIC-1-S4 that git-revert recoverability only covers entries that reached a commit; a manual remove of an uncommitted entry is unrecoverable by design. Small doc fix that aligns the recoverability claim with the &quot;plain delete, no history&quot; decision.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overall persona grade: B</strong> (point average ≈ 3.05 → B). The plan is security-sound for local single-actor tooling with a justified trust-boundary/classification claim and genuinely good integrity/rollback design; it falls short of A because its two most security-critical guarantees (N1 concurrency, F6 no-stamping) lack tests that exercise them, and environment/first-run validation (SE13) is thin.</p>
+
+</body>
+</html>

@@ -14,5 +14,8 @@
     "terraform": {
       "review": ["terraform-skills:validate"]
     }
+  },
+  "backlog": {
+    "auto_reconcile": true
   }
 }

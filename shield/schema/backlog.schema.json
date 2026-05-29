@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shield.tesseract/schema/backlog/1.0",
+  "title": "Shield backlog.json — schema 1.0",
+  "description": "Machine-readable schema for docs/shield/backlog.json. Source of truth for shield/scripts/validate_backlog.py.",
+  "type": "object",
+  "required": ["schema_version", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Top-level migration key. Current is 1.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["id", "order", "kind", "source", "feature", "epic", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "uuid4 string; uniqueness across entries[] enforced by the validator, not the schema.",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "order": {
+          "type": "integer",
+          "description": "View order (ascending). No priority buckets in v1."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["epic", "story", "task"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["user", "agent"]
+        },
+        "feature": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Existing folder slug (manifest features[].name) or proposed-new name."
+        },
+        "epic": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Existing epic name (plan.json epics[].name) or proposed-new name. Note: matched by name, never by positional EPIC-N id."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

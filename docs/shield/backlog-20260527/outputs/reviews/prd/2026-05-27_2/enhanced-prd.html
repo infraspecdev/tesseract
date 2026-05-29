@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield PRD Review</title>
+<style>
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
+  h1,h2,h3{line-height:1.25;margin-top:1.6em}
+  h1{border-bottom:2px solid #e1e4e8;padding-bottom:.3em}
+  h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
+  code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em}
+  pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0}
+  th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top}
+  th{background:#f6f8fa}
+  blockquote{border-left:4px solid #d0d7de;margin:1em 0;padding:.2em 1em;color:#57606a}
+  .meta{background:#fff8e6;border:1px solid #f0d999;border-radius:8px;padding:.6em 1em;font-size:.9em;color:#6a5500}
+</style>
+</head>
+<body>
+<div class="meta">Shield PRD Review · feature <code>backlog-20260527</code> · 2026-05-27 · rendered from markdown (source of truth in <code>reviews/prd/2026-05-27/</code>)</div>
+<h1 id="shield-backlog">Shield Backlog</h1>
+<!--
+  PRD-Review enhanced copy — 2026-05-27 (run _2). Verdict: Ready (composite 3.1, 0 P0).
+  Source is unchanged; remaining items are listed here with line refs (table/mermaid splicing avoided).
+
+  P1 (§2, ~line 23): "the entry is removed only when this epic's work appears in plan.json" contradicts the
+      manual-remove trigger (§5/§6/§9) — change "only when" to "when", or add "(or removed manually)".
+  P1 (§5 / §8 M1, ~lines 47/97): capture "usable from any Shield skill" — the capture interface
+      (command/helper name + entry fields) is undefined; define at/before /plan.
+  P1 (§3 / §10, ~line 127): problem baseline unquantified (honestly logged as unvalidated) —
+      add one real figure from past /implement transcripts to harden why-now.
+
+  P2 (§5 / §9, ~lines 47/104): the "transient promotion reference" mechanism is prose-only — pin how
+      /plan and /implement receive and act on it in the /plan/TRD.
+  P2 (§6, ~line 74): state that eager-prune and the /backlog sweep are idempotent (remove-if-present).
+  P2 (§6/§11): add a scope-creep guard naming the likely ask + @ashwinimanoj as accept authority.
+  P2 (§1): sign-off N/A → "N/A — internal tooling, confirmed by @ashwinimanoj".
+
+  TRD inputs (tech-lead, informational/lean-exempt but carry forward): add backlog.json schema_version +
+      migration policy; reconciliation treats unknown manifest.json/plan.json shapes as doubt→entry-stays;
+      state a /backlog sweep perf budget; name a rollback-to-manual-only trigger.
+-->
+<h2 id="1-header">1. Header</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Owner</td>
+<td>@ashwinimanoj</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Draft</td>
+</tr>
+<tr>
+<td>PRD type</td>
+<td>Lean</td>
+</tr>
+<tr>
+<td>Date created</td>
+<td>2026-05-27</td>
+</tr>
+<tr>
+<td>Last updated</td>
+<td>2026-05-27</td>
+</tr>
+<tr>
+<td>Linked design spec</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Linked research</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Decision-maker</td>
+<td>@ashwinimanoj</td>
+</tr>
+<tr>
+<td>Sign-off contacts</td>
+<td><em>(n/a for internal tooling)</em></td>
+</tr>
+<tr>
+<td>Linked plans</td>
+<td><em>(auto-populated by /plan)</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-terminologies">2. Terminologies</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backlog</td>
+<td>A project-level, ordered list of future work captured across the Shield workflow. Lives at <code>docs/shield/backlog.json</code>.</td>
+</tr>
+<tr>
+<td>Backlog entry</td>
+<td>One captured idea — a future epic, story, or task. May not be actionable when captured. Carries an order, a <code>kind</code> hint (<code>epic</code> | <code>story</code> | <code>task</code>), a source (<code>user</code> | <code>agent</code>), and a <strong>feature + epic association</strong> (either may be proposed-new until promotion).</td>
+</tr>
+<tr>
+<td>Feature association</td>
+<td>The feature an entry belongs to (a <code>docs/shield/&lt;feature&gt;/</code> folder). It is the <strong>reconciliation key</strong>: <code>manifest.json</code> is keyed by feature, so this is how an entry is matched to its pipeline progress. May be proposed-new until promotion.</td>
+</tr>
+<tr>
+<td>Epic association</td>
+<td>The epic an entry slots into when planned — an existing epic id (e.g. <code>EPIC-2</code>) or a proposed new epic. Acts as the <strong>gate</strong> at reconciliation: the entry is removed only when this epic's work appears in the feature's <code>plan.json</code>.</td>
+</tr>
+<tr>
+<td>Promotion</td>
+<td>Acting on a backlog entry by starting the appropriate Shield step for it — <code>/research</code>, <code>/prd</code>, <code>/plan</code>, or <code>/implement</code>. <strong>The user decides which step</strong>; the backlog does not auto-route.</td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td>Keeping the backlog current: <code>manifest.json</code> locates the entry's feature and whether it has a <code>plan.json</code>; if so, the entry's epic is looked up there. The entry is removed once its epic's work appears in the feature's <code>plan.json</code> (<code>epics[].stories[]</code>). No ids are stamped — matching is by feature (manifest) + epic (plan): an existing-epic entry matches by <strong>epic id</strong>, a proposed-new-epic entry matches by <strong>epic name</strong> (names expected stable). On any ambiguity or no match, the entry stays — reconciliation never removes on doubt. A <code>prd</code>-only feature does <strong>not</strong> trigger removal. Removal fires at the end of the <code>/plan</code> or <code>/implement</code> run promoted from the entry, or on the <code>/backlog</code> view sweep.</td>
+</tr>
+<tr>
+<td>Agent-discovered entry</td>
+<td>A backlog entry the agent adds on its own when it notices future work mid-task (vs. a user-created entry).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-problem--context">3. Problem &amp; context</h2>
+<p>Future work surfaces constantly while using Shield — during <code>/research</code>, while writing a PRD, mid-<code>/plan</code>, and especially during <code>/implement</code> (&quot;we should also handle X later&quot;, &quot;this whole area needs a rewrite&quot;). Today there is <strong>nowhere to park that work</strong>. The options are bad: derail the current task to chase it, or drop it in a comment / memory / someone's head and lose it.</p>
+<p>Concretely:</p>
+<ul>
+<li>There is no project-level, ordered place to capture &quot;not now, but later&quot; items. <code>plan.json</code> only holds work already committed to a milestone; <code>manifest.json</code> is an artifact index. Neither captures un-triaged future work.</li>
+<li>Ideas discovered by the agent mid-task have no home — they're mentioned once in conversation and gone.</li>
+<li>When future work <em>is</em> remembered, there's no consistent path from &quot;loose idea&quot; to &quot;stories in a plan.&quot; Each pickup re-derives the epic, the feature, and the scope from scratch.</li>
+</ul>
+<p>Why now: Shield's pipeline (<code>/research → /prd → /plan → /implement</code>) is mature, but it only handles work that's <em>already</em> been decided on. The gap is the staging area <em>before</em> that pipeline — where future work waits, ordered, until the user promotes it in.</p>
+<h2 id="4-target-users--personas">4. Target users / personas</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Persona</th>
+<th>Goals</th>
+<th>Frictions today</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>Ashwini — Shield maintainer running <code>/research</code>/<code>/plan</code>/<code>/implement</code> daily</td>
+<td>Capture future work without losing focus on the current task; come back later to an ordered list of what to pick up next</td>
+<td>Future ideas get lost or derail the current task; no ordered &quot;later&quot; list at the project level</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>The agent (Claude) running a Shield task</td>
+<td>Record follow-up work it discovers mid-task so the human doesn't have to remember it</td>
+<td>Discovered work is mentioned once in chat then forgotten; no place to persist it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-architecture--flows">5. Architecture &amp; flows</h2>
+<p>A single global store <code>docs/shield/backlog.json</code> (sibling to <code>manifest.json</code>), a <code>/backlog</code> command to view it, a capture path usable from any Shield skill or by the user, and a <strong>user-driven promotion</strong>: the user picks an entry and starts whichever Shield step fits — <code>/research</code>, <code>/prd</code>, <code>/plan</code>, or <code>/implement</code>. Each entry carries an order, a source (<code>user</code> | <code>agent</code>), and a <strong>feature + epic association</strong>. <strong>Reconciliation</strong> reads <code>manifest.json</code> as the project-level index — to find each entry's feature, see whether it has a <code>plan.json</code>, and surface its pipeline status (research/prd/plan) in the <code>/backlog</code> view — then opens the flagged <code>plan.json</code> and removes any entry whose epic's work now appears there. A <code>prd</code>-only feature stays in the backlog; only committed work is removed. No ids are tracked. An entry promoted via <code>/plan</code> or <code>/implement</code> is pruned at the <strong>end of that run</strong> (the command carries the entry as a transient promotion reference); the <code>/backlog</code> view sweep is the lazy safety net for work that landed without an explicit reference; and a <strong>manual remove</strong> clears ideas decided against or anything not tied to a promotion run.</p>
+<pre class="mermaid">flowchart LR
+  cap[&quot;Capture&lt;br/&gt;(user or agent, anytime)&quot;] --&gt; bl[&quot;backlog.json&lt;br/&gt;(ordered, project-level)&quot;]
+  bl --&gt; view[&quot;/backlog&lt;br/&gt;(ordered list +&lt;br/&gt;per-entry pipeline status)&quot;]
+  man[&quot;manifest.json&lt;br/&gt;(feature index:&lt;br/&gt;research/prd/plan)&quot;] --&gt; view
+  bl --&gt; dec{&quot;User decides&lt;br/&gt;next step&quot;}
+  dec --&gt; research[&quot;/research&quot;]
+  dec --&gt; prd[&quot;/prd&quot;]
+  dec --&gt; plan[&quot;/plan&quot;]
+  dec --&gt; impl[&quot;/implement&quot;]
+  man --&gt; rec[&quot;Reconcile → remove from backlog:&lt;br/&gt;end of promoted /plan or /implement,&lt;br/&gt;or /backlog sweep (work now in plan.json)&quot;]
+  plan --&gt; rec
+  impl --&gt; rec
+  rec --&gt; bl
+</pre>
+<h2 id="6-goals--non-goals">6. Goals &amp; non-goals</h2>
+<h3 id="goals">Goals</h3>
+<ul>
+<li>Capture future work (epic / story / task granularity) at <strong>any point</strong> in the workflow — before a PRD exists, during planning, during implementation — without derailing the current task.</li>
+<li>Support <strong>both</strong> capture sources: user-created and agent-discovered.</li>
+<li>Keep the backlog <strong>ordered</strong> so there's a clear &quot;what to pick up next.&quot;</li>
+<li>Every entry is <strong>associated with a feature and an epic</strong> — existing or proposed-new — and the agent <strong>suggests a matching feature/epic</strong> at capture or promotion time.</li>
+<li>A <code>/backlog</code> command <strong>shows the current backlog</strong>, ordered, with each entry's feature + epic association, source, and <strong>pipeline status (research / prd / plan, read from <code>manifest.json</code>)</strong> — so you can see what's been started (e.g. a prd written) without the entry being removed.</li>
+<li>Provide a <strong>user-driven promotion path</strong>: the user picks an entry and starts the Shield step they judge appropriate (<code>/research</code>, <code>/prd</code>, <code>/plan</code>, or <code>/implement</code>). The backlog suggests, but does not dictate, the next step.</li>
+<li><strong>Keep the backlog current</strong>: an entry promoted via <code>/plan</code> or <code>/implement</code> is removed at the end of that run; the <code>/backlog</code> view also sweeps out any entry whose work has since landed in a <code>plan.json</code>. The backlog reflects only not-yet-committed work.</li>
+<li><strong>Manual remove</strong>: any entry can be explicitly removed from <code>/backlog</code> — covers ideas decided against and entries not cleared by a promotion run.</li>
+</ul>
+<h3 id="non-goals">Non-goals</h3>
+<ul>
+<li><strong>Automatic end-of-task surfacing machinery</strong> (hooks). The agent already calls out new entries conversationally; no dedicated surfacing mechanism in v1.</li>
+<li><strong>Per-feature backlogs.</strong> v1 is a single global backlog.</li>
+<li><strong>A status/workflow engine.</strong> The lifecycle is minimal: an entry exists until it is removed — at the end of the <code>/plan</code> or <code>/implement</code> it was promoted from, by the <code>/backlog</code> sweep once its work is in a <code>plan.json</code>, or manually. No multi-state machine.</li>
+<li><strong>Syncing the backlog to the PM tool</strong> (ClickUp/Jira/etc.). The backlog is a pre-pipeline staging area; PM sync happens after promotion, via the existing <code>/pm-sync</code> on the resulting plan.</li>
+<li><strong>Replacing the PM tool's own backlog.</strong> This is Shield-local triage, not a project-management backlog of record.</li>
+</ul>
+<h2 id="7-success-metrics">7. Success metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Type</th>
+<th>Target</th>
+<th>Counter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Captured entries that get acted on (work started, or removed once it lands in a plan) vs. left to rot</td>
+<td>Outcome</td>
+<td>≥70% reach a terminal state (promoted/landed in a plan, or explicitly dropped) within 30 days; &lt;20% sit untouched &gt;60 days</td>
+<td>Entries pile up un-triaged → backlog becomes a graveyard</td>
+</tr>
+<tr>
+<td>Entries carrying a feature + epic association at promotion time</td>
+<td>Quality</td>
+<td>100% — promotion cannot complete without a feature and epic</td>
+<td>Forcing association makes capture so heavy nobody captures</td>
+</tr>
+<tr>
+<td>Agent feature/epic-suggestion acceptance</td>
+<td>Quality</td>
+<td>≥60% of agent feature/epic suggestions accepted without override</td>
+<td>Bad suggestions that users routinely override</td>
+</tr>
+<tr>
+<td>Capture friction</td>
+<td>Adoption</td>
+<td>Capture is a single <code>/backlog add</code> (or one agent action) and never blocks the current task</td>
+<td>Capture is so quick the backlog fills with low-signal noise</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Measurement (v1):</strong> no telemetry — metrics are tracked manually via a periodic <code>/backlog</code> audit and the git history of <code>backlog.json</code> (entry add/remove commits). Owner: @ashwinimanoj.</p>
+<h2 id="8-milestones">8. Milestones</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Outcome</th>
+<th>Exit criteria</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>Capture + store + view</td>
+<td>A global <code>backlog.json</code> exists; entries can be added (user + agent) with order, source, and feature + epic association; <code>/backlog</code> shows the ordered list with per-entry pipeline status from <code>manifest.json</code></td>
+<td><code>backlog.json</code> schema defined; an entry can be captured from a skill or by the user; <code>/backlog</code> renders the ordered backlog with feature + epic and a research/prd/plan status read from <code>manifest.json</code>; an entry can be manually removed from <code>/backlog</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Feature + epic association + suggestion</td>
+<td>Every entry references a feature and an epic (existing or proposed new); the agent suggests a matching feature/epic</td>
+<td>Capture prompts for a feature + epic; agent scans <code>manifest.json</code> features and known epics and proposes a match; user can accept, pick another, or create-new</td>
+<td>M1</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>Promotion + reconciliation</td>
+<td>The user picks an entry and starts the Shield step they choose (<code>/research</code>, <code>/prd</code>, <code>/plan</code>, or <code>/implement</code>); once the entry's epic's work appears in the feature's <code>plan.json</code>, it is removed from the backlog</td>
+<td>Reconciliation uses <code>manifest.json</code> (find feature, has-plan?) + <code>plan.json</code> (epic present?) — no ids stamped; a <code>prd</code>-only feature is <strong>not</strong> removed; removal fires eagerly at the end of the <code>/plan</code> or <code>/implement</code> run promoted from the entry and lazily on the <code>/backlog</code> sweep; the user-chosen step is never overridden</td>
+<td>M2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="9-open-questions">9. Open questions</h2>
+<h3 id="decided-locked-for-v1">Decided (locked for v1)</h3>
+<ul>
+<li><strong>Reconciliation triggers:</strong> an entry is removed (a) <strong>eagerly</strong> at the end of the <code>/plan</code> or <code>/implement</code> run it was promoted <em>from</em> — the entry id is passed to the command as a transient promotion reference, and the entry is pruned on success; and (b) <strong>lazily</strong> by the <code>/backlog</code> view sweep, which prunes any entry whose epic's work is now in a <code>plan.json</code> (the safety net for work that landed without an explicit reference). The promotion reference is a runtime command argument, not an id stamped into <code>plan.json</code>.</li>
+<li><strong>Reconciliation match key:</strong> feature (via <code>manifest.json</code>) + epic. Existing-epic entries match by <strong>epic id</strong>; proposed-new-epic entries match by <strong>epic name</strong> (names expected stable). On ambiguity or no match, the entry stays — reconciliation never removes on doubt.</li>
+<li><strong>Ordering scheme:</strong> a single explicit integer <code>order</code> field per entry (like <code>orderindex</code>); no priority buckets in v1.</li>
+<li><strong>Entry granularity:</strong> entries carry a <code>kind</code> hint (<code>epic</code> | <code>story</code> | <code>task</code>); promotion always yields ≥1 story regardless of <code>kind</code>.</li>
+<li><strong>Shippable work routes through <code>/plan</code>:</strong> anything that produces stories is promoted via <code>/plan</code> so it lands in <code>plan.json</code> (the lazy-sweep signal) and is pruned at the end of that <code>/plan</code> run. Direct <code>/implement</code> stays available for rare tiny planless changes; when promoted from an entry, that entry is pruned at the end of the <code>/implement</code> run too.</li>
+<li><strong>Manual remove:</strong> <code>/backlog</code> supports explicitly removing an entry — for ideas decided against, or any entry not cleared by a promotion run (e.g. captured-then-abandoned). Removal is a plain delete; no retained history in v1.</li>
+</ul>
+<h3 id="still-open">Still open</h3>
+<ul>
+<li><strong>Feature/epic discovery cost.</strong> Epics live inside per-feature <code>plan.json</code>, so confirming an entry's epic means opening the plan the manifest flags as having one. (Leaning: manifest as the index, open only flagged <code>plan.json</code> files; add a project-level epic index only if this gets slow.)</li>
+<li><strong>Dropped/rejected entries.</strong> Do we need an explicit terminal state for &quot;decided against,&quot; or is deleting the entry enough? (Deferred — see §11 Out of scope.)</li>
+</ul>
+<h2 id="10-risks--assumptions">10. Risks &amp; assumptions</h2>
+<h3 id="risks">Risks</h3>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backlog becomes a graveyard (captured, never acted on)</td>
+<td>Reconciliation prunes plan-committed work on <code>/backlog</code> view; periodic audit surfaces stale entries; §7 counter-metric tracks it</td>
+<td>@ashwinimanoj</td>
+</tr>
+<tr>
+<td>Concurrent writes corrupt <code>backlog.json</code> (capture racing reconciliation)</td>
+<td>Atomic write (temp-then-rename); validate-or-refuse on read; <code>backlog.json</code> is git-tracked so corruption is revertable</td>
+<td>@ashwinimanoj</td>
+</tr>
+<tr>
+<td>Reconciliation wrongly removes an entry (epic-name collision / ambiguous match)</td>
+<td>Match on feature + epic only; never remove on ambiguity (entry stays); <code>git revert</code> recovers any bad removal</td>
+<td>@ashwinimanoj</td>
+</tr>
+<tr>
+<td>Capture friction too high → nobody captures</td>
+<td>Single-step capture; agent can capture without prompting</td>
+<td>@ashwinimanoj</td>
+</tr>
+</tbody>
+</table>
+<h3 id="assumptions">Assumptions</h3>
+<ul>
+<li><strong>(unvalidated)</strong> Agents reliably surface follow-up work conversationally — the entire no-hooks non-goal (§6) rests on this. Revisit if discovered work is still being lost after v1.</li>
+<li><strong>(unvalidated)</strong> The volume/loss of future-work items today is high enough to justify the tool — no baseline count has been measured; v1's own <code>backlog.json</code> history will validate it.</li>
+<li><strong>(assumed stable)</strong> Epic names in <code>plan.json</code> are stable enough to serve as the proposed-new-epic match key (see §9).</li>
+<li><strong>(validated)</strong> <code>manifest.json</code> is feature-keyed and <code>plan.json</code> carries <code>epics[].stories[]</code> — confirmed against the current schema.</li>
+</ul>
+<h2 id="11-out-of-scope--non-goals">11. Out of scope / Non-goals</h2>
+<ul>
+<li>Automatic end-of-task surfacing via hooks (the agent calls it out conversationally; revisit if that proves unreliable).</li>
+<li>Per-feature backlogs and a global↔per-feature promotion path.</li>
+<li>An audit trail / retained history for removed or declined entries (manual remove is a plain delete in v1 — the entry is gone, with no kept record).</li>
+<li><code>/pm-sync</code> of backlog entries to the PM tool before promotion.</li>
+<li>Cross-project / multi-repo backlogs.</li>
+<li>Reordering UX beyond editing the order field (no drag-and-drop, no auto-prioritization).</li>
+</ul>
+<hr />
+<blockquote>
+<p><strong>This is a lean PRD.</strong> It intentionally omits the following standard sections:</p>
+<ul>
+<li>Section 8 — User stories &amp; scenarios</li>
+<li>Section 9 — Functional requirements</li>
+<li>Section 10 — Non-functional requirements</li>
+<li>Section 11 — RBAC &amp; permissions matrix</li>
+<li>Section 12 — Dependencies</li>
+<li>Section 13 — Risks &amp; mitigations</li>
+<li>Section 14 — Assumptions</li>
+<li>Section 15 — Rollout plan (full — lean has its own §8 Milestones)</li>
+<li>Section 16 — Cost &amp; resource impact</li>
+<li>Section 17 — GTM &amp; customer-comms</li>
+<li>Section 18 — Support / CX impact</li>
+</ul>
+<p>If scope grows or stakeholders need more detail, run <code>/prd</code> again — Shield
+will offer to add specific sections or upgrade to <code>standard</code>.</p>
+</blockquote>
+
+</body>
+</html>
