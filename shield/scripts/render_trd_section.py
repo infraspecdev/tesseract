@@ -102,16 +102,23 @@ def render_milestones(milestones: list[dict]) -> str:
         deps = ms.get("depends_on") or []
         deps_str = "no deps" if not deps else "deps " + ", ".join(deps)
         outcome = (ms.get("outcome") or "").strip()
+        description = (ms.get("description") or "").strip()
         exit_criteria = [ec.strip() for ec in (ms.get("exit_criteria") or [])]
+        touches = [c.strip() for c in (ms.get("touches_lld") or []) if c and c.strip()]
 
         lines = [
             f"### {ms['id']} — {ms['name']}  *({deps_str})*",
             "",
             f"**Outcome:** {outcome}",
         ]
+        if description:
+            lines += ["", f"**Description:** {description}"]
         if exit_criteria:
             lines += ["", "**Exit criteria:**"]
             lines += [f"- {ec}" for ec in exit_criteria]
+        if touches:
+            links = ", ".join(f"[`{c}`](lld-{c}.md)" for c in touches)
+            lines += ["", f"**Detailed design:** {links}"]
         blocks.append("\n".join(lines))
 
     # Blank line between milestone blocks keeps markdown rendering crisp.

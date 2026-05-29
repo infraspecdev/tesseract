@@ -193,6 +193,44 @@ def test_begin_marker_explains_do_not_edit() -> None:
     assert "plan.json" in BEGIN_MARKER
 
 
+def test_renders_touches_lld_as_detailed_design_links() -> None:
+    out = render_milestones([
+        {
+            "id": "M3", "name": "Trunk live", "outcome": "x",
+            "exit_criteria": ["y"], "depends_on": ["M1"],
+            "touches_lld": ["corridor-trunk", "ledger-service"],
+        },
+    ])
+    assert "**Detailed design:** [`corridor-trunk`](lld-corridor-trunk.md), " \
+           "[`ledger-service`](lld-ledger-service.md)" in out
+
+
+def test_omits_detailed_design_line_when_no_touches_lld() -> None:
+    out = render_milestones([
+        {"id": "M1", "name": "A", "outcome": "a",
+         "exit_criteria": ["x"], "depends_on": []},
+    ])
+    assert "**Detailed design:**" not in out
+
+
+def test_renders_optional_description_when_present() -> None:
+    out = render_milestones([
+        {"id": "M1", "name": "A", "outcome": "a", "description": "More detail here.",
+         "exit_criteria": ["x"], "depends_on": []},
+    ])
+    assert "**Description:** More detail here." in out
+
+
+def test_omits_description_line_when_absent_or_blank() -> None:
+    out = render_milestones([
+        {"id": "M1", "name": "A", "outcome": "a", "description": "  ",
+         "exit_criteria": ["x"], "depends_on": []},
+        {"id": "M2", "name": "B", "outcome": "b",
+         "exit_criteria": ["x"], "depends_on": ["M1"]},
+    ])
+    assert "**Description:**" not in out
+
+
 # ───────────────────────────── runner ─────────────────────────────
 
 def _run() -> int:
