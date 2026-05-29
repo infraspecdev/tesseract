@@ -8,6 +8,7 @@ outputs:
   - plan_html
   - plan_trd_html
   - prd_meta_json   # updates the PRD sidecar's linked_plans field
+  - lld_draft_md    # one per lld_components[] entry (Path B); promoted to docs/lld/<component>.md by /implement step 5h
 ---
 
 # Plan
@@ -30,6 +31,7 @@ This command writes the following registry-tracked paths (see `shield/schema/out
 | `plan_html` | `{output_dir}/{feature}/outputs/plan.html` |
 | `plan_trd_html` | `{output_dir}/{feature}/outputs/trd.html` |
 | `prd_meta_json` | `{output_dir}/{feature}/prd.meta.json` (updated — appends to `linked_plans`) |
+| `lld_draft_md` | `{output_dir}/{feature}/lld-{component}.md` (one per `lld_components[]` entry; canonical `docs/lld/` is untouched at /plan time) |
 
 The global dashboard `{output_dir}/index.html` (registry key `global_index_html`) is updated as a side effect; it is not declared in `outputs:` because it is a cross-feature artifact, not a per-run deliverable.
 
@@ -83,7 +85,7 @@ Numbered run subfolders (`plan/{N}-{slug}/`) are gone — each plan is a single 
    For each domain detected, read all `SKILL.md` files under `shield/skills/<domain>/` as **context** when generating stories and ACs. Skills inform what the plan should cover (API design conventions, test strategy, deployment safety, etc.) but are NOT applied as gating checks — that happens at /plan-review and /review.
 
    If no domain markers are found and no override is set, generate a generic plan and use the backend per-section guidance as the default (it is the broader interpretation).
-9. **Generate `{plan_json}` first** — the sidecar JSON with epics, stories, tasks, acceptance criteria, and `design_refs[]`. See `shield:plan-docs/sidecar-schema.md` for the schema (version 1.2) and the section-ID selection heuristic.
+9. **Generate `{plan_json}` first** — the sidecar JSON with epics, stories, tasks, acceptance criteria, and `design_refs[]`. See `shield:plan-docs/sidecar-schema.md` for the schema (version 1.5) and the section-ID selection heuristic. The sidecar is at schema 1.5 — see `shield:plan-docs/sidecar-schema.md` for the `lld_components[]` and `milestones[].touches_lld[]` field shapes.
 10. **Generate `{plan_trd_md}`** — emit the 14-section TRD per `shield:plan-docs/trd-template.md`. The emitter:
     - Walks §1 → §14 in canonical order.
     - For each section, surfaces the domain-appropriate authoring guidance (backend / infra / mixed-labeled subsections).
@@ -92,11 +94,25 @@ Numbered run subfolders (`plan/{N}-{slug}/`) are gone — each plan is a single 
     - Writes `trd.md.tmp` first, then renames to `trd.md` (atomic write). On any failure mid-write, removes `.tmp` and surfaces the error.
     - Allows `n/a — <reason>` on sections that genuinely don't apply; rejects vague TBDs and silent omissions.
 11. **Generate `{plan_md}`** — canonical detailed plan markdown (stories rendered from the sidecar)
-12. **Render HTML** — produce `{plan_trd_html}` and `{plan_html}` under `{output_dir}/{feature}/outputs/` via the render-markdown helper (mirrors the `/prd` rendering flow); see `shield:plan-docs` for the exact invocation
-13. **Update `manifest.json`** in `{output_dir}/` and **regenerate `index.html`** — single dashboard linking to all artifacts
-14. **You MUST produce all five artifacts (`{plan_json}`, `{plan_md}`, `{plan_trd_md}`, `{plan_html}`, `{plan_trd_html}`) and write them to the paths above.** No exceptions.
-15. Verify the sidecar JSON contains at least 1 epic with stories, each with acceptance criteria and (when a TRD exists) at least one `design_refs[]` entry.
-16. Offer next steps:
+12. **Derive `lld_components[]` and `milestones[].touches_lld[]`** — before
+    writing plan.json to disk, walk all stories' `design_refs[]` entries where
+    `doc == "lld"`; collect unique components into `lld_components[]` with
+    inferred `type`; persist the rollup of `design_refs[].component` per
+    milestone as `milestones[].touches_lld[]`. See
+    `shield:plan-docs/SKILL.md` for the exact algorithm and re-run semantics.
+13. **Emit feature-folder LLD drafts (Path B)** — for each entry in the
+    just-derived `lld_components[]`, invoke the `lld-docs` skill in `draft`
+    or `merge` mode (depending on whether `docs/lld/{name}.md` exists on
+    disk); record `fork_blob_sha` for enhancement components; update
+    plan.json with the captured fork SHAs. Drafts land at
+    `docs/shield/{feature}/lld-{name}.md`. The canonical
+    `docs/lld/{name}.md` is **not** touched here — that's `/implement`'s
+    job at milestone close.
+14. **Render HTML** — produce `{plan_trd_html}` and `{plan_html}` under `{output_dir}/{feature}/outputs/` via the render-markdown helper (mirrors the `/prd` rendering flow); see `shield:plan-docs` for the exact invocation
+15. **Update `manifest.json`** in `{output_dir}/` and **regenerate `index.html`** — single dashboard linking to all artifacts
+16. **You MUST produce all five tracked artifacts (`{plan_json}`, `{plan_md}`, `{plan_trd_md}`, `{plan_html}`, `{plan_trd_html}`) plus any feature-folder LLD drafts emitted by step 13.** No exceptions.
+17. Verify the sidecar JSON contains at least 1 epic with stories, each with acceptance criteria and (when a TRD exists) at least one `design_refs[]` entry.
+18. Offer next steps:
     - `/plan-review` — run multi-agent review on the plan
     - `/pm-sync` — sync stories to project management tool
 

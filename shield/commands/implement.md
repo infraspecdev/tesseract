@@ -16,7 +16,12 @@ Start implementing a feature using test-driven development with progress trackin
 
 ## Paths
 
-This command mutates `{plan_json}` = `{output_dir}/{feature}/plan.json` in place as steps complete. It does NOT write any new files — story status updates land in the existing sidecar so `/plan-review` and `/pm-sync` see the latest state.
+This command mutates `{plan_json}` = `{output_dir}/{feature}/plan.json` in place as steps complete. On milestone close (step 5h), it also promotes feature-folder LLD drafts to the canonical `docs/lld/{component}.md` location (registry: `lld_canonical_md`).
+
+| Registry key | Resolved path | When written |
+|---|---|---|
+| `plan_json` | `{output_dir}/{feature}/plan.json` | Mutated in place on every story-status change |
+| `lld_canonical_md` | `docs/lld/{component}.md` | Promoted from `{output_dir}/{feature}/lld-{component}.md` at milestone close (step 5h) |
 
 ## Behavior
 
@@ -37,8 +42,15 @@ This command mutates `{plan_json}` = `{output_dir}/{feature}/plan.json` in place
    - TDD: write failing tests, implement, per-step review
    - Commit after each step
    - Update story status in `{plan_json}` = `{output_dir}/{feature}/plan.json`
-6. If superpowers is available, delegate TDD to `superpowers:test-driven-development`
-7. After all steps complete, invoke `shield:summarize`
+6. **On the story close that completes a milestone**, promote each LLD draft
+   listed in `plan.json milestones[<M>].touches_lld[]` from
+   `docs/shield/{feature}/lld-{component}.md` to `docs/lld/{component}.md`.
+   This includes a fork-drift concurrency check, §14 Changelog row append,
+   atomic rename, and `design_refs[]` anchor back-fill. See step 5h in
+   `shield:implement-feature/SKILL.md` for the full procedure and the
+   just-in-time auto-heal rules.
+7. If superpowers is available, delegate TDD to `superpowers:test-driven-development`
+8. After all steps complete, invoke `shield:summarize`
 
 ### Final Review
 

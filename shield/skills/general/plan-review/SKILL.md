@@ -53,6 +53,10 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 0c | Stale-anchor check on design_refs[] — Critical finding per stale entry | when {plan_trd_md} exists | Yes |
 | 0d | PRD↔TRD duplication (§2 + §5, 80-char substring threshold) | when both PRD and TRD exist | Yes |
 | 0e | Implementation-manual rule (§7 code blocks > 20 lines without §8 rationale) | when {plan_trd_md} exists | Yes |
+| 0f | `touches_lld_drift` — persisted `milestones[i].touches_lld[]` ≠ rollup of `design_refs[].component` per milestone | when plan.json is schema 1.5+ | Yes — High |
+| 0g | `lld_components_integrity` — every `design_refs[].component` (where doc==lld) must appear in `lld_components[]`; type must be in enum; no duplicate names; fork_blob_sha matches canonical when set | when plan.json is schema 1.5+ | Yes — High (missing/dup/type) · Medium (fork drift) |
+| 0h | `undocumented_lld` — `docs/lld/<c>.md` exists on disk but a story's `design_refs[].anchor_url` for that component is null | when canonical LLDs exist | Yes — Medium |
+| 0i | `lld_draft_review` — apply the LLD structural rubric (missing always-on, missing forced subsection, vague TBDs in always-on, PoD lifted but vague) to every `docs/shield/{feature}/lld-*.md` draft | when feature-folder LLD drafts exist | Yes — High/Medium/Review depending on issue |
 | 1 | Load plan document | always | Yes |
 | 1a | Detect prior PRD in feature folder — read prd.meta.json if present | only if prd.meta.json exists | No |
 | 2 | Select reviewer personas | always | Yes |
@@ -151,6 +155,178 @@ a Critical finding:
 This catches the "design doc is really an implementation manual" anti-pattern
 from `research.md`. Threshold lives in the rule body; do not change without
 bumping the rule version.
+
+### 0f. `touches_lld_drift` rule
+
+Wraps `shield/scripts/validate_plan.py`'s `_check_touches_lld_drift` output
+(introduced in M1 plan, Task 4). For every milestone in the plan:
+
+```python
+persisted = set(milestone["touches_lld"])
+rollup = {ref.component for story in milestone.stories
+                       for ref in story.design_refs
+                       if ref.doc == "lld"}
+if persisted != rollup:
+    flag as `touches_lld_drift`
+```
+
+**Why it matters:** The persisted field exists so PM-sync, reviewers, and
+humans can read it without recomputing. Drift means the persisted value is
+lying — the source-of-truth `design_refs[]` and the convenience `touches_lld[]`
+have diverged.
+
+**Severity:** High. The plan.json is internally inconsistent.
+
+**Suggested fix output:**
+
+```
+For milestone <M>:
+  persisted touches_lld: [list]
+  rollup from design_refs[]: [list]
+  To fix: update plan.json milestones[<M>].touches_lld = [rollup].
+```
+
+**Fixture reference:** `shield/evals/lld-docs/fixtures/neg-touches-lld-drift/plan.json`.
+
+### 0g. `lld_components_integrity` rule
+
+Wraps `shield/scripts/validate_plan.py`'s `_check_lld_component_missing`
+output, plus inline checks for `type` enum, duplicate names, and
+`fork_blob_sha` drift against the live canonical.
+
+**Four sub-checks:**
+
+1. **Missing registry entry.** For every `design_refs[].component` (where
+   `doc == "lld"`), confirm it appears in `lld_components[].name`.
+2. **Type enum.** Every `lld_components[].type` is in `{"backend", "infra"}`.
+   Other values fail.
+3. **Duplicate names.** `lld_components[].name` values are unique. Duplicates
+   mean the registry contradicts itself.
+4. **Fork drift uncaught.** For every `lld_components[]` entry where
+   `fork_blob_sha` is non-null AND `docs/lld/<name>.md` exists,
+   verify `git hash-object docs/lld/<name>.md == fork_blob_sha`.
+   Mismatch → finding `lld_fork_drift_uncaught` (Medium). Suggested fix:
+   re-run /plan to refresh fork_blob_sha — /implement's step 5h will
+   then auto-heal at milestone close.
+
+**Severity:** High for sub-checks 1–3 (registry breaks promotion); Medium for
+sub-check 4 (drift caught later by step 5h, but better surfaced now).
+
+**Suggested fix output (per sub-check):**
+
+```
+Missing registry entry for component 'user-service':
+  Referenced by: EPIC-1-S1, EPIC-1-S2
+  To fix: add to lld_components[]: { "name": "user-service", "type": "<inferred-or-asked>", "fork_blob_sha": null }
+```
+
+```
+Invalid type for component 'foo': 'lambda'
+  Valid values: backend, infra
+  To fix: update lld_components[<index>].type.
+```
+
+```
+Duplicate component name in lld_components[]: 'foo' (entries at indices 0 and 2)
+  To fix: drop one entry (the duplicate); confirm fork_blob_sha matches across both before dropping.
+```
+
+**Fixture references:**
+- `shield/evals/lld-docs/fixtures/neg-component-not-in-registry/plan.json`
+- `shield/evals/lld-docs/fixtures/neg-invalid-type/plan.json`
+- `shield/evals/lld-docs/fixtures/neg-fork-drift-uncaught/`
+
+### 0h. `undocumented_lld` rule
+
+Detects the gap state where an LLD has landed at the canonical path but
+the plan.json still has TODO placeholders for it.
+
+**Check:**
+
+```python
+for epic in plan.epics:
+    for story in epic.stories:
+        for ref in story.design_refs:
+            if ref.doc == "lld" and ref.anchor_url is None:
+                canonical = Path(f"docs/lld/{ref.component}.md")
+                if canonical.exists():
+                    slug, match_type = select_anchor(story.name, slugs_for(ref.component))
+                    finding(story.id, ref.component, slug, match_type)
+```
+
+**Why it matters:** Before /implement's step 5h has run, design_refs[] entries
+may legitimately carry `anchor_url: null` (the LLD doesn't exist yet). After
+the LLD lands, those entries should be back-filled. If they're still null
+post-promotion, either /implement skipped the back-fill (bug) or a human
+edited plan.json afterward (drift). Either way, the LLD layer's value is
+diminished — stories don't know which section they implement.
+
+**Severity:** Medium. Doesn't block /implement runs but degrades traceability.
+
+**Suggested fix output:**
+
+```
+Story EPIC-1-S1 has a TODO LLD ref for component 'user-service', but
+docs/lld/user-service.md exists.
+
+Suggested back-fill:
+  anchor_url: lld-user-service.md#data-model
+  label: §4 Data model
+  match type: [heuristic]
+
+To apply: update plan.json epics[].stories[].design_refs[].
+```
+
+**Fixture reference:** `shield/evals/lld-docs/fixtures/neg-undocumented-lld/`.
+
+### 0i. `lld_draft_review` rule
+
+Mirrors the TRD-review rubric pattern (rule 0b), applied to LLD drafts in the
+feature folder.
+
+**Procedure for each `docs/shield/{feature}/lld-*.md`:**
+
+1. Parse the provenance comment to determine template type
+   (look for `<!-- generated by /lld v… -->`; the filename `lld-<name>.md`
+   gives the component; the matching `lld_components[]` entry gives the
+   `type`).
+2. Load the slug allow-list from `shield/schema/lld-sections-<type>.yaml`.
+3. **Always-on presence check:** for every section where `promote_on_demand: false`,
+   verify the heading + anchor are present in the draft. If absent → finding.
+4. **Forced-subsection check:** for §12, verify every entry in
+   `forced_subsections[]` has its sub-anchor present. If absent → finding.
+5. **`n/a — <reason>` escape check:** any section may declare `n/a — <reason>`
+   in place of populated content. Vague placeholders
+   (`TBD`, `TODO`, `to be determined`, `to do`, `[fill in]`) in always-on
+   sections → finding.
+6. **PoD lifted-but-vague check:** for promote-on-demand sections rendered as
+   `<details open>` (lifted), verify content is non-vague. A lifted PoD
+   section with only `TBD` or `n/a` is a finding.
+
+**Severities:**
+- Missing always-on section → **High**.
+- Missing §12 forced subsection → **Medium**.
+- Vague TBD in always-on → **Review** (informational; human decides).
+- PoD lifted but vague → **Review**.
+
+**Suggested fix output:**
+
+```
+Draft docs/shield/{feature}/lld-foo.md:
+  - Missing always-on section: §3 module-layout (severity: High)
+  - Missing forced subsection: §12.4 latency-breakdown (severity: Medium)
+  - Vague TBD in §1 overview (severity: Review)
+
+To fix:
+  - Add the missing sections per shield/schema/lld-sections-backend.yaml.
+  - Replace `TBD` with concrete content or `n/a — <reason>`.
+```
+
+**Fixture references:**
+- `shield/evals/lld-docs/fixtures/neg-missing-section-1/lld.md` through `…-8`
+- `shield/evals/lld-docs/fixtures/neg-missing-forced-subsection-1/lld.md` through `…-4`
+- `shield/evals/lld-docs/fixtures/neg-vague-tbd/lld.md`
+- `shield/evals/lld-docs/fixtures/neg-pod-lifted-vague/lld.md`
 
 ## Persona Selection
 

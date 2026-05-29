@@ -9,6 +9,7 @@ variables:
   date:         "YYYY-MM-DD of the review run"
   _counter:     "Empty for first run on a date; '_2', '_3', ... on same-day collisions"
   agent:        "Agent slug for per-agent detail files (e.g. 'backend-engineer')"
+  component:    "Per-LLD component identifier (kebab-case, e.g. 'user-service', 'vpc-module'); multi-instance over lld_components[]"
 
 paths:
   # Top-level
@@ -25,6 +26,10 @@ paths:
   plan_md:            "{feature_dir}/plan.md"
   plan_trd_md:        "{feature_dir}/trd.md"
   plan_arch_md:       "{feature_dir}/plan-architecture.md"   # deprecated — superseded by plan_trd_md
+
+  # LLD (Low-Level Design)
+  lld_draft_md:       "{feature_dir}/lld-{component}.md"     # Path B draft (one per lld_components[] entry) — written by /plan; promoted by /implement step 5h
+  lld_canonical_md:   "docs/lld/{component}.md"              # canonical LLD — written by /lld (Path A) or promoted from drafts by /implement (Path B). NOT under {output_dir}; docs/lld/ is project-level.
 
   # Per-feature rendered
   feature_outputs:    "{feature_dir}/outputs"
@@ -62,6 +67,7 @@ derived:
   - review_outputs_dir  # parent dir for rendered review HTML
   - global_outputs_dir  # top-level rendered output dir
   - global_index_html   # top-level dashboard, regenerated on every write
+  - lld_canonical_md    # canonical LLDs live outside output_dir (project-level docs/lld/); written by /lld + /implement, multi-instance over {component}
 
 # Deprecated keys — declared above with `deprecated:` comment markers.
 # Listed here so the lint-coverage check accepts them as "intentionally

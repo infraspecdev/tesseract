@@ -1,0 +1,98 @@
+# shield/schema/lld-sections-backend.yaml
+# Canonical 14-section backend LLD template slug allow-list.
+# Source of truth for the /lld emitter (lld-docs SKILL.md) and the lld-docs eval.
+# Pinned to the PR #43 Bytebite signup sample.
+# Consumers must not edit — modify lld-template-backend.md first.
+
+version: 1
+domain: backend
+description: >
+  Stable kebab-case section anchors that every /lld-generated backend LLD must
+  carry. Order is canonical: emitters and validators MUST preserve §1 → §14 order.
+  Sections marked promote_on_demand default to collapsed <details> blocks and are
+  lifted only when the component's nature warrants it.
+
+sections:
+  - id: overview
+    number: 1
+    title: Overview
+    promote_on_demand: false
+  - id: scope-and-non-goals
+    number: 2
+    title: Scope & non-goals
+    promote_on_demand: false
+  - id: module-layout
+    number: 3
+    title: Module layout
+    promote_on_demand: false
+  - id: data-model
+    number: 4
+    title: Data model
+    promote_on_demand: false
+  - id: api-contracts
+    number: 5
+    title: API contracts
+    promote_on_demand: false
+    sub_anchor_prefix: api
+  - id: sequence-flows
+    number: 6
+    title: Sequence flows
+    promote_on_demand: false
+    sub_anchor_prefix: flow
+  - id: error-handling
+    number: 7
+    title: Error handling
+    promote_on_demand: false
+  - id: concurrency-and-state
+    number: 8
+    title: Concurrency & state
+    promote_on_demand: false
+  - id: configuration
+    number: 9
+    title: Configuration
+    promote_on_demand: true
+  - id: observability
+    number: 10
+    title: Observability
+    promote_on_demand: false
+  - id: security-and-privacy
+    number: 11
+    title: Security & privacy
+    promote_on_demand: true
+  - id: performance-and-scaling
+    number: 12
+    title: Performance & scaling
+    promote_on_demand: false
+    forced_subsections:
+      - id: load
+        number: "12.1"
+        title: Load
+      - id: slo
+        number: "12.2"
+        title: SLO
+      - id: bottleneck
+        number: "12.3"
+        title: Bottleneck
+      - id: latency-breakdown
+        number: "12.4"
+        title: Latency breakdown
+      - id: capacity
+        number: "12.5"
+        title: Capacity
+      - id: scale-out-lever
+        number: "12.6"
+        title: Scale-out lever
+      - id: caches
+        number: "12.7"
+        title: Caches
+      - id: degradation
+        number: "12.8"
+        title: Degradation
+  - id: open-questions
+    number: 13
+    title: Open questions
+    promote_on_demand: false
+  - id: changelog
+    number: 14
+    title: Changelog
+    promote_on_demand: false

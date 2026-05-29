@@ -1,0 +1,4 @@
+ABORT: pathb-fork-drift-conflict — fork drift on 'foo' produced merge conflicts.
+Canonical docs/lld/foo.md changed since /plan drafted (commit <sha-of-canonical-at-promotion>).
+Re-run /plan to refresh the fork, then retry /implement.
+Conflicting sections: api-contracts

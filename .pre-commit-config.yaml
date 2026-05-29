@@ -27,7 +27,8 @@ repos:
         entry: python3 shield/evals/_parse_eval.py --check
         language: system
         files: '^shield/evals/.*\.md$'
-        exclude: '^shield/evals/(README\.md|inputs/)'
+        # README, inputs/, and any per-suite fixtures/ dir (test data, not eval docs)
+        exclude: '^shield/evals/(README\.md|inputs/|[^/]+/fixtures/)'
 
       # ── 4. render-markdown pytest (only when relevant files change) ───────
       - id: render-markdown-tests

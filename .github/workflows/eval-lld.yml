@@ -1,0 +1,68 @@
+name: Eval — lld-docs
+# Recurring CI gate for the /lld command, lld-docs skill, plan-sidecar 1.5
+# schema, /implement step 5h promotion, and /plan-review LLD rules. Runs on
+# every PR or push that touches the LLD surface.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shield/skills/general/lld-docs/**'
+      - 'shield/schema/plan-sidecar.schema.json'
+      - 'shield/schema/lld-sections-backend.yaml'
+      - 'shield/schema/lld-sections-infra.yaml'
+      - 'shield/commands/lld.md'
+      - 'shield/commands/plan.md'
+      - 'shield/commands/implement.md'
+      - 'shield/skills/general/plan-docs/**'
+      - 'shield/skills/general/plan-review/SKILL.md'
+      - 'shield/skills/general/implement-feature/SKILL.md'
+      - 'shield/scripts/lld_blob_sha.py'
+      - 'shield/scripts/lld_anchor_heuristic.py'
+      - 'shield/scripts/run_lld_docs.py'
+      - 'shield/scripts/run_step_5h.py'
+      - 'shield/scripts/validate_plan.py'
+      - 'shield/evals/lld-docs.yaml'
+      - 'shield/evals/lld-docs/**'
+      - 'shield/evals/run-lld-docs.py'
+      - 'shield/tests/test_lld_blob_sha.py'
+      - 'shield/tests/test_lld_anchor_heuristic.py'
+      - 'shield/tests/test_validate_plan_1_5.py'
+      - '.github/workflows/eval-lld.yml'
+  pull_request:
+    paths:
+      - 'shield/skills/general/lld-docs/**'
+      - 'shield/schema/plan-sidecar.schema.json'
+      - 'shield/schema/lld-sections-backend.yaml'
+      - 'shield/schema/lld-sections-infra.yaml'
+      - 'shield/commands/lld.md'
+      - 'shield/commands/plan.md'
+      - 'shield/commands/implement.md'
+      - 'shield/skills/general/plan-docs/**'
+      - 'shield/skills/general/plan-review/SKILL.md'
+      - 'shield/skills/general/implement-feature/SKILL.md'
+      - 'shield/scripts/lld_blob_sha.py'
+      - 'shield/scripts/lld_anchor_heuristic.py'
+      - 'shield/scripts/run_lld_docs.py'
+      - 'shield/scripts/run_step_5h.py'
+      - 'shield/scripts/validate_plan.py'
+      - 'shield/evals/lld-docs.yaml'
+      - 'shield/evals/lld-docs/**'
+      - 'shield/evals/run-lld-docs.py'
+      - 'shield/tests/test_lld_blob_sha.py'
+      - 'shield/tests/test_lld_anchor_heuristic.py'
+      - 'shield/tests/test_validate_plan_1_5.py'
+      - '.github/workflows/eval-lld.yml'
+
+jobs:
+  eval-lld-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Run lld-docs eval
+        # 3 positive fixtures (backend LLD, infra LLD, plan.json 1.5),
+        # 6 Path B fixtures, 19 negatives with named errors.
+        run: uv run --with pytest --with pyyaml --with jsonschema python shield/evals/run-lld-docs.py
+      - name: Run lld-docs unit tests
+        # blob_sha helper, anchor heuristic, schema-validator 1.5 additions.
+        run: uv run --with pytest --with pyyaml --with jsonschema pytest shield/tests/test_validate_plan_1_5.py shield/tests/test_lld_blob_sha.py shield/tests/test_lld_anchor_heuristic.py -v
