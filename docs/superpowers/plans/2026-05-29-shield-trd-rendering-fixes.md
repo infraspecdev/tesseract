@@ -795,13 +795,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 8: Regenerate the bill-payments TRD as proof (F) — VERIFICATION
+## Task 8: Regenerate the bill-payments TRD as proof (F) — OUT OF SCOPE (user-initiated)
 
-> **Cross-repo + needs user confirmation.** The bill-payments TRD lives in a
-> *separate* repo (`/Users/apple/projects/aspora/flow-research`). This task
-> regenerates it with the upgraded plugin to prove the fixes end-to-end. It is a
-> verification step, not a code change in this repo — do it only after the user
-> confirms touching that repo (see the open question in the handoff).
+> **Not part of this worktree.** The user will regenerate the bill-payments TRD
+> themselves by re-running `/plan` through the upgraded plugin once 2.23.0 is
+> published. The durable regression coverage for this work is the in-repo
+> executable evals (Tasks 1–6). The steps below are retained only as the
+> verification checklist the user can follow when they regenerate.
 
 **Files (other repo):**
 - `flow-research/docs/shield/bill-payments-platform-20260430/plan.json` (gains `lld_components[]`, `milestones[].touches_lld[]`, optional `description`)
@@ -850,7 +850,7 @@ Expected: exit 0 — no `milestone_drift`, no missing sections.
 - C (relative-link rewrite) → Task 4 ✓
 - D (§7 mermaid) → Task 5 (guidance) + Task 6 (rendered-output eval) ✓
 - E (§13 from `lld_components[]`) → Task 5 ✓
-- F (regenerate proof) → Task 8 ✓
+- F (regenerate proof) → Task 8, OUT OF SCOPE (user-initiated via the published plugin) ✓
 - Evals (mandatory) → Tasks 1, 2, 3, 4, 6 are executable repo-resident tests ✓
 - Versioning → Task 7 ✓
 
