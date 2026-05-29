@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -40,6 +41,43 @@ BEGIN_MARKER = (
 END_MARKER = "<!-- END rendered:milestones -->"
 
 
+_ID_NUM_RE = re.compile(r"^M(\d+)$")
+
+
+def _milestone_num(mid: str) -> int:
+    """Numeric component of an ``M<n>`` id. Malformed ids sort last via a
+    large sentinel so ordering stays total and deterministic."""
+    m = _ID_NUM_RE.match(mid or "")
+    return int(m.group(1)) if m else 1_000_000
+
+
+def _order_milestones(milestones: list[dict]) -> list[dict]:
+    """Dependency-topological order, ties broken by numeric id.
+
+    A milestone is emitted only after every id in its ``depends_on`` is
+    already emitted. Among ready milestones, the lowest numeric id wins.
+    Unknown deps are ignored; an unbreakable cycle falls back to numeric
+    order for the remaining nodes so this never loops forever.
+    """
+    by_id = {m["id"]: m for m in milestones}
+    remaining = sorted(milestones, key=lambda m: (_milestone_num(m["id"]), m["id"]))
+    emitted: list[dict] = []
+    emitted_ids: set[str] = set()
+    while remaining:
+        progressed = False
+        for ms in list(remaining):
+            deps = [d for d in (ms.get("depends_on") or []) if d in by_id]
+            if all(d in emitted_ids for d in deps):
+                emitted.append(ms)
+                emitted_ids.add(ms["id"])
+                remaining.remove(ms)
+                progressed = True
+        if not progressed:  # cycle / unsatisfiable — emit rest in numeric order
+            emitted.extend(remaining)
+            break
+    return emitted
+
+
 def render_milestones(milestones: list[dict]) -> str:
     """Render `plan.json` `milestones[]` as the §10 body block.
 
@@ -47,9 +85,10 @@ def render_milestones(milestones: list[dict]) -> str:
     the marker lines themselves. Use `render_section_with_markers()` to
     get the marker-wrapped form ready to inject into a TRD.
 
-    Determinism: milestones are sorted by `id` (lexicographic). Project
-    convention keeps ids in the M1…M9 single-digit range; if a project
-    ever grows to M10+, callers should normalise ids before passing in.
+    Determinism: milestones are ordered dependency-topologically (a milestone
+    appears only after everything in its ``depends_on``), ties broken by the
+    numeric component of the id. This keeps M10+ in build order rather than
+    lexical order.
 
     Empty `milestones[]` produces a single italic line noting the opt-out
     so the rendered region is never literally empty — that keeps the
@@ -59,7 +98,7 @@ def render_milestones(milestones: list[dict]) -> str:
         return "_No milestones — sidecar opts out of milestone tracking._"
 
     blocks: list[str] = []
-    for ms in sorted(milestones, key=lambda m: m["id"]):
+    for ms in _order_milestones(milestones):
         deps = ms.get("depends_on") or []
         deps_str = "no deps" if not deps else "deps " + ", ".join(deps)
         outcome = (ms.get("outcome") or "").strip()

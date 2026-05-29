@@ -101,6 +101,51 @@ def test_render_is_idempotent() -> None:
     assert render_milestones(ms) == render_milestones(ms)
 
 
+def test_orders_topologically_then_numeric() -> None:
+    """M10..M16 must NOT sort lexically after M1; deps drive order, numeric breaks ties."""
+    ms = [
+        {"id": "M1", "name": "One", "outcome": "a", "exit_criteria": ["x"], "depends_on": []},
+        {"id": "M10", "name": "Ten", "outcome": "j", "exit_criteria": ["x"], "depends_on": ["M9"]},
+        {"id": "M2", "name": "Two", "outcome": "b", "exit_criteria": ["x"], "depends_on": ["M1"]},
+        {"id": "M9", "name": "Nine", "outcome": "i", "exit_criteria": ["x"], "depends_on": ["M2"]},
+    ]
+    out = render_milestones(ms)
+    p1 = out.index("M1 — One")
+    p2 = out.index("M2 — Two")
+    p9 = out.index("M9 — Nine")
+    p10 = out.index("M10 — Ten")
+    assert p1 < p2 < p9 < p10, "must be M1, M2, M9, M10 — not lexical M1, M10, M2, M9"
+
+
+def test_ties_broken_by_numeric_id_within_a_dep_level() -> None:
+    """Two milestones both depending only on M1 emit in numeric (not lexical) order."""
+    ms = [
+        {"id": "M1", "name": "One", "outcome": "a", "exit_criteria": ["x"], "depends_on": []},
+        {"id": "M2", "name": "Two", "outcome": "b", "exit_criteria": ["x"], "depends_on": ["M1"]},
+        {"id": "M11", "name": "Eleven", "outcome": "k", "exit_criteria": ["x"], "depends_on": ["M1"]},
+    ]
+    out = render_milestones(ms)
+    assert out.index("M2 — Two") < out.index("M11 — Eleven")
+
+
+def test_unknown_dep_is_ignored_not_crashing() -> None:
+    ms = [
+        {"id": "M1", "name": "One", "outcome": "a", "exit_criteria": ["x"], "depends_on": ["M99"]},
+        {"id": "M2", "name": "Two", "outcome": "b", "exit_criteria": ["x"], "depends_on": ["M1"]},
+    ]
+    out = render_milestones(ms)  # must not raise
+    assert out.index("M1 — One") < out.index("M2 — Two")
+
+
+def test_dependency_cycle_falls_back_to_numeric_without_hanging() -> None:
+    ms = [
+        {"id": "M1", "name": "One", "outcome": "a", "exit_criteria": ["x"], "depends_on": ["M2"]},
+        {"id": "M2", "name": "Two", "outcome": "b", "exit_criteria": ["x"], "depends_on": ["M1"]},
+    ]
+    out = render_milestones(ms)  # must terminate
+    assert "M1 — One" in out and "M2 — Two" in out
+
+
 # ───────────────────────────── edge cases ─────────────────────────────
 
 def test_empty_milestones_returns_opt_out_marker() -> None:
