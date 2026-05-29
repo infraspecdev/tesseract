@@ -190,6 +190,23 @@ def test_missing_sidecar_fails(tmp_path: Path) -> None:
     assert "missing_sidecar" in r.stderr
 
 
+def test_drift_green_with_touches_lld_and_description(tmp_path: Path) -> None:
+    """A TRD whose §10 was rendered from milestones carrying touches_lld +
+    description must validate with no milestone_drift (renderer and validator
+    share render_milestones, so the bytes match)."""
+    milestones = [
+        {"id": "M1", "name": "Foundation", "outcome": "base", "description": "Sets the base.",
+         "exit_criteria": ["compiles"], "depends_on": [], "touches_lld": ["core-svc"]},
+        {"id": "M2", "name": "Cutover", "outcome": "ship",
+         "exit_criteria": ["green"], "depends_on": ["M1"], "touches_lld": []},
+    ]
+    body = render_section_with_markers(milestones)
+    trd = _write_trd(tmp_path, body)
+    _write_plan(tmp_path, milestones)
+    r = _run(str(trd))
+    assert r.returncode == 0, f"expected exit 0; stderr={r.stderr}"
+
+
 # ───────────────────────── runner ─────────────────────────
 
 def _runner() -> int:
