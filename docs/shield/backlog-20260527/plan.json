@@ -6,7 +6,7 @@
   "source_research": null,
   "source_prd": "docs/shield/backlog-20260527/prd.md",
   "prd_rubric_version_at_planning": null,
-  "last_aligned_with": null,
+  "last_aligned_with": "4dd7fff415ddf6dc3b0c83c0ddda305b0a6a6b02",
   "lld_components": [
     {
       "name": "backlog-store",
@@ -84,7 +84,7 @@
         {
           "id": "EPIC-1-S1",
           "name": "Define backlog.json schema and validator",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -127,7 +127,7 @@
         {
           "id": "EPIC-1-S2",
           "name": "Capture entrypoint (user + skill) with atomic write",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -172,7 +172,7 @@
         {
           "id": "EPIC-1-S3",
           "name": "/backlog view \u2014 ordered list",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -206,7 +206,7 @@
         {
           "id": "EPIC-1-S4",
           "name": "Manual remove from /backlog",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "medium",
           "week": null,
@@ -252,7 +252,7 @@
         {
           "id": "EPIC-2-S1",
           "name": "Per-entry pipeline status from manifest.json",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -283,7 +283,7 @@
         {
           "id": "EPIC-2-S2",
           "name": "Feature + epic association + agent suggestion",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -333,7 +333,7 @@
         {
           "id": "EPIC-3-S1",
           "name": "User-driven promotion with transient reference",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -364,7 +364,7 @@
         {
           "id": "EPIC-3-S2",
           "name": "Reconciliation engine (match key + never-remove-on-doubt)",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -407,7 +407,7 @@
         {
           "id": "EPIC-3-S3",
           "name": "Eager + lazy removal triggers (idempotent) + kill switch",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -460,7 +460,7 @@
         {
           "id": "EPIC-4-S1",
           "name": "Executable evals for the backlog lifecycle (RED\u2192GREEN)",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "high",
           "week": null,
@@ -497,7 +497,7 @@
         {
           "id": "EPIC-4-S2",
           "name": "Version bump + command/skill docs",
-          "status": "in-review",
+          "status": "done",
           "assignee": null,
           "priority": "medium",
           "week": null,
