@@ -155,14 +155,14 @@ state restoration, IAM least-privilege properties, cost ceiling, compliance fram
 Detail belongs in `/lld` (when it lands); §7 stays at the "what fits where" level.
 
 **Diagrams are mandatory and MUST be Mermaid** (rendered client-side by the HTML
-shell), not ASCII art. Emit a fenced ```mermaid block per diagram. At minimum:
+shell), not ASCII art. Emit one fenced `mermaid` block per diagram. At minimum:
 
-1. **Component / topology** (```mermaid `flowchart`): which service/module owns
+1. **Component / topology** (a `mermaid` `flowchart`): which service/module owns
    which responsibility, the ports/interfaces between them, and the persistence
    boundary.
-2. **Core flow sequence** (```mermaid `sequenceDiagram`): the primary
+2. **Core flow sequence** (a `mermaid` `sequenceDiagram`): the primary
    request/lifecycle path end-to-end, including failure/recovery transitions.
-3. **Boundary diagram** (```mermaid `flowchart` with `subgraph` per zone): the
+3. **Boundary diagram** (a `mermaid` `flowchart` with `subgraph` per zone): the
    region / network / residency / account boundaries and what crosses them.
 
 A single richer topology diagram is the floor; prefer all three when the system
