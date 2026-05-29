@@ -100,7 +100,7 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.5**.
 
 ### Milestones
 
-- `milestones[]` is the roadmap. Each milestone has `id` (`M1`, `M2`, …), `name`, `outcome`, `exit_criteria` (≥1 testable item), and `depends_on` (array of milestone IDs; empty = no prerequisites).
+- `milestones[]` is the roadmap. Each milestone has `id` (`M1`, `M2`, …), `name`, `outcome`, `exit_criteria` (≥1 testable item), and `depends_on` (array of milestone IDs; empty = no prerequisites). Each milestone MAY also carry an optional `description` (2–3 sentences of context beyond `outcome`); it is additive and back-compat (sidecars without it render with no Description line).
 - Every milestone in `milestones[]` MUST have at least one covering story (any story whose `milestone_id` equals this milestone's `id`).
 - Exit criteria follow the same testable standard as story acceptance criteria.
 - `depends_on` forms a DAG — cycles are rejected by `plan-review`.

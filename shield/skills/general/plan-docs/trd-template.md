@@ -154,19 +154,28 @@ state restoration, IAM least-privilege properties, cost ceiling, compliance fram
 **Purpose:** The shape of the solution — components, data flow, key contracts.
 Detail belongs in `/lld` (when it lands); §7 stays at the "what fits where" level.
 
-**Backend interpretation:** Component diagram or boxes-and-arrows description: which
-service owns which responsibility, what data flows across the boundary, what is
-synchronous vs. asynchronous, where the persistence boundary is. ASCII diagrams or
-Mermaid acceptable.
+**Diagrams are mandatory and MUST be Mermaid** (rendered client-side by the HTML
+shell), not ASCII art. Emit one fenced `mermaid` block per diagram. At minimum:
 
-**Infra interpretation:** Module graph and resource topology: which module composes
-which providers, which VPCs/accounts/regions are involved, how networking and IAM
-boundaries are drawn. ASCII or Mermaid acceptable.
+1. **Component / topology** (a `mermaid` `flowchart`): which service/module owns
+   which responsibility, the ports/interfaces between them, and the persistence
+   boundary.
+2. **Core flow sequence** (a `mermaid` `sequenceDiagram`): the primary
+   request/lifecycle path end-to-end, including failure/recovery transitions.
+3. **Boundary diagram** (a `mermaid` `flowchart` with `subgraph` per zone): the
+   region / network / residency / account boundaries and what crosses them.
 
-**Anti-pattern:** Do not paste >20-line code blocks here — that turns the TRD into an
-implementation manual. The plan-review implementation-manual rule will flag a code
-block longer than 20 lines unless §8 Alternatives Considered carries a rationale for
-why this exact code shape was chosen.
+A single richer topology diagram is the floor; prefer all three when the system
+spans regions, async flows, or trust boundaries.
+
+**Backend interpretation:** services, ports, sync-vs-async edges, event backbone,
+canonical data store. **Infra interpretation:** module graph, provider composition,
+VPC/account/region subgraphs, IAM/network boundaries.
+
+**Anti-patterns:** Do NOT paste ASCII box-art (it renders as monospace text, not a
+diagram). Do NOT paste >20-line code blocks (the plan-review implementation-manual
+rule flags code blocks >20 lines unless §8 carries a rationale for why this exact
+code shape was chosen). Mermaid source is not counted as a code block for that rule.
 
 ---
 
@@ -221,6 +230,13 @@ renderer would produce now (mirrors gate 0c's stale-anchor strictness).
 **Do not hand-edit the rendered region.** To change a milestone — its name,
 outcome, exit criteria, or `depends_on` — edit `plan.json` `milestones[]` and
 re-run `/plan`; the §10 body refreshes on the next emit.
+
+**Per-milestone fields rendered (from `plan.json` `milestones[]`):** `outcome`
+(headline), optional `description` (2–3 sentences of additional context — populate
+it when the outcome alone is thin), `exit_criteria`, and a **Detailed design:** line
+auto-built from `touches_lld[]` linking each component to its co-located
+`lld-<component>.md` draft. You do not write these by hand — they render from the
+sidecar; you control them by editing `plan.json`.
 
 **Backend interpretation:** Phases like "service compiles", "feature flag default
 off ships", "feature flag enabled in prod", "old code path removed". Exit criteria
@@ -278,6 +294,13 @@ ADRs.
 
 **Infra interpretation:** Link the PRD, the research transcript, Terraform module
 registry pages, AWS/GCP service-quota docs, ADRs for prior topology decisions.
+
+**LLD references (derive from `plan.json`, do not hand-curate):** list every entry
+in `lld_components[]`, each linked to its co-located draft `./lld-<name>.md`, with a
+one-line lifecycle note: *"drafted by `/plan`; promoted to `docs/lld/<name>.md` by
+`/implement` at milestone close."* When `lld_components[]` is empty, write
+`n/a — no component LLDs at this scope`. This is what makes the TRD→LLD relationship
+visible instead of a hand-written "to be authored" stub.
 
 ---
 
