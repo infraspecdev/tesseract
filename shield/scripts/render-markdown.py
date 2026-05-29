@@ -8,7 +8,9 @@ reads the markdown, renders it with a CommonMark-strict parser
 extensions, builds a Table of Contents from h2/h3 headings, and writes
 the shell with placeholders substituted. Mermaid fences (info string
 `mermaid`) are emitted as `<pre class="mermaid">...</pre>` so mermaid.js
-can render them client-side.
+can render them client-side. Relative links and image sources in the body
+are rewritten by the directory delta between `--md` and `--out`, so a doc
+rendered into an `outputs/` subdir keeps its `./`-relative links resolvable.
 
 Invocation contract is owned by render-markdown.sh — see that file.
 """
@@ -16,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import html
+import os
+import posixpath
 import sys
 from pathlib import Path
 
@@ -27,7 +31,50 @@ BODY_PLACEHOLDER = "{{BODY}}"
 TOC_PLACEHOLDER = "{{TOC}}"
 
 
-def _make_parser() -> MarkdownIt:
+def _rewrite_relative(url: str, prefix: str) -> str:
+    """Prefix a *relative* URL with the md→out directory delta.
+
+    Absolute (`http(s)://`, `//`), root-relative (`/…`), anchor (`#…`) and
+    `mailto:` URLs are returned unchanged. ``prefix`` of "" or "." is a no-op.
+    """
+    if not prefix or prefix == "." or not url:
+        return url
+    if url.startswith(("#", "/", "mailto:")) or url.startswith("//") or "://" in url:
+        return url
+    return posixpath.normpath(posixpath.join(prefix, url))
+
+
+def _override_link_rewrite(md: MarkdownIt, prefix: str) -> None:
+    """Rewrite relative href/src on link_open + image tokens by ``prefix``."""
+    if not prefix or prefix == ".":
+        return
+
+    default_link = md.renderer.rules.get("link_open")
+
+    def link_open(tokens, idx, options, env):
+        href = tokens[idx].attrGet("href")
+        if href is not None:
+            tokens[idx].attrSet("href", _rewrite_relative(href, prefix))
+        if default_link is not None:
+            return default_link(tokens, idx, options, env)
+        return md.renderer.renderToken(tokens, idx, options, env)
+
+    md.renderer.rules["link_open"] = link_open
+
+    default_image = md.renderer.rules.get("image")
+
+    def image(tokens, idx, options, env):
+        src = tokens[idx].attrGet("src")
+        if src is not None:
+            tokens[idx].attrSet("src", _rewrite_relative(src, prefix))
+        if default_image is not None:
+            return default_image(tokens, idx, options, env)
+        return md.renderer.renderToken(tokens, idx, options, env)
+
+    md.renderer.rules["image"] = image
+
+
+def _make_parser(link_prefix: str = "") -> MarkdownIt:
     md = (
         MarkdownIt("commonmark", {"html": True, "linkify": True, "typographer": False})
         .enable("table")
@@ -35,6 +82,7 @@ def _make_parser() -> MarkdownIt:
         .use(anchors_plugin, min_level=1, max_level=4, permalink=False)
     )
     _override_mermaid_fence(md)
+    _override_link_rewrite(md, link_prefix)
     return md
 
 
@@ -111,9 +159,9 @@ def _build_toc_html(entries: list[tuple[int, str, str]]) -> str:
     return "\n".join(parts)
 
 
-def render(md_text: str) -> tuple[str, str]:
+def render(md_text: str, link_prefix: str = "") -> tuple[str, str]:
     """Return (toc_html, body_html). toc_html is '' when no h2/h3 found."""
-    md = _make_parser()
+    md = _make_parser(link_prefix)
     env: dict = {}
     tokens = md.parse(md_text, env)
     body = md.renderer.render(tokens, md.options, env)
@@ -144,7 +192,10 @@ def main() -> int:
         )
         return 2
 
-    toc, body = render(args.md.read_text())
+    link_prefix = os.path.relpath(
+        args.md.resolve().parent, args.out.resolve().parent
+    ).replace(os.sep, "/")
+    toc, body = render(args.md.read_text(), link_prefix=link_prefix)
     out = shell
     if TOC_PLACEHOLDER in out:
         out = out.replace(TOC_PLACEHOLDER, toc)
