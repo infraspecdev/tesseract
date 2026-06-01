@@ -1,44 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="sidecar" content="../plan.json">
-<title>Plan — /plan TRD refactor</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
-h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
-h3 { color: #5f6368; margin-top: 22px; }
-table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
-th { background-color: #f1f3f4; font-weight: bold; }
-tr:nth-child(even) { background-color: #f8f9fa; }
-code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', Menlo, 'Courier New', monospace; font-size: 13px; }
-pre { background-color: #f1f3f4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: 'SF Mono', Menlo, 'Courier New', monospace; white-space: pre; font-size: 12px; line-height: 1.4; }
-pre code { background: transparent; padding: 0; }
-blockquote { border-left: 4px solid #1a73e8; margin: 15px 0; padding: 10px 20px; background-color: #e8f0fe; }
-ul, ol { margin: 10px 0; padding-left: 24px; }
-li { margin: 4px 0; }
-hr { border: none; border-top: 1px solid #dadce0; margin: 24px 0; }
-a { color: #1a73e8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.nav { margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid #dadce0; font-size: 14px; }
-.nav a { margin-right: 14px; }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Architecture — plan-trd-refactor-20260524</title>
+<link rel="stylesheet" href="../../shield.css" />
+<script defer src="../../manifest.js"></script>
+<script defer src="../../shield-nav.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  document.addEventListener("DOMContentLoaded", () => mermaid.run({ querySelector: "pre.mermaid" }));
+</script>
 </head>
-<body>
-<div class="nav">
-  <a href="../../index.html">&larr; Shield Overview</a> |
-  <a href="../research.md">Research</a> |
-  <a href="../plan.json">Sidecar (JSON)</a> |
-  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
-</div>
+<body data-shield-root="../../">
+<header class="shield-header">
+  <a class="brand" href="../../index.html">🛡 Shield</a>
+  <span class="bar-sep">|</span>
+  <nav class="crumb" id="shield-crumb"></nav>
+  <span class="bar-spacer"></span>
+  <div class="feat-wrap">
+    <button class="feat-btn" id="docs-toggle" aria-expanded="false">Features ▾</button>
+    <div class="feat-panel" id="docs-panel">
+      <input class="docs-search" id="docs-search" placeholder="Search docs…  (⌘K)" autocomplete="off" />
+      <div id="docs-results"></div>
+    </div>
+  </div>
+</header>
+<main class="shield-main">
+
+<nav class="toc">
+<div class="toc-title">Contents</div>
+<ul>
+<li><a href="#why-this-refactor">Why this refactor</a>
+</li>
+<li><a href="#how-the-implementation-breaks-down">How the implementation breaks down</a>
+</li>
+<li><a href="#key-architectural-decisions">Key architectural decisions</a>
+</li>
+<li><a href="#deliverables-per-milestone">Deliverables (per milestone)</a>
+<ul>
+<li><a href="#m1--trd-cutover-one-pr">M1 — TRD cutover (one PR)</a></li>
+<li><a href="#m2--review--sync-wiring-one-pr">M2 — Review + sync wiring (one PR)</a></li>
+<li><a href="#m3--drift--duplication-hardening-one-pr">M3 — Drift + duplication hardening (one PR)</a></li>
+</ul>
+</li>
+<li><a href="#rollback-strategy">Rollback strategy</a>
+</li>
+<li><a href="#out-of-scope">Out of scope</a>
+</li>
+<li><a href="#what-to-do-next">What to do next</a>
+</li>
+</ul>
+</nav>
 <h1 id="plan-architecture--plan-trd-refactor">Plan Architecture — <code>/plan</code> TRD refactor</h1>
 <p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code>
-<strong>Source research:</strong> <a href="./research.md"><code>research.md</code></a> — read this first; it is the authoritative source for design decisions, citations, and rejected alternatives.
+<strong>Source research:</strong> <a href="../research.md"><code>research.md</code></a> — read this first; it is the authoritative source for design decisions, citations, and rejected alternatives.
 <strong>Date:</strong> 2026-05-24</p>
 <blockquote>
-<p>This document is the <strong>why &amp; how</strong> companion to <code>plan.json</code>. For the <strong>what to do</strong> breakdown (epics, stories, ACs), see <code>plan.json</code> and the rendered <a href="./plan.md"><code>plan.md</code></a>.</p>
+<p>This document is the <strong>why &amp; how</strong> companion to <code>plan.json</code>. For the <strong>what to do</strong> breakdown (epics, stories, ACs), see <code>plan.json</code> and the rendered <a href="../plan.md"><code>plan.md</code></a>.</p>
 <p><strong>Note on path layout:</strong> <code>/plan</code> today still emits <code>plan-architecture.md</code>. This plan run uses today's <code>/plan</code> to plan the refactor of <code>/plan</code>. After EPIC-1-S2 lands, future plan runs will emit <code>trd.md</code> in this slot instead.</p>
 </blockquote>
 <h2 id="why-this-refactor">Why this refactor</h2>
@@ -136,5 +156,7 @@ M3 Drift + duplication hardening                ← P2 (follows M2)
 <li><code>/implement</code> — TDD-driven implementation, starting with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail.</li>
 </ul>
 
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
 </body>
 </html>

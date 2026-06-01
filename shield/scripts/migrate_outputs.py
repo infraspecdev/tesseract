@@ -167,17 +167,25 @@ TRACKED_ARTIFACTS = {
     "plan_json":    "plan.json",
     "plan_md":      "plan.md",
     "plan_arch_md": "plan-architecture.md",
+    "trd":          "trd.md",
 }
 
 
-def _summarize_reviews(feature_dir: Path, review_type: str) -> dict[str, str | int]:
+def _summarize_reviews(feature_dir: Path, review_type: str) -> dict[str, object]:
     review_root = feature_dir / "reviews" / review_type
     if not review_root.exists():
-        return {"count": 0}
+        return {"count": 0, "entries": []}
     runs = sorted(d.name for d in review_root.iterdir() if d.is_dir())
     if not runs:
-        return {"count": 0}
-    return {"latest": runs[-1], "count": len(runs)}
+        return {"count": 0, "entries": []}
+    entries = [
+        {
+            "date": run,
+            "path": f"{feature_dir.name}/outputs/reviews/{review_type}/{run}/summary.html",
+        }
+        for run in runs
+    ]
+    return {"latest": runs[-1], "count": len(runs), "entries": entries}
 
 
 def build_manifest(output_dir: Path) -> dict:
@@ -200,7 +208,7 @@ def build_manifest(output_dir: Path) -> dict:
             "reviews": reviews,
             "updated": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
         })
-    return {"schema_version": 2, "features": features}
+    return {"schema_version": "2.1", "features": features}
 
 
 def git_dirty_paths(root: Path) -> list[str] | None:

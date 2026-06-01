@@ -96,7 +96,7 @@ The "what to do" — stories rendered as markdown from the sidecar plus narrativ
 
 ## HTML Render
 
-After the markdown sources are written, render both into `{output_dir}/{feature}/outputs/` using `render-markdown.sh` (the same helper `/prd` uses — strict CommonMark + plugins):
+After the markdown sources are written, render both into `{output_dir}/{feature}/outputs/` using `render-markdown.sh` with the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` (strict CommonMark + plugins):
 
 ```bash
 cd "{output_dir}/{feature}"
@@ -105,22 +105,24 @@ mkdir -p outputs
 # TRD
 "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
   --md    trd.md \
-  --shell trd.shell.html \
-  --out   outputs/trd.html
+  --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+  --out   outputs/trd.html \
+  --assets-root "{output_dir}" \
+  --title "TRD — {feature}"
 
 # Detailed plan
 "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
   --md    plan.md \
-  --shell plan.shell.html \
-  --out   outputs/plan.html
+  --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+  --out   outputs/plan.html \
+  --assets-root "{output_dir}" \
+  --title "Plan — {feature}"
+
+# Refresh manifest-derived page assets (manifest.js + static assets)
+uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"
 ```
 
-Each rendered HTML file MUST include a meta tag in its shell template that references the sidecar:
-```html
-<meta name="sidecar" content="../plan.json">
-```
-
-Delete the `.shell.html` files once the helper succeeds.
+The shared shell wires nav, dashboard, and mermaid client-side via `manifest.js` + the static assets refreshed by `write_shield_assets.py`. Do NOT write per-skill `.shell.html` files.
 
 ### Story Format in HTML
 

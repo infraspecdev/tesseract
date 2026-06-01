@@ -1,20 +1,78 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="sidecar" content="../plan.json">
-<title>Shield TRD — Backlog</title>
-<style>
- body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1.2rem;color:#1b1f24}
- h1,h2,h3,h4{line-height:1.25;margin-top:1.6em} h1{color:#1a73e8;border-bottom:2px solid #e1e4e8;padding-bottom:.3em} h2{border-bottom:1px solid #eaecef;padding-bottom:.2em}
- code{background:#f3f4f6;padding:.12em .35em;border-radius:4px;font-size:.9em} pre{background:#f6f8fa;padding:1em;border-radius:8px;overflow:auto} pre code{background:none;padding:0}
- pre.mermaid{background:none;padding:0;text-align:center}
- table{border-collapse:collapse;width:100%;margin:1em 0} th,td{border:1px solid #d0d7de;padding:.45em .7em;text-align:left;vertical-align:top} th{background:#f6f8fa}
- blockquote{border-left:4px solid #1a73e8;margin:1em 0;padding:.2em 1em;color:#57606a}
- details{margin:1em 0;padding:.4em .8em;background:#f6f8fa;border-radius:6px} summary{cursor:pointer;font-weight:600}
-</style></head><body>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plan — backlog-20260527</title>
+<link rel="stylesheet" href="../../shield.css" />
+<script defer src="../../manifest.js"></script>
+<script defer src="../../shield-nav.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  document.addEventListener("DOMContentLoaded", () => mermaid.run({ querySelector: "pre.mermaid" }));
+</script>
+</head>
+<body data-shield-root="../../">
+<header class="shield-header">
+  <a class="brand" href="../../index.html">🛡 Shield</a>
+  <span class="bar-sep">|</span>
+  <nav class="crumb" id="shield-crumb"></nav>
+  <span class="bar-spacer"></span>
+  <div class="feat-wrap">
+    <button class="feat-btn" id="docs-toggle" aria-expanded="false">Features ▾</button>
+    <div class="feat-panel" id="docs-panel">
+      <input class="docs-search" id="docs-search" placeholder="Search docs…  (⌘K)" autocomplete="off" />
+      <div id="docs-results"></div>
+    </div>
+  </div>
+</header>
+<main class="shield-main">
+
+<nav class="toc">
+<div class="toc-title">Contents</div>
+<ul>
+<li><a href="#milestones">Milestones</a>
+</li>
+<li><a href="#epic-1--store-schema--capture--m1">EPIC-1 — Store, schema &amp; capture  (M1)</a>
+<ul>
+<li><a href="#epic-1-s1--define-backlogjson-schema-and-validator-high">EPIC-1-S1 · Define backlog.json schema and validator (high)</a></li>
+<li><a href="#epic-1-s2--capture-entrypoint-user--skill-with-atomic-write-high">EPIC-1-S2 · Capture entrypoint (user + skill) with atomic write (high)</a></li>
+<li><a href="#epic-1-s3--backlog-view--ordered-list-high">EPIC-1-S3 · /backlog view — ordered list (high)</a></li>
+<li><a href="#epic-1-s4--manual-remove-from-backlog-medium">EPIC-1-S4 · Manual remove from /backlog (medium)</a></li>
+</ul>
+</li>
+<li><a href="#epic-2--association--pipeline-status">EPIC-2 — Association &amp; pipeline status</a>
+<ul>
+<li><a href="#epic-2-s1--per-entry-pipeline-status-from-manifestjson-high-m1">EPIC-2-S1 · Per-entry pipeline status from manifest.json (high, M1)</a></li>
+<li><a href="#epic-2-s2--feature--epic-association--agent-suggestion-high-m2">EPIC-2-S2 · Feature + epic association + agent suggestion (high, M2)</a></li>
+</ul>
+</li>
+<li><a href="#epic-3--promotion--reconciliation--m3">EPIC-3 — Promotion &amp; reconciliation  (M3)</a>
+<ul>
+<li><a href="#epic-3-s1--user-driven-promotion-with-transient-reference-high">EPIC-3-S1 · User-driven promotion with transient reference (high)</a></li>
+<li><a href="#epic-3-s2--reconciliation-engine-match-key--never-remove-on-doubt-high">EPIC-3-S2 · Reconciliation engine (match key + never-remove-on-doubt) (high)</a></li>
+<li><a href="#epic-3-s3--eager--lazy-removal-triggers-idempotent--kill-switch-high">EPIC-3-S3 · Eager + lazy removal triggers (idempotent) + kill switch (high)</a></li>
+</ul>
+</li>
+<li><a href="#epic-4--eval-coverage--release--m3">EPIC-4 — Eval coverage &amp; release  (M3)</a>
+<ul>
+<li><a href="#epic-4-s1--executable-evals-for-the-backlog-lifecycle-redgreen-high">EPIC-4-S1 · Executable evals for the backlog lifecycle (RED→GREEN) (high)</a></li>
+<li><a href="#epic-4-s2--version-bump--commandskill-docs-medium">EPIC-4-S2 · Version bump + command/skill docs (medium)</a></li>
+</ul>
+</li>
+<li><a href="#validate-the-bet-from-v1-data--p1--pm10-decided-2026-05-27">Validate the bet from v1 data  (P1 — PM10, decided 2026-05-27)</a>
+</li>
+<li><a href="#carried-forward-from-prd-review-ready-run-_2">Carried forward from PRD-review (Ready, run _2)</a>
+</li>
+<li><a href="#next-steps">Next steps</a>
+</li>
+</ul>
+</nav>
 <!-- sidecar: ./plan.json -->
 <h1 id="plan--shield-backlog">Plan — Shield Backlog</h1>
 <p><strong>Project:</strong> Shield · <strong>Phase:</strong> v1 · <strong>Domain:</strong> backend (Python)
-<strong>PRD:</strong> <a href="./prd.md"><code>./prd.md</code></a> (reviewed <strong>Ready</strong>, composite 3.12) · <strong>TRD:</strong> <a href="./trd.md"><code>./trd.md</code></a> · <strong>Sidecar:</strong> <code>./plan.json</code></p>
+<strong>PRD:</strong> <a href="../prd.md"><code>./prd.md</code></a> (reviewed <strong>Ready</strong>, composite 3.12) · <strong>TRD:</strong> <a href="../trd.md"><code>./trd.md</code></a> · <strong>Sidecar:</strong> <code>./plan.json</code></p>
 <p>A project-level Shield backlog: capture (user/agent) → user-driven promotion → reconciliation. Entries are removed when their work commits — eagerly at the end of a promoted <code>/plan</code> or <code>/implement</code> run, lazily on the <code>/backlog</code> view sweep, or manually. Matching is by feature (<code>manifest.json</code> index) + epic (<code>plan.json</code> gate); no ids are stamped. This re-plan folds the 2026-05-27 plan-review findings (P0 gate-0d, the P1/P2 set) into the stories and adds the previously-deferred 14-section TRD plus three component LLD drafts.</p>
 <h2 id="milestones">Milestones</h2>
 <table>
@@ -51,7 +109,7 @@
 </tr>
 </tbody>
 </table>
-<p>LLD drafts emitted by this plan (feature-folder, net-new): <a href="./lld-backlog-store.md"><code>lld-backlog-store.md</code></a>, <a href="./lld-epic-suggester.md"><code>lld-epic-suggester.md</code></a>, <a href="./lld-reconciler.md"><code>lld-reconciler.md</code></a>.</p>
+<p>LLD drafts emitted by this plan (feature-folder, net-new): <a href="../lld-backlog-store.md"><code>lld-backlog-store.md</code></a>, <a href="../lld-epic-suggester.md"><code>lld-epic-suggester.md</code></a>, <a href="../lld-reconciler.md"><code>lld-reconciler.md</code></a>.</p>
 <hr />
 <h2 id="epic-1--store-schema--capture--m1">EPIC-1 — Store, schema &amp; capture  <em>(M1)</em></h2>
 <h3 id="epic-1-s1--define-backlogjson-schema-and-validator-high">EPIC-1-S1 · Define backlog.json schema and validator <em>(high)</em></h3>
@@ -59,28 +117,28 @@
 <ul>
 <li><strong>Tasks:</strong> author <code>shield/schema/backlog.schema.json</code>; specify the <code>id</code> contract (<code>uuid4</code> string; uniqueness across <code>entries[]</code> enforced by the <strong>validator</strong>, not the JSON Schema — P1-2 — since draft 2020-12 can't express property-level array uniqueness); document entry shape, migration policy, and the <strong><code>manifest features[].name</code> == folder-slug</strong> invariant (P1-3) in <code>shield/skills/general/backlog/SKILL.md</code>; create <code>shield/scripts/validate_backlog.py</code>; ordering = single integer <code>order</code>; migration is doc-only until <code>schema_version</code> 2.</li>
 <li><strong>AC:</strong> schema rejects unknown <code>kind</code> (named error); <strong>the validator</strong> rejects duplicate <code>id</code> values (<code>duplicate_entry_id</code>); <code>validate_backlog.py</code> exits 0/non-zero correctly; <code>schema_version</code> + migration policy + name==slug invariant documented; enums constrained; <code>id</code> is a <code>uuid4</code> string.</li>
-<li><strong>Design:</strong> <a href="./trd.md#apis-involved">§11 APIs Involved</a> · LLD <a href="./lld-backlog-store.md#data-model"><code>backlog-store</code> §4 Data model</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#apis-involved">§11 APIs Involved</a> · LLD <a href="../lld-backlog-store.md#data-model"><code>backlog-store</code> §4 Data model</a></li>
 </ul>
 <h3 id="epic-1-s2--capture-entrypoint-user--skill-with-atomic-write-high">EPIC-1-S2 · Capture entrypoint (user + skill) with atomic write <em>(high)</em></h3>
 <p>Capture usable by the user (<code>/backlog add</code>) and any skill (documented <code>capture()</code> write helper). Atomic temp-then-rename + validate-or-refuse so concurrent capture vs reconciliation can't corrupt the file. <em>Resolves PRD-review P1 (capture interface); closes TRD §12 Q3.</em></p>
 <ul>
 <li><strong>Tasks:</strong> <code>/backlog add</code> (assigns next <code>order</code> + <code>uuid4</code> id); <strong>LOCKED</strong> write-helper signature <code>capture(text: str, *, kind: str = &quot;task&quot;, feature: str | None = None, epic: str | None = None, source: str) -&gt; str</code> in <code>shield/scripts/backlog_store.py</code>, raising <code>BacklogInvalid</code> (pinned TRD §11); <strong>LOCKED</strong> single-writer (no lock) → full doc → <code>.tmp</code> → <code>os.replace()</code> (TRD §6 N1); <strong>+ compare-before-replace</strong> (P1-1/security): refuse <code>os.replace()</code> if the on-disk store changed since read → loud <code>BacklogInvalid</code>, no lost entry; <strong>package <code>backlog_store</code></strong> with a <code>pyproject.toml</code> (P1-4 — skills import <code>capture()</code>); validate-or-refuse on read <strong>and</strong> write.</li>
 <li><strong>AC:</strong> user + skill capture both work; interface documented + pinned in TRD §11; mid-write kill leaves no corruption; <strong>a concurrent on-disk change between read and replace is refused with <code>BacklogInvalid</code> (no lost entry)</strong>; next <code>order</code>/<code>uuid4</code> id/default <code>kind</code> assigned; malformed/partial <code>backlog.json</code> on read is <strong>refused with <code>BacklogInvalid</code></strong>, never silently read or truncated.</li>
-<li><strong>Design:</strong> <a href="./trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="./lld-backlog-store.md#api-contracts"><code>backlog-store</code> §5 API contracts</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="../lld-backlog-store.md#api-contracts"><code>backlog-store</code> §5 API contracts</a></li>
 </ul>
 <h3 id="epic-1-s3--backlog-view--ordered-list-high">EPIC-1-S3 · /backlog view — ordered list <em>(high)</em></h3>
 <p><code>/backlog</code> command + skill rendering entries sorted by <code>order</code> with feature + epic + source.</p>
 <ul>
 <li><strong>Tasks:</strong> author <code>shield/commands/backlog.md</code> + <code>backlog/SKILL.md</code>; render sorted by <code>order</code>; define the per-entry render-line format once in the SKILL.md (canonical badge string lives in EPIC-2-S1) so every view path renders identically; document a local-dev/dry-run loop; empty-backlog message.</li>
 <li><strong>AC:</strong> ascending-<code>order</code> list with feature/epic/source; clean empty message; command registered; render-line format documented once and reused.</li>
-<li><strong>Design:</strong> <a href="./trd.md#product-journey">§4 Product Journey</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#product-journey">§4 Product Journey</a></li>
 </ul>
 <h3 id="epic-1-s4--manual-remove-from-backlog-medium">EPIC-1-S4 · Manual remove from /backlog <em>(medium)</em></h3>
 <p><code>/backlog remove &lt;id&gt;</code> — plain delete for ideas decided against / entries no run will clear.</p>
 <ul>
 <li><strong>Tasks:</strong> <code>remove &lt;id&gt;</code> via atomic helper; confirm-before-delete; clear error on absent id; document the recoverability boundary (git revert covers only committed entries; uncommitted manual remove is unrecoverable by design — N4).</li>
 <li><strong>AC:</strong> deletes + persists atomically; absent id = clear no-op error; no history retained; uncommitted-entry recoverability caveat documented.</li>
-<li><strong>Design:</strong> <a href="./trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="./lld-backlog-store.md#api-contracts"><code>backlog-store</code> §5 API contracts</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="../lld-backlog-store.md#api-contracts"><code>backlog-store</code> §5 API contracts</a></li>
 </ul>
 <hr />
 <h2 id="epic-2--association--pipeline-status">EPIC-2 — Association &amp; pipeline status</h2>
@@ -89,14 +147,14 @@
 <ul>
 <li><strong>Tasks:</strong> read manifest; render status badges per entry; pin the canonical badge string <code>research ✓  prd ✓  plan –</code> in the SKILL.md; <code>not started</code> when feature absent; compute at view time (no stored status).</li>
 <li><strong>AC:</strong> badges derived from manifest using the pinned string; prd-but-no-plan shows <code>prd ✓ plan –</code> and stays; absent feature → <code>not started</code>.</li>
-<li><strong>Design:</strong> <a href="./trd.md#high-level-design">§7 High-Level Design</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#high-level-design">§7 High-Level Design</a></li>
 </ul>
 <h3 id="epic-2-s2--feature--epic-association--agent-suggestion-high-m2">EPIC-2-S2 · Feature + epic association + agent suggestion <em>(high, M2)</em></h3>
 <p>Associate every entry with a feature (reconciliation key) + epic (removal gate), either proposed-new; agent suggests feature (manifest) + epic (plan.json); user accept/replace/create-new.</p>
 <ul>
 <li><strong>Tasks:</strong> prompt/accept feature + epic (allow proposed-new); <strong>LOCKED</strong> match key = exact normalized (<code>casefold()</code> + collapsed whitespace); <strong>UPDATED (P0-2): both existing and proposed-new epics match by exact normalized NAME</strong> (epic id <code>EPIC-N</code> is a positional within-plan slot, not a cross-plan key), no fuzzy ranking (TRD §5 F7/F8); suggestion typed against the real shapes (P0-1): <code>suggest_feature</code> reads <code>manifest.features[].name</code>, <code>suggest_epic</code> reads <code>plans[feature].epics[]</code> (plans = <code>dict[slug→plan]</code>, path derived); never block capture; a tie (≥2 matches) surfaces all and auto-picks none.</li>
 <li><strong>AC:</strong> every entry has feature + epic; ≥1 feature + ≥1 epic candidate proposed when matches exist; <code>auth</code> fixture surfaces <code>auth</code> top candidate + 2-way tie auto-picks neither; <strong>a suggested feature value resolves to an existing <code>docs/shield/&lt;value&gt;/</code> path</strong>; capture succeeds with proposed-new when none.</li>
-<li><strong>Design:</strong> <a href="./trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="./lld-epic-suggester.md#api-contracts"><code>epic-suggester</code> §5 API contracts</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#functional-requirements">§5 Functional Requirements</a> · LLD <a href="../lld-epic-suggester.md#api-contracts"><code>epic-suggester</code> §5 API contracts</a></li>
 </ul>
 <hr />
 <h2 id="epic-3--promotion--reconciliation--m3">EPIC-3 — Promotion &amp; reconciliation  <em>(M3)</em></h2>
@@ -105,7 +163,7 @@
 <ul>
 <li><strong>Tasks:</strong> <code>promote &lt;id&gt;</code> affordance; forward id as transient reference; document non-persistence; shippable work routes through <code>/plan</code>, direct <code>/implement</code> for rare planless one-offs.</li>
 <li><strong>AC:</strong> promotion starts the chosen step + forwards the reference; reference not persisted to plan.json/stories (F6); tool never auto-routes.</li>
-<li><strong>Design:</strong> <a href="./trd.md#product-journey">§4 Product Journey</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#product-journey">§4 Product Journey</a></li>
 </ul>
 <blockquote>
 <p><strong>Intra-epic dependency:</strong> EPIC-3-S3 (triggers) consumes both EPIC-3-S1 (transient reference) and EPIC-3-S2 (engine) and must land after them.</p>
@@ -115,14 +173,14 @@
 <ul>
 <li><strong>Tasks:</strong> <code>shield/scripts/reconcile_backlog.py</code> with <code>reconcile(entry, *, manifest: dict, plans: dict[str,dict]) -&gt; RemovalDecision</code> (pure fn; manifest = list-keyed <code>features[]</code>, <code>plans</code> = <code>{slug→plan}</code> with path <strong>derived</strong> — P0-1); <strong>UPDATED (P0-2)</strong> match key = epic by casefold+collapsed-ws exact <strong>name</strong> for both existing and proposed-new (never by positional <code>EPIC-N</code> id; a re-planned reorder must still resolve); tie/no-match → stays; story status never consulted; never-remove-on-doubt; drift tolerance with logged warning; define <code>RemovalDecision</code> + <strong>log every removal</strong> <code>{entry id, feature, epic, match-kind (name), triggering run, gating plan.json path}</code>.</li>
 <li><strong>AC:</strong> removed only when an epic with normalized-exact <strong>name</strong> is present in <code>plan.json.epics[]</code> (story status not consulted), prd-only not; <strong>a re-planned epic reorder (same name, new <code>EPIC-N</code>) still resolves</strong>; epic-name collision across two features → ambiguous → entry stays; malformed/old shapes → entry stays (logged), no exception; every removal emits the structured log line.</li>
-<li><strong>Design:</strong> <a href="./trd.md#high-level-design">§7 High-Level Design</a> · LLD <a href="./lld-reconciler.md#sequence-flows"><code>reconciler</code> §6 Sequence flows</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#high-level-design">§7 High-Level Design</a> · LLD <a href="../lld-reconciler.md#sequence-flows"><code>reconciler</code> §6 Sequence flows</a></li>
 </ul>
 <h3 id="epic-3-s3--eager--lazy-removal-triggers-idempotent--kill-switch-high">EPIC-3-S3 · Eager + lazy removal triggers (idempotent) + kill switch <em>(high)</em></h3>
 <p>Eager prune at end of promoted <code>/plan</code>/<code>/implement</code> (via the transient reference); lazy sweep on <code>/backlog</code> view. Both idempotent; both call the one reconciliation engine. Ships the kill switch and closes the uncommitted-state recovery gap. <em>Lands after EPIC-3-S1 + EPIC-3-S2.</em></p>
 <ul>
 <li><strong>Tasks:</strong> eager prune hook at end of <code>/plan</code> + <code>/implement</code>; lazy sweep on view; idempotent remove-if-present + shared engine; <strong>kill switch</strong> <code>.shield.json</code> <code>backlog.auto_reconcile</code> (default true) disabling eager + lazy (§14 rollback fallback) — <strong>requires an additive <code>backlog</code> object in <code>shield/schemas/shield.schema.json</code></strong> (P0-3; current schema is <code>additionalProperties:false</code>); <strong>RESOLVED (P1-1)</strong> the single recovery mechanism is append-to-<code>.shield/backlog-removed.log</code> <strong>before</strong> the destructive prune (commit-before-prune is a non-goal); no-op prune writes no log/recovery record; <strong>instrument the N2 ~1s budget</strong> with a debug-gated latency line (WARN &gt; 1s).</li>
 <li><strong>AC:</strong> promotion removes referenced entry at end of run (eager); sweep removes plan-committed entries (lazy); second pass is a no-op (idempotent); shared engine; <code>backlog.auto_reconcile=false</code> (now schema-valid) disables both, leaving manual-remove; <strong>end-of-run prune appends to <code>.shield/backlog-removed.log</code> before remove; replay restores the entry</strong>; debug latency line reports view+sweep wall time + WARN above 1s.</li>
-<li><strong>Design:</strong> <a href="./trd.md#high-level-design">§7 High-Level Design</a> · LLD <a href="./lld-reconciler.md#concurrency-and-state"><code>reconciler</code> §8 Concurrency &amp; state</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#high-level-design">§7 High-Level Design</a> · LLD <a href="../lld-reconciler.md#concurrency-and-state"><code>reconciler</code> §8 Concurrency &amp; state</a></li>
 </ul>
 <hr />
 <h2 id="epic-4--eval-coverage--release--m3">EPIC-4 — Eval coverage &amp; release  <em>(M3)</em></h2>
@@ -131,14 +189,14 @@
 <ul>
 <li><strong>Tasks:</strong> fixtures <strong>from the real artifact schemas</strong> (P0-1: list-keyed <code>manifest.features[]</code>, boolean <code>plan_json</code> flag) covering prd-only-stays, plan-committed-removed, ambiguous-stays (epic-name collision across features), malformed-stays, <strong>re-planned-epic-reorder-still-resolves</strong> (same name, new <code>EPIC-N</code> — P0-2); evals incl. duplicate-id rejection; <strong>concurrency/lost-update eval</strong> (P1-1: a concurrent on-disk change between read and <code>os.replace()</code> is refused with <code>BacklogInvalid</code> — no corruption, no lost entry); <strong>write-side eval</strong> (P1-b: <code>capture()</code> producing a schema-invalid doc refuses, byte-unchanged); <strong>no-stamping eval (F6)</strong>; <strong>recovery-rehearsal eval</strong> (P1-c: crash at the ordering seam — after log-append, before remove — still recoverable via replay); name a <strong>concrete CI entrypoint</strong> (the actual workflow file + runner) + path-filter glob (<code>shield/{schema,scripts,skills/general/backlog}/**</code>, <code>shield/commands/backlog.md</code>).</li>
 <li><strong>AC:</strong> suite under <code>shield/evals/</code> covers all listed behaviors (incl. re-plan reorder, lost-update detection, write-side refusal, ordering-seam recovery); fixtures use real manifest/plan shapes; self-contained (no API/LLM); PR body has RED + GREEN; the named CI workflow runs on the backlog-asset glob.</li>
-<li><strong>Design:</strong> <a href="./trd.md#milestones">§10 Milestones</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#milestones">§10 Milestones</a></li>
 </ul>
 <h3 id="epic-4-s2--version-bump--commandskill-docs-medium">EPIC-4-S2 · Version bump + command/skill docs <em>(medium)</em></h3>
 <p>Bump the Shield plugin version (marketplace.json + pyproject where touched) in the same commit as asset changes; finalize <code>/backlog</code> + backlog SKILL.md docs.</p>
 <ul>
 <li><strong>Tasks:</strong> bump <code>marketplace.json</code>; bump <code>backlog_store</code> <code>pyproject.toml</code> (<strong>unconditional</strong> — P1-4, it's a packaged module); commit the <code>shield/schemas/shield.schema.json</code> <code>backlog</code> change (P0-3) in the same commit; finalize command/skill docs (capture, three triggers, kill switch, <strong>name</strong> match key, manual remove, badges, <strong>wrong-removal recovery procedure</strong>); document a <strong>fixed monthly</strong> <code>/backlog</code> audit with the concrete PRD §7 revisit triggers (&lt;70% terminal in 30d, or &gt;20% untouched &gt;60d); add explicit DoD lines (&quot;PR reviewed and merged&quot;, &quot;marketplace version published&quot;); CHANGELOG.</li>
 <li><strong>AC:</strong> version bumped in <code>marketplace.json</code> + <code>backlog_store</code> <code>pyproject.toml</code> and the <code>shield.schema.json</code> change committed, all in one commit; command + SKILL document capture/view/promote/remove + 3 triggers + kill switch + recovery procedure + fixed monthly audit with numeric triggers; explicit DoD lines present; CHANGELOG mentions the feature.</li>
-<li><strong>Design:</strong> <a href="./trd.md#references">§13 References</a></li>
+<li><strong>Design:</strong> <a href="../trd.md#references">§13 References</a></li>
 </ul>
 <hr />
 <h2 id="validate-the-bet-from-v1-data--p1--pm10-decided-2026-05-27">Validate the bet from v1 data  <em>(P1 — PM10, decided 2026-05-27)</em></h2>
@@ -157,5 +215,7 @@
 <li><code>/implement</code> — begin TDD implementation at M1 / EPIC-1-S1.</li>
 </ul>
 
-<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"neutral"});</script>
-</body></html>
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
+</body>
+</html>

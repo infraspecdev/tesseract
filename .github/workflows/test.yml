@@ -49,3 +49,15 @@ jobs:
           else
             echo "No MCP server code found, skipping"
           fi
+
+  js-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run shield template JS unit tests
+        # Pure-logic tests for shield-nav.js (breadcrumb + Features filter) via
+        # Node's built-in runner — zero deps. Mirrors the shield-nav.js pre-commit hook.
+        run: node --test "shield/templates/**/*.test.js"

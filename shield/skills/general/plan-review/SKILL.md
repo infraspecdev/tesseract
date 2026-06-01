@@ -393,10 +393,24 @@ Write to `{review_dir}` = `{output_dir}/{feature}/reviews/plan/{date}{_counter}/
 
 The summary should include a "Detailed Agent Findings" section linking to each detailed file.
 
-Render HTML to `{review_outputs_dir}` = `{output_dir}/{feature}/outputs/reviews/plan/{date}{_counter}/` via `render-markdown.sh`:
-- `{review_summary_html}` (`summary.html`)
-- `{review_enhanced_html}` (`enhanced-plan.html`)
-- `{review_detailed_html}` (`detailed/<agent>.html`) — one per dispatched agent
+Render HTML to `{review_outputs_dir}` = `{output_dir}/{feature}/outputs/reviews/plan/{date}{_counter}/` via the shared shell. For each markdown source (`summary.md`, `enhanced-plan.md`, and every `detailed/<agent>.md`):
+
+```bash
+"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
+  --md    {review_dir}/<source>.md \
+  --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+  --out   {review_outputs_dir}/<source>.html \
+  --assets-root "{output_dir}" \
+  --title "Review — {feature}"
+```
+
+After every render in the batch completes, refresh the manifest-derived page assets once:
+
+```bash
+uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"
+```
+
+Do NOT write per-skill `*.shell.html` files — the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` owns DOCTYPE/head/nav/footer.
 
 After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`.
 

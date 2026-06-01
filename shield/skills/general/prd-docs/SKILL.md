@@ -295,12 +295,22 @@ If `.shield.json.prd_template` is set:
     [n] Skip — prd.md is written, prd.html will be missing until you re-run /prd after installing uv
   ```
   If user agrees, run the installer via Bash, then `export PATH="$HOME/.local/bin:$PATH"` in the same shell so the next step finds it. If user declines, write `prd.md` and `prd.meta.json` but skip `prd.html` and surface the warning in the step-16 summary.
-- Render `{output_dir}/{feature}/outputs/prd.html` (registry key: `prd_html`) via the helper (see `templates.md` → HTML render template):
-  1. Write `prd.shell.html` next to `prd.md` containing the full HTML scaffold from `templates.md`. The shell **MUST include both placeholders**: `{{TOC}}` (placed immediately after the meta-banner div, on its own line — the renderer replaces it with the auto-generated table of contents) AND `{{BODY}}` (placed after `{{TOC}}`, on its own line — the renderer replaces it with the rendered markdown body). Fill in the title and meta-banner content directly (owner, status, sidecar/research links) — those are NOT placeholders. Do NOT omit `{{TOC}}` — without it, the rendered prd.html will have no table of contents.
-  2. Ensure the `{output_dir}/{feature}/outputs/` directory exists before writing.
-  3. Run `"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" --md prd.md --shell prd.shell.html --out outputs/prd.html` (from the feature dir).
-  4. Delete `prd.shell.html` once the helper succeeds.
-  Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, mermaid fence rules, and loose/tight wrapping.
+- Render `{output_dir}/{feature}/outputs/prd.html` (registry key: `prd_html`) via the helper using the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html`:
+  1. Ensure the `{output_dir}/{feature}/outputs/` directory exists before writing.
+  2. From the feature dir, run:
+     ```bash
+     "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
+       --md    prd.md \
+       --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+       --out   outputs/prd.html \
+       --assets-root "{output_dir}" \
+       --title "PRD — {feature}"
+     ```
+  3. Refresh the manifest-derived page assets (manifest.js + static asset bundle):
+     ```bash
+     uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"
+     ```
+  Do NOT write per-skill `*.shell.html` files — the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` owns DOCTYPE/head/nav/footer. Do NOT hand-render `prd.html` or pipe through pandoc/`python-markdown` — those mis-handle nested lists, lists-after-paragraphs, mermaid fence rules, and loose/tight wrapping.
 - Write `{output_dir}/{feature}/prd.meta.json` (per `meta-schema.md`) — side-artifact metadata sidecar, not a primary deliverable
 
 ### 16. Update dashboard
@@ -333,8 +343,9 @@ PRD authored. What's next?
 | Mirroring §8 story AC as G/W/T FRs in §9 | §9 should only contain rules §8 doesn't capture (cross-story invariants, architectural commitments, negative "shall not" requirements, background/operational behaviors, data-handling rules, inter-service contracts). If an FR has a 1:1 back-pointer to a single story and says nothing the story doesn't, drop it. |
 | Auto-detecting type without confirming with user | Type detection is best-effort; ALWAYS confirm with user |
 | Writing to a path other than {output_dir}/{feature}/ (e.g. creating a numbered prd/{N}-{slug}/ subfolder) | prd.md must be written flat in the feature folder: {output_dir}/{feature}/prd.md |
-| Omitting {{TOC}} from prd.shell.html | prd.shell.html MUST have BOTH {{TOC}} and {{BODY}}; omitting {{TOC}} produces a TOC-less prd.html |
+| Writing a per-skill `prd.shell.html` | The HTML shell is centralized at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` — point `--shell` at it. Do not write or delete per-skill shell files. |
 | Hand-rendering prd.html without render-markdown.sh | Always use render-markdown.sh; other renderers don't apply the mermaid fence rule or anchors plugin |
+| Skipping `write_shield_assets.py` after rendering | Every render pass MUST end with `uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"` so manifest.js + static assets stay in sync with manifest.json |
 | Dropping or duplicating lean §8 Milestones during upgrade to standard | The lean §8 Milestones table MUST migrate into standard §15's Milestones sub-table. Do NOT keep it as standalone §8 (that's Stories in standard) and do NOT duplicate it. The upgrade flow's Note line explicitly calls this out — agents that miss it produce corrupted PRDs. |
 
 ## See Also

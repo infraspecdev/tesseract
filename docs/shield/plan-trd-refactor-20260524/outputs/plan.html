@@ -1,41 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="sidecar" content="../plan.json">
-<title>Plan — /plan TRD refactor</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
-h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
-h3 { color: #5f6368; margin-top: 22px; }
-table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
-th { background-color: #f1f3f4; font-weight: bold; }
-tr:nth-child(even) { background-color: #f8f9fa; }
-code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', Menlo, 'Courier New', monospace; font-size: 13px; }
-pre { background-color: #f1f3f4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: 'SF Mono', Menlo, 'Courier New', monospace; white-space: pre; font-size: 12px; line-height: 1.4; }
-pre code { background: transparent; padding: 0; }
-blockquote { border-left: 4px solid #1a73e8; margin: 15px 0; padding: 10px 20px; background-color: #e8f0fe; }
-ul, ol { margin: 10px 0; padding-left: 24px; }
-li { margin: 4px 0; }
-hr { border: none; border-top: 1px solid #dadce0; margin: 24px 0; }
-a { color: #1a73e8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.nav { margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid #dadce0; font-size: 14px; }
-.nav a { margin-right: 14px; }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plan — plan-trd-refactor-20260524</title>
+<link rel="stylesheet" href="../../shield.css" />
+<script defer src="../../manifest.js"></script>
+<script defer src="../../shield-nav.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  document.addEventListener("DOMContentLoaded", () => mermaid.run({ querySelector: "pre.mermaid" }));
+</script>
 </head>
-<body>
-<div class="nav">
-  <a href="../../index.html">&larr; Shield Overview</a> |
-  <a href="../research.md">Research</a> |
-  <a href="../plan.json">Sidecar (JSON)</a> |
-  <a href="../reviews/plan/2026-05-25/summary.md">Plan Review</a>
-</div>
+<body data-shield-root="../../">
+<header class="shield-header">
+  <a class="brand" href="../../index.html">🛡 Shield</a>
+  <span class="bar-sep">|</span>
+  <nav class="crumb" id="shield-crumb"></nav>
+  <span class="bar-spacer"></span>
+  <div class="feat-wrap">
+    <button class="feat-btn" id="docs-toggle" aria-expanded="false">Features ▾</button>
+    <div class="feat-panel" id="docs-panel">
+      <input class="docs-search" id="docs-search" placeholder="Search docs…  (⌘K)" autocomplete="off" />
+      <div id="docs-results"></div>
+    </div>
+  </div>
+</header>
+<main class="shield-main">
+
+<nav class="toc">
+<div class="toc-title">Contents</div>
+<ul>
+<li><a href="#milestones">Milestones</a>
+</li>
+<li><a href="#epic-1--trd-generation-and-storage----m1">EPIC-1 · TRD generation and storage  ·  M1</a>
+<ul>
+<li><a href="#epic-1-s1--author-the-canonical-14-section-trd-template-with-domain-aware-prompting----priority-high">EPIC-1-S1 · Author the canonical 14-section TRD template with domain-aware prompting  ·  priority: high</a></li>
+<li><a href="#epic-1-s2--update-plan-to-emit-trdmd-unified-backend--infra----priority-high">EPIC-1-S2 · Update /plan to emit trd.md (unified backend + infra)  ·  priority: high</a></li>
+<li><a href="#epic-1-s4--bump-plugin-version-per-claudemd-mandate----priority-high">EPIC-1-S4 · Bump plugin version per CLAUDE.md mandate  ·  priority: high</a></li>
+<li><a href="#epic-1-s3--update-existing-feature-behavior-on-re-run----priority-medium">EPIC-1-S3 · Update existing-feature behavior on re-run  ·  priority: medium</a></li>
+</ul>
+</li>
+<li><a href="#epic-2--story-schema-and-design-traceability----m1">EPIC-2 · Story schema and design traceability  ·  M1</a>
+<ul>
+<li><a href="#epic-2-s1--extend-planjson-schema-with-optional-design_refs----priority-high">EPIC-2-S1 · Extend plan.json schema with optional design_refs[]  ·  priority: high</a></li>
+<li><a href="#epic-2-s2--populate-design_refs-when-plan-has-trd-context----priority-high">EPIC-2-S2 · Populate design_refs[] when /plan has TRD context  ·  priority: high</a></li>
+<li><a href="#epic-2-s3--add-json-schema-validator-for-planjson----priority-high">EPIC-2-S3 · Add JSON Schema validator for plan.json  ·  priority: high</a></li>
+</ul>
+</li>
+<li><a href="#epic-3--eval-coverage-for-trd-format----m1">EPIC-3 · Eval coverage for TRD format  ·  M1</a>
+<ul>
+<li><a href="#epic-3-s1--author-positive-trd-eval-fixtures-backend--infra----priority-high">EPIC-3-S1 · Author positive TRD eval fixtures (backend + infra)  ·  priority: high</a></li>
+<li><a href="#epic-3-s2--author-missing-section--drift--vague-tbd-negative-fixtures----priority-high">EPIC-3-S2 · Author missing-section + drift + vague-TBD negative fixtures  ·  priority: high</a></li>
+<li><a href="#epic-3-s3--wire-eval-into-ci--red-green-paper-trail----priority-high">EPIC-3-S3 · Wire eval into CI / RED-GREEN paper trail  ·  priority: high</a></li>
+</ul>
+</li>
+<li><a href="#epic-4--plan-review-and-pm-sync-wiring----m2">EPIC-4 · /plan-review and /pm-sync wiring  ·  M2</a>
+<ul>
+<li><a href="#epic-4-s0--scaffold-jira--confluence--notion-adapter-packages----priority-high">EPIC-4-S0 · Scaffold Jira / Confluence / Notion adapter packages  ·  priority: high</a></li>
+<li><a href="#epic-4-s1--add-14-section-presence-rule--stale-anchor-rule-to-plan-review----priority-high">EPIC-4-S1 · Add 14-section presence rule + stale-anchor rule to /plan-review  ·  priority: high</a></li>
+<li><a href="#epic-4-s2--add-prdtrd-duplication-detection-rule-to-plan-review----priority-medium">EPIC-4-S2 · Add PRD↔TRD duplication-detection rule to /plan-review  ·  priority: medium</a></li>
+<li><a href="#epic-4-s3--pm-sync-emits-design_refs-as-web-links-with-idempotent-upsert----priority-high">EPIC-4-S3 · /pm-sync emits design_refs[] as web links with idempotent upsert  ·  priority: high</a></li>
+</ul>
+</li>
+<li><a href="#epic-5--drift--duplication-hardening----m3">EPIC-5 · Drift + duplication hardening  ·  M3</a>
+<ul>
+<li><a href="#epic-5-s1--add-last_aligned_with-metadata-to-planjson----priority-medium">EPIC-5-S1 · Add last_aligned_with metadata to plan.json  ·  priority: medium</a></li>
+<li><a href="#epic-5-s2--add-implementation-manual--pseudo-code-lint-rule-to-plan-review----priority-low">EPIC-5-S2 · Add implementation-manual / pseudo-code lint rule to /plan-review  ·  priority: low</a></li>
+</ul>
+</li>
+<li><a href="#out-of-scope-locked">Out of scope (locked)</a>
+</li>
+<li><a href="#next-steps">Next steps</a>
+</li>
+</ul>
+</nav>
 <h1 id="plan--plan-trd-refactor">Plan — <code>/plan</code> TRD refactor</h1>
-<p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code> · <strong>Phase:</strong> v1 cutover · <strong>Source:</strong> <a href="./research.md"><code>research.md</code></a> · <a href="./plan-architecture.md"><code>plan-architecture.md</code></a>
-<strong>Sidecar:</strong> <a href="./plan.json"><code>plan.json</code></a> (schema v1.1)</p>
+<p><strong>Feature:</strong> <code>plan-trd-refactor-20260524</code> · <strong>Phase:</strong> v1 cutover · <strong>Source:</strong> <a href="../research.md"><code>research.md</code></a> · <a href="../plan-architecture.md"><code>plan-architecture.md</code></a>
+<strong>Sidecar:</strong> <a href="../plan.json"><code>plan.json</code></a> (schema v1.1)</p>
 <h2 id="milestones">Milestones</h2>
 <table>
 <thead>
@@ -381,5 +424,7 @@ a:hover { text-decoration: underline; }
 <li><code>/implement</code> — start with EPIC-3-S1 (positive eval fixture) to anchor the RED → GREEN trail per CLAUDE.md.</li>
 </ul>
 
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
 </body>
 </html>

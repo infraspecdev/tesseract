@@ -181,6 +181,30 @@ Write the result to `enhanced-prd.md`.
 | `detailed/dx-reviewer.md` | DX persona's anti-pattern findings + clarity notes |
 | `detailed/finops-analyst.md` | Cost persona's full report |
 
+### 7b. Render review HTML
+
+Render `summary.md` and `enhanced-prd.md` into `{review_outputs_dir}` via the shared shell, then refresh the manifest-derived page assets:
+
+```bash
+"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
+  --md    {review_dir}/summary.md \
+  --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+  --out   {review_outputs_dir}/summary.html \
+  --assets-root "{output_dir}" \
+  --title "Review — {feature}"
+
+"$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
+  --md    {review_dir}/enhanced-prd.md \
+  --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+  --out   {review_outputs_dir}/enhanced-prd.html \
+  --assets-root "{output_dir}" \
+  --title "Review — {feature}"
+
+uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"
+```
+
+Do NOT write per-skill `*.shell.html` files — the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` owns DOCTYPE/head/nav/footer.
+
 ### 8. Update manifest + dashboard
 
 - Append a new entry to `{output_dir}/manifest.json`

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Research — plan-trd-refactor-20260524</title>
+<link rel="stylesheet" href="../../shield.css" />
+<script defer src="../../manifest.js"></script>
+<script defer src="../../shield-nav.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  document.addEventListener("DOMContentLoaded", () => mermaid.run({ querySelector: "pre.mermaid" }));
+</script>
+</head>
+<body data-shield-root="../../">
+<header class="shield-header">
+  <a class="brand" href="../../index.html">🛡 Shield</a>
+  <span class="bar-sep">|</span>
+  <nav class="crumb" id="shield-crumb"></nav>
+  <span class="bar-spacer"></span>
+  <div class="feat-wrap">
+    <button class="feat-btn" id="docs-toggle" aria-expanded="false">Features ▾</button>
+    <div class="feat-panel" id="docs-panel">
+      <input class="docs-search" id="docs-search" placeholder="Search docs…  (⌘K)" autocomplete="off" />
+      <div id="docs-results"></div>
+    </div>
+  </div>
+</header>
+<main class="shield-main">
+
+<nav class="toc">
+<div class="toc-title">Contents</div>
+<ul>
+<li><a href="#decision">Decision</a>
+<ul>
+<li><a href="#canonical-lld-template-14-sections--from-sample-pr-43">Canonical LLD template (14 sections — from sample PR #43)</a></li>
+</ul>
+</li>
+<li><a href="#why-not-keep-plan-architecturemd">Why Not Keep plan-architecture.md?</a>
+</li>
+<li><a href="#what-the-industry-recommends">What the Industry Recommends</a>
+<ul>
+<li><a href="#ieee-1016-2009--software-design-descriptions">IEEE 1016-2009 — Software Design Descriptions</a></li>
+<li><a href="#ian-sommerville-software-engineering-10th-ed-ch-6">Ian Sommerville, Software Engineering (10th ed., Ch. 6)</a></li>
+<li><a href="#roger-pressman-software-engineering-a-practitioners-approach-8th-ed">Roger Pressman, Software Engineering: A Practitioner&#x27;s Approach (8th ed.)</a></li>
+<li><a href="#malte-ubl--design-docs-at-google">Malte Ubl — &quot;Design Docs at Google&quot;</a></li>
+<li><a href="#will-larson--lethaincom">Will Larson — lethain.com</a></li>
+<li><a href="#gergely-orosz--the-pragmatic-engineer">Gergely Orosz — The Pragmatic Engineer</a></li>
+<li><a href="#simon-brown--the-c4-model">Simon Brown — The C4 model</a></li>
+<li><a href="#reference-trds-actual-practice-notion-workspace-internal-evidence">Reference TRD&#x27;s actual practice (Notion workspace, internal evidence)</a></li>
+</ul>
+</li>
+<li><a href="#how-this-works-in-practice--plan-refactor-flow">How This Works in Practice — /plan Refactor Flow</a>
+<ul>
+<li><a href="#story-to-design-section-reference-contract">Story-to-design-section reference contract</a></li>
+<li><a href="#de-duplication-contract-addresses-the-users-named-risk">De-duplication contract (addresses the user&#x27;s named risk)</a></li>
+</ul>
+</li>
+<li><a href="#failure-modes--countermeasures">Failure Modes &amp; Countermeasures</a>
+</li>
+<li><a href="#decisions-locked--open-questions">Decisions Locked &amp; Open Questions</a>
+<ul>
+<li><a href="#decisions-locked-with-the-user-2026-05-24--2026-05-25">Decisions locked with the user (2026-05-24 → 2026-05-25)</a></li>
+<li><a href="#open-questions-for-the-implementation-phase">Open questions for the implementation phase</a></li>
+</ul>
+</li>
+<li><a href="#migration-path--reversibility">Migration Path / Reversibility</a>
+</li>
+<li><a href="#summary">Summary</a>
+</li>
+<li><a href="#product-lens">Product Lens</a>
+<ul>
+<li><a href="#scorecard-pm1pm11">Scorecard (PM1–PM11)</a></li>
+<li><a href="#user-impact-analysis">User Impact Analysis</a></li>
+<li><a href="#scope-recommendation">Scope Recommendation</a></li>
+<li><a href="#prioritization-framework">Prioritization Framework</a></li>
+<li><a href="#stakeholder-summary">Stakeholder Summary</a></li>
+<li><a href="#critical-gaps--user-verdict-2026-05-24">Critical gaps — user verdict (2026-05-24)</a></li>
+</ul>
+</li>
+<li><a href="#references">References</a>
+<ul>
+<li><a href="#internal-references-notion--reference-workspace">Internal references (Notion — reference workspace)</a></li>
+<li><a href="#internal-references-shield-repo">Internal references (Shield repo)</a></li>
+</ul>
+</li>
+<li><a href="#further-exploration">Further Exploration</a>
+<ul>
+<li><a href="#books">Books</a></li>
+<li><a href="#long-form-blogs--articles">Long-form blogs / articles</a></li>
+<li><a href="#videos--talks">Videos / talks</a></li>
+<li><a href="#courses">Courses</a></li>
+<li><a href="#podcasts--podcast-episodes">Podcasts / podcast episodes</a></li>
+<li><a href="#other">Other</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<h1 id="hldlld-best-practices--refactor-shield-plan-to-produce-a-trd">HLD/LLD Best Practices — Refactor /shield plan to Produce a TRD</h1>
+<p><strong>Status:</strong> Proposed
+<strong>Date:</strong> 2026-05-24
+<strong>Context:</strong> Shield's <code>/plan</code> produces a stories-first work-breakdown plus a <code>plan-architecture.md</code> companion. Industry convention is HLD → LLD; Shield is missing the high-level-design layer that justifies the work-breakdown. This research informs a refactor where <code>/plan</code> will emit a <strong>TRD = HLD + PM-lens milestones</strong>, with a separate <strong>LLD</strong> authored later per milestone, and <strong>stories that reference both HLD and LLD sections</strong>.</p>
+<h2 id="decision">Decision</h2>
+<p><code>/plan</code> should emit a <strong>TRD</strong> that combines (a) a high-level design grounded in IEEE 1016 / Sommerville / Pressman section coverage, (b) PM-lens milestones derived from the HLD, (c) a Rollback Strategy section preserving the strongest property of today's <code>plan-architecture.md</code>, and (d) a story breakdown where each story has an additive <code>design_refs</code> array pointing to TRD and LLD sections. The TRD <strong>replaces</strong> today's <code>plan-architecture.md</code> (direct cutover, no feature flag, no side-by-side period).</p>
+<p><strong>The TRD applies to both backend and infrastructure work</strong> — same 14-section template, same anchor IDs, same eval, same <code>/plan-review</code> rubric. A few sections (Product Journey, Functional Requirements, APIs Involved) have domain-aware interpretation in the <code>/plan</code> prompt; pure-state changes can declare <code>n/a — &lt;reason&gt;</code> per section as the explicit escape (a pattern borrowed from the LLD sample's §12). Two genuinely-infra-favored properties of today's ADR-flavored <code>plan-architecture.md</code> are preserved in the unified template:</p>
+<ul>
+<li><strong>§8 Alternatives Considered</strong> — where the &quot;5 numbered decisions with trade-offs&quot; pattern lives (VPC peering vs Transit Gateway, Aurora vs RDS, single vs multi-region).</li>
+<li><strong>§14 Rollback Strategy</strong> — promoted to a first-class 14th section (terraform destroy plans, state recovery, blue/green flip back, traffic shift reversal for infra; data rollback, feature-flag toggle, key rotation, schema reversal for backend).</li>
+</ul>
+<p><strong>LLDs are component-scoped, not milestone-scoped.</strong> Each LLD document covers one C4-style Container or Component (a service, library, or module). A single LLD can be referenced by multiple milestones — milestone M1 and milestone M2 may both touch <code>lld-component-auth.md</code>, each updating different sections. The TRD §10 (Milestones) lists <em>which</em> LLDs each milestone touches; the LLDs themselves grow incrementally as milestones land. <strong>LLDs are typically authored for backend components</strong> where pre-implementation design has measurable value; infra plans rarely need an LLD layer since the declarative terraform/k8s code is the spec.</p>
+<p>The recommended TRD template, reconciled across the reference TRD template and the industry consensus core, is:</p>
+<ol>
+<li><strong>Document Overview</strong> — title, status, authors, related PRD link, date</li>
+<li><strong>Problem Statement</strong> — what user/business/operational problem (links PRD; doesn't restate it)</li>
+<li><strong>Objective &amp; Scope</strong> — goals, non-goals (Google design-doc convention)</li>
+<li><strong>Product Journey</strong> — end-to-end user flow (backend) / request lifecycle through the infra or operator journey (infra). <code>n/a — &lt;reason&gt;</code> permitted for pure-state changes.</li>
+<li><strong>Functional Requirements</strong> — what users can do (backend) / what the infra must support — capacity, regions, accounts, traffic patterns (infra). Links PRD where possible.</li>
+<li><strong>Non-Functional Requirements</strong> — SLAs, perf, security, observability (backend) / SLOs, RPO/RTO, cost ceiling, blast radius, multi-AZ tolerance (infra). Uber RFC convention.</li>
+<li><strong>High-Level Design</strong> — services + data flow (backend) / network topology + resource graph + dependency chain (infra). Block/sequence/architecture diagrams.</li>
+<li><strong>Alternatives Considered</strong> — what we didn't pick and why. <strong>For infra plans, this is where the ADR-style &quot;5 numbered decisions with trade-offs&quot; pattern lives</strong> — VPC peering vs Transit Gateway, Aurora vs RDS, single vs multi-region. Google + Larson convention.</li>
+<li><strong>Cross-Cutting Concerns</strong> — security, privacy, observability, multi-tenancy (backend) / IAM, encryption, observability, cost, multi-region, disaster recovery, compliance-region constraints (infra). Google + Uber.</li>
+<li><strong>Milestones</strong> — PM-lens phased breakdown derived from the HLD (backend) / phased rollout — dev → stage → prod, canary regions, blue/green flip, percentage cutover (infra). Reference TRD precedent.</li>
+<li><strong>APIs Involved</strong> — HTTP contracts touched (backend) / module interfaces + cloud-API surface + IAM boundaries + output values consumed by downstream stacks (infra).</li>
+<li><strong>Open Questions</strong> — known unknowns; surfaced for follow-up</li>
+<li><strong>References</strong> — links to PRD, LLDs (forward links, populated as LLDs land), ADRs, runbooks</li>
+<li><strong>Rollback Strategy</strong> — data rollback, feature-flag toggle, key rotation, schema reversal (backend) / terraform destroy plan, state recovery, blue/green flip back, traffic shift reversal (infra). Promoted from today's <code>plan-architecture.md</code> Rollback section.</li>
+</ol>
+<p>Each milestone in §10 declares which LLDs it touches. The LLDs are authored separately (a future <code>/lld &lt;component&gt;</code> command) and follow the C4 model's Container/Component levels — one LLD per service, library, or module. Stories in <code>plan.json</code> get an optional <code>design_refs[]</code> field with <code>{doc, section_id, anchor_url, label}</code> — additive, backward-compatible with <code>/pm-sync</code>.</p>
+<p><strong><code>n/a — &lt;reason&gt;</code> escape per section.</strong> Following the LLD sample's §12 pattern, any of the 14 sections may declare <code>n/a — &lt;reason&gt;</code> when the section genuinely doesn't apply (e.g., §4 Product Journey on a pure-state infra change). Vague TBDs and silent omissions are not allowed — the eval rejects them — but an explicit &quot;n/a&quot; with rationale passes. This keeps the structure intact across domains without forcing pretend-content.</p>
+<h3 id="canonical-lld-template-14-sections--from-sample-pr-43">Canonical LLD template (14 sections — from sample PR #43)</h3>
+<p>The LLD template is anchored in <a href="https://github.com/infraspecdev/tesseract/pull/43">tesseract PR #43</a> — <code>docs/superpowers/specs/2026-05-18-lld-sample.html</code> — a Bytebite user-signup sample that establishes the LLD shape Shield should generate:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Section</th>
+<th>Always-on?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Overview</td>
+<td>Yes</td>
+<td>Names which epics/PRD milestones this LLD serves — bidirectional with TRD §10</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Scope &amp; non-goals</td>
+<td>Yes</td>
+<td>In-scope/out-of-scope lists</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Module layout</td>
+<td>Yes</td>
+<td>File tree with <code>new</code>/<code>mod</code>/<code>unchanged</code> badges</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Data model</td>
+<td>Yes</td>
+<td>Tables + Redis/cache namespaces with column-level detail</td>
+</tr>
+<tr>
+<td>5</td>
+<td>API contracts</td>
+<td>Yes</td>
+<td>Per-endpoint request/response (each endpoint gets its own sub-anchor, e.g., <code>#api-create-user</code>)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Sequence flows</td>
+<td>Yes</td>
+<td>Mermaid sequence diagrams (each flow gets its own sub-anchor, e.g., <code>#flow-signup</code>)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Error handling</td>
+<td>Yes</td>
+<td>Error codes + behavior matrix</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Concurrency &amp; state</td>
+<td>Yes</td>
+<td>Named race conditions and resolutions</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Configuration</strong></td>
+<td><strong>Promote-on-demand</strong></td>
+<td>Config values; lifted when the component needs them</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Observability</td>
+<td>Yes</td>
+<td>Logs, metrics, traces</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Security &amp; privacy</strong></td>
+<td><strong>Promote-on-demand</strong></td>
+<td>Auth, PII, threats; lifted when the component touches user data</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Performance &amp; scaling</td>
+<td>Yes — <strong>8 forced subsections</strong></td>
+<td>12.1 Load · 12.2 SLO · 12.3 Bottleneck · 12.4 Latency breakdown · 12.5 Capacity · 12.6 Scale-out lever · 12.7 Caches · 12.8 Degradation. <em>&quot;n/a — <reason>&quot;</em> is the only escape; vague prose is not allowed.</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Open questions</td>
+<td>Yes</td>
+<td>Q#, question, options, owner, resolve-by table</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Changelog</td>
+<td>Yes</td>
+<td>Every edit ties to a story ID + sections touched — closes the loop with <code>plan.json</code> <code>design_refs[]</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Header metadata</strong> (above §1): Feature · Owner · Status · Linked PRD · Linked plans (plural — one LLD, many plans) · Version · Last updated.</p>
+<p><strong>Why this shape works for Shield:</strong></p>
+<ul>
+<li><strong>Per-component scope</strong> with <code>Linked plans</code> plural matches the user's &quot;same LLD doc covered across multiple milestones&quot; intent.</li>
+<li><strong>Stable kebab-case anchors</strong> on every section AND subsection — directly addresses Confluence-style anchor-rot the research surfaced.</li>
+<li><strong>§12's 8 forced subsections</strong> are the strongest anti-format-drift mechanism in the template: a fixture-based eval can mechanically check that all 8 are present and non-empty, with <code>&quot;n/a — &lt;reason&gt;&quot;</code> as the only allowed escape.</li>
+<li><strong>§14 Changelog with story IDs</strong> is the inverse of <code>design_refs[]</code> on the story side — the LLD knows which stories touched it; the story knows which LLD sections it depends on. Bidirectional graph.</li>
+<li><strong>§9 + §11 promote-on-demand</strong> acknowledges that not every component touches config or user data — keeps the template scoped to reality without losing the slot.</li>
+</ul>
+<h2 id="why-not-keep-plan-architecturemd">Why Not Keep <code>plan-architecture.md</code>?</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Today's <code>plan-architecture.md</code></th>
+<th>Proposed unified TRD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Domain coverage</td>
+<td>De-facto infra/ADR-flavored</td>
+<td><strong>Both infra and backend</strong> — same template, domain-aware prompting per section</td>
+</tr>
+<tr>
+<td>Origin</td>
+<td>Shield convention; closer to ADR + HLD hybrid</td>
+<td>IEEE 1016 + reference TRD template + Google design-doc lineage</td>
+</tr>
+<tr>
+<td>HLD coverage</td>
+<td>Solution sketch + 5 numbered decisions + PR sequencing</td>
+<td>Full HLD viewpoint coverage: context, composition, interfaces, NFRs</td>
+</tr>
+<tr>
+<td>NFRs</td>
+<td>Implicit</td>
+<td>Explicit §6 (forced for both domains — SLOs/RPO/RTO/cost matter for infra too)</td>
+</tr>
+<tr>
+<td>Alternatives</td>
+<td>Present (good)</td>
+<td>Preserved in §8 — the ADR-style &quot;decisions with trade-offs&quot; pattern lives here</td>
+</tr>
+<tr>
+<td>Rollback strategy</td>
+<td>Present in plan-architecture.md</td>
+<td><strong>Promoted to first-class §14</strong> (universal)</td>
+</tr>
+<tr>
+<td>Milestones</td>
+<td>&quot;Deliverables&quot; as PR sequencing</td>
+<td>First-class §10 — feature phases (backend) or phased rollout (infra)</td>
+</tr>
+<tr>
+<td>Cross-cutting</td>
+<td>Implicit</td>
+<td>Explicit §9 — forces IAM/cost/observability/DR for infra</td>
+</tr>
+<tr>
+<td>Story traceability</td>
+<td>None (LLD-shaped content buried in <code>plan.json</code> descriptions)</td>
+<td>Each story gets <code>design_refs[]</code> pointing to TRD/LLD sections</td>
+</tr>
+<tr>
+<td>Reviewer rubric</td>
+<td>Free-form</td>
+<td>Structured — <code>/plan-review</code> grades 14 fixed sections (with <code>n/a — &lt;reason&gt;</code> escape)</td>
+</tr>
+</tbody>
+</table>
+<p>The unified TRD subsumes everything <code>plan-architecture.md</code> does well (decisions, alternatives, rollback) and adds the structural rigor that infra plans currently lack (forced NFRs, Cross-Cutting, first-class Milestones).</p>
+<h2 id="what-the-industry-recommends">What the Industry Recommends</h2>
+<h3 id="ieee-1016-2009--software-design-descriptions">IEEE 1016-2009 — Software Design Descriptions</h3>
+<blockquote>
+<p><em>&quot;A representation of a software design to be used for communicating design information to its stakeholders.&quot;</em></p>
+<p><em>&quot;Design view: A representation comprised of one or more design elements to address a set of design concerns from a specified design viewpoint.&quot;</em>
+— <a href="https://cengproject.cankaya.edu.tr/wp-content/uploads/sites/10/2017/12/SDD-ieee-1016-2009.pdf">IEEE Std 1016-2009, Clause 3 — full PDF via Çankaya University</a></p>
+</blockquote>
+<p>IEEE 1016 names 12 design viewpoints (Context, Composition, Logical, Dependency, Information, Patterns-use, Interface, Structure, Interaction, State dynamics, Algorithm, Resource). A defensible HLD-vs-LLD split treats the first ~7 (Context → Interface) as HLD and the last ~5 (Structure → Resource) as LLD. The proposed TRD §7 (HLD) covers Context + Composition + Logical + Interface viewpoints; §11 (APIs Involved) covers Interface explicitly. LLD covers Structure + State + Algorithm + Resource.</p>
+<h3 id="ian-sommerville-software-engineering-10th-ed-ch-6">Ian Sommerville, <em>Software Engineering</em> (10th ed., Ch. 6)</h3>
+<blockquote>
+<p><em>&quot;Architectural design is concerned with understanding how a software system should be organized and designing the overall structure of that system.&quot;</em></p>
+<p><em>&quot;Architectural design is the critical link between design and requirements engineering as it identifies the main structural components in a system and the relationships between them.&quot;</em></p>
+<p><em>&quot;Architecture may be used as a focus of discussion by system stakeholders. … Analysis of whether the system can meet its non-functional requirements is possible. … The architecture may be reusable across a range of systems.&quot;</em>
+— Sommerville, Chapter 6 §6.1</p>
+</blockquote>
+<p>Sommerville's three justifications for explicit architecture — stakeholder communication, NFR analysis, reuse — map directly to TRD §4 (Product Journey, stakeholder communication), §6 (NFRs explicit), §7 (HLD as reusable architectural template).</p>
+<h3 id="roger-pressman-software-engineering-a-practitioners-approach-8th-ed">Roger Pressman, <em>Software Engineering: A Practitioner's Approach</em> (8th ed.)</h3>
+<p>Pressman organizes design into four layers:</p>
+<blockquote>
+<p><em>&quot;Architectural design defines the relationship between major structural elements of the software, the architectural styles and design patterns that can be used to achieve the requirements defined for the system.&quot;</em></p>
+<p><em>&quot;Component-level design transforms structural elements of the software architecture into procedural description of software components.&quot;</em></p>
+</blockquote>
+<p>Pressman's split — architectural + data + interface (HLD) vs. component-level (LLD) — is the cleanest textbook mapping for the TRD/LLD layering.</p>
+<h3 id="malte-ubl--design-docs-at-google">Malte Ubl — &quot;Design Docs at Google&quot;</h3>
+<blockquote>
+<p><em>&quot;The design doc is the place to write down the trade-offs you made in designing your software.&quot;</em></p>
+<p><em>&quot;A short list of bullet points of what the goals of the system are, and, sometimes more importantly, what non-goals are.&quot;</em></p>
+<p><em>&quot;This is where your organization can ensure that certain cross-cutting concerns such as security, privacy, and observability are always taken into consideration.&quot;</em></p>
+<p><em>&quot;A clear indicator that a doc might not be necessary are design docs that are really implementation manuals. If a doc basically says 'This is how we are going to implement it' without going into trade-offs, alternatives, and explaining decision making … then it would probably have been a better idea to write the actual program right away.&quot;</em>
+— <a href="https://www.industrialempathy.com/posts/design-docs-at-google/">Design Docs at Google, industrialempathy.com</a></p>
+</blockquote>
+<p>Google's template — Context · Goals/Non-goals · The design · Alternatives · Cross-cutting concerns — is the empirical template Shield's existing <code>plan-architecture.html</code> already resembles. Adopting it explicitly closes the gap.</p>
+<h3 id="will-larson--lethaincom">Will Larson — <code>lethain.com</code></h3>
+<blockquote>
+<p><em>&quot;Design documents describe the decisions and tradeoffs you've made in specific projects.&quot;</em></p>
+<p><em>&quot;A batch of five design docs is the ideal ingredient for writing an effective strategy because design documents have what bad strategies lack: detailed specifics grounded in reality.&quot;</em></p>
+<p><em>&quot;You should write a design document for any project whose capabilities will be used by numerous future projects … any work taking more than a month of engineering time.&quot;</em></p>
+<p><em>&quot;Gather perspectives widely but write alone.&quot;</em>
+— <a href="https://lethain.com/eng-strategies/">Writing an engineering strategy, lethain.com</a></p>
+</blockquote>
+<p>Larson's &quot;design-doc-as-decision-artifact&quot; framing reinforces that the TRD should privilege decisions and trade-offs over comprehensive specification. The &quot;write alone&quot; rule is implementation guidance for the <code>/plan</code> agent: produce a single, opinionated TRD per run, not a consensus-shaped one.</p>
+<h3 id="gergely-orosz--the-pragmatic-engineer">Gergely Orosz — The Pragmatic Engineer</h3>
+<blockquote>
+<p><em>&quot;Software engineers who write design docs for their architecture — and ask for reviews on it — often ship more maintainable architecture.&quot;</em></p>
+<p>On Uber's RFC scale problems at &gt;2,000 engineers: <em>&quot;Noise: Hundreds of RFCs weekly overwhelmed experienced engineers; Ambiguity: Unclear which work required documentation; Discoverability: Documents scattered across Google Drive.&quot;</em>
+— <a href="https://blog.pragmaticengineer.com/rfcs-and-design-docs/">RFCs and Design Docs, blog.pragmaticengineer.com</a></p>
+</blockquote>
+<p>Orosz's account of design-doc value at scale supports adopting a uniform template for Shield's TRD output. Shield's <code>/plan</code> audience is one team per run, so the Uber-scale &quot;tiered templates&quot; remediation doesn't apply — a single 14-section template is the right level of structure.</p>
+<h3 id="simon-brown--the-c4-model">Simon Brown — The C4 model</h3>
+<blockquote>
+<p><em>&quot;Container&quot; — a separately runnable/deployable unit (e.g., a server-side web application, a single-page application, a desktop application, a mobile app, a database schema, a file system) that executes code or stores data.</em></p>
+<p><em>&quot;Component&quot; — a grouping of related functionality encapsulated behind a well-defined interface. From an implementation perspective, components are typically a collection of implementation classes/objects.&quot;</em>
+— <a href="https://c4model.com/">The C4 model for visualising software architecture, c4model.com</a></p>
+</blockquote>
+<p>The C4 model's Container and Component levels are the natural granularity for LLD documents in Shield's setup. One LLD per Container (or per Component for finer-grained services) cleanly aligns with how engineers reason about ownership and deployability — and avoids the milestone-LLD-proliferation that per-milestone LLDs would cause for cross-cutting components.</p>
+<h3 id="reference-trds-actual-practice-notion-workspace-internal-evidence">Reference TRD's actual practice (Notion workspace, internal evidence)</h3>
+<blockquote>
+<p>Reference TRD Template (last edited 2025-11-04) explicitly: <em>&quot;HLD — Objective: Explain how the system will behave end-to-end. Include: Block diagram or sequence diagram showing data flow between frontend, backend, and external services / Key microservices involved / Event triggers, queues, APIs, and DBs touched.&quot;</em></p>
+<p><em>&quot;LLD — Objective: Capture how each component or service works internally. Include: Components / Class/State diagrams / Database schema changes / API Contracts / Non Functional Aspects (error handling, retry, config) / Caching or fallback mechanisms.&quot;</em>
+— <a href="https://www.notion.so/29a1ab62faf5805ea7dadefb9d052af0">Reference TRD Template (Notion)</a></p>
+</blockquote>
+<p><strong>Observed deviations from the reference template in real artifacts:</strong></p>
+<ul>
+<li>Large features split HLD and LLD into <strong>separate Notion pages</strong>. One library LLD opens: <em>&quot;The TRD describes what the library does and why. This LLD describes how.&quot;</em></li>
+<li>Small features keep HLD+LLD inline but <strong>omit the section labels</strong> entirely — using functional headings like &quot;Architecture Components&quot; and &quot;Implementation Plan.&quot;</li>
+<li>&quot;Solutioning&quot; is used as a sibling term to HLD (one HLD title: <em>&quot;... — High-Level Design &amp; Solutioning Document&quot;</em>) — signals that decision-rationale lives next to the architecture, validating the Alternatives + Cross-Cutting sections.</li>
+<li>One reference TRD has an <strong>explicit &quot;Implementation Plan&quot; section with 5 phases</strong> — a real precedent for the proposed §10 Milestones.</li>
+</ul>
+<p><strong>LLD granularity in the reference workspace is per-service/per-library</strong> (one example LLD covers a single library and is referenced by whichever milestone touches it). Shield will adopt this convention: <strong>LLDs are per-component (C4 Container/Component level)</strong>, and the TRD's §10 Milestones declares which LLD components each milestone touches. A single LLD doc grows incrementally across milestones.</p>
+<h2 id="how-this-works-in-practice--plan-refactor-flow">How This Works in Practice — <code>/plan</code> Refactor Flow</h2>
+<pre><code>PRD (optional)
+   │
+   ▼
+/plan ────────────► TRD (HLD + Milestones)  ←── replaces plan-architecture.md
+   │                  │
+   │                  ├─ §1–9: HLD (problem, goals, design, NFRs, cross-cutting)
+   │                  ├─ §10: Milestones — each lists touched LLD components
+   │                  └─ §11–14: APIs, open Qs, references, rollback strategy
+   │
+   ▼
+plan.json (stories with design_refs[])
+   │
+   ├──► /implement (consumes story + design_refs[])
+   ├──► /pm-sync (consumes plan.json; design_refs[] become PM-tool links)
+   └──► [future] /lld &lt;component&gt;  ──► per-component LLD doc (14-section template from PR #43)
+              │
+              ├─ Header: Linked plans = [plan/M1, plan/M2, ...]   ← bidirectional
+              ├─ §1 Overview names the epics/milestones served
+              ├─ §14 Changelog: each edit has Story ID + sections touched
+              │
+              ├─ M1 may touch [lld-component-auth.md, lld-component-api.md]
+              ├─ M2 may touch [lld-component-api.md, lld-component-ui.md]
+              └─ Same LLD doc grows incrementally across milestones; §14 records each touch
+</code></pre>
+<p><strong>Reference example:</strong> <a href="https://github.com/infraspecdev/tesseract/pull/43">tesseract PR #43</a> — <code>docs/superpowers/specs/2026-05-18-lld-sample.html</code>. Bytebite user-signup LLD. 704 lines of HTML, 14 sections, 12 always-on + 2 promote-on-demand, with stable kebab-case anchors on every section and subsection. This is the structural model <code>/lld</code> will emit.</p>
+<h3 id="story-to-design-section-reference-contract">Story-to-design-section reference contract</h3>
+<p>Add an optional <code>design_refs[]</code> array to each story in <code>plan.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;E1-S1&quot;,
+  &quot;title&quot;: &quot;Implement POST /users endpoint&quot;,
+  &quot;design_refs&quot;: [
+    {
+      &quot;doc&quot;: &quot;trd&quot;,
+      &quot;section_id&quot;: &quot;high-level-design&quot;,
+      &quot;anchor_url&quot;: &quot;trd.md#high-level-design&quot;,
+      &quot;label&quot;: &quot;TRD §7 High-Level Design&quot;
+    },
+    {
+      &quot;doc&quot;: &quot;lld&quot;,
+      &quot;component&quot;: &quot;user-service&quot;,
+      &quot;section_id&quot;: &quot;api-create-user&quot;,
+      &quot;anchor_url&quot;: &quot;lld-user-service.md#api-create-user&quot;,
+      &quot;label&quot;: &quot;LLD §5.1 POST /users&quot;
+    }
+  ]
+}
+</code></pre>
+<p><strong>Properties:</strong></p>
+<ul>
+<li><strong>Additive</strong> — adapters that don't understand <code>design_refs</code> ignore it. No <code>/pm-sync</code> schema break.</li>
+<li><strong>Component-scoped</strong> — LLD refs include <code>component</code> so multiple stories across multiple milestones can point at the same LLD doc; the LLD's <code>Linked plans</code> header and §14 Changelog close the loop on the other side.</li>
+<li><strong>Stable kebab-case anchors</strong> — <code>section_id</code> matches the LLD sample's explicit <code>id=&quot;...&quot;</code> attributes (e.g., <code>#api-create-user</code>, <code>#perf-load</code>), not heading-derived. Confluence-style anchor-rot bugs (CONFSERVER-26897/28087/41483) don't apply because we author the IDs explicitly.</li>
+<li><strong>Subsection-resolvable</strong> — points at <code>#api-create-user</code> (LLD §5.1), not just <code>#api-contracts</code> (LLD §5). Required for the precision the LLD sample establishes (per-endpoint, per-flow, per-perf-aspect anchors).</li>
+<li><strong>Forward-resolvable</strong> — <code>lld</code> refs can be added when the LLD is authored; the TRD generator leaves them as TODO entries until then.</li>
+<li><strong>PM-sync adapter behavior:</strong> Confluence/Jira → web link with anchor URL. ClickUp → URL custom field (+ optional Doc relate). Notion → URL property (+ optional Database relation).</li>
+</ul>
+<h3 id="de-duplication-contract-addresses-the-users-named-risk">De-duplication contract (addresses the user's named risk)</h3>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Owner doc</th>
+<th>TRD treatment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User problem, personas, business impact</td>
+<td>PRD</td>
+<td>TRD §2 links the PRD; restates problem in 1 sentence max for self-containment</td>
+</tr>
+<tr>
+<td>Functional requirements (what users do)</td>
+<td>PRD</td>
+<td>TRD §5 links PRD's user stories; doesn't restate them</td>
+</tr>
+<tr>
+<td>Non-functional requirements</td>
+<td>PRD names targets; TRD specifies architecture-level NFRs</td>
+<td>TRD §6</td>
+</tr>
+<tr>
+<td>Architecture &amp; design</td>
+<td>TRD</td>
+<td>TRD §7</td>
+</tr>
+<tr>
+<td>Alternatives &amp; trade-offs</td>
+<td>TRD</td>
+<td>TRD §8</td>
+</tr>
+<tr>
+<td>Component-internal algorithms, schemas, contracts</td>
+<td>LLD</td>
+<td>TRD §11 lists <em>which</em> APIs; LLD specifies their internals</td>
+</tr>
+<tr>
+<td>Work breakdown</td>
+<td>plan.json</td>
+<td>Plan generates stories; stories <code>design_refs[]</code> back to TRD/LLD</td>
+</tr>
+</tbody>
+</table>
+<p>Rule (paraphrased from Koko Product on PRD vs TRD): <strong>&quot;PRD owns <em>why</em>; TRD owns <em>how at architecture level</em>; LLD owns <em>how at component level</em>; plan owns <em>work breakdown</em>. Cross-references replace restatement.&quot;</strong></p>
+<h2 id="failure-modes--countermeasures">Failure Modes &amp; Countermeasures</h2>
+<p>Community research surfaced 10 named failure modes. Five are directly addressable by Shield's eval framework + structural choices:</p>
+<table>
+<thead>
+<tr>
+<th>Failure mode</th>
+<th>Source</th>
+<th>Shield countermeasure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Format drift across agent runs</strong> — different sessions produce differently-shaped TRDs</td>
+<td>User's stated risk + Cvet 2020 + acatton (Lobsters) — <em>&quot;authors and reviewers felt that most of the RFC template was superfluous&quot;</em></td>
+<td><strong>Schema-validated TRD eval</strong>: a fixture-based eval asserts presence of §1–14, asserts each section is non-empty (with <code>n/a — &lt;reason&gt;</code> as the only allowed escape), asserts <code>design_refs[]</code> shape. Backend + infra positive fixtures both pass. RED → GREEN trail required per CLAUDE.md.</td>
+</tr>
+<tr>
+<td><strong>Content duplication PRD↔TRD↔plan</strong> — same content restated, drifts independently</td>
+<td>User's stated risk + Plane.so + Koko Product — <em>&quot;Keep the boundary clean.&quot;</em></td>
+<td>The de-duplication contract above + a <code>/plan-review</code> rule: flag any TRD section that restates PRD content verbatim.</td>
+</tr>
+<tr>
+<td><strong>Undead documentation / silent divergence</strong> — doc reflects an outdated reality</td>
+<td>Doug Turnbull (softwaredoug.com) — <em>&quot;most design docs lie to you. They're undead documentation&quot;</em>; Lucas Costa — <em>&quot;Either you update the doc (which nobody does) or you diverge from it silently&quot;</em></td>
+<td>Shield's <code>/plan</code> re-runs <strong>update the same files in place</strong> (per current behavior). Combined with git history, the TRD is a snapshot at decision time. Recommend a <code>last_aligned_with: &lt;commit-sha&gt;</code> metadata field updated by <code>/implement</code> when stories close.</td>
+</tr>
+<tr>
+<td><strong>Over-specification (&quot;LLD too early&quot;)</strong> — schema/API decisions before query patterns are understood</td>
+<td>Lucas Costa — <em>&quot;you have the least information at the beginning of a project, which is exactly when design docs ask you to make the most decisions&quot;</em></td>
+<td>Defer LLD to per-milestone authoring. TRD §11 names <em>which</em> APIs change; LLD specifies their internals only when the milestone begins.</td>
+</tr>
+<tr>
+<td><strong>Implementation-manual pseudo-code</strong> — doc just narrates code with no trade-offs</td>
+<td>Google design-docs doc — <em>&quot;design docs that are really implementation manuals … it would probably have been a better idea to write the actual program right away&quot;</em></td>
+<td><code>/plan-review</code> rule: flag any HLD section that contains code blocks &gt; N lines without an &quot;Alternatives Considered&quot; rationale.</td>
+</tr>
+</tbody>
+</table>
+<p>Five more failure modes (design-doc theatre, review-rubber-stamp, RFC firing-squad, authority fragmentation, template bloat) are governance issues not directly fixable by structural choices — flag as future <code>/plan-review</code> rubric expansions.</p>
+<h2 id="decisions-locked--open-questions">Decisions Locked &amp; Open Questions</h2>
+<h3 id="decisions-locked-with-the-user-2026-05-24--2026-05-25">Decisions locked with the user (2026-05-24 → 2026-05-25)</h3>
+<ol>
+<li><strong>LLD granularity: strictly per-component (C4-inspired).</strong> One LLD per Container or Component (service, library, module). Milestones list which LLDs they touch; LLDs grow incrementally as milestones land. LLDs are typically backend-only; infra rarely needs an LLD layer.</li>
+<li><strong>No lean variant.</strong> The full 14-section template is required for every TRD. (Orosz's tiered-template pattern applies at &gt;2,000-engineer scale, not Shield's per-team scope.)</li>
+<li><strong>Direct cutover.</strong> <code>/plan</code> stops writing <code>plan-architecture.md</code> immediately. No feature flag, no side-by-side period. Existing <code>plan-architecture.md</code> files remain readable; no migration tool needed.</li>
+<li><strong>Section enforcement: strict via eval, with <code>n/a — &lt;reason&gt;</code> escape.</strong> All 14 TRD sections are required by the schema-validated eval. Missing any section is an eval failure with a named error. An explicit <code>n/a — &lt;reason&gt;</code> line counts as present; vague TBDs or empty sections fail.</li>
+<li><strong>One TRD, two domains.</strong> Same 14-section template applies to backend AND infrastructure work. Domain-aware prompting per section in <code>/plan</code>'s SKILL.md surfaces the right interpretation; the eval and <code>/plan-review</code> rubric do not fork.</li>
+<li><strong>§14 Rollback Strategy is a first-class section.</strong> Preserves the strongest property of today's <code>plan-architecture.md</code>.</li>
+</ol>
+<h3 id="open-questions-for-the-implementation-phase">Open questions for the implementation phase</h3>
+<ol>
+<li><strong><code>design_refs[]</code> resolution at PM-sync time.</strong> Should adapters auto-create Confluence/Notion pages and link them, or only emit URLs and trust the user to author the pages? Recommendation: <strong>emit URLs only</strong> in v1; adapter authoring is a v2 enhancement.</li>
+<li><strong>Section-ID stability.</strong> TRD section anchors should be stable kebab-case slugs (<code>#high-level-design</code>), not heading-derived (which break on rename per Confluence CONFSERVER-26897/28087/41483). Concrete recommendation: emit explicit <code>{#section-id}</code> markdown anchors in the TRD template, and validate the slug set is the canonical 14 in the eval.</li>
+<li><strong>TRD ↔ LLD linking direction.</strong> TRD §10 lists LLDs each milestone touches (forward link). Should LLDs maintain backlinks to milestones/TRD? Recommendation: <strong>yes, but auto-generated</strong> — <code>/lld</code> reads the TRD, fills in a &quot;Referenced By&quot; section in the LLD pointing back to milestones. Avoids manual link-rot.</li>
+<li><strong><code>/pm-sync</code> adapter behavior for <code>design_refs[]</code>.</strong> Confluence → web link with anchor URL. Jira → remote issue link. ClickUp → URL custom field. Notion → URL property. Open: should ClickUp/Notion also populate a Relationship/Database-relation if the design doc exists in the same tool? Recommendation: <strong>v1 emits URL only</strong>, structured relationships are v2.</li>
+<li><strong>Eval shape for TRD.</strong> Concrete eval design: a fixture TRD with all 14 sections present passes; fixtures missing any section fail with a named error per section. Bidirectional check: the LLM does not add unprompted sections (drift-by-addition). <code>n/a — &lt;reason&gt;</code> lines count as present; vague TBDs or empty sections do not. Coverage includes both backend and infra positive fixtures. All covered by <code>shield/evals/plan-trd.yaml</code> fixture set.</li>
+</ol>
+<h2 id="migration-path--reversibility">Migration Path / Reversibility</h2>
+<p>The refactor is a direct cutover; reversibility cost is low:</p>
+<ul>
+<li><strong>Forward:</strong> <code>/plan</code> adds TRD generation step before plan.md/plan.json. <code>plan-architecture.md</code> is replaced by <code>trd.md</code> immediately (no feature flag). Story schema gains optional <code>design_refs[]</code>. <code>/plan-review</code> gets new TRD-section rules. Estimated work: one PR for the <code>/plan</code> command + plan-docs SKILL.md changes, one PR for evals, one PR for <code>/plan-review</code> rule additions.</li>
+<li><strong>Reversal:</strong> If the TRD approach proves wrong, revert <code>plan-docs/SKILL.md</code> to the pre-refactor template + restore <code>plan-architecture.md</code> generation. Existing <code>trd.md</code> files remain readable in old feature folders. <code>design_refs[]</code> is optional everywhere, so removing it is a no-op for downstream adapters.</li>
+<li><strong>Existing artifacts:</strong> Pre-refactor feature folders keep their <code>plan-architecture.md</code> — no rewrite, no migration. New folders get <code>trd.md</code>. This is git-history-friendly and doesn't break anyone reading older docs.</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>The TRD = HLD + PM-lens milestones + Rollback Strategy design is well-supported by the IEEE 1016 / Sommerville / Pressman lineage, mirrors the reference TRD template, and aligns with Google + Uber + Larson + Orosz modern practice. The <strong>unified 14-section TRD template covers both backend and infrastructure work</strong>, with domain-aware prompting per section and an explicit <code>n/a — &lt;reason&gt;</code> escape for sections that genuinely don't apply; the 14-section LLD template (anchored in <a href="https://github.com/infraspecdev/tesseract/pull/43">tesseract PR #43's Bytebite sample</a>) is the per-component layer authored separately and is <strong>typically backend-only</strong> since infra code is declarative-spec-as-code. <strong>LLDs are per-component (C4-inspired)</strong> — a single LLD covers one Container or Component, lists multiple <code>Linked plans</code> in its header, and grows incrementally as milestones touch it; §14 Changelog records each touch with a Story ID. Story traceability via additive <code>design_refs[]</code> (component-scoped, subsection-precise) is the highest-signal way to link work to design without breaking <code>/pm-sync</code>. The two named risks (format drift, content duplication) have concrete countermeasures: schema-validated evals enforcing all sections (and §12's 8 forced subsections in the LLD), and a de-duplication contract (&quot;PRD owns <em>why</em>, TRD owns <em>how at architecture</em>, LLD owns <em>how at component</em>, plan owns <em>work breakdown</em>&quot;). The refactor is a direct cutover with no feature flag; reversal is a simple revert with no migration burden.</p>
+<h2 id="product-lens">Product Lens</h2>
+<h3 id="scorecard-pm1pm11">Scorecard (PM1–PM11)</h3>
+<table>
+<thead>
+<tr>
+<th>Dim</th>
+<th>Name</th>
+<th>Grade</th>
+<th>Severity</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PM1</td>
+<td>User impact clarity</td>
+<td><strong>D</strong></td>
+<td>Critical</td>
+<td>Roles named abstractly (&quot;reviewers&quot;, &quot;engineers&quot;); no quantified before/after per persona</td>
+</tr>
+<tr>
+<td>PM2</td>
+<td>Problem–solution fit</td>
+<td><strong>B</strong></td>
+<td>Critical</td>
+<td>Missing explicit Problem Statement section <em>before</em> Decision; named risks appear pre-problem</td>
+</tr>
+<tr>
+<td>PM3</td>
+<td>Scope discipline</td>
+<td><strong>B</strong></td>
+<td>Important</td>
+<td>14 TRD + 14 LLD sections (+ §12's 8 forced subsections) reads kitchen-sink; no MVP cut explicit</td>
+</tr>
+<tr>
+<td>PM4</td>
+<td>Prioritization rationale</td>
+<td><strong>D</strong></td>
+<td>Important</td>
+<td>Three PRs listed without effort/impact tags or stated dependencies</td>
+</tr>
+<tr>
+<td>PM5</td>
+<td>Stakeholder communicability</td>
+<td><strong>D</strong></td>
+<td>Important</td>
+<td>Jargon-saturated; no plain-language summary a non-technical reader could follow</td>
+</tr>
+<tr>
+<td>PM6</td>
+<td>Market / competitive awareness</td>
+<td><strong>A</strong></td>
+<td>Warning</td>
+<td>Strong: <code>plan-architecture.md</code>, reference TRD, Google, Uber, IEEE 1016, C4, arc42, ADR all compared</td>
+</tr>
+<tr>
+<td>PM7</td>
+<td>Adoption / rollout risk</td>
+<td><strong>B</strong></td>
+<td>Important</td>
+<td>Technical risks covered; adoption-side risks (learning curve, change mgmt, partner buy-in) missing</td>
+</tr>
+<tr>
+<td>PM8</td>
+<td>Success metrics defined</td>
+<td><strong>F</strong></td>
+<td>Important</td>
+<td>No measurable post-ship outcome (no thresholds, targets, observable behaviors)</td>
+</tr>
+<tr>
+<td>PM9</td>
+<td>Reversibility / exit cost</td>
+<td><strong>A</strong></td>
+<td>Warning</td>
+<td>Strong: clean revert path, no migration burden, additive schema</td>
+</tr>
+<tr>
+<td>PM10</td>
+<td>Business value alignment</td>
+<td><strong>F</strong></td>
+<td>Critical</td>
+<td>No tie to business goal/OKR/customer escalation/compliance — justified entirely on engineering grounds</td>
+</tr>
+<tr>
+<td>PM11</td>
+<td>Framing coverage honored</td>
+<td><strong>B</strong></td>
+<td>Important</td>
+<td>All 5 PF7 voices quoted; PF8 &quot;Vendor docs&quot; category has refs but no verbatim body quote</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Composite:</strong> 2A · 3B · 3D · 2F (≈ C+ overall). <strong>3 Critical gaps</strong> to close before this is plan-ready: PM1 (user-impact quantification), PM2 (Problem Statement section), PM10 (business-value tie-in).</p>
+<h3 id="user-impact-analysis">User Impact Analysis</h3>
+<p>The proposed TRD refactor directly serves five user populations identified in the framing brief, and the research provides differentiated evidence for each:</p>
+<ul>
+<li><strong>Shield maintainer</strong> — Highest leverage beneficiary. The named risks (format drift, content duplication) get concrete countermeasures: a schema-validated eval enforces all 14 TRD sections, and the de-duplication contract codifies ownership across PRD/TRD/LLD/plan. Risk of inaction: continued ad-hoc <code>plan-architecture.md</code> output that <code>/plan-review</code> can only grade free-form.</li>
+<li><strong>Staff/senior engineers reading the TRD</strong> — Gain a predictable artifact grounded in IEEE 1016 viewpoints, Sommerville's three architecture justifications, and the reference TRD template. Research quantifies coverage: 12 IEEE viewpoints, split ~7 HLD / ~5 LLD; 14 canonical TRD sections; 14 canonical LLD sections (12 always-on + 2 promote-on-demand).</li>
+<li><strong>Junior/mid engineers consuming via <code>/implement</code></strong> — Gain unambiguous design pointers via <code>design_refs[]</code> with subsection-precision (e.g., <code>#api-create-user</code> not <code>#api-contracts</code>). Research cites the Bytebite sample (PR #43, 704 lines, kebab-case anchors on every section and subsection) as the concrete structural target.</li>
+<li><strong><code>/plan-review</code> reviewer agents</strong> — Gain stable section anchors enabling structured rubrics instead of free-form grading. Research surfaces five mechanically-enforceable rules.</li>
+<li><strong><code>/pm-sync</code></strong> — Hard backward-compat constraint is <strong>met</strong>: <code>design_refs[]</code> is additive, adapters ignore unknown fields. No schema break.</li>
+</ul>
+<p><strong>Unquantified gaps:</strong></p>
+<ul>
+<li>No estimate of how many existing feature folders carry <code>plan-architecture.md</code>. Direct-cutover migration risk is asserted &quot;low&quot; but not measured.</li>
+<li>No baseline for current <code>/plan-review</code> defect-catch rate vs. expected post-refactor rate.</li>
+<li>&quot;Future LLD-authoring command&quot; is described but its build effort is not estimated.</li>
+</ul>
+<h3 id="scope-recommendation">Scope Recommendation</h3>
+<p><strong>Essential (MVP — ship in v1 cutover):</strong></p>
+<ol>
+<li><code>/plan</code> emits <code>trd.md</code> with the canonical 14 sections (replaces <code>plan-architecture.md</code>).</li>
+<li>Stable kebab-case section anchors emitted explicitly as <code>{#section-id}</code> markdown anchors.</li>
+<li><code>plan.json</code> story schema gains optional additive <code>design_refs[]</code> with <code>{doc, section_id, anchor_url, label}</code>.</li>
+<li>Schema-validated eval fixture pair (positive + missing-section negatives) under <code>shield/evals/plan-trd.yaml</code>.</li>
+<li><code>/plan-review</code> rules for the 14 required sections (with <code>n/a — &lt;reason&gt;</code> escape) + at least one duplication-detection rule.</li>
+</ol>
+<p><strong>Defer (v2 enhancements):</strong></p>
+<ul>
+<li><code>/lld &lt;component&gt;</code> command — template locked; authoring command is &quot;future&quot;. v1 leaves <code>lld</code> refs as TODO entries.</li>
+<li>Adapter auto-creation of Confluence/Notion pages from <code>design_refs[]</code> — v1 emits URLs only.</li>
+<li>Structured ClickUp/Notion relationships — v1 emits URLs only.</li>
+<li><code>last_aligned_with: &lt;commit-sha&gt;</code> metadata for undead-doc countermeasure.</li>
+<li><code>/lld</code> auto-generated &quot;Referenced By&quot; backlinks.</li>
+<li>Governance failure-mode rules (design-doc theatre, review-rubber-stamp, etc.).</li>
+</ul>
+<p><strong>Cut entirely:</strong></p>
+<ul>
+<li>Lean TRD variant — research locks this as <strong>rejected</strong>. Do not relitigate.</li>
+<li>Migration tool for existing <code>plan-architecture.md</code> — direct cutover, no migration.</li>
+</ul>
+<h3 id="prioritization-framework">Prioritization Framework</h3>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Work item</th>
+<th>Effort</th>
+<th>Impact</th>
+<th>Dependency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong></td>
+<td>Schema-validated TRD eval fixture pair + section slug allow-list</td>
+<td>M</td>
+<td><strong>Very high</strong> — strongest format-drift countermeasure; CLAUDE.md mandate</td>
+<td>Section list locked (done)</td>
+</tr>
+<tr>
+<td><strong>P0</strong></td>
+<td><code>/plan</code> command + <code>plan-docs/SKILL.md</code> updates to emit <code>trd.md</code> with 14 canonical sections, domain-aware prompting per section, and explicit <code>{#section-id}</code> anchors</td>
+<td>L</td>
+<td><strong>Very high</strong> — the actual cutover</td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>P0</strong></td>
+<td><code>plan.json</code> story schema: additive <code>design_refs[]</code></td>
+<td>S</td>
+<td><strong>High</strong> — story traceability + <code>/implement</code> consumption</td>
+<td>None (additive)</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td><code>/plan-review</code> rules for required-section presence + 1 duplication-detection rule</td>
+<td>M</td>
+<td>High — converts free-form review into structured grading</td>
+<td>P0 schema lands first</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td><code>/pm-sync</code> adapter handling for <code>design_refs[]</code> URL emission (all four adapters)</td>
+<td>M</td>
+<td>Medium — read-only forward link in v1</td>
+<td><code>design_refs[]</code> shape locked (done)</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td><code>last_aligned_with</code> metadata + <code>/implement</code> update on story close</td>
+<td>S</td>
+<td>Medium — undead-doc countermeasure</td>
+<td>After v1 stable</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td><code>/plan-review</code> rules for remaining failure-mode countermeasures</td>
+<td>M</td>
+<td>Medium — incremental review quality</td>
+<td>After P1</td>
+</tr>
+<tr>
+<td><strong>P3 (deferred)</strong></td>
+<td><code>/lld &lt;component&gt;</code> command + LLD eval fixtures</td>
+<td>L</td>
+<td>High <em>for LLD consumers</em> — but no LLD consumers exist yet</td>
+<td>After v1, separate epic</td>
+</tr>
+<tr>
+<td><strong>P3 (deferred)</strong></td>
+<td>Adapter auto-creation of design-doc pages</td>
+<td>L</td>
+<td>Low — research recommends URL-only in v1</td>
+<td>After <code>/lld</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sequencing rationale:</strong> P0 items land together in the cutover PR (eval can't ship before generator; generator shouldn't ship without eval). <code>design_refs[]</code> is additive and zero-risk, so it goes in v1 even with no consumer yet — locking the contract early avoids a v2 migration. <code>/lld</code> is genuinely deferrable because the TRD references LLDs by URL with TODO entries until the command exists.</p>
+<h3 id="stakeholder-summary">Stakeholder Summary</h3>
+<p>Shield's <code>/plan</code> command today produces a work breakdown and a free-form architecture sketch (<code>plan-architecture.md</code>). Engineers reading the output have no predictable place to find the system design, and reviewers have no consistent shape to grade against. The research recommends replacing the free-form sketch with a <strong>Technical Requirements Document (TRD)</strong> — a 14-section template grounded in the IEEE software-design standard, mirrored from the reference TRD template, and consistent with how Google, Uber, and respected practitioners (Will Larson, Gergely Orosz) describe modern design-doc practice. The TRD covers the <em>what</em> and the <em>architecture-level how</em> of a feature. The deeper component-internal details (database schemas, API internals, race-condition handling) move to per-component <strong>Low-Level Design (LLD)</strong> documents authored separately when each milestone begins, following a 14-section template Shield already has a working sample for. Every story in the work plan gains an optional pointer to the exact section of the TRD or LLD it depends on, so an engineer picking up a story can find the design in one click. The change ships as a direct replacement with no migration burden — existing feature folders keep their old artifacts and stay readable. The two biggest risks of templated design docs (templates drifting in shape across runs, and the same content being restated in three places that then disagree) are addressed with an automated check that enforces the section list and a written ownership rule of which document owns which content. The first release lands the new TRD output, the schema-enforcing test, and the story-to-design pointers; the LLD command and richer reviewer rules follow in a second release.</p>
+<h3 id="critical-gaps--user-verdict-2026-05-24">Critical gaps — user verdict (2026-05-24)</h3>
+<p>The three Critical-severity findings were reviewed with the requester. All three are acknowledged as artifacts of applying the full PM1–PM11 rubric (designed for PRDs / product features) to an internal-tooling research artifact. Verdict per gap:</p>
+<ol>
+<li><strong>PM1 — Quantified user-impact per persona.</strong> <em>Resolution:</em> the refactor's value is a baseline add to how tech teams currently work — the personas (plan author, reviewer, <code>/implement</code> consumer) all benefit uniformly. No additional quantification needed for an internal tooling change.</li>
+<li><strong>PM2 — Explicit Problem Statement section.</strong> <em>Resolution:</em> not required. Going to implementation directly; the Context paragraph at the top of this doc carries enough framing for engineering work.</li>
+<li><strong>PM10 — Business-value tie-in.</strong> <em>Resolution:</em> the value is to help tech teams iterate faster by automating planning steps that previously required free-form judgment. Not a business-OKR question for an internal Shield meta-tooling refactor.</li>
+</ol>
+<p>PM8 (success metrics) and PM4/PM5 (prioritization rationale, stakeholder communicability) are Important but not blocking — folded into the implementation work where the Prioritization Framework table already addresses sequencing.</p>
+<h2 id="references">References</h2>
+<ul>
+<li>IEEE Std 1016-2009, &quot;Software Design Descriptions.&quot; <a href="https://cengproject.cankaya.edu.tr/wp-content/uploads/sites/10/2017/12/SDD-ieee-1016-2009.pdf">Çankaya University full PDF</a> · <a href="https://ieeexplore.ieee.org/document/5167255">IEEE Xplore</a> · <a href="https://en.wikipedia.org/wiki/Software_design_description">Wikipedia summary</a></li>
+<li>Sommerville, I. (2015). <em>Software Engineering</em>, 10th ed. Pearson. Chapter 6 (Architectural Design) + Chapter 7 (Design and Implementation). <a href="https://www.pearson.com/en-us/subject-catalog/p/software-engineering/P200000003258/9780137503148">Pearson catalog</a></li>
+<li>Pressman, R., &amp; Maxim, B. (2014). <em>Software Engineering: A Practitioner's Approach</em>, 8th ed. McGraw-Hill. Chapters 12–15 (Design Concepts, Architectural Design, Component-Level Design, UI Design). <a href="https://books.google.com/books/about/Software_Engineering_A_Practitioner_s_Ap.html?id=i8NmnAEACAAJ">Google Books</a></li>
+<li>Ubl, M. &quot;Design Docs at Google.&quot; <a href="https://www.industrialempathy.com/posts/design-docs-at-google/">industrialempathy.com</a></li>
+<li>Larson, W. &quot;Writing an engineering strategy.&quot; <a href="https://lethain.com/eng-strategies/">lethain.com/eng-strategies</a> · <em>An Elegant Puzzle: Systems of Engineering Management</em></li>
+<li>Orosz, G. &quot;Companies Using RFCs or Design Docs and Examples of These.&quot; <a href="https://blog.pragmaticengineer.com/rfcs-and-design-docs/">blog.pragmaticengineer.com/rfcs-and-design-docs</a></li>
+<li>Bryar, C., &amp; Carr, B. (2021). <em>Working Backwards: Insights, Stories, and Secrets from Inside Amazon</em>. <a href="https://workingbackwards.com/concepts/working-backwards-pr-faq-process/">workingbackwards.com PR/FAQ summary</a></li>
+<li>Costa, L. &quot;Design docs are dead and we killed them.&quot; <a href="https://www.lucasfcosta.com/blog/design-docs">lucasfcosta.com/blog/design-docs</a></li>
+<li>Turnbull, D. &quot;Throwaway PRs, not design docs.&quot; <a href="https://softwaredoug.com/blog/2024/12/14/throwaway-prs-not-design-docs">softwaredoug.com</a></li>
+<li>Cvet, M. &quot;Goals and Failure Modes for RFCs and Technical Design Documents.&quot; <a href="https://medium.com/better-programming/goals-and-failure-modes-for-rfcs-and-technical-design-documents-c4ee1d1da6ff">Better Programming, Medium, 2020</a></li>
+<li>Squarespace Engineering. &quot;The Power of 'Yes, If'.&quot; <a href="https://engineering.squarespace.com/blog/2019/the-power-of-yes-if">engineering.squarespace.com</a></li>
+<li>Kashitsyn, R. &quot;Effective design docs.&quot; <a href="https://mmapped.blog/posts/31-effective-design-docs">mmapped.blog</a></li>
+<li>McCaffrey, C. &quot;Design docs, markdown, and Git.&quot; <a href="https://caitiem20.wordpress.com/2020/03/29/design-docs-markdown-and-git/">caitiem20.wordpress.com</a></li>
+<li>&quot;Decoding the Dichotomy: PRD vs TRD.&quot; <a href="https://medium.com/@kokoproduct/decoding-the-dichotomy-prd-vs-trd-67463a29aa84">Koko Product, Medium</a></li>
+<li>&quot;How to write a PRD that engineers actually read.&quot; <a href="https://plane.so/blog/how-to-write-a-prd-that-engineers-actually-read">Plane.so blog</a></li>
+<li>Atlassian. &quot;Anchors in Confluence.&quot; <a href="https://confluence.atlassian.com/doc/anchors-139442.html">confluence.atlassian.com/doc/anchors-139442.html</a></li>
+<li>Atlassian. &quot;Configuring issue linking.&quot; <a href="https://confluence.atlassian.com/adminjiraserver/configuring-issue-linking-938847862.html">confluence.atlassian.com/adminjiraserver/configuring-issue-linking-938847862.html</a></li>
+<li>ClickUp. &quot;Intro to Relationships.&quot; <a href="https://help.clickup.com/hc/en-us/articles/6304528030743-Intro-to-Relationships">help.clickup.com/.../6304528030743</a></li>
+<li>Brown, S. &quot;The C4 model for visualising software architecture.&quot; <a href="https://c4model.com/">c4model.com</a></li>
+<li>Notion. &quot;Create links and backlinks.&quot; <a href="https://www.notion.com/help/create-links-and-backlinks">notion.com/help/create-links-and-backlinks</a></li>
+<li>HN thread on design-doc anti-patterns (item 44779428). <a href="https://news.ycombinator.com/item?id=44779428">news.ycombinator.com/item?id=44779428</a></li>
+<li>HN thread on RFC-process cost (item 18145205). <a href="https://news.ycombinator.com/item?id=18145205">news.ycombinator.com/item?id=18145205</a></li>
+<li>HN thread on over-specification (item 46221016). <a href="https://news.ycombinator.com/item?id=46221016">news.ycombinator.com/item?id=46221016</a></li>
+<li>Lobsters discussion on Design Docs at Google. <a href="https://lobste.rs/s/rullsv/design_docs_at_google">lobste.rs/s/rullsv</a></li>
+<li>ADR catalog. <a href="https://adr.github.io/">adr.github.io</a></li>
+</ul>
+<h3 id="internal-references-notion--reference-workspace">Internal references (Notion — reference workspace)</h3>
+<ul>
+<li><a href="https://www.notion.so/29a1ab62faf5805ea7dadefb9d052af0">Reference TRD Template</a> (last edited 2025-11-04)</li>
+<li>Reference LLD example (per-library scope, 2026-05-10) — per-library LLD example</li>
+<li>Reference HLD example (module-first, 2026-04-15)</li>
+<li>Reference HLD example with &quot;Solutioning&quot; sibling label (2026-04-01)</li>
+<li>Reference HLD example (minimal, small features, 2026-05-21)</li>
+<li>Reference TRD with explicit 5-phase Implementation Plan precedent (2026-01-04)</li>
+</ul>
+<h3 id="internal-references-shield-repo">Internal references (Shield repo)</h3>
+<ul>
+<li><code>docs/shield/agent-behavior-decomposition-20260520/outputs/plan-architecture.html</code> — baseline ADR+HLD hybrid the TRD must improve on</li>
+<li><a href="https://github.com/infraspecdev/tesseract/pull/43">tesseract PR #43</a> — <code>docs/superpowers/specs/2026-05-18-lld-sample.html</code> — canonical 14-section LLD sample (Bytebite user-signup); reference structure for the <code>/lld</code> command</li>
+</ul>
+<h2 id="further-exploration">Further Exploration</h2>
+<p><em>Curated for going deeper; NOT cited in body above.</em></p>
+<h3 id="books">Books</h3>
+<ul>
+<li>Bass, L., Clements, P., Kazman, R. (2021). <em>Software Architecture in Practice</em> (4th ed.). The module/component-and-connector/allocation viewtype taxonomy is a cleaner alternative to Pressman's four layers.</li>
+<li>Bryar, C., Carr, B. (2021). <em>Working Backwards.</em> Amazon's PR/FAQ tradition for the PRD-upstream framing.</li>
+<li>Fournier, C. (2017). <em>The Manager's Path.</em> ADRs vs design docs distinction in tech-lead chapters.</li>
+</ul>
+<h3 id="long-form-blogs--articles">Long-form blogs / articles</h3>
+<ul>
+<li>Brown, S. &quot;The C4 model for visualising software architecture.&quot; <a href="https://c4model.com/">c4model.com</a> — quoted in body above; Container/Component levels are the chosen LLD granularity.</li>
+<li>arc42 template. <a href="https://arc42.org/">arc42.org</a> — open-source 12-chapter architecture-doc scaffold widely used in DE/EU teams.</li>
+<li>ThoughtWorks. &quot;Lightweight architecture decision records.&quot; For the &quot;TRD = HLD + ADR&quot; hybrid Shield is gravitating toward.</li>
+</ul>
+<h3 id="videos--talks">Videos / talks</h3>
+<ul>
+<li>Larson, W. on engineering strategy at LeadDev. For the &quot;five design docs → one strategy&quot; pattern.</li>
+</ul>
+<h3 id="courses">Courses</h3>
+<ul>
+<li>(None curated this round — open opportunity.)</li>
+</ul>
+<h3 id="podcasts--podcast-episodes">Podcasts / podcast episodes</h3>
+<ul>
+<li><em>StaffEng Podcast</em> — multiple episodes on design-doc practice with senior+ engineers.</li>
+</ul>
+<h3 id="other">Other</h3>
+<ul>
+<li>Joel Henderson's ADR catalog. <a href="https://adr.github.io/">adr.github.io</a> — patterns for ADRs as supplement to (not replacement of) HLD.</li>
+<li>HashiCorp's public RFC template. Useful comparison point for infra-leaning teams.</li>
+</ul>
+
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
+</body>
+</html>

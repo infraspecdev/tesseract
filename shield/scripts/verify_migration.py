@@ -93,16 +93,16 @@ def verify(tmp_tree: Path, *, check_known_moves: bool) -> list[str]:
             if old in before and before[old] != _sha256(tmp_tree / new):
                 failures.append(f"content changed during move: {old} -> {new}")
 
-    # 3. Manifest written with schema_version: 2.
+    # 3. Manifest written with schema_version: 2 or "2.1".
     manifest_path = tmp_tree / "manifest.json"
     if not manifest_path.exists():
         failures.append("manifest.json not created by --apply")
     else:
         try:
             manifest = json.loads(manifest_path.read_text())
-            if manifest.get("schema_version") != 2:
+            if manifest.get("schema_version") not in (2, "2.1"):
                 failures.append(
-                    f"manifest schema_version != 2 (got {manifest.get('schema_version')!r})"
+                    f"manifest schema_version not in {{2, '2.1'}} (got {manifest.get('schema_version')!r})"
                 )
             if not isinstance(manifest.get("features"), list):
                 failures.append("manifest missing features list")
