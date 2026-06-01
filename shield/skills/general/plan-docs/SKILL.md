@@ -160,6 +160,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 2a | Milestone resolution — extract from PRD §15/§8 or invoke `shield:milestone-coverage` as fallback; user refines | always | Yes |
 | 2b | Detect dominant domain — `.shield.json` `plan.template_override` first, then repo markers (backend / infra / mixed) | always | Yes |
 | 3 | Generate `{plan_json}` sidecar (stories include `design_refs[]` pointing into the TRD) | always | Yes |
+| 3b | Apply `shield:writing-style` to author-written TRD/plan prose (preamble/narrative sections only — NEVER the marker-wrapped rendered regions like §10 Milestones, and never `{plan_json}` values) | always | Yes |
 | 4 | Generate `{plan_trd_md}` per the 14-section TRD template (atomic write, provenance stamp) | always | Yes |
 | 5 | Generate `{plan_md}` (detailed plan markdown) | always | Yes |
 | 6 | Render `{plan_trd_html}` and `{plan_html}` via render-markdown.sh | always | Yes |
