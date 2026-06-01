@@ -74,5 +74,5 @@ Triggers on backend stacks (file paths under `services/`, `src/`, `backend/`, pr
 ## Related Skills
 
 - For API contract concerns → `backend-api-design-review`
-- For framework-specific issues (Spring annotations, etc.) → relevant Spring skill (Plan 2)
+- For framework-specific issues (Spring annotations, etc.) → relevant Spring skill (e.g. `spring-web`, `spring-data`)
 - For test-code design → `backend-testing-strategy-review`

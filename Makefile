@@ -8,12 +8,10 @@
 help:  ## Show available targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-10s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install:  ## Install dev/test dependencies (jsonschema, pyyaml, uv)
-	@python3 -m pip install --user --quiet jsonschema pyyaml 2>/dev/null \
-		|| python3 -m pip install --user --break-system-packages --quiet jsonschema pyyaml
+install:  ## Ensure uv is present (test deps are provisioned per-run via `uv run --with`)
 	@command -v uv >/dev/null 2>&1 \
 		|| (echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh)
-	@echo "✓ deps ready (jsonschema, pyyaml, uv)"
+	@echo "✓ uv ready (jsonschema/pyyaml/pytest are pulled in on demand by uv run --with)"
 
 test:  ## Run the full Shield test suite
 	@bash shield/tests/run-all.sh

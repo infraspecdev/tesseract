@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "5d777c54-e22b-4949-ab83-778d8eb28388",
+      "order": 1,
+      "kind": "task",
+      "source": "agent",
+      "feature": "deprecation",
+      "epic": "Remove deprecated plugins",
+      "text": "Delete the deprecated clickup-sprint-planner plugin: remove its source tree (~900 LOC near-fork of shield/adapters/clickup, byte-identical clickup_client.py, zero tests, not in CI) and drop it from marketplace.json. Owner intends to do this later."
+    },
+    {
+      "id": "f5c1675c-5ff9-46a6-a862-0b82ad25b4ff",
+      "order": 2,
+      "kind": "task",
+      "source": "agent",
+      "feature": "ci",
+      "epic": "CI policy enforcement",
+      "text": "Enforce repo policies in CI: (a) a PR touching a plugin asset must bump the plugin version in marketplace.json; (b) pyproject version must agree with marketplace for python-server plugins; (c) changed plugin assets must ship an eval. Currently policy-by-review only (review finding #7)."
+    },
+    {
+      "id": "68c81935-5e67-4928-a5fe-49b2d3bbcd9f",
+      "order": 3,
+      "kind": "task",
+      "source": "agent",
+      "feature": "pm-adapters",
+      "epic": "PM adapter consolidation",
+      "text": "Extract a shared forward_design_refs driver into shield/adapters/_common (skip-no-anchor / idempotent-skip / error+log loop is copy-pasted across jira/confluence/notion/clickup with drifted logging). Also consider unifying the 3 HTTP stacks (httpx/requests/urllib). Correctness fragility already fixed; this is the dedup half (review #11)."
+    },
+    {
+      "id": "f3f53d5f-00a7-4e20-94b9-8befc08b129b",
+      "order": 4,
+      "kind": "task",
+      "source": "agent",
+      "feature": "skill-registry",
+      "epic": "Skill invocation namespace",
+      "text": "Reconcile skill-invocation namespace: commands reference skills as shield:domain:skill (path style) but registered skill names are flat (e.g. terraform-plan-analyzer), so the path-style strings are not actually invokable. Pick one convention repo-wide (review M2)."
+    },
+    {
+      "id": "8776ed1e-d15b-4504-8f33-bfeea3de3eeb",
+      "order": 5,
+      "kind": "task",
+      "source": "agent",
+      "feature": "pm-adapters",
+      "epic": "PM adapter consolidation",
+      "text": "Notion adapter: document/justify last-write-wins on the single Design Links URL property (a second ref clobbers the first; only the key list accumulates), and bring test coverage to parity with clickup (currently contract+idempotency only). Adapter is v0.1.0 scaffold maturity (review M4)."
+    }
+  ]
+}

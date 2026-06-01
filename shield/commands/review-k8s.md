@@ -32,7 +32,7 @@ Writes registry-tracked paths under `{review_dir}` = `{output_dir}/{feature}/rev
    - `shield:kubernetes:cost-review`
    - `shield:kubernetes:operational-review`
 3. Dispatch `shield:platform-engineer` agent in all three modes (security, cost, operational) in parallel
-4. If deprecated APIs found by any skill, recommend running `/review-k8s-deprecation`
+4. If deprecated APIs found by any skill, run `shield:kubernetes:deprecation-check-and-upgrade` for upgrade guidance
 5. Aggregate findings, deduplicate, sort by severity
 6. Present unified findings to the user
 
@@ -56,9 +56,11 @@ Numbered run subfolders (`code-review/{N}-{slug}/`) are gone — runs are date-k
 
 After writing, also render `{review_summary_html}` and one `{review_detailed_html}` per agent under `{output_dir}/{feature}/outputs/reviews/code/{date}{_counter}/`. Then update `{output_dir}/manifest.json` with the new review entry and regenerate `{output_dir}/index.html`.
 
-## Single-Agent Shortcuts
+## Scoping to a Single Concern
 
-- `/review-k8s-security` — security audit only (invoke `shield:kubernetes:security-audit` + `shield:platform-engineer` in security mode)
-- `/review-k8s-cost` — cost review only (invoke `shield:kubernetes:cost-review` + `shield:platform-engineer` in cost mode)
-- `/review-k8s-ops` — operational review only (invoke `shield:kubernetes:operational-review` + `shield:platform-engineer` in operational mode)
-- `/review-k8s-deprecation` — deprecation check only (invoke `shield:kubernetes:deprecation-check-and-upgrade`)
+There are no per-concern slash commands. To scope the review, invoke a single skill directly instead of running the full `/review-k8s`:
+
+- Security only — `shield:kubernetes:security-audit` + `shield:platform-engineer` in security mode
+- Cost only — `shield:kubernetes:cost-review` + `shield:platform-engineer` in cost mode
+- Operational only — `shield:kubernetes:operational-review` + `shield:platform-engineer` in operational mode
+- Deprecation only — `shield:kubernetes:deprecation-check-and-upgrade`

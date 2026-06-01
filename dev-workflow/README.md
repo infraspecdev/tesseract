@@ -1,5 +1,9 @@
 # dev-workflow
 
+> ⚠️ **Deprecated — use [Shield](../shield/) instead.** This plugin is no longer maintained as a standalone. Its capabilities now live in Shield's general skills (`/research`, `/plan`, `/implement`) and superpowers integration.
+>
+> **Migrate:** `/plugin install shield@tesseract` then run `/shield init` in your project.
+
 General-purpose development workflow skills for Claude Code.
 
 ## Skills

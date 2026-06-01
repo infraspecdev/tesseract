@@ -67,6 +67,7 @@ def _set_custom_field(
     task_id: str,
     field_id: str,
     value: str,
+    ref: DesignRef,
 ) -> tuple[bool, ForwardError | None]:
     try:
         resp = client.post(
@@ -76,7 +77,7 @@ def _set_custom_field(
         )
     except httpx.RequestError as exc:
         return False, ForwardError(
-            ref=None,  # type: ignore[arg-type]
+            ref=ref,
             error_class=type(exc).__name__,
             message=str(exc),
             http_status=None,
@@ -84,7 +85,7 @@ def _set_custom_field(
     if resp.status_code == 200:
         return True, None
     return False, ForwardError(
-        ref=None,  # type: ignore[arg-type]
+        ref=ref,
         error_class="HTTPError",
         message=resp.text[:200],
         http_status=resp.status_code,
@@ -158,14 +159,11 @@ def forward_design_refs(
             continue
 
         # Write the URL field, then update the keys companion.
-        ok_url, err_url = _set_custom_field(cli, base_url, task_id, url_field_id, ref.anchor_url)
+        ok_url, err_url = _set_custom_field(
+            cli, base_url, task_id, url_field_id, ref.anchor_url, ref
+        )
         if not ok_url:
-            err = ForwardError(
-                ref=ref,
-                error_class=err_url.error_class if err_url else "HTTPError",
-                message=err_url.message if err_url else "unknown",
-                http_status=err_url.http_status if err_url else None,
-            )
+            err = err_url or ForwardError(ref=ref, error_class="HTTPError", message="unknown")
             result.errors.append(err)
             logger.warning(
                 "forward_design_ref_failed",
@@ -181,15 +179,12 @@ def forward_design_refs(
 
         existing_keys.append(ref.idempotency_key)
         joined = ",".join(existing_keys)
-        ok_key, err_key = _set_custom_field(cli, base_url, task_id, key_field_id, joined)
+        ok_key, err_key = _set_custom_field(cli, base_url, task_id, key_field_id, joined, ref)
         if not ok_key:
             # URL write succeeded but key companion failed — this is the only
             # window where a duplicate could leak on re-run. Treat as error.
-            err = ForwardError(
-                ref=ref,
-                error_class=err_key.error_class if err_key else "HTTPError",
-                message=(err_key.message if err_key else "key_field_write_failed"),
-                http_status=err_key.http_status if err_key else None,
+            err = err_key or ForwardError(
+                ref=ref, error_class="HTTPError", message="key_field_write_failed"
             )
             result.errors.append(err)
             logger.warning(

@@ -63,7 +63,7 @@ It shields you from the mistakes that haunt on-call rotations — because the be
 
 #### Design Philosophy
 
-**One pipeline, many domains.** Shield follows a single workflow — research, plan, build, review — but adapts to the domain you're working in. Terraform gets provider-specific research and HashiCorp Configuration Language-aware review. Atmos gets stack hygiene checks. Future domains (Python, TypeScript, Kubernetes) slot in by adding a directory, not by rewriting orchestration.
+**One pipeline, many domains.** Shield follows a single workflow — research, plan, build, review — but adapts to the domain you're working in. Terraform gets provider-specific research and HashiCorp Configuration Language-aware review. Atmos gets stack hygiene checks. Backend code (Java, Kotlin, Python, Node, Go) and Kubernetes/Helm each get their own review skills and specialist agents. New domains slot in by adding a directory, not by rewriting orchestration.
 
 **Continuous review, not gatekeeping.** Review isn't a phase at the end — it happens after planning (are the stories actionable?), after each implementation step (did we introduce issues?), and as a final consolidated check. You choose which findings to fix, which to defer, and which to discuss.
 
@@ -72,8 +72,8 @@ It shields you from the mistakes that haunt on-call rotations — because the be
 **Agents are specialists.** Each agent has a clear domain (security, cost, architecture, operations) and operates in modes depending on context — lightweight checks when reviewing a plan document, deep checklists when reviewing Terraform code. One agent file, multiple depths.
 
 **Your config, your rules.** The plugin adapts to your setup:
-- Pick your domains (`terraform`, `atmos`, or both)
-- Pick your project management tool per project (`clickup`, `jira`, or future adapters)
+- Pick your domains (`terraform`, `atmos`, `backend`, `kubernetes`, `github-actions`)
+- Pick your project management tool per project (`clickup`, `jira`, `confluence`, `notion`)
 - Override which reviewers always run or never run per project
 
 #### Usage
@@ -113,11 +113,10 @@ Review findings are presented with severity levels. You pick which fixes to appl
 | `{output_dir}/manifest.json` | Yes | Feature index — tracks latest artifacts per feature |
 | `{output_dir}/index.html` | Yes | Dashboard — navigable overview of all features |
 | `{output_dir}/{feature}/plan.json` | Yes | Plan sidecars — source of truth for stories and status |
-| `{output_dir}/{feature}/plan/` | Yes | Architecture and plan docs — team reference |
-| `{output_dir}/{feature}/research/` | Yes | Research findings — useful context |
-| `{output_dir}/{feature}/summary/` | Yes | Phase completion records |
-| `{output_dir}/{feature}/plan-review/` | No | Ephemeral — findings feed back into plan revisions |
-| `{output_dir}/{feature}/code-review/` | No | Ephemeral — fixes become commits |
+| `{output_dir}/{feature}/*.md` | Yes | Sources — `research.md`, `prd.md`, `plan.md`, etc. (team reference) |
+| `{output_dir}/{feature}/outputs/` | Yes | Rendered HTML — navigable team reference |
+| `{output_dir}/{feature}/reviews/` | Yes | Date-keyed review records — never overwritten, useful history |
+| `{output_dir}/{feature}/.session-transcript.md` | No | Transient Q&A scratch — gitignored side-artifact |
 | `~/.shield/` | N/A | User-local config (PM credentials, project settings) — never in repo |
 
 #### Installation
@@ -188,10 +187,15 @@ Or do it manually:
 | Command | What it does |
 |---------|-------------|
 | `/shield init` | Set up Shield for a new project (creates config files) |
+| `/shield init-devcontainer` | Scaffold a `.devcontainer/` to run `/implement` in isolation |
 | `/shield migrate` | Migrate from older plugin versions |
 | `/research` | Research a technical topic with structured citations and expert sources |
-| `/plan` | Generate plan documents — architecture decisions and execution plans with stories |
+| `/prd` | Author a problem-first Product Requirements Document |
+| `/prd-review` | Multi-persona PRD review against a 13-dimension rubric |
+| `/plan` | Generate plan documents — a 14-section TRD and an execution plan with stories |
 | `/plan-review` | Run multi-agent plan review with scoring |
+| `/lld` | Generate or update a component-scoped Low-Level Design document |
+| `/backlog` | Capture, view, promote, and remove project backlog entries |
 | `/pm-sync` | Sync plan stories to your project management tool |
 | `/pm-status` | Show sprint or epic status from your project management tool |
 | `/implement` | Test-driven development-based feature implementation with progress tracking |
@@ -199,6 +203,9 @@ Or do it manually:
 | `/review-security` | Security-focused review only |
 | `/review-cost` | Cost optimization review only |
 | `/review-well-architected` | Amazon Web Services Well-Architected Framework review |
+| `/review-backend` | Backend code review with stack detection and specialist dispatch |
+| `/review-k8s` | Kubernetes manifest review (security, cost, operational readiness) |
+| `/review-helm` | Helm chart review (structure, best practices, template security) |
 | `/analyze-plan` | Analyze `terraform plan` output for security, cost, and operational impact |
 
 #### External Plugin Integration
@@ -229,36 +236,49 @@ shield/
 ├── skills/                        # Organized by domain
 │   ├── general/                   # Domain-agnostic orchestrators
 │   │   ├── research/              # Structured research with citations
-│   │   ├── plan-docs/             # Plan document generation (HTML + JSON sidecar)
+│   │   ├── prd-docs/              # PRD authoring + prd-review
+│   │   ├── plan-docs/             # TRD + execution plan (HTML + JSON sidecar)
 │   │   ├── plan-review/           # Multi-agent plan review
+│   │   ├── lld-docs/              # Component Low-Level Design docs
+│   │   ├── backlog/               # Backlog capture + promotion
 │   │   ├── implement-feature/     # Test-driven development-based implementation
 │   │   ├── review/                # Review orchestrator: detect domain, dispatch agents
 │   │   └── summarize/             # Phase summary generator
 │   ├── terraform/                 # Terraform-specific overrides
 │   ├── atmos/                     # Atmos-specific overrides
-│   └── github-actions/            # Continuous integration and delivery review
+│   ├── backend/                   # Backend code review (Java/Kotlin/Python/Node/Go)
+│   ├── kubernetes/                # K8s manifest + Helm chart review
+│   ├── github-actions/            # Continuous integration and delivery review
+│   └── devcontainer/              # Devcontainer scaffolding
 │
-├── agents/                        # Specialist reviewers (multi-mode)
-│   ├── security-reviewer.md       # Plan + infrastructure code + application code modes
-│   ├── cost-reviewer.md
-│   ├── architecture-reviewer.md
-│   ├── operations-reviewer.md
-│   ├── well-architected-reviewer.md
-│   ├── agile-coach-reviewer.md
-│   └── dx-engineer-reviewer.md    # Developer experience reviewer
+├── agents/                        # Specialist reviewers + PM-dimension graders
+│   ├── security-engineer.md       # Plan + infrastructure code + application code modes
+│   ├── finops-analyst.md          # Cost optimization
+│   ├── architect.md               # Service topology, scalability, HA
+│   ├── cloud-architect.md         # AWS Well-Architected (6 pillars)
+│   ├── sre.md                     # Operational readiness, day-2 ops
+│   ├── backend-engineer.md        # Backend application code
+│   ├── platform-engineer.md       # Kubernetes / Helm
+│   ├── agile-coach.md             # Sprint-readiness, story quality
+│   ├── dx-engineer.md             # Developer experience / plan clarity
+│   └── ...                        # PM-dimension graders (PM1–PM11), research-framer, etc.
 │
-├── commands/                      # Slash commands (/research, /plan, /review, etc.)
+├── commands/                      # Slash commands (/research, /prd, /plan, /review, etc.)
 ├── hooks/                         # Session start, post-edit
-├── adapters/clickup/              # ClickUp project management adapter (Model Context Protocol server)
+├── adapters/                      # PM + SAST adapters (Model Context Protocol servers)
+│   ├── clickup/  jira/  confluence/  notion/   # PM adapters
+│   ├── sast/                      # Semgrep / SonarQube findings
+│   └── _common/                   # Shared adapter helpers
 └── schemas/                       # JSON schemas for config and plan sidecar
 ```
 
 #### Examples
 
-See Shield in action with two example projects:
+See Shield in action with three example projects:
 
 - **[terraform-vpc](./shield/examples/terraform-vpc/)** — a Terraform VPC module walkthrough showing infrastructure review agents catching security, cost, and architecture issues
 - **[python-api](./shield/examples/python-api/)** — a FastAPI application walkthrough showing the general review pipeline
+- **[spring-boot-api](./shield/examples/spring-boot-api/)** — a Spring Boot service walkthrough exercising the backend review skills and specialist dispatch
 
 Each example includes a step-by-step README.
 
@@ -270,7 +290,7 @@ Releases are triggered by version bumps in `.claude-plugin/marketplace.json`. To
 
 1. Bump the `version` field for the plugin in `marketplace.json`
 2. Merge to `main`
-3. A GitHub Actions workflow detects the change, creates a git tag (for example, `v2.1.0`), and publishes a GitHub Release with auto-generated release notes
+3. A GitHub Actions workflow detects the change, creates a plugin-namespaced git tag (for example, `shield-v2.1.0`), and publishes a GitHub Release with auto-generated release notes
 
 ---
 
@@ -294,7 +314,7 @@ Releases are triggered by version bumps in `.claude-plugin/marketplace.json`. To
 ### Adding a Project Management Adapter to Shield
 
 1. Create `shield/adapters/<tool>/` with its own Model Context Protocol server
-2. Implement the standard tool interface: `pm_sync`, `pm_bulk_create`, `pm_bulk_update`, `pm_get_status`, `pm_get_stories_for_epic`, `pm_link_story_to_epic`, `pm_action_log`, `pm_get_capabilities`
+2. Implement the standard tool interface: `pm_sync_sidecar`, `pm_backfill_ids`, `pm_bulk_create`, `pm_bulk_update`, `pm_bulk_rename`, `pm_get_status`, `pm_link_story_to_epic`, `pm_action_log`, `pm_get_capabilities`
 3. Add `.mcp.json` and server code
 4. Set `"adapter": "<tool>"` in the project's `pm.json`
 

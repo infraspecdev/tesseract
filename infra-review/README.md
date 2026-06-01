@@ -1,5 +1,9 @@
 # infra-review
 
+> ⚠️ **Deprecated — use [Shield](../shield/) instead.** This plugin is no longer maintained as a standalone. Its capabilities now live in Shield's domain-specific review skills (`terraform/`, `atmos/`, `github-actions/`) and specialist reviewer agents.
+>
+> **Migrate:** `/plugin install shield@tesseract` then run `/shield init` in your project — Shield detects old `infra-review` config and offers to set up the new `.shield.json` marker.
+
 A Claude Code plugin for reviewing Terraform infrastructure in Atmos component repositories. Provides specialized review agents, skills, and slash commands covering security, architecture, operations, cost optimization, the AWS Well-Architected Framework, and terraform plan analysis.
 
 ## Requirements

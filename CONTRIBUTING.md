@@ -18,7 +18,6 @@ my-plugin/
 ```json
 {
   "name": "my-plugin",
-  "version": "1.0.0",
   "description": "Short description of what the plugin does.",
   "author": {
     "name": "Your Name"
@@ -28,6 +27,8 @@ my-plugin/
   "keywords": ["relevant", "keywords"]
 }
 ```
+
+> **Do not put a `version` field in `plugin.json`.** For relative-path plugins (all plugins in this repo) the version lives **only** in `marketplace.json`. A `version` in `plugin.json` silently wins and causes the marketplace version to be ignored. See [Versioning](#versioning).
 
 ### 3. Register in the marketplace
 
@@ -163,21 +164,33 @@ Steps Claude should follow when the user runs this command.
 
 ## Versioning
 
-When releasing changes to a plugin, bump the version in all three places:
+For relative-path plugins (all plugins in this repo), the version lives in **`.claude-plugin/marketplace.json` only** — never in `plugin.json` (the manifest version silently wins and causes the marketplace version to be ignored). When releasing changes to a plugin, bump:
 
-1. `<plugin>/.claude-plugin/plugin.json`
-2. `.claude-plugin/marketplace.json`
-3. `pyproject.toml` (if applicable)
+1. `.claude-plugin/marketplace.json` (the plugin's `version` field) — **required**
+2. `<plugin>/pyproject.toml` — **only if** the plugin ships a Python server (e.g. `clickup-sprint-planner`), bumped in the same commit
+
+Reference: [plugin marketplace version resolution](https://code.claude.com/docs/en/plugin-marketplaces#version-resolution-and-release-channels).
+
+## Eval coverage (required)
+
+Every new or changed plugin asset (skill, agent, command, MCP prompt, hook, or skill-orchestrator wiring) **must land in the same PR as at least one executable eval** that exercises the new behavior. In-conversation testing during development does not survive into the repo and cannot regression-test future changes.
+
+If a change genuinely has no eval-shaped surface (a doc typo, a rename, a comment), state that explicitly in the PR body. The default is "eval required." See `.claude/skills/updating-plugin-assets/SKILL.md` for the RED→GREEN procedure and framework choice.
 
 ## Testing
 
-Install your plugin locally before submitting:
+The repo's test suite runs via `make` (mirrors what pre-commit and CI run):
 
 ```bash
-claude --plugin-dir ./my-plugin
+make install   # ensure uv is present (test deps are pulled in per-run via uv run --with)
+make test      # run shield/tests/run-all.sh — schema, structure, hooks, evals, adapters
+make lint      # shellcheck shipped shell scripts
+make ci        # install + test + lint (what GitHub Actions runs)
 ```
 
-Verify that:
+Python runs through `uv` only — no system `pip`, no `requirements.txt`. Adapter contract tests live under `shield/adapters/*/tests/` (`uv run --extra test pytest`); evals live under `shield/evals/`.
+
+Before submitting, also smoke-test the plugin in Claude Code via the marketplace flow and verify that:
 - Skills trigger on the expected inputs
 - Commands are listed and work correctly
 - MCP tools respond as expected
