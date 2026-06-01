@@ -125,4 +125,3 @@ Two components touch new code: `OrdersController.refundOrder` (Spring MVC) and t
 - PRD: [`./prd.md`](./prd.md)
 - Q1 refund incident: see internal `postmortem-2026-02-14`
 - Payments refund API: see Payments service handbook
-
