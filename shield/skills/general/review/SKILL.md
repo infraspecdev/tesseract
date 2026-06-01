@@ -159,7 +159,20 @@ If an active story context exists (from the plan sidecar `{plan_json}` = `{outpu
 
 1. Apply selected fixes
 2. Write review summary to `{review_summary}` = `{review_dir}/summary.md` (exact path from Output Path section above)
-3. Render `{review_summary_html}` and each `{review_detailed_html}` under `{review_outputs_dir}` via `render-markdown.sh`
+3. Render `{review_summary_html}` and each `{review_detailed_html}` under `{review_outputs_dir}` via the shared shell. For each markdown source (`summary.md` and every `detailed/<agent>.md`):
+   ```bash
+   "$CLAUDE_PLUGIN_ROOT/scripts/render-markdown.sh" \
+     --md    {review_dir}/<source>.md \
+     --shell "$CLAUDE_PLUGIN_ROOT/templates/shell.html" \
+     --out   {review_outputs_dir}/<source>.html \
+     --assets-root "{output_dir}" \
+     --title "Review — {feature}"
+   ```
+   After every render in the batch completes, refresh the manifest-derived page assets once:
+   ```bash
+   uv run "$CLAUDE_PLUGIN_ROOT/scripts/write_shield_assets.py" --output-dir "{output_dir}"
+   ```
+   Do NOT write per-skill `*.shell.html` files — the shared shell at `$CLAUDE_PLUGIN_ROOT/templates/shell.html` owns DOCTYPE/head/nav/footer.
 4. After writing, update `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html`
 5. Write `changes.md` in `{review_dir}` documenting applied fixes (side-artifact, not in registry):
    ```markdown
