@@ -105,6 +105,12 @@ Omit the `### Qualitative` section entirely for fully deterministic evals; the r
 | 04 | walk-order | Terminologies deferral, §5 placement, story-coverage trigger |
 | 05 | end-to-end-render | TOC, sections, Type labels, mermaid in final prd.html |
 
+### Index — writing-style
+
+| # | Name | Measures |
+|---|---|---|
+| 01 | tighten-prose | Cuts filler/passive voice, preserves facts, prose-only scope |
+
 ---
 
 ## Snapshot evals (`run-evals.sh`)
