@@ -1,0 +1,5 @@
+{
+  "project": "spring-boot-api-example",
+  "domains": ["backend"],
+  "output_dir": "docs/shield"
+}
