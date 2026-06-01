@@ -74,4 +74,4 @@ Framework-agnostic: applies to Spring `@ControllerAdvice`, FastAPI exception han
 
 - For HTTP-level error response shape → `backend-api-design-review`
 - For underlying code structure → `backend-code-quality-review`
-- For Spring-specific exception handling (Plan 2) → `spring-web`
+- For Spring-specific exception handling → `spring-web`

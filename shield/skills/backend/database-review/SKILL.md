@@ -75,6 +75,6 @@ Framework-agnostic: applies to JPA/Hibernate, SQLAlchemy, ActiveRecord, Sequeliz
 
 ## Related Skills
 
-- For Spring-specific transactional boundary issues (Plan 2) → `spring-data`
+- For Spring-specific transactional boundary issues → `spring-data`
 - For deployment ordering of migrations → `backend-deployment-safety-review`
 - For underlying code structure → `backend-code-quality-review`

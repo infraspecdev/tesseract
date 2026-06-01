@@ -1,6 +1,6 @@
 ---
 name: milestone-coverage
-description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches product-manager and agile-coach in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
+description: Use when scaffolding milestones for a PRD or for a plan when no PRD milestones exist. Dispatches a PM-lens general-purpose agent and agile-coach in parallel, merges proposals, surfaces conflicts. Consumed by /prd (after stories in Section 8 for standard; after metrics in Section 7 for lean) and /plan (as fallback when PRD has no milestones).
 ---
 
 # Milestone Coverage

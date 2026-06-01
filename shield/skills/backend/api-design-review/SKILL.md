@@ -75,5 +75,5 @@ The skill is framework-agnostic — applies equally to Spring `@RestController`,
 
 - For underlying code structure → `backend-code-quality-review`
 - For test design around endpoints → `backend-testing-strategy-review`
-- For Spring `@RestController` specifics (Plan 2) → `spring-web`
+- For Spring `@RestController` specifics → `spring-web`
 - For error handling shape → `backend-error-observability-review`
