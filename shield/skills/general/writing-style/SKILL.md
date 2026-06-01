@@ -19,8 +19,11 @@ sections, outcomes, descriptions, rationale.
   `<!-- BEGIN rendered:* -->` and `<!-- END rendered:* -->` (TRD §10 from
   `render_trd_section.py`). Rewriting these triggers `validate_trd.py` drift
   errors (`milestone_drift`, `unbounded_markers`).
-- JSON sidecars, schema-bound field values, stable anchors, code blocks, and
-  literal command/output samples.
+- JSON sidecars, schema-bound field values, stable anchors, code blocks
+  (including inline JSON/YAML/config snippets in the doc itself), and literal
+  command/output samples. "Preserve" means **include verbatim in the
+  tightened output** — not "don't edit the source file." Dropping a code
+  block as part of cleanup is the same violation as rewriting it.
 
 If unsure whether a region is rendered, leave it untouched.
 
@@ -71,6 +74,7 @@ writing, never the meaning.
 |---|---|
 | Rewriting a `<!-- BEGIN rendered:* -->` block | Leave rendered/marker-wrapped content untouched |
 | Editing JSON sidecar values for "clarity" | Sidecars are structured data, not prose |
+| Dropping a code block or JSON snippet entirely as part of "cleanup" | Keep the block verbatim in the output — removing it is the same defect as rewriting it |
 | Dropping a fact while cutting words | Tighten phrasing, keep every number/name |
 | Over-compressing into cryptic shorthand | Concise ≠ terse-to-the-point-of-unclear |
 
