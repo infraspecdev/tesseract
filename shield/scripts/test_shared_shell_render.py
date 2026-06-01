@@ -24,10 +24,19 @@ def test_shared_shell_wires_assets_at_depth():
         )
         assert r.returncode == 0, r.stderr
         h = out.read_text()
+        # assets wired at correct depth
         assert 'href="../../shield.css"' in h
         assert 'src="../../manifest.js"' in h
         assert 'src="../../shield-nav.js"' in h
         assert 'data-shield-root="../../"' in h
         assert "<title>PRD — feat-a</title>" in h
-        assert 'id="docs-dropdown"' in h
-        assert "{{" not in h  # no unsubstituted placeholders
+        # redesigned nav markup
+        assert 'id="shield-crumb"' in h          # breadcrumb mount
+        assert 'id="docs-toggle"' in h           # Features button
+        assert ">Features" in h                  # button label (not "Docs")
+        assert 'id="docs-search"' in h           # panel search input
+        assert 'id="docs-results"' in h          # results mount
+        # old vague nav removed
+        assert "Docs ▾" not in h
+        assert 'id="docs-dropdown"' not in h
+        assert "{{" not in h                     # no unsubstituted placeholders
