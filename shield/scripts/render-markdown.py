@@ -29,6 +29,9 @@ from mdit_py_plugins.anchors import anchors_plugin
 
 BODY_PLACEHOLDER = "{{BODY}}"
 TOC_PLACEHOLDER = "{{TOC}}"
+ROOT_PLACEHOLDER = "{{ROOT}}"
+TITLE_PLACEHOLDER = "{{TITLE}}"
+META_PLACEHOLDER = "{{META}}"
 
 
 def _rewrite_relative(url: str, prefix: str) -> str:
@@ -175,6 +178,10 @@ def main() -> int:
     parser.add_argument("--shell", required=True, type=Path,
         help="HTML shell containing {{BODY}} (mandatory) and optional {{TOC}} placeholder")
     parser.add_argument("--out", required=True, type=Path, help="Output HTML file")
+    parser.add_argument("--assets-root", type=Path, default=None,
+        help="docs/shield root; used to compute {{ROOT}} relative prefix")
+    parser.add_argument("--title", default="", help="page <title> text")
+    parser.add_argument("--meta", default="", help="optional meta-banner HTML")
     args = parser.parse_args()
 
     if not args.md.is_file():
@@ -197,6 +204,15 @@ def main() -> int:
     ).replace(os.sep, "/")
     toc, body = render(args.md.read_text(), link_prefix=link_prefix)
     out = shell
+    root_prefix = ""
+    if args.assets_root is not None:
+        rel = os.path.relpath(
+            args.assets_root.resolve(), args.out.resolve().parent
+        ).replace(os.sep, "/")
+        root_prefix = "" if rel == "." else rel + "/"
+    out = out.replace(ROOT_PLACEHOLDER, root_prefix)
+    out = out.replace(TITLE_PLACEHOLDER, html.escape(args.title))
+    out = out.replace(META_PLACEHOLDER, args.meta)
     if TOC_PLACEHOLDER in out:
         out = out.replace(TOC_PLACEHOLDER, toc)
     out = out.replace(BODY_PLACEHOLDER, body)
