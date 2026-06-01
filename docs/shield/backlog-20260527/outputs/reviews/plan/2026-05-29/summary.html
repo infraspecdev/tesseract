@@ -16,10 +16,15 @@
 <body data-shield-root="../../../../../">
 <header class="shield-header">
   <a class="brand" href="../../../../../index.html">🛡 Shield</a>
-  <a class="nav-link" href="../../../../../index.html">Dashboard</a>
-  <div class="docs-menu">
-    <button class="docs-toggle" id="docs-toggle" aria-expanded="false">Docs ▾</button>
-    <div class="docs-dropdown" id="docs-dropdown"></div>
+  <span class="bar-sep">|</span>
+  <nav class="crumb" id="shield-crumb"></nav>
+  <span class="bar-spacer"></span>
+  <div class="feat-wrap">
+    <button class="feat-btn" id="docs-toggle" aria-expanded="false">Features ▾</button>
+    <div class="feat-panel" id="docs-panel">
+      <input class="docs-search" id="docs-search" placeholder="Search docs…  (⌘K)" autocomplete="off" />
+      <div id="docs-results"></div>
+    </div>
   </div>
 </header>
 <main class="shield-main">
