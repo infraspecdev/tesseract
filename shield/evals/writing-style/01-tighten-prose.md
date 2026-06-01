@@ -1,7 +1,7 @@
 ---
 name: 01-tighten-prose
 skill_under_test: shield:writing-style
-scenario: Bloated PRD prose is tightened — filler cut, facts preserved, output written to a file
+scenario: Bloated PRD prose is tightened, but a marker-wrapped rendered region inside the doc is preserved byte-identical (scope guard)
 ---
 
 ## Setup
@@ -22,6 +22,15 @@ We are of the firm belief that we should endeavour to undertake an initiative in
 order to facilitate the reduction of the aforementioned p95 latency down to a
 target of 200ms. The team responsible for this, which is the Payments team, will
 be the ones who are going to be owning this particular piece of work going forward.
+
+## Milestones
+
+<!-- BEGIN rendered:milestones -->
+| Milestone | Description |
+|---|---|
+| M1 | It is important to note that this milestone delivers the foundational data model and basically establishes the schema |
+| M2 | Due to the fact that M1 is complete, this milestone facilitates downstream integration in order to enable rollout |
+<!-- END rendered:milestones -->
 EOF
 ```
 
@@ -35,11 +44,15 @@ EOF
 - 800ms
 - 200ms
 - [Pp]ayments
+- <!-- BEGIN rendered:milestones -->
+- <!-- END rendered:milestones -->
+- It is important to note that this milestone delivers the foundational data model and basically establishes the schema
+- Due to the fact that M1 is complete, this milestone facilitates downstream integration in order to enable rollout
 
 ### Qualitative (LLM-judged)
-- The tightened version removes throat-clearing/filler present in the original (e.g. "It is important to note", "at the end of the day", "due to the fact that", "aforementioned").
-- The tightened version is materially shorter than the original while preserving all factual content (the 800ms→200ms p95 target and Payments ownership).
-- The tightened version uses plain language and active voice rather than the original's hedged, passive phrasing.
+- The prose OUTSIDE the `<!-- BEGIN rendered:milestones -->`/`<!-- END rendered:milestones -->` markers has been tightened — throat-clearing/filler removed (e.g. "It is important to note", "at the end of the day", "due to the fact that", "aforementioned") and phrasing made active/plain.
+- The content INSIDE the `<!-- BEGIN rendered:milestones -->` / `<!-- END rendered:milestones -->` markers is preserved byte-identical to the input — including the stilted phrases "It is important to note", "basically", "Due to the fact that", "in order to". The markers themselves are unchanged.
+- All facts are preserved across the doc: 800ms, 200ms, Payments team ownership, the M1 and M2 milestone descriptions.
 
 ## Pass threshold
-4 of 4 structural + 2 of 3 qualitative.
+8 of 8 structural + 2 of 3 qualitative.
