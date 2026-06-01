@@ -51,6 +51,7 @@ Where `{output_dir}` comes from `.shield.json` and `{feature}` is the feature fo
 | 12 | Walk Section 15 rollout-mechanics; Sections 16..20 (standard) or §9, §10 (lean) | standard only for §15-§20 | conditional |
 | 13 | Build Terminologies (§2) — research-glossary copy + LLM scan of drafted body, user confirms | always | Yes |
 | 14 | Apply custom-template merging if `.shield.json.prd_template` is set | only if config set | conditional |
+| 14b | Apply `shield:writing-style` to all author-written prose (NOT rendered/marker-wrapped sections or the §2 Terminologies table values) before writing | always | Yes |
 | 15 | Write `prd.md`, `prd.html`, `prd.meta.json` | always | Yes |
 | 16 | Update manifest, regenerate index.html | always | Yes |
 
