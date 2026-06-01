@@ -50,6 +50,10 @@ job at milestone close (M2 plan, step 5h).
 4. On any failure between steps 2 and 3 (write error, signal interrupt),
    remove `<target>.tmp` and surface the error. **Never leave a partial
    `<target>` behind.**
+5. Before the write, apply `shield:writing-style` to author-written prose
+   sections (overview, rationale, narrative). Do NOT alter the provenance
+   stamp, the §14 Changelog rows, header metadata, code blocks, or
+   `n/a — <reason>` escapes.
 
 ## Provenance stamp
 

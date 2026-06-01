@@ -105,6 +105,17 @@ Omit the `### Qualitative` section entirely for fully deterministic evals; the r
 | 04 | walk-order | Terminologies deferral, §5 placement, story-coverage trigger |
 | 05 | end-to-end-render | TOC, sections, Type labels, mermaid in final prd.html |
 
+### Index — writing-style
+
+| # | Name | Measures |
+|---|---|---|
+| 01 | tighten-prose | Cuts filler/passive voice, preserves facts, marker-wrapped scope guard |
+| 02 | json-sidecar-scope | Tightens prose but leaves embedded JSON code blocks byte-identical |
+| 03 | bluf-restructure | Moves a buried conclusion to the front of the paragraph |
+| 04 | preserve-tight-prose | Already-tight prose is not over-compressed into cryptic shorthand |
+| 05 | concrete-not-vague | Replaces vague claims ("improved significantly") with specific numbers/names from the doc |
+| 06 | lld-scope-guards | Tightens LLD §1 prose; preserves provenance stamp, §14 Changelog rows, and `n/a — <reason>` escapes |
+
 ---
 
 ## Snapshot evals (`run-evals.sh`)

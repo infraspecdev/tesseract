@@ -51,6 +51,7 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 6 | Parallel research agents (3) | Phase 2 | if Phase 2 accepted | Conditional |
 | 7 | Synthesize findings | Phase 2 | if Phase 2 accepted | Conditional |
 | 8 | PM review | Phase 2 | if Phase 2 accepted | Conditional |
+| 8b | Apply `shield:writing-style` to the synthesized findings prose (NOT citation blocks, quoted source text, or the raw transcript) | Both | always | Yes |
 | 9 | Write `{research}` (findings) + `.session-transcript.md` (side-artifact) | Both | always | Yes |
 
 ## Workflow

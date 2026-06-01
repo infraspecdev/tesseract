@@ -39,6 +39,7 @@ tesseract/
 - **Agents** are markdown files in `agents/` — they define specialized subagents.
 - **Hooks** use `hooks.json` to register shell scripts for Claude Code lifecycle events.
 - **MCP servers** are configured in `.mcp.json` at the plugin root.
+- **Doc-authoring skills** (any skill that writes a doc to `docs/shield/`) MUST apply the `shield:writing-style` skill to their author-written prose before writing — see `shield/skills/general/writing-style/SKILL.md`. This keeps generated docs simple, clear, and concise. It applies to prose only, never to rendered/marker-wrapped sections or JSON sidecars.
 
 ## Working with the Codebase
 

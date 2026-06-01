@@ -19,6 +19,26 @@ fi
 EVAL_TIMEOUT="${EVAL_TIMEOUT:-300}"
 EVAL_JUDGE_TIMEOUT="${EVAL_JUDGE_TIMEOUT:-90}"
 
+# Portable timeout wrapper. GNU `timeout` ships on Linux; macOS has it only as
+# `gtimeout` (coreutils). If neither is present, run the command directly with
+# no timeout guard (and warn once) so the runner still works.
+_TIMEOUT_BIN=""
+if command -v timeout >/dev/null 2>&1; then
+  _TIMEOUT_BIN="timeout"
+elif command -v gtimeout >/dev/null 2>&1; then
+  _TIMEOUT_BIN="gtimeout"
+else
+  echo "run-eval: no \`timeout\`/\`gtimeout\` found — dispatches run WITHOUT a timeout guard (install coreutils for one)" >&2
+fi
+_eval_timeout() {
+  local secs="$1"; shift
+  if [[ -n "$_TIMEOUT_BIN" ]]; then
+    "$_TIMEOUT_BIN" --kill-after=10 "$secs" "$@"
+  else
+    "$@"
+  fi
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:?Usage: run-eval.sh <folder-or-eval-path>}"
 
@@ -51,7 +71,7 @@ run_one() {
   # the agent resolves relative paths (docs/shield/...) there, not in the repo.
   # Wrap in `timeout` so a hung dispatch can't block the rest of the batch.
   local dispatch_rc=0
-  timeout --kill-after=10 "$EVAL_TIMEOUT" \
+  _eval_timeout "$EVAL_TIMEOUT" \
     claude --print --dangerously-skip-permissions --add-dir "$workdir" \
     --append-system-prompt "Your working directory for this task is $workdir. Resolve ALL relative file paths — both reads and writes — against $workdir. The .shield.json and all project files (docs/, research transcripts, etc.) are under $workdir. Always use absolute paths prefixed with $workdir when reading or writing any file." \
     <<<"$prompt" >"$workdir/output.txt" 2>"$workdir/output.err" || dispatch_rc=$?
@@ -157,7 +177,7 @@ $(head -200 "$wf" 2>/dev/null)
       # from the `local` assignment (which would otherwise mask it via $?=0).
       local verdict_out
       local judge_rc=0
-      verdict_out=$(timeout --kill-after=10 "$EVAL_JUDGE_TIMEOUT" \
+      verdict_out=$(_eval_timeout "$EVAL_JUDGE_TIMEOUT" \
         claude --print --dangerously-skip-permissions <<EOF
 You are a strict eval judge. Given the model output and any written files below,
 evaluate whether the criterion is met. Answer ONLY "PASS" or "FAIL".
