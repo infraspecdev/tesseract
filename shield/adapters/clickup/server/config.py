@@ -32,6 +32,10 @@ class ClickUpConfig(BaseModel):
     lists: ListsConfig
     relationship_field: RelationshipFieldConfig
     custom_fields: dict = Field(default_factory=dict)
+    # Resolved token, carried in-process so we never write a secret into the
+    # global environment. Excluded from serialization and repr. When unset
+    # (e.g. legacy file-based config), get_api_token() falls back to the env var.
+    api_token: str | None = Field(default=None, repr=False, exclude=True)
 
 
 class TeamMember(BaseModel):
@@ -97,8 +101,11 @@ def load_shield_config() -> SprintPlannerConfig | None:
     creds_path = shield_home / "credentials.json"
     api_token = None
     if creds_path.exists():
-        with open(creds_path) as f:
-            creds = json.load(f)
+        try:
+            with open(creds_path) as f:
+                creds = json.load(f)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Malformed credentials file at {creds_path}: {exc}") from exc
         adapter_name = pm_config.get("adapter", "clickup")
         api_token = creds.get(adapter_name, {}).get("api_token")
 
@@ -111,8 +118,9 @@ def load_shield_config() -> SprintPlannerConfig | None:
             f"No API token found. Add it to {creds_path} or set CLICKUP_API_TOKEN env var."
         )
 
-    # Set the token in env so get_api_token() can find it
-    os.environ["CLICKUP_API_TOKEN"] = api_token
+    # Carry the token on the config object (see ClickUpConfig.api_token) rather
+    # than writing it into os.environ — a process-global secret leaks into
+    # subprocess env, logs, and crash dumps.
 
     # Build SprintPlannerConfig from Shield config sources
     naming = pm_config.get("naming", {})
@@ -124,6 +132,7 @@ def load_shield_config() -> SprintPlannerConfig | None:
     return SprintPlannerConfig(
         clickup=ClickUpConfig(
             api_token_env="CLICKUP_API_TOKEN",
+            api_token=api_token,
             workspace_id=pm_config.get("workspace_id", "auto"),
             space=SpaceConfig(
                 name=space_cfg.get("name", ""),
@@ -169,7 +178,14 @@ def load_config(path: str | Path | None = None) -> SprintPlannerConfig:
 
 
 def get_api_token(config: SprintPlannerConfig) -> str:
-    """Read ClickUp API token from the env var named in config."""
+    """Return the ClickUp API token.
+
+    Prefers the token resolved at load time and carried on the config
+    (Shield-native mode); falls back to the env var named in config for the
+    legacy file-based path.
+    """
+    if config.clickup.api_token:
+        return config.clickup.api_token
     env_var = config.clickup.api_token_env
     token = os.environ.get(env_var)
     if not token:

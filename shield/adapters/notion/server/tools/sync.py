@@ -39,6 +39,7 @@ def _patch_page(
     session: requests.Session,
     base_url: str,
     page_id: str,
+    ref: DesignRef,
     new_url: str,
     new_label: str,
     new_key: str,
@@ -61,7 +62,7 @@ def _patch_page(
         resp = session.patch(f"{base_url}/v1/pages/{page_id}", json=payload, timeout=15)
     except requests.RequestException as exc:
         return False, ForwardError(
-            ref=None,  # type: ignore[arg-type]
+            ref=ref,
             error_class=type(exc).__name__,
             message=str(exc),
             http_status=None,
@@ -69,7 +70,7 @@ def _patch_page(
     if resp.status_code == 200:
         return True, None
     return False, ForwardError(
-        ref=None,  # type: ignore[arg-type]
+        ref=ref,
         error_class="HTTPError",
         message=resp.text[:200],
         http_status=resp.status_code,
@@ -135,6 +136,7 @@ def forward_design_refs(
             sess,
             base_url,
             task_id,
+            ref,
             ref.anchor_url,
             ref.label,
             ref.idempotency_key,
@@ -142,14 +144,7 @@ def forward_design_refs(
             existing_keys=existing_keys,
         )
         if not ok:
-            # Re-attach the ref to the error before we surface it (the helper
-            # doesn't have it in scope when constructing the error).
-            err = ForwardError(
-                ref=ref,
-                error_class=err.error_class if err else "HTTPError",
-                message=err.message if err else "unknown",
-                http_status=err.http_status if err else None,
-            )
+            err = err or ForwardError(ref=ref, error_class="HTTPError", message="unknown")
             result.errors.append(err)
             logger.warning(
                 "forward_design_ref_failed",
