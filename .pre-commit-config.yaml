@@ -33,9 +33,9 @@ repos:
       # ── 4. render-markdown pytest (only when relevant files change) ───────
       - id: render-markdown-tests
         name: render-markdown pytest
-        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest --with "markdown-it-py>=3,<4" --with "mdit-py-plugins>=0.4,<1" pytest test_render_markdown_toc.py'
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest --with "markdown-it-py>=3,<4" --with "mdit-py-plugins>=0.4,<1" pytest test_render_markdown_toc.py test_render_markdown_root.py test_shared_shell_render.py test_write_shield_assets.py test_migrate_outputs_manifest.py'
         language: system
-        files: '^shield/scripts/(render-markdown\.py|test_render_markdown_toc\.py)$'
+        files: '^shield/(scripts/(render-markdown\.py|write_shield_assets\.py|migrate_outputs\.py|test_.*\.py)|templates/.*)$'
         pass_filenames: false
 
       # ── 5. devcontainer Feature ref parse check ──────────────────────────
