@@ -1,31 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Plan Review — /plan TRD refactor</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
-h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
-h3 { color: #5f6368; margin-top: 22px; }
-h4 { color: #5f6368; margin-top: 18px; font-size: 1.05em; }
-table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
-th { background-color: #f1f3f4; font-weight: bold; }
-tr:nth-child(even) { background-color: #f8f9fa; }
-code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', Menlo, 'Courier New', monospace; font-size: 13px; }
-pre { background-color: #f1f3f4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: 'SF Mono', Menlo, 'Courier New', monospace; white-space: pre; font-size: 12px; line-height: 1.4; }
-pre code { background: transparent; padding: 0; }
-blockquote { border-left: 4px solid #1a73e8; margin: 15px 0; padding: 10px 20px; background-color: #e8f0fe; }
-ul, ol { margin: 10px 0; padding-left: 24px; }
-li { margin: 4px 0; }
-hr { border: none; border-top: 1px solid #dadce0; margin: 24px 0; }
-a { color: #1a73e8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-strong { font-weight: 600; }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Review — plan-trd-refactor-20260524</title>
+<link rel="stylesheet" href="../../../../../shield.css" />
+<script defer src="../../../../../manifest.js"></script>
+<script defer src="../../../../../shield-nav.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  document.addEventListener("DOMContentLoaded", () => mermaid.run({ querySelector: "pre.mermaid" }));
+</script>
 </head>
-<body>
+<body data-shield-root="../../../../../">
+<header class="shield-header">
+  <a class="brand" href="../../../../../index.html">🛡 Shield</a>
+  <a class="nav-link" href="../../../../../index.html">Dashboard</a>
+  <div class="docs-menu">
+    <button class="docs-toggle" id="docs-toggle" aria-expanded="false">Docs ▾</button>
+    <div class="docs-dropdown" id="docs-dropdown"></div>
+  </div>
+</header>
+<main class="shield-main">
+
+<nav class="toc">
+<div class="toc-title">Contents</div>
+<ul>
+<li><a href="#verdict">Verdict</a>
+</li>
+<li><a href="#score-summary">Score Summary</a>
+</li>
+<li><a href="#p0-recommendations-block-implementation-start">P0 Recommendations (block implementation start)</a>
+</li>
+<li><a href="#p1-recommendations-should-land-in-implementation-milestone">P1 Recommendations (should land in implementation milestone)</a>
+</li>
+<li><a href="#p2-recommendations-nice-to-have">P2 Recommendations (nice to have)</a>
+</li>
+<li><a href="#cross-reviewer-convergence">Cross-reviewer convergence</a>
+</li>
+<li><a href="#detailed-agent-findings">Detailed Agent Findings</a>
+</li>
+<li><a href="#next-steps">Next steps</a>
+</li>
+</ul>
+</nav>
 <h1 id="plan-review-plan-trd-refactor">Plan Review: /plan TRD refactor</h1>
 <p><strong>Date:</strong> 2026-05-25
 <strong>Plan:</strong> <code>docs/shield/plan-trd-refactor-20260524/plan.json</code> (+ plan.md, plan-architecture.md)
@@ -367,19 +386,21 @@ strong { font-weight: 600; }
 </table>
 <h2 id="detailed-agent-findings">Detailed Agent Findings</h2>
 <ul>
-<li><a href="detailed/agile-coach.md">Agile Coach</a> — A-, sprint-readiness focus</li>
-<li><a href="detailed/dx-engineer.md">DX Engineer</a> — B+, handoff/specification gaps</li>
-<li><a href="detailed/architect.md">Architect</a> — B, topology + edge-case completeness</li>
-<li><a href="detailed/backend-engineer.md">Backend Engineer</a> — C+, adapter contract + repo-grounded findings</li>
-<li><a href="detailed/sre.md">SRE</a> — C, runtime safety net</li>
+<li><a href="../../../../reviews/plan/2026-05-25/detailed/agile-coach.md">Agile Coach</a> — A-, sprint-readiness focus</li>
+<li><a href="../../../../reviews/plan/2026-05-25/detailed/dx-engineer.md">DX Engineer</a> — B+, handoff/specification gaps</li>
+<li><a href="../../../../reviews/plan/2026-05-25/detailed/architect.md">Architect</a> — B, topology + edge-case completeness</li>
+<li><a href="../../../../reviews/plan/2026-05-25/detailed/backend-engineer.md">Backend Engineer</a> — C+, adapter contract + repo-grounded findings</li>
+<li><a href="../../../../reviews/plan/2026-05-25/detailed/sre.md">SRE</a> — C, runtime safety net</li>
 </ul>
 <h2 id="next-steps">Next steps</h2>
 <ol>
-<li>Apply the <strong>enhanced plan</strong> (<a href="enhanced-plan.md">enhanced-plan.md</a>) which carries the P0 fixes and most P1 recommendations</li>
+<li>Apply the <strong>enhanced plan</strong> (<a href="../../../../reviews/plan/2026-05-25/enhanced-plan.md">enhanced-plan.md</a>) which carries the P0 fixes and most P1 recommendations</li>
 <li>After applying, re-run <code>/plan-review</code> to confirm composite moves above 3.0 (target: B+/Ready-clean)</li>
 <li>Then <code>/pm-sync</code> to push the updated stories</li>
 <li>Then <code>/implement</code> starting with EPIC-3-S1 (positive eval fixtures) per the RED → GREEN trail</li>
 </ol>
 
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
 </body>
 </html>

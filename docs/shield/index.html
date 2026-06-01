@@ -1,98 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>tesseract — Shield Overview</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 24px; line-height: 1.6; color: #202124; }
-h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 32px; }
-h3 { color: #5f6368; margin-top: 22px; }
-table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-th, td { border: 1px solid #dadce0; padding: 10px; text-align: left; vertical-align: top; }
-th { background-color: #f1f3f4; font-weight: bold; }
-tr:nth-child(even) { background-color: #f8f9fa; }
-a { color: #1a73e8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.feature { margin: 18px 0; padding: 16px 18px; border: 1px solid #dadce0; border-radius: 8px; background: #fff; }
-.feature h3 { margin: 0 0 10px; }
-.feature p.updated { margin: 0 0 8px; color: #5f6368; font-size: 13px; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px; }
-.badge-research { background-color: #e8f0fe; color: #1a73e8; }
-.badge-prd { background-color: #fce4ec; color: #c2185b; }
-.badge-plan { background-color: #e6f4ea; color: #1e8e3e; }
-.badge-review { background-color: #fef7e0; color: #e65100; }
-ul.artifacts { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
-ul.artifacts li { margin: 3px 0; }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shield Dashboard</title>
+<link rel="stylesheet" href="shield.css" />
+<script defer src="manifest.js"></script>
+<script defer src="shield-nav.js"></script>
+<script defer src="shield-dashboard.js"></script>
 </head>
-<body>
-
-<h1>tesseract — Shield Overview</h1>
-
-<p>Generated from <a href="manifest.json">manifest.json</a> · 2026-05-29</p>
-
-<h2>Features</h2>
-
-<div class="feature">
-  <h3>backlog-20260527</h3>
-  <p class="updated">Updated: 2026-05-29</p>
-  <p>
-    <span class="badge badge-prd">PRD</span>
-    <span class="badge badge-plan">Plan</span>
-    <span class="badge badge-plan">TRD</span>
-    <span class="badge badge-review">PRD Review (B / Ready)</span>
-    <span class="badge badge-review">Plan Review (B+ / Ready · 3 P0)</span>
-  </p>
-  <ul class="artifacts">
-    <li><a href="backlog-20260527/prd.md">PRD (Markdown, lean)</a></li>
-    <li><a href="backlog-20260527/trd.md">TRD (Markdown, 14-section)</a> · <a href="backlog-20260527/outputs/trd.html">HTML</a></li>
-    <li><a href="backlog-20260527/plan.md">Detailed Plan (Markdown)</a> · <a href="backlog-20260527/outputs/plan.html">HTML</a></li>
-    <li><a href="backlog-20260527/plan.json">Plan Sidecar (JSON)</a></li>
-    <li>LLD drafts: <a href="backlog-20260527/lld-backlog-store.md">backlog-store</a> · <a href="backlog-20260527/lld-epic-suggester.md">epic-suggester</a> · <a href="backlog-20260527/lld-reconciler.md">reconciler</a></li>
-    <li><a href="backlog-20260527/reviews/plan/2026-05-29/summary.md">Plan Review 2026-05-29 — Summary (Markdown)</a> · <a href="backlog-20260527/outputs/reviews/plan/2026-05-29/summary.html">HTML</a> (B+ / Ready, 3 P0)</li>
-    <li><a href="backlog-20260527/reviews/plan/2026-05-29/enhanced-plan.md">Enhanced Plan 2026-05-29 (Markdown)</a> · <a href="backlog-20260527/outputs/reviews/plan/2026-05-29/enhanced-plan.html">HTML</a></li>
-    <li><a href="backlog-20260527/reviews/prd/2026-05-27_2/summary.md">PRD Review 2026-05-27 (run 2) — Summary (Markdown)</a> · <a href="backlog-20260527/outputs/reviews/prd/2026-05-27_2/summary.html">HTML</a></li>
-    <li><a href="backlog-20260527/reviews/plan/2026-05-27/summary.md">Plan Review 2026-05-27 — Summary (Markdown)</a> · <a href="backlog-20260527/outputs/reviews/plan/2026-05-27/summary.html">HTML</a></li>
-    <li><a href="backlog-20260527/reviews/plan/2026-05-27/enhanced-plan.md">Enhanced Plan (Markdown)</a> · <a href="backlog-20260527/outputs/reviews/plan/2026-05-27/enhanced-plan.html">HTML</a></li>
-  </ul>
-</div>
-
-<div class="feature">
-  <h3>plan-trd-refactor-20260524</h3>
-  <p class="updated">Updated: 2026-05-25</p>
-  <p>
-    <span class="badge badge-research">Research</span>
-    <span class="badge badge-plan">Plan</span>
-    <span class="badge badge-review">Plan Review (B / Ready)</span>
-  </p>
-  <ul class="artifacts">
-    <li><a href="plan-trd-refactor-20260524/research.md">Research Document</a></li>
-    <li><a href="plan-trd-refactor-20260524/plan-architecture.md">Plan Architecture (Markdown)</a> · <a href="plan-trd-refactor-20260524/outputs/plan-architecture.html">HTML</a></li>
-    <li><a href="plan-trd-refactor-20260524/plan.md">Detailed Plan (Markdown)</a> · <a href="plan-trd-refactor-20260524/outputs/plan.html">HTML</a></li>
-    <li><a href="plan-trd-refactor-20260524/plan.json">Plan Sidecar (JSON)</a></li>
-    <li><a href="plan-trd-refactor-20260524/reviews/plan/2026-05-25/summary.md">Plan Review 2026-05-25 — Summary (Markdown)</a> · <a href="plan-trd-refactor-20260524/outputs/reviews/plan/2026-05-25/summary.html">HTML</a></li>
-    <li><a href="plan-trd-refactor-20260524/reviews/plan/2026-05-25/enhanced-plan.md">Enhanced Plan (Markdown)</a> · <a href="plan-trd-refactor-20260524/outputs/reviews/plan/2026-05-25/enhanced-plan.html">HTML</a></li>
-  </ul>
-</div>
-
-<div class="feature">
-  <h3>pm-restructure-v0-20260521</h3>
-  <p class="updated">Updated: 2026-05-22</p>
-  <p><span class="badge badge-plan">Plan</span></p>
-  <ul class="artifacts">
-    <li><a href="pm-restructure-v0-20260521/plan.json">Plan Sidecar (JSON)</a></li>
-  </ul>
-</div>
-
-<div class="feature">
-  <h3>devcontainer-implement-20260518</h3>
-  <p class="updated">Updated: 2026-05-22</p>
-  <p><span class="badge badge-research">Research</span></p>
-  <ul class="artifacts">
-    <li>Research artifacts under <code>devcontainer-implement-20260518/</code></li>
-  </ul>
-</div>
-
+<body data-shield-root="">
+<header class="shield-header">
+  <a class="brand" href="index.html">🛡 Shield</a>
+  <a class="nav-link" href="index.html">Dashboard</a>
+  <div class="docs-menu">
+    <button class="docs-toggle" id="docs-toggle" aria-expanded="false">Docs ▾</button>
+    <div class="docs-dropdown" id="docs-dropdown"></div>
+  </div>
+</header>
+<main class="shield-main">
+  <h1>Shield Dashboard</h1>
+  <p class="subtitle">Plan &amp; review artifacts across the project.</p>
+  <div id="shield-dashboard"></div>
+</main>
+<footer class="shield-footer">Generated by Shield</footer>
 </body>
 </html>

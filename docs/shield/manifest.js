@@ -1,4 +1,4 @@
-{
+window.SHIELD_MANIFEST = {
   "schema_version": "2.1",
   "features": [
     {
@@ -158,4 +158,4 @@
       "updated": "2026-06-01T11:49:28+00:00"
     }
   ]
-}
+};

@@ -4,27 +4,47 @@
 
 All Shield skills MUST update `{manifest}` = `{output_dir}/manifest.json` and regenerate `{output_dir}/index.html` (the `global_index_html` registry entry) after writing any output.
 
-## manifest.json (v2)
+## manifest.json (v2.1)
 
 Lives at `{output_dir}/manifest.json`. This is the source of truth for which features exist and which artifacts are present per feature. Built deterministically by `shield/scripts/migrate_outputs.py:build_manifest()`; any agent regeneration MUST produce the same shape.
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": "2.1",
   "features": [
     {
       "name": "vpc-module-20260319",
       "artifacts": {
         "research":     true,
         "prd":          true,
+        "trd":          true,
         "plan_json":    true,
         "plan_md":      true,
         "plan_arch_md": true
       },
       "reviews": {
-        "prd":  { "latest": "2026-03-19",      "count": 1 },
-        "plan": { "latest": "2026-03-21_2",    "count": 2 },
-        "code": { "latest": "2026-03-22",      "count": 1 }
+        "prd":  {
+          "latest": "2026-03-19",
+          "count": 1,
+          "entries": [
+            {"date": "2026-03-19", "path": "vpc-module-20260319/outputs/reviews/prd/2026-03-19/summary.html"}
+          ]
+        },
+        "plan": {
+          "latest": "2026-03-21_2",
+          "count": 2,
+          "entries": [
+            {"date": "2026-03-21",   "path": "vpc-module-20260319/outputs/reviews/plan/2026-03-21/summary.html"},
+            {"date": "2026-03-21_2", "path": "vpc-module-20260319/outputs/reviews/plan/2026-03-21_2/summary.html"}
+          ]
+        },
+        "code": {
+          "latest": "2026-03-22",
+          "count": 1,
+          "entries": [
+            {"date": "2026-03-22", "path": "vpc-module-20260319/outputs/reviews/code/2026-03-22/summary.html"}
+          ]
+        }
       },
       "updated": "2026-03-22T14:30:00+00:00"
     }
@@ -34,11 +54,12 @@ Lives at `{output_dir}/manifest.json`. This is the source of truth for which fea
 
 ### Field semantics
 
-- **`schema_version`** — always `2` post-cutover. Tooling that sees `1` should treat the manifest as legacy and either run `/shield migrate` or rebuild via `migrate_outputs.py`.
+- **`schema_version`** — string `"2.1"` post-cutover. Tooling that sees `1`, `2`, or any unrecognized value should treat the manifest as legacy and rebuild via `migrate_outputs.py`.
 - **`features[].name`** — the feature folder name (`{kebab-case-name}-YYYYMMDD`).
 - **`features[].artifacts`** — booleans for each per-feature source file:
   - `research` → `{research}` = `{feature_dir}/research.md`
   - `prd` → `{prd}` = `{feature_dir}/prd.md`
+  - `trd` → `{trd}` = `{feature_dir}/trd.md`
   - `plan_json` → `{plan_json}` = `{feature_dir}/plan.json`
   - `plan_md` → `{plan_md}` = `{feature_dir}/plan.md`
   - `plan_arch_md` → `{plan_arch_md}` = `{feature_dir}/plan-architecture.md`
@@ -46,8 +67,23 @@ Lives at `{output_dir}/manifest.json`. This is the source of truth for which fea
 - **`features[].reviews`** — one entry per review type (`prd`, `plan`, `code`). Each:
   - `latest`: the highest-sorted date-keyed run folder name (e.g. `2026-03-21_2`)
   - `count`: number of run folders under `{feature_dir}/reviews/<type>/`
-  - If no runs exist, the entry is `{ "count": 0 }` (no `latest` key).
+  - `entries`: list of `{date, path}` dicts, one per run folder, where `path` is the rendered summary at `{feature}/outputs/reviews/{type}/{date}/summary.html`. Entries are sorted ascending by `date`.
+  - If no runs exist, the entry is `{ "count": 0, "entries": [] }` (no `latest` key).
 - **`features[].updated`** — ISO 8601 UTC timestamp of the last manifest rebuild.
+
+### Page assets
+
+Every Shield page (dashboard, rendered PRD/TRD/Plan/Plan-Architecture, review summaries, detailed-agent reports) is rendered into the shared HTML shell at `shield/templates/shell.html`. The shell provides a single nav, a single stylesheet link, and a single body container; per-page content is substituted into `{{TITLE}}`, `{{META}}`, and `{{BODY}}` by `shield/scripts/render-markdown.py`.
+
+`shield/scripts/write_shield_assets.py` writes the runtime bundle into `{output_dir}/`:
+
+- `manifest.js` — a JS-loadable mirror of `manifest.json`, assigned to `window.SHIELD_MANIFEST`. This avoids `fetch()` and works under `file://`.
+- `shield.css` — single stylesheet for all pages.
+- `shield-nav.js` — builds the nested Docs menu client-side from `window.SHIELD_MANIFEST`.
+- `shield-dashboard.js` — renders the dashboard grid client-side from `window.SHIELD_MANIFEST`.
+- `index.html` — the dashboard shell (loads `manifest.js` + `shield-dashboard.js`).
+
+Nav and dashboard are entirely client-side — there are no fetch calls, so the docs tree opens cleanly from `file://`.
 
 Numbered-run subfolders (`plan/{N}-{slug}/`, `plan-review/{N}-{slug}/`, etc.) are gone. Per-run history for source artifacts is in git, not the manifest. Per-run history for reviews is the file-system listing under `reviews/<type>/`.
 
