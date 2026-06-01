@@ -25,14 +25,17 @@ jobs:
 
             if [ "$version" != "$prev_version" ]; then
               echo "Version changed for $name: $prev_version -> $version"
-              TAG="v${version}"
+              # Namespace tags per plugin so independently-versioned plugins that
+              # land on the same number (e.g. two plugins at 1.4.0) don't collide.
+              TAG="${name}-v${version}"
 
               if git rev-parse "$TAG" >/dev/null 2>&1; then
                 echo "Tag $TAG already exists, skipping"
                 continue
               fi
 
-              PREV_TAG=$(git tag -l "v*" --sort=-v:refname | head -1)
+              # Release notes scoped to this plugin's previous tag.
+              PREV_TAG=$(git tag -l "${name}-v*" --sort=-v:refname | head -1)
               if [ -n "$PREV_TAG" ]; then
                 NOTES=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD")
               else
@@ -43,23 +46,26 @@ jobs:
               git push origin "$TAG"
 
               RELEASE_URL=$(gh release create "$TAG" \
-                --title "v${version}" \
+                --title "${name} v${version}" \
                 --notes "$NOTES" \
                 --target main)
 
+              # Notification is best-effort: a missing webhook must not fail the
+              # job after the tag + release are already published.
               if [ -z "$GCHAT_WEBHOOK_URL" ]; then
-                echo "GCHAT_WEBHOOK_URL secret is not set" >&2
-                exit 1
+                echo "::warning::GCHAT_WEBHOOK_URL not set — skipping release notification for $TAG"
+                continue
               fi
 
               PAYLOAD=$(jq -n \
-                --arg text "🚀 *${GITHUB_REPOSITORY}* — *v${version}* released by ${GITHUB_ACTOR}"$'\n\n'"${NOTES}"$'\n\n'"${RELEASE_URL}" \
+                --arg text "🚀 *${GITHUB_REPOSITORY}* — *${name} v${version}* released by ${GITHUB_ACTOR}"$'\n\n'"${NOTES}"$'\n\n'"${RELEASE_URL}" \
                 '{text: $text}')
 
               curl -sS --fail-with-body -X POST \
                 -H "Content-Type: application/json" \
                 -d "$PAYLOAD" \
-                "$GCHAT_WEBHOOK_URL"
+                "$GCHAT_WEBHOOK_URL" \
+                || echo "::warning::Release notification failed for $TAG (release already published)"
             fi
           done
         env:

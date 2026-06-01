@@ -24,14 +24,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        adapter: [_common, clickup, jira, confluence, notion]
+        adapter: [_common, clickup, jira, confluence, notion, sast]
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
       - name: Run contract + idempotency tests
+        # No explicit path: each adapter's pyproject `testpaths` governs
+        # discovery (sast spreads tests across tests/, semgrep/tests/,
+        # sonarqube/tests/; the rest default to tests/).
         run: |
           cd shield/adapters/${{ matrix.adapter }}
-          uv run --extra test pytest tests/ -v
+          uv run --extra test pytest -v
 
   mcp-server-tests:
     runs-on: ubuntu-latest

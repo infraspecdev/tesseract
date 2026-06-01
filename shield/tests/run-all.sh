@@ -10,6 +10,10 @@ REPO_ROOT="$(cd "$SHIELD_ROOT/.." && pwd)"
 PASS=0
 FAIL=0
 
+# Python with third-party deps (jsonschema, pyyaml) provisioned on the fly by
+# uv — no system pip, per CLAUDE.md. Stdlib-only snippets below stay bare python3.
+PY_DEPS="uv run --with jsonschema --with pyyaml python3"
+
 run_test() {
   local name="$1"
   shift
@@ -49,13 +53,13 @@ echo ""
 
 # --- 2. Config Examples vs Schemas ---
 echo "2. Config Examples vs Schemas"
-run_test_verbose "shield.example.json validates" python3 -c "
+run_test_verbose "shield.example.json validates" $PY_DEPS -c "
 import json, jsonschema
 schema = json.load(open('$SHIELD_ROOT/schemas/shield.schema.json'))
 example = json.load(open('$SHIELD_ROOT/config-examples/shield.example.json'))
 jsonschema.validate(example, schema)
 "
-run_test_verbose "pm-clickup.example.json validates" python3 -c "
+run_test_verbose "pm-clickup.example.json validates" $PY_DEPS -c "
 import json, jsonschema
 schema = json.load(open('$SHIELD_ROOT/schemas/pm.schema.json'))
 example = json.load(open('$SHIELD_ROOT/config-examples/pm-clickup.example.json'))
@@ -177,7 +181,7 @@ echo ""
 
 # --- 6. Eval Criteria ---
 echo "6. Eval Criteria"
-run_test_verbose "eval criteria YAML valid" python3 -c "
+run_test_verbose "eval criteria YAML valid" $PY_DEPS -c "
 import yaml, glob
 for f in glob.glob('$SHIELD_ROOT/evals/expected/*.yaml'):
     with open(f) as fh:
@@ -198,7 +202,7 @@ for example_dir in "$SHIELD_ROOT"/examples/*/; do
   example_name=$(basename "$example_dir")
   marker="$example_dir/.shield.json"
   if [ -f "$marker" ]; then
-    run_test_verbose "$example_name: .shield.json validates" python3 -c "
+    run_test_verbose "$example_name: .shield.json validates" $PY_DEPS -c "
 import json, jsonschema
 schema = json.load(open('$SHIELD_ROOT/schemas/shield.schema.json'))
 marker = json.load(open('$marker'))
