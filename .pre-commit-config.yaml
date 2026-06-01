@@ -38,6 +38,14 @@ repos:
         files: '^shield/(scripts/(render-markdown\.py|write_shield_assets\.py|migrate_outputs\.py|test_.*\.py)|templates/.*)$'
         pass_filenames: false
 
+      # ── 4b. shield-nav.js unit tests (Node's built-in runner, zero deps) ──
+      - id: shield-nav-js-tests
+        name: shield-nav.js node:test
+        entry: bash -c 'node --test shield/templates/shield-nav.test.js'
+        language: system
+        files: '^shield/templates/shield-nav(\.test)?\.js$'
+        pass_filenames: false
+
       # ── 5. devcontainer Feature ref parse check ──────────────────────────
       # Catches the 'name:tag@sha256:digest' combined form which the Dev
       # Containers CLI rejects (its path regex disallows ':'). Pure Python,
