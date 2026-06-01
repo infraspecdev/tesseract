@@ -296,15 +296,31 @@ def test_build_manifest_v2_structure(tmp_path: Path) -> None:
 
     manifest = build_manifest(output_dir)
 
-    assert manifest["schema_version"] == 2
+    assert manifest["schema_version"] == "2.1"
     assert len(manifest["features"]) == 1
     feat = manifest["features"][0]
     assert feat["name"] == "vpc-20260322"
     assert feat["artifacts"]["research"] is True
     assert feat["artifacts"]["plan_json"] is True
     assert feat["artifacts"]["prd"] is False
-    assert feat["reviews"]["plan"] == {"latest": "2026-05-21_2", "count": 2}
-    assert feat["reviews"]["code"] == {"latest": "2026-05-22", "count": 1}
+    assert feat["reviews"]["plan"] == {
+        "latest": "2026-05-21_2",
+        "count": 2,
+        "entries": [
+            {"date": "2026-05-21",
+             "path": "vpc-20260322/outputs/reviews/plan/2026-05-21/summary.html"},
+            {"date": "2026-05-21_2",
+             "path": "vpc-20260322/outputs/reviews/plan/2026-05-21_2/summary.html"},
+        ],
+    }
+    assert feat["reviews"]["code"] == {
+        "latest": "2026-05-22",
+        "count": 1,
+        "entries": [
+            {"date": "2026-05-22",
+             "path": "vpc-20260322/outputs/reviews/code/2026-05-22/summary.html"},
+        ],
+    }
     assert "prd" not in feat["reviews"] or feat["reviews"]["prd"]["count"] == 0
 
 
@@ -351,7 +367,7 @@ def test_cli_apply_moves_and_writes_manifest(tmp_path: Path) -> None:
     assert (feature / "research.md").exists()
     assert (output_dir / "manifest.json").exists()
     manifest = json.loads((output_dir / "manifest.json").read_text())
-    assert manifest["schema_version"] == 2
+    assert manifest["schema_version"] == "2.1"
 
 
 def test_plan_moves_returns_collision_resolutions(tmp_path: Path) -> None:
