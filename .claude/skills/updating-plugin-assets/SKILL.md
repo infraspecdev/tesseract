@@ -35,6 +35,15 @@ Trigger this skill whenever you are about to write or edit:
 
 For these, state "no eval-shaped surface" in the PR body and proceed.
 
+## Doc-authoring skills — writing-style contract
+
+If the asset you are adding or editing is a **doc-authoring skill** (it writes a
+doc to `docs/shield/` — e.g. `prd-docs`, `plan-docs`, `lld-docs`, `research`, or
+any future equivalent), it MUST include an explicit step that applies
+`shield:writing-style` to its author-written prose before writing. Prose only —
+never rendered/marker-wrapped sections or JSON sidecars. This is part of the
+definition of done for such skills, alongside eval coverage.
+
 ## Workflow
 
 **Before step 1**: verify the asset actually exists at the path the user named and the section/symbol you intend to change is real. If the path or section name is wrong, surface the mismatch and ask — do not silently re-target. Following procedure on the wrong file is worse than not following procedure at all.
