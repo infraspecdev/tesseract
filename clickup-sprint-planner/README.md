@@ -1,5 +1,9 @@
 # clickup-sprint-planner
 
+> ⚠️ **Deprecated — use [Shield](../shield/) instead.** This plugin is no longer maintained as a standalone. Its capabilities now live in Shield's PM adapter system (`/pm-sync`, `/pm-status`) with the ClickUp adapter at `shield/adapters/clickup/`.
+>
+> **Migrate:** `/plugin install shield@tesseract` then run `/shield init` in your project — Shield detects old `sprint-planner.json` config and offers to migrate it.
+
 Claude Code plugin for sprint planning with ClickUp. Provides bulk operations, relationship field support (that actually works), plan document sync, and action logging.
 
 ## Why
