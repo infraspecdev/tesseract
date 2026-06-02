@@ -49,6 +49,7 @@ SCHEMA_PATH = REPO_ROOT / "shield" / "schema" / "plan-sidecar.schema.json"
 TRD_SECTIONS_PATH = REPO_ROOT / "shield" / "schema" / "trd-sections.yaml"
 
 CURRENT_VERSION = (1, 6)
+MILESTONE_DIAGRAM_MIN_VERSION = (1, 6)   # MUST equal the bumped CURRENT_VERSION
 
 
 def _parse_version(v: str) -> tuple[int, int]:
@@ -57,6 +58,13 @@ def _parse_version(v: str) -> tuple[int, int]:
         return int(major), int(minor)
     except (ValueError, AttributeError):
         return (0, 0)
+
+
+ASCII_BOXART_CHARS = set("┌┐└┘├┤┬┴┼│─")
+
+
+def _has_ascii_boxart(s: str) -> bool:
+    return any(c in ASCII_BOXART_CHARS for c in s) or "+--" in s
 
 
 def _load_schema() -> dict[str, Any]:
@@ -142,6 +150,20 @@ def validate(plan_path: Path, *, strict_design_refs: bool = False) -> int:
     if cycle:
         _emit("FAIL", "cycle_in_milestones", " -> ".join(cycle))
         return 1
+
+    # Milestone diagram gate (version-gated; older sidecars grandfathered like touches_lld).
+    plan_ver = _parse_version(str(plan.get("version", "0.0")))
+    if plan_ver >= MILESTONE_DIAGRAM_MIN_VERSION:
+        for m in milestones:
+            diagram = (m.get("diagram") or "").strip()
+            if not diagram:
+                _emit("FAIL", f"milestone_no_diagram:{m['id']}",
+                      "milestone has no diagram (required at this sidecar version)")
+                fail = True
+            elif _has_ascii_boxart(diagram):
+                _emit("FAIL", f"milestone_ascii_diagram:{m['id']}",
+                      "milestone diagram contains ASCII box-art; must be Mermaid")
+                fail = True
 
     # Story-level checks.
     trd_present = _trd_present_for(plan_path)
