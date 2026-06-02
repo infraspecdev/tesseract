@@ -65,17 +65,19 @@ unchanged. Operator-side promotion procedure is documented in §14.
 
 ## §7 High-Level Design {#high-level-design}
 
-```
-eu-west-1 (primary)          us-east-1 (secondary)
-+--------------------+       +--------------------+
-| Aurora cluster     | ====> | Aurora cluster     |
-|   2 writer nodes   | repl. |   1 reader node    |
-+--------------------+       +--------------------+
-        |                              |
-        v                              v
-+--------------------+       +--------------------+
-| Backups → S3 (30d) |       | Backups → S3 (30d) |
-+--------------------+       +--------------------+
+```mermaid
+flowchart LR
+  subgraph eu["eu-west-1 (primary)"]
+    AuroraEU[Aurora cluster<br/>2 writer nodes]
+    S3EU[(Backups → S3 30d)]
+    AuroraEU --> S3EU
+  end
+  subgraph us["us-east-1 (secondary)"]
+    AuroraUS[Aurora cluster<br/>1 reader node]
+    S3US[(Backups → S3 30d)]
+    AuroraUS --> S3US
+  end
+  AuroraEU -- replication --> AuroraUS
 ```
 
 The `aurora-global` module composes the AWS provider's `aws_rds_global_cluster`,

@@ -86,8 +86,9 @@ The `search-index` Terraform module composes `aws_opensearch_domain`,
 `aws_iam_role` for the service-account assume-role, and VPC endpoint resources.
 DNS records are managed in the `bytebite-dns` workspace via remote-state lookup.
 
-```
-[ search-api pod ] ----> [ OpenSearch domain (3 data + 3 master nodes) ]
+```mermaid
+flowchart LR
+  Pod[search-api pod] --> Domain[(OpenSearch domain<br/>3 data + 3 master nodes)]
 ```
 
 ## §8 Alternatives Considered {#alternatives-considered}
