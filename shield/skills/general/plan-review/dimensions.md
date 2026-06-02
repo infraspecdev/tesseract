@@ -39,7 +39,7 @@ These continue to dispatch as full persona agents — they are not decomposed in
 
 | Persona | Subagent | Weight | Notes |
 |---|---|---|---|
-| Architect | `shield:architect` | 1.0 | Service topology, scalability, HA |
+| Architect | `shield:architect` | 1.0 | Service topology, scalability, HA, HLD adequacy (C4 level + diagrams per `architecture-authoring.md`) |
 | Agile coach | `shield:agile-coach` | 0.7 | Story quality, sprint readiness |
 | DX engineer | `shield:dx-engineer` | 1.0 | Plan clarity, anti-patterns |
 | FinOps analyst | `shield:finops-analyst` | 0.7 | Cost awareness, right-sizing |

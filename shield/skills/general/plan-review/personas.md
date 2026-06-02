@@ -4,7 +4,7 @@ All agents are dispatched in **plan review mode** — lightweight checks focused
 
 | Agent | Weight | Focus |
 |-------|--------|-------|
-| `shield:architect` | 1.0 | Service topology, scalability, HA, network design |
+| `shield:architect` | 1.0 | Service topology, scalability, HA, network design, HLD adequacy (C4 level + diagrams per `architecture-authoring.md`) |
 | `shield:security-engineer` | 1.0 | Security posture, threat modeling, access control, testability |
 | `shield:dx-engineer` | 1.0 | Plan clarity, actionability, software architecture |
 | `shield:finops-analyst` | 0.7 | Cost awareness, right-sizing, environment tiering |
