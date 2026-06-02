@@ -1,5 +1,9 @@
 # Infra LLD Template
 
+> The LLD is the C4 *Component/Code* level. High-level (Context/Container)
+> architecture lives in PRD §5 / TRD §7 — see
+> `shield/skills/general/architecture-authoring.md` for the L2↔L3 boundary.
+
 This document is the canonical template for infra LLDs (terraform / k8s / helm).
 The `/lld` command (Path A) and `/plan` (Path B — M2) both generate documents
 conforming to this shape via the lld-docs skill.
