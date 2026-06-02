@@ -502,7 +502,7 @@ And in the milestone-authoring step (where `milestones[]` is built), add:
 ```markdown
 For each milestone, author a `diagram` (Mermaid) in `plan.json` showing the
 architecture slice that milestone delivers — same C4/Mermaid conventions as §7.
-This is required: `validate_plan.py` fails `milestone_no_diagram` / 
+This is required: `validate_plan.py` fails `milestone_no_diagram` /
 `milestone_ascii_diagram`, and it renders under the milestone in §10.
 ```
 
