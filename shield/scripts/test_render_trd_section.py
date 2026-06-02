@@ -231,6 +231,19 @@ def test_omits_description_line_when_absent_or_blank() -> None:
     assert "**Description:**" not in out
 
 
+def test_milestone_diagram_renders_as_mermaid_block() -> None:
+    ms = [{
+        "id": "M1", "name": "Login core", "outcome": "Users can log in",
+        "exit_criteria": ["endpoint returns 200"],
+        "diagram": "flowchart LR\n  User --> Auth --> DB[(Sessions)]",
+    }]
+    out = render_milestones(ms)
+    assert "```mermaid" in out
+    assert "User --> Auth --> DB[(Sessions)]" in out
+    # diagram appears under the milestone heading
+    assert out.index("M1 — Login core") < out.index("```mermaid")
+
+
 # ───────────────────────────── runner ─────────────────────────────
 
 def _run() -> int:
