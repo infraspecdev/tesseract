@@ -45,6 +45,15 @@
       "feature": "pm-adapters",
       "epic": "PM adapter consolidation",
       "text": "Notion adapter: document/justify last-write-wins on the single Design Links URL property (a second ref clobbers the first; only the key list accumulates), and bring test coverage to parity with clickup (currently contract+idempotency only). Adapter is v0.1.0 scaffold maturity (review M4)."
+    },
+    {
+      "id": "7707712f-849a-4d2c-abc5-d9f1feec68a6",
+      "order": 6,
+      "kind": "task",
+      "source": "agent",
+      "feature": "writing-style",
+      "epic": "Global skill distribution",
+      "text": "Make writing-style globally available outside Shield. Portable today (single SKILL.md, no plugin-root/script deps). Recommended: generalized personal copy at ~/.claude/skills/writing-style/SKILL.md — keep the 4 principles + revision pass verbatim, generalize the scope guard to 'do not rewrite code blocks / generated/marker-wrapped regions / structured data', drop Shield-specific jargon (TRD §10, render_trd_section.py, sidecars, See-Also). Coexists with shield:writing-style (keeps Shield scope + CLAUDE.md contract). Trade-off: personal copy will not auto-update with the plugin (principles are stable). Alternatives: verbatim copy (carries jargon); symlink to plugin path (fragile, versioned path moves on update)."
     }
   ]
 }
