@@ -1,16 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://shield.tesseract/schema/plan-sidecar/1.5",
-  "title": "Shield plan.json sidecar — schema 1.5",
+  "$id": "https://shield.tesseract/schema/plan-sidecar/1.6",
+  "title": "Shield plan.json sidecar — schema 1.6",
   "description": "Machine-readable counterpart of shield/skills/general/plan-docs/sidecar-schema.md. Source of truth for shield/scripts/validate_plan.py.",
   "type": "object",
   "required": ["version", "project", "name", "epics"],
   "additionalProperties": true,
   "properties": {
     "version": {
-      "description": "Sidecar schema version. Current is 1.5.",
+      "description": "Sidecar schema version. Current is 1.6.",
       "type": "string",
-      "enum": ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"]
+      "enum": ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"]
     },
     "project": { "type": "string", "minLength": 1 },
     "name": {
@@ -90,6 +90,11 @@
             "type": "string",
             "pattern": "^[a-z0-9-]+$"
           }
+        },
+        "diagram": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Mermaid source for the architecture state/delta this milestone delivers. Enforced present by validate_plan.py at the current sidecar version; older sidecars grandfathered."
         }
       }
     },
