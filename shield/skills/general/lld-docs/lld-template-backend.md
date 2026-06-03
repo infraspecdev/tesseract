@@ -1,5 +1,9 @@
 # Backend LLD Template
 
+> The LLD is the C4 *Component/Code* level. High-level (Context/Container)
+> architecture lives in PRD §5 / TRD §7 — see
+> `shield/skills/general/architecture-authoring.md` for the L2↔L3 boundary.
+
 This document is the canonical template for backend LLDs. The `/lld` command
 (Path A — human invocation) and `/plan` (Path B — TRD-driven, M2 plan) both
 generate documents conforming to this shape via the lld-docs skill.

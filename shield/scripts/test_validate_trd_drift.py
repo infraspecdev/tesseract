@@ -53,7 +53,10 @@ Body.
 
 ## §7 High-Level Design {#high-level-design}
 
-Body.
+```mermaid
+flowchart LR
+  A --> B
+```
 
 ## §8 Alternatives Considered {#alternatives-considered}
 

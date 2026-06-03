@@ -119,6 +119,9 @@ def render_milestones(milestones: list[dict]) -> str:
         if touches:
             links = ", ".join(f"[`{c}`](lld-{c}.md)" for c in touches)
             lines += ["", f"**Detailed design:** {links}"]
+        diagram = (ms.get("diagram") or "").strip()
+        if diagram:
+            lines += ["", "**Architecture:**", "", "```mermaid", diagram, "```"]
         blocks.append("\n".join(lines))
 
     # Blank line between milestone blocks keeps markdown rendering crisp.

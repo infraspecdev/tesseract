@@ -135,16 +135,18 @@ Walk Section 1 (Header) — present the template fields and ask the user for con
 
 Walk Section 3 (Problem) and Section 4 (Personas) — skip pre-populated fields unless the user wants to edit.
 
-Then walk Section 5 (Architecture & flows). Prompt the user:
+Then walk Section 5 (Architecture & flows).
 
-```
-Optional: Add a system overview or key flow diagrams? You can write Mermaid
-code blocks (preferred — they render in prd.html) or link images stored
-alongside prd.md. Leave empty if this feature has no notable architecture
-or flows worth diagramming.
-```
+Before drafting §5, run the **architecture elicitation Q&A** from
+`shield/skills/general/architecture-authoring.md` at the *Context* level
+(actors, external systems, primary flows). Auto-fill any answers already
+present in the research transcript or earlier PRD sections and confirm them
+rather than re-asking. Record anything the user is unsure about in §19 Open
+Questions — do not invent structure.
 
-If the user adds Mermaid, sanity-check the syntax by trying a quick parse (the renderer will surface errors; don't block on syntax). If the user leaves it empty, leave the section content as a brief comment so the heading still appears.
+Diagrams are Mermaid (conventions live in the standard). Sanity-check syntax
+by trying a quick parse if the user pastes Mermaid; the renderer will surface
+errors — don't block on syntax.
 
 Then walk Section 6 (Goals).
 
@@ -336,7 +338,7 @@ PRD authored. What's next?
 | Walking lean PRD through all 20 sections | Lean is intentionally 10 sections (its own numbering); use the lean scaffold from templates.md, not the standard one |
 | Forgetting custom-template required-section merging | Custom templates MUST have all required sections; Shield appends missing ones with markers |
 | Walking §2 (Terminologies) in order during the first pass | §2 is intentionally deferred; placeholder inserted in step 6a, content filled in step 13 after the rest of the PRD is drafted |
-| Forcing diagrams in §5 (Architecture & flows) for every PRD | §5 is optional. If the feature has no notable architecture/flows, leave the section empty — don't manufacture diagrams |
+| Treating §5 as optional or skipping the C4 *Context* walk | §5 is the C4 System Context level — required. Run the elicitation Q&A from `shield/skills/general/architecture-authoring.md`; route genuine unknowns to §19 Open Questions; never fabricate. |
 | Dropping Source A research-glossary terms from Terminologies | ALL terms from the research transcript's glossary section MUST appear in the Terminologies table — do not filter by domain relevance |
 | Adding ungrounded canonical terms to §2 Terminologies (e.g. JWS, OAuth, TLS, SLO when never used in body) | Source B is a scan of the body, not a domain-vocab dump. Before substituting the merged table, recount each candidate term's occurrences *excluding* the Terminologies section — if 0, drop the row. The "used 2+ times" criterion is measured in the body, not in your prior knowledge. |
 | Forgetting the Type field on stories | Every story in §8 MUST have Type (new/enhancement/existing). For rewrites, "existing" stories make regression surface visible |

@@ -36,10 +36,11 @@ What's broken, who hurts, baseline data, why now (cost-of-inaction).
 
 ## 5. Architecture & flows
 
-Optional. If this feature has non-trivial system topology, user flows, or
-state machines, capture them here as Mermaid diagrams (preferred — render
-in prd.html) or linked images alongside prd.md. Leave empty if all flows
-are simple enough to describe in prose elsewhere.
+Author per the shared standard — see `shield/skills/general/architecture-authoring.md`.
+**PRD §5 is the C4 *System Context* level:** the system as one box, its users,
+the external systems it integrates with, and the 1–2 primary flows. Keep it
+product-readable; container/component internals belong in TRD §7 / the LLD.
+Diagrams are Mermaid (conventions in the standard).
 
 ### System overview
 ```mermaid

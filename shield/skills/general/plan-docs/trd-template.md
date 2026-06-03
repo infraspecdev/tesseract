@@ -151,31 +151,22 @@ state restoration, IAM least-privilege properties, cost ceiling, compliance fram
 
 ## §7 High-Level Design {#high-level-design}
 
-**Purpose:** The shape of the solution — components, data flow, key contracts.
-Detail belongs in `/lld` (when it lands); §7 stays at the "what fits where" level.
+**Author per the shared standard — see `shield/skills/general/architecture-authoring.md`.**
+§7 is the C4 *Container* level: the deployable/runtime units inside the system
+boundary, their responsibilities + tech, the interfaces/contracts between them,
+data flow, the persistence boundary, and trust/network/residency boundaries —
+plus the core lifecycle incl. failure/recovery. Component/code detail belongs in
+the LLD, not here.
 
-**Diagrams are mandatory and MUST be Mermaid** (rendered client-side by the HTML
-shell), not ASCII art. Emit one fenced `mermaid` block per diagram. At minimum:
-
-1. **Component / topology** (a `mermaid` `flowchart`): which service/module owns
-   which responsibility, the ports/interfaces between them, and the persistence
-   boundary.
-2. **Core flow sequence** (a `mermaid` `sequenceDiagram`): the primary
-   request/lifecycle path end-to-end, including failure/recovery transitions.
-3. **Boundary diagram** (a `mermaid` `flowchart` with `subgraph` per zone): the
-   region / network / residency / account boundaries and what crosses them.
-
-A single richer topology diagram is the floor; prefer all three when the system
-spans regions, async flows, or trust boundaries.
+**Diagrams are mandatory and MUST be Mermaid** (no ASCII box-art —
+`validate_trd.py` fails `hld_missing_diagram` / `hld_ascii_art`). At minimum a
+container `flowchart` + a core `sequenceDiagram`; add a boundary `subgraph`
+diagram when the system spans zones. Conventions + examples live in the standard.
+Mermaid source is not counted as a code block by the >20-line plan-review rule.
 
 **Backend interpretation:** services, ports, sync-vs-async edges, event backbone,
 canonical data store. **Infra interpretation:** module graph, provider composition,
 VPC/account/region subgraphs, IAM/network boundaries.
-
-**Anti-patterns:** Do NOT paste ASCII box-art (it renders as monospace text, not a
-diagram). Do NOT paste >20-line code blocks (the plan-review implementation-manual
-rule flags code blocks >20 lines unless §8 carries a rationale for why this exact
-code shape was chosen). Mermaid source is not counted as a code block for that rule.
 
 ---
 

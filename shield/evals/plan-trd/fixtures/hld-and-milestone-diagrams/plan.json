@@ -1,0 +1,101 @@
+{
+  "version": "1.6",
+  "project": "bytebite",
+  "name": "auth-revamp",
+  "phase": "v1",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Login core",
+      "outcome": "Users can sign in via email + password",
+      "exit_criteria": [
+        "POST /v1/auth/login returns 200 on valid creds",
+        "Failed attempts emit auth.login.failed metric"
+      ],
+      "depends_on": [],
+      "diagram": "flowchart LR\n  User --> Web[Web Console]\n  Web --> Auth[Auth API]\n  Auth --> Sessions[(Sessions DB)]"
+    },
+    {
+      "id": "M2",
+      "name": "Refresh + revoke",
+      "outcome": "Sessions can be refreshed and revoked",
+      "exit_criteria": [
+        "POST /v1/auth/refresh rotates the refresh token",
+        "DELETE /v1/auth/sessions/:id invalidates the session"
+      ],
+      "depends_on": ["M1"],
+      "diagram": "flowchart LR\n  Web[Web Console] --> Auth[Auth API]\n  Auth --> Sessions[(Sessions DB)]\n  Auth --> Audit{{auth.session.events}}"
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Auth surface",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Implement POST /v1/auth/login",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Add login handler with rate limit and audit emit.",
+          "tasks": [
+            "Add AuthController.login handler",
+            "Wire SessionStore.put",
+            "Emit auth.login.* metrics"
+          ],
+          "acceptance_criteria": [
+            "Valid creds return 200 with session cookie",
+            "Invalid creds return 401 and emit auth.login.failed"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "high-level-design",
+              "anchor_url": "trd.md#high-level-design",
+              "label": "§7 High-Level Design"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Implement POST /v1/auth/refresh",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Rotate refresh token; revoke prior token id.",
+          "tasks": [
+            "Add AuthController.refresh handler",
+            "Update SessionStore.rotate"
+          ],
+          "acceptance_criteria": [
+            "Valid refresh token returns 200 with new pair",
+            "Reused refresh token returns 401 and revokes the family"
+          ],
+          "design_refs": [
+            {
+              "doc": "trd",
+              "component": null,
+              "section_id": "high-level-design",
+              "anchor_url": "trd.md#high-level-design",
+              "label": "§7 High-Level Design"
+            }
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-06-01",
+    "domains": ["backend"]
+  }
+}

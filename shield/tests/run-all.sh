@@ -363,6 +363,26 @@ else
 fi
 echo ""
 
+# --- 17. TRD/Plan Validators + Renderer ---
+echo "17. TRD/Plan Validators + Renderer"
+if command -v uv &>/dev/null; then
+  run_test_verbose "validate_trd HLD §7 gate tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest --with pyyaml pytest test_validate_trd_hld.py -q 2>&1"
+  run_test_verbose "validate_trd §10 drift tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest --with pyyaml pytest test_validate_trd_drift.py -q 2>&1"
+  run_test_verbose "render_trd_section tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest pytest test_render_trd_section.py -q 2>&1"
+  run_test_verbose "validate_plan milestone-diagram tests pass" bash -c \
+    "cd '$SHIELD_ROOT/scripts' && uv run --with pytest --with jsonschema pytest test_validate_plan_milestone_diagram.py -q 2>&1"
+  run_test_verbose "validate_plan 1.5 schema tests pass" bash -c \
+    "cd '$SHIELD_ROOT' && uv run --with pytest --with jsonschema pytest tests/test_validate_plan_1_5.py -q 2>&1"
+  run_test_verbose "plan-trd eval suite passes" bash -c \
+    "cd '$REPO_ROOT' && uv run shield/evals/run.py plan-trd 2>&1"
+else
+  echo "  ⚠ uv not installed, skipping validator tests"
+fi
+echo ""
+
 # --- Summary ---
 echo "==========================="
 TOTAL=$((PASS + FAIL))

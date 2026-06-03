@@ -94,3 +94,12 @@ cases:
   - name: milestone-unbounded-markers
     fixture: fixtures/milestone-unbounded-markers
     expect: { trd: "unbounded_markers:milestones" }
+
+  # HLD-authoring end-to-end: §7 has flowchart + sequenceDiagram, every
+  # milestone carries a Mermaid `diagram` rendered into §10, sidecar at
+  # the bumped 1.6 version (so the milestone-diagram gate is active).
+  - name: hld-and-milestone-diagrams
+    fixture: fixtures/hld-and-milestone-diagrams
+    expect:
+      trd: PASS
+      plan: PASS

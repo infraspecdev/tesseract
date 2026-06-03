@@ -66,15 +66,12 @@ call that updates Orders state and instructs Payments to refund.
 
 ## §7 High-Level Design {#high-level-design}
 
-```
-+-------------+      +-----------+      +-----------+
-| Care Console| ---> | Orders API| ---> | Order DB  |
-+-------------+      +-----------+      +-----------+
-                          |
-                          v
-                     +-----------+      +-----------+
-                     | Kafka     | <--> | Payments  |
-                     +-----------+      +-----------+
+```mermaid
+flowchart LR
+  Console[Care Console] --> API[Orders API]
+  API --> DB[(Order DB)]
+  API --> Kafka{{Kafka}}
+  Kafka <--> Payments[Payments Service]
 ```
 
 Two components touch new code: `OrdersController.refundOrder` (Spring MVC) and the

@@ -46,6 +46,14 @@ repos:
         files: '^shield/templates/shield-nav(\.test)?\.js$'
         pass_filenames: false
 
+      # ── 4c. TRD/plan validators + §10 renderer (HLD authoring gates) ──────
+      - id: trd-plan-validator-tests
+        name: TRD/plan validators + renderer pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest --with pyyaml --with jsonschema pytest test_validate_trd_hld.py test_validate_trd_drift.py test_render_trd_section.py test_validate_plan_milestone_diagram.py -q'
+        language: system
+        files: '^shield/(scripts/(validate_trd\.py|validate_plan\.py|render_trd_section\.py|test_validate_trd_.*\.py|test_validate_plan_.*\.py|test_render_trd_.*\.py)|schema/plan-sidecar\.schema\.json|schema/trd-sections\.yaml)$'
+        pass_filenames: false
+
       # ── 5. devcontainer Feature ref parse check ──────────────────────────
       # Catches the 'name:tag@sha256:digest' combined form which the Dev
       # Containers CLI rejects (its path regex disallows ':'). Pure Python,
