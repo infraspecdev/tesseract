@@ -1,0 +1,47 @@
+# shield/evals/plan-review-verdict.yaml
+# Eval suite for /plan-review verdict computation (composite + P0-gate).
+# Invoked by `uv run shield/evals/run.py plan-review-verdict`.
+#
+# Each fixture is a grades.json holding aggregated per-persona grades plus the
+# classified findings. compute_plan_verdict.py turns those into a composite
+# score and applies the P0-gate. The `verdict` expectation lists substrings
+# that must ALL appear in the script's stdout.
+
+name: plan-review-verdict
+description: >
+  Asserts that /plan-review's verdict logic applies the P0-gate: a high
+  composite with a Critical D/F finding is gated to Needs Work, while a clean
+  high composite is Ready and a weak plan is Not Ready.
+
+cases:
+  # Strong grades, no Critical D/F → Ready.
+  - name: clean-ready
+    fixture: fixtures/clean-ready
+    expect:
+      verdict:
+        - "Ready"
+        - "composite 3.6"
+
+  # THE bug today: composite >= 2.5 but a Critical-F is present. Without the
+  # P0-gate this scored "Ready"; the gate must flip it to Needs Work.
+  - name: high-composite-p0
+    fixture: fixtures/high-composite-p0
+    expect:
+      verdict:
+        - "Needs Work"
+        - "blocked by 1 P0"
+
+  # Mid composite, no P0 (the lone finding is Important/C = P1) → Needs Work,
+  # and crucially NOT "blocked by" (distinguishes gate from threshold).
+  - name: needs-work-threshold
+    fixture: fixtures/needs-work-threshold
+    expect:
+      verdict:
+        - "Needs Work"
+
+  # Weak grades across the board → Not Ready on composite alone.
+  - name: not-ready
+    fixture: fixtures/not-ready
+    expect:
+      verdict:
+        - "Not Ready"

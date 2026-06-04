@@ -36,6 +36,7 @@ SCRIPTS_DIR = REPO_ROOT / "shield" / "scripts"
 VALIDATE_TRD = SCRIPTS_DIR / "validate_trd.py"
 VALIDATE_PLAN = SCRIPTS_DIR / "validate_plan.py"
 CHECK_PLAN_REVIEW_TRD = SCRIPTS_DIR / "check_plan_review_trd.py"
+COMPUTE_PLAN_VERDICT = SCRIPTS_DIR / "compute_plan_verdict.py"
 
 
 def _run_validator(script: Path, target: Path) -> tuple[int, str]:
@@ -124,6 +125,31 @@ def run_suite(suite_name: str, only_case: str | None = None, verbose: bool = Fal
                 failed_assertions.append(f"gates: {evidence}")
             elif verbose:
                 print(f"    gates OK ({gates_expect})")
+
+        # plan-review verdict check (composite + P0-gate). The `verdict`
+        # expectation is one or more substrings that must ALL appear in the
+        # compute_plan_verdict.py stdout for grades.json.
+        verdict_expect = expect.get("verdict")
+        if verdict_expect is not None:
+            needles = [verdict_expect] if isinstance(verdict_expect, str) else list(verdict_expect)
+            grades_path = fixture_dir / "grades.json"
+            proc = subprocess.run(
+                [sys.executable, str(COMPUTE_PLAN_VERDICT), str(grades_path)],
+                capture_output=True,
+                text=True,
+            )
+            stdout = proc.stdout.strip()
+            missing = [n for n in needles if n not in stdout]
+            if proc.returncode != 0:
+                failed_assertions.append(
+                    f"verdict: script exit={proc.returncode} stderr={proc.stderr.strip()!r}"
+                )
+            elif missing:
+                failed_assertions.append(
+                    f"verdict: missing {missing!r} in stdout={stdout!r}"
+                )
+            elif verbose:
+                print(f"    verdict OK ({needles})")
 
         if failed_assertions:
             print(f"  FAIL {name}")

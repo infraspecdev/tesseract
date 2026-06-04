@@ -1,0 +1,9 @@
+{
+  "personas": [
+    { "name": "architect", "grade": "D" },
+    { "name": "security-engineer", "grade": "F" },
+    { "name": "dx-engineer", "grade": "D" },
+    { "name": "product-manager", "grade": "D" }
+  ],
+  "findings": []
+}

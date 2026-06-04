@@ -2,24 +2,21 @@
 
 ## Dispatch Prompt
 
-For each selected agent, use this prompt structure with the Agent tool:
+Dispatch each selected reviewer via the `Agent` tool with `subagent_type` set to the agent's
+slug (e.g. `shield:architect`, `shield:security-engineer`, or one of the PM1-PM10 dim subagents
+— see `dimensions.md`). The subagent loads its OWN persona definition; do **not** inline the
+agent markdown into the prompt. Pass only the plan path and the rubric pointer:
 
 ```
-You are reviewing a plan document as a specialized reviewer.
+You are reviewing a plan document in plan-review mode.
 
-<persona>
-{full content of the agent's markdown file}
-</persona>
+<plan-path>
+{path to the plan document — e.g. docs/shield/{feature}/plan.md or the source-plan.md snapshot}
+</plan-path>
 
-<plan>
-{full content of the plan document}
-</plan>
-
-<scoring-rubric>
-{full content of scoring.md}
-</scoring-rubric>
-
-Review the plan according to your persona's evaluation points. Grade each point A-F using the scoring rubric. Produce your output in the exact format specified in your persona's Output Format section.
+Grade against your persona's evaluation points using the rubric at
+`shield/skills/general/plan-review/scoring.md`. Produce output in the exact format
+specified in your persona's Output Format section.
 
 Important:
 - Grade based on what the plan SAYS, not what you assume
@@ -28,7 +25,8 @@ Important:
 - Recommendations must be actionable — not "improve this" but "add X to section Y"
 ```
 
-Use `subagent_type` matching the agent name (e.g., `shield:architect`) when available, otherwise use `general-purpose`.
+Fall back to `subagent_type: general-purpose` only if the named subagent is unavailable; in
+that case inline the agent's markdown file as a `<persona>` block.
 
 ## plan-review-summary.md Format
 
@@ -39,6 +37,20 @@ Use `subagent_type` matching the agent name (e.g., `shield:architect`) when avai
 **Plan:** <path to reviewed plan>
 **Reviewers:** <list of activated personas>
 **Composite Score:** <letter grade> — <verdict>
+
+## Deterministic Gates
+
+Results of gates 0a–0i (run before persona dispatch). List each as PASS or the named
+Critical/High/Medium finding. A failed gate is a P0 regardless of persona grades.
+
+| Gate | Check | Result |
+|------|-------|--------|
+| 0a | plan.json schema (validate_plan.py) | PASS |
+| 0b | TRD 14-section presence (validate_trd.py) | PASS |
+| 0c | Stale design_refs[] anchors | PASS |
+| 0d | PRD↔TRD duplication | PASS |
+| 0e | Implementation-manual (TRD §7) | PASS |
+| 0f–0i | touches_lld / registry / undocumented / LLD-draft | PASS |
 
 ## Score Summary
 
@@ -109,10 +121,10 @@ After writing both files, summarize:
 > **P1 issues:** 5 (should fix for quality)
 > **P2 issues:** 3 (nice to have)
 >
-> Files written:
-> - `{feature}/plan-review/{N}-{slug}/summary.md` — full scored analysis
-> - `{feature}/plan-review/{N}-{slug}/enhanced-plan.md` — enhanced plan with recommendations applied
-> - `{feature}/plan-review/{N}-{slug}/detailed/<agent>.md` — per-agent detailed findings
+> Files written (under `{review_dir}` = `{output_dir}/{feature}/reviews/plan/{date}{_counter}/`):
+> - `summary.md` — full scored analysis
+> - `enhanced-plan.md` — enhanced plan with recommendations applied
+> - `detailed/<agent>.md` — per-agent detailed findings
 >
 > Review the analysis and enhanced plan. You can edit either file before proceeding.
 >

@@ -26,17 +26,21 @@ Average all evaluation point grades for a persona, then round to the nearest let
 
 Weighted average of all activated persona grades.
 
-**Persona Weights:**
+**Persona Weights:** the canonical table lives in `shield/scripts/compute_plan_verdict.py`
+(`WEIGHTS`). It is the single source of truth — `dimensions.md` and this file reference it
+rather than restating values. For human reference, the current weights are:
 
-| Persona | Weight | Role |
+| Persona (subagent slug) | Weight | Role |
 |---------|--------|------|
-| Cloud Architect | 1.0 | Core |
-| Security Engineer | 1.0 | Core |
-| DX Engineer | 1.0 | Core |
-| Cost/FinOps | 0.7 | Supporting |
-| Agile Coach | 0.7 | Supporting |
-| Operations | 0.7 | Supporting |
-| Product Manager | 0.7 | Supporting |
+| `architect` | 1.0 | Core |
+| `security-engineer` | 1.0 | Core |
+| `dx-engineer` | 1.0 | Core |
+| `platform-engineer` | 1.0 | Core |
+| `backend-engineer` | 1.0 | Core |
+| `finops-analyst` | 0.7 | Supporting |
+| `agile-coach` | 0.7 | Supporting |
+| `sre` | 0.7 | Supporting |
+| `product-manager` | 0.7 | Supporting (applied to the grade rolled up from PM1-PM10) |
 
 **Formula:**
 
@@ -44,15 +48,33 @@ Weighted average of all activated persona grades.
 composite = sum(persona_numeric_grade * weight) / sum(activated_weights)
 ```
 
-Only activated personas contribute to the composite. The denominator is the sum of weights for personas that actually ran — not all 7.
+Only activated personas contribute to the composite. The denominator is the sum of weights
+for personas that actually ran — not all nine.
 
-## Verdict Thresholds
+## Verdict — composite + P0-gate
 
-| Composite Range | Verdict |
+**Do not compute the verdict by hand.** Feed the aggregated persona grades and the classified
+findings to `shield/scripts/compute_plan_verdict.py`; it returns the composite, the P0 count,
+and the verdict string. The SKILL.md scoring step invokes it.
+
+The composite alone can hide a fatal gap (the "averaging problem"): enough strong personas can
+drown out one F on a Critical dimension — and plan-review makes this worse by first averaging
+the ten PM dims into one grade, then weighting that aggregate at only 0.7. **P0 presence GATES
+the verdict.**
+
+| Condition | Verdict |
 |----------------|---------|
-| A - B (>= 2.5) | Ready |
-| B - C (1.5 - 2.4) | Needs Work |
-| D - F (< 1.5) | Not Ready |
+| Composite < 1.5 | **Not Ready** |
+| Composite 1.5 – 2.4 | **Needs Work** |
+| Composite ≥ 2.5 AND any P0 present | **Needs Work** (composite is informational; the P0 floor binds) |
+| Composite ≥ 2.5 AND zero P0s | **Ready** |
+
+**Verdict line in `summary.md`** (verbatim from the script):
+- With P0s: `Needs Work (composite 3.61, blocked by 1 P0)`
+- Clean: `Ready (composite 3.61)`
+
+This is aligned with `/prd-review`'s P0-gate (`prd-review/scoring.md`) — same averaging-problem
+guard, same gate semantics.
 
 ## Priority Classification
 
