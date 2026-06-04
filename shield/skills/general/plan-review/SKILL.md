@@ -1,6 +1,6 @@
 ---
 name: plan-review
-description: Use when a plan, architecture doc, or execution plan exists and needs expert review before implementation. Triggers on /plan-review, review my plan, document review.
+description: Use when a plan, architecture doc, or execution plan exists and needs expert review before implementation. Produces a scored analysis with a P0-gated verdict and an enhanced plan. Triggers on /plan-review, review my plan, document review.
 ---
 
 # Plan Review
@@ -14,6 +14,8 @@ All review output goes into a per-run, date-keyed folder under the feature's `re
 ```
 {output_dir}/{feature}/reviews/plan/{date}{_counter}/   ← {review_dir}
 ├── summary.md                        ← {review_summary}  (scored analysis, main output)
+├── source-plan.md                    ← immutable verbatim snapshot of the reviewed plan
+├── grades.json                       ← aggregated persona grades + findings (verdict input)
 ├── enhanced-plan.md                  ← {review_enhanced} (enhanced plan with feedback applied)
 └── detailed/
     └── <agent>.md                    ← {review_detailed} (one per dispatched agent)
@@ -59,16 +61,25 @@ At startup, call execute-steps to register these steps. Execute them in order, u
 | 0i | `lld_draft_review` — apply the LLD structural rubric (missing always-on, missing forced subsection, vague TBDs in always-on, PoD lifted but vague) to every `docs/shield/{feature}/lld-*.md` draft | when feature-folder LLD drafts exist | Yes — High/Medium/Review depending on issue |
 | 1 | Load plan document | always | Yes |
 | 1a | Detect prior PRD in feature folder — read prd.meta.json if present | only if prd.meta.json exists | No |
+| 1b | Snapshot the loaded plan to `{review_dir}/source-plan.md` (immutable) — see Source Snapshot | always | Yes |
 | 2 | Select reviewer personas | always | Yes |
 | 3 | Dispatch selected agents in parallel | always | Yes |
-| 4 | Parse grades + calculate scores | always | Yes |
+| 4 | Parse grades; compute composite + verdict via `compute_plan_verdict.py` (P0-gate) — see Collection & Scoring | always | Yes |
 | 5 | Generate enhanced plan | always | Yes |
-| 6 | Write summary + detailed findings (gates 0a-0e flow in here as Critical findings) | always | Yes |
+| 6 | Write summary + detailed findings (gates 0a-0i flow in here as Critical/High findings) | always | Yes |
 | 7 | Update manifest | always | Yes |
 
 ### Step 1a: Detect prior PRD
 
 If `{output_dir}/{feature}/prd.meta.json` exists (alongside `{prd}` = `{output_dir}/{feature}/prd.md`), read it. Use its `sections_present` and `type` to inform the plan-vs-PRD alignment check (future enhancement — for now, record it in `{review_summary}` as a "Source PRD" header line, e.g. `Source PRD: prd.md (type: standard, rubric: 1.2)`). This gives reviewers visibility into which PRD version the plan was built from.
+
+### Step 1b: Source Snapshot
+
+Immediately after loading the plan (and before dispatch), copy the plan markdown verbatim to
+`{review_dir}/source-plan.md`. This is an immutable snapshot — the enhanced plan is annotated
+separately as `enhanced-plan.md`, never in place. The snapshot makes each date-keyed review
+folder self-contained for audit (reviews never overwrite prior runs). Mirrors `/prd-review`'s
+`source-prd.md`. When the plan source is HTML, snapshot the parsed markdown and note the origin.
 
 ## Plan Input
 
@@ -379,14 +390,27 @@ After all agents return:
    templates expect.
 3. **Per-persona grade** — average numeric grades (A=4, B=3, C=2, D=1, F=0) within each
    persona, round using ranges in `scoring.md`.
-4. **Composite score** — weighted average using persona weights from `dimensions.md` (PM
-   persona is 0.7, applied to the aggregated PM grade), convert to verdict per `scoring.md`
-   thresholds.
-5. **Classify recommendations** — P0/P1/P2 per severity rules in `scoring.md`.
+4. **Classify recommendations** — P0/P1/P2 per severity rules in `scoring.md`. A P0 is any
+   finding graded D or F on a **Critical** severity evaluation point. Failed deterministic
+   gates (0a–0i) are also P0s.
+5. **Compute composite + verdict deterministically** — do NOT compute the verdict by hand.
+   Build a `grades.json` payload — `{ "personas": [{"name": "<slug>", "grade": "<A-F>"}, ...],
+   "findings": [{"id": "...", "severity": "Critical|Important|Warning", "grade": "<A-F>"}, ...] }`
+   — and run:
+
+   ```bash
+   uv run "$CLAUDE_PLUGIN_ROOT/scripts/compute_plan_verdict.py" {review_dir}/grades.json
+   ```
+
+   It returns the composite (with weights from its canonical `WEIGHTS` table), the P0 count, and
+   the verdict string — applying the P0-gate (a composite ≥ 2.5 with any P0 is gated to **Needs
+   Work**, not Ready). Use the emitted `verdict:` line verbatim in `summary.md`.
 
 ## Output
 
 Write to `{review_dir}` = `{output_dir}/{feature}/reviews/plan/{date}{_counter}/`:
+- `source-plan.md` — immutable verbatim snapshot of the reviewed plan (Step 1b)
+- `grades.json` — aggregated persona grades + classified findings (input to `compute_plan_verdict.py`)
 - `{review_summary}` (`summary.md`) — scored evaluation with consolidated recommendations
 - `{review_enhanced}` (`enhanced-plan.md`) — enhanced version of original plan with feedback applied
 - `{review_detailed}` (`detailed/<agent>.md`) — full output from each dispatched agent

@@ -48,9 +48,10 @@ These continue to dispatch as full persona agents — they are not decomposed in
 | Backend engineer | `shield:backend-engineer` | 1.0 | Application code, API design |
 | Security engineer | `shield:security-engineer` | 1.0 | Security posture, threat modeling |
 
-Persona weights (used by `scoring.md` composite calculation) are unchanged from `personas.md`.
-The PM persona weight is 0.7 — it now applies to the aggregated PM grade rolled up from the
-10 dim subagents.
+Persona weights are defined canonically in `shield/scripts/compute_plan_verdict.py` (`WEIGHTS`);
+`scoring.md` and the table above reference that single source. The PM persona weight is 0.7 — it
+applies to the aggregated PM grade rolled up from the 10 dim subagents. Platform Engineer and
+Backend Engineer are weight 1.0 (Core); both are in the canonical table.
 
 ## Dispatch shape per pattern
 
