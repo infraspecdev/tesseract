@@ -41,3 +41,14 @@ shield/tests/output/
 # outputs/, and reviews/ (see docs/superpowers/plans/2026-05-22-shield-output-
 # structure-cutover.md). Only the hidden Q&A scratch transcript is disposable.
 **/docs/shield/*/.session-transcript.md
+
+# Shield HTML is a BUILD ARTIFACT, not a source. Markdown + JSON sidecars are
+# the committed source of truth. Regenerate the site locally with /shield
+# render (scripts/render-output.sh). See docs/superpowers/specs/
+# 2026-06-08-shield-single-canonical-output-design.md
+**/docs/shield/*/outputs/
+**/docs/shield/index.html
+**/docs/shield/manifest.js
+**/docs/shield/shield.css
+**/docs/shield/shield-nav.js
+**/docs/shield/shield-dashboard.js
