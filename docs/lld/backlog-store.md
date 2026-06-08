@@ -103,7 +103,7 @@ live in `reconciler`; this is the mechanical delete it calls.
 
 ```mermaid
 sequenceDiagram
-  participant C as caller (/backlog add or skill)
+  participant C as caller via /backlog add or skill
   participant S as backlog_store
   participant FS as filesystem
   C->>S: capture(text, ..., source)
