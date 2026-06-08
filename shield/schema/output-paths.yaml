@@ -1,3 +1,6 @@
+# NOTE: All `*_html` entries below are LOCAL BUILD ARTIFACTS — gitignored and
+# regenerated on demand by /shield render (scripts/render-output.sh). The
+# committed source of truth is the corresponding Markdown (+ JSON sidecars).
 # shield/schema/output-paths.yaml
 # Plugin-owned contract. Consumers should NOT edit.
 # See docs/superpowers/specs/2026-05-22-shield-output-structure-design.md §5.
