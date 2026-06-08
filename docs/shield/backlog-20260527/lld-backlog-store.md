@@ -103,7 +103,7 @@ live in `reconciler`; this is the mechanical delete it calls.
 
 ```mermaid
 sequenceDiagram
-  participant C as caller (/backlog add or skill)
+  participant C as caller via /backlog add or skill
   participant S as backlog_store
   participant FS as filesystem
   C->>S: capture(text, ..., source)
@@ -111,7 +111,7 @@ sequenceDiagram
   alt malformed
     S-->>C: raise BacklogInvalid
   else ok
-    S->>S: append entry (uuid4 id, next order); validate in-memory doc
+    S->>S: append entry (uuid4 id, next order) then validate in-memory doc
     S->>FS: write backlog.json.tmp (full doc) + fsync
     S->>FS: re-check on-disk version/count (compare-before-replace)
     alt store changed underneath

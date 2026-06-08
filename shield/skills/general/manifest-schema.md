@@ -63,7 +63,7 @@ Lives at `{output_dir}/manifest.json`. This is the source of truth for which fea
   - `plan_json` → `{plan_json}` = `{feature_dir}/plan.json`
   - `plan_md` → `{plan_md}` = `{feature_dir}/plan.md`
   - `plan_arch_md` → `{plan_arch_md}` = `{feature_dir}/plan-architecture.md`
-  Each is `true` if the file exists, `false` if not. Rendered HTML siblings under `{feature_dir}/outputs/` are implied by the source presence and not tracked separately.
+  Each is `true` if the file exists, `false` if not. Rendered HTML siblings land under `{feature_dir}/outputs/` (build artifact — gitignored; rebuild locally with `/shield render`) and are implied by the source presence, not tracked separately.
 - **`features[].reviews`** — one entry per review type (`prd`, `plan`, `code`). Each:
   - `latest`: the highest-sorted date-keyed run folder name (e.g. `2026-03-21_2`)
   - `count`: number of run folders under `{feature_dir}/reviews/<type>/`
