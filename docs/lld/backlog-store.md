@@ -111,7 +111,7 @@ sequenceDiagram
   alt malformed
     S-->>C: raise BacklogInvalid
   else ok
-    S->>S: append entry (uuid4 id, next order); validate in-memory doc
+    S->>S: append entry (uuid4 id, next order) then validate in-memory doc
     S->>FS: write backlog.json.tmp (full doc) + fsync
     S->>FS: re-check on-disk version/count (compare-before-replace)
     alt store changed underneath
