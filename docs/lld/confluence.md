@@ -168,18 +168,18 @@ sequenceDiagram
     Caller->>Fwd: forward_design_refs(task_id, refs)
     loop for each ref
         alt ref.anchor_url is empty
-            Fwd->>Fwd: result.skipped += 1; log skipped_no_anchor
+            Fwd->>Fwd: result.skipped += 1 — log skipped_no_anchor
         else has anchor
             Fwd->>Conf: PUT relation/link/from {name, destination}
             alt 201 Created
                 Conf-->>Fwd: 201
-                Fwd->>Fwd: result.created += 1; log created
+                Fwd->>Fwd: result.created += 1 — log created
             else 200 OK
                 Conf-->>Fwd: 200
-                Fwd->>Fwd: result.skipped += 1; log idempotent_skip
+                Fwd->>Fwd: result.skipped += 1 — log idempotent_skip
             else other status / transport error
                 Conf-->>Fwd: 4xx/5xx or raise
-                Fwd->>Fwd: result.errors.append(...); log failed
+                Fwd->>Fwd: result.errors.append(...) — log failed
             end
         end
     end

@@ -166,7 +166,7 @@ sequenceDiagram
             Adapter->>Notion: PATCH /v1/pages/{page_id} (Design Links + Shield Link Keys)
             alt 200
                 Notion-->>Adapter: 200
-                Adapter->>Adapter: existing_keys.append(key); created += 1
+                Adapter->>Adapter: existing_keys.append(key) — created += 1
             else non-200 / transport error
                 Notion-->>Adapter: error
                 Adapter->>Adapter: errors.append(ForwardError)

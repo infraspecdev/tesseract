@@ -173,7 +173,7 @@ sequenceDiagram
             SQ->>API: re-fetch issues
             SQ-->>BE: AdapterResult(mode="invoked", findings)
         else both fail
-            SQ-->>BE: AdapterResult(mode="unavailable", note="api err; scan err")
+            SQ-->>BE: AdapterResult(mode="unavailable", note="api err, scan err")
         end
     else credentials missing
         SQ-->>BE: AdapterResult(mode="unavailable", note="credentials missing …")

@@ -370,11 +370,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Skill as /pm-sync skill
-    participant Create as pm_bulk_create
+    participant Creator as pm_bulk_create
     participant Backfill as pm_backfill_ids
     participant Plan as plan.json
-    Skill->>Create: stories[]
-    Create-->>Skill: created[] (task_id, task_url)
+    Skill->>Creator: stories[]
+    Creator-->>Skill: created[] (task_id, task_url)
     Skill->>Skill: build {id, pm_id, pm_url} mapping
     Skill->>Backfill: plan_json_path, epics[], stories[]
     Backfill->>Plan: load_plan, mutate, save_plan (atomic, schema 1.4)

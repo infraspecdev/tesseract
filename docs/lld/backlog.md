@@ -270,13 +270,13 @@ sequenceDiagram
   alt malformed store
     S-->>C: raise BacklogInvalid
   else ok
-    S->>S: snapshot (schema_version, entry_count); append entry (uuid4, next order)
+    S->>S: snapshot (schema_version, entry_count) — append entry (uuid4, next order)
     S->>S: _validate_doc(doc) before any write
     S->>FS: re-read on-disk snapshot (compare-before-replace)
     alt snapshot changed
       S-->>C: raise BacklogInvalid (lost_update — no lost entry)
     else unchanged
-      S->>FS: write unique .tmp + fsync; os.replace(.tmp, path)
+      S->>FS: write unique .tmp + fsync — os.replace(.tmp, path)
       S-->>C: return new uuid4 id
     end
   end
@@ -295,17 +295,17 @@ sequenceDiagram
   alt switch off
     T-->>P: return None (no-op)
   else on
-    T->>S: read_backlog; find entry by id
+    T->>S: read_backlog — find entry by id
     alt absent
       T-->>P: return None (idempotent)
     else present
       T->>T: load_manifest + load_plans
       T->>R: reconcile(entry, manifest, plans)
       alt verdict != REMOVE
-        T-->>P: return decision (entry stays; caller sees reason)
+        T-->>P: return decision (entry stays, caller sees reason)
       else REMOVE
         T->>S: remove(id, log_to_recovery=True)
-        S->>S: append recovery log BEFORE delete; atomic remove
+        S->>S: append recovery log BEFORE delete — atomic remove
         T-->>P: return decision
       end
     end
@@ -327,7 +327,7 @@ sequenceDiagram
     alt absent or prd-only
       R-->>Caller: STAY_NO_MATCH
     else has plan.json
-      R->>R: normalize(epic); find features whose plan has matching epic name
+      R->>R: normalize(epic) — find features whose plan has matching epic name
       alt 0 matches
         R-->>Caller: STAY_NO_MATCH
       else >=2 matches (cross-feature collision)

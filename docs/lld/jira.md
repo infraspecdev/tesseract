@@ -126,18 +126,18 @@ sequenceDiagram
     Caller->>Fwd: forward_design_refs(task_id, refs, session, base_url)
     loop for each ref
         alt ref.anchor_url is None
-            Fwd->>Fwd: skipped += 1; log outcome=skipped_no_anchor
+            Fwd->>Fwd: skipped += 1 — log outcome=skipped_no_anchor
         else has anchor
             Fwd->>Jira: POST /rest/api/3/issue/{task_id}/remotelink (globalId=idempotency_key)
             alt 201 Created
                 Jira-->>Fwd: 201
-                Fwd->>Fwd: created += 1; log outcome=created
+                Fwd->>Fwd: created += 1 — log outcome=created
             else 200 OK (existing link)
                 Jira-->>Fwd: 200
-                Fwd->>Fwd: skipped += 1; log outcome=idempotent_skip
+                Fwd->>Fwd: skipped += 1 — log outcome=idempotent_skip
             else error / non-2xx / exception
                 Jira-->>Fwd: 4xx/5xx or RequestException
-                Fwd->>Fwd: errors.append(ForwardError); log forward_design_ref_failed
+                Fwd->>Fwd: errors.append(ForwardError) — log forward_design_ref_failed
             end
         end
     end
