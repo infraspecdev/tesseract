@@ -97,3 +97,21 @@ repos:
         language: system
         files: '^shield/scripts/(lint_output_paths|test_lint_output_paths)\.py$'
         pass_filenames: false
+
+      # ── 9. mermaid validation ────────────────────────────────────────────
+      # Mermaid fences ship to the browser un-parsed; this catches the common
+      # syntax traps (semicolons, reserved-word actors, block imbalance) in
+      # generated docs before they break at view time. Pure-stdlib, offline.
+      - id: shield-mermaid-validate
+        name: shield mermaid validate
+        entry: python3 shield/scripts/validate_mermaid.py
+        language: system
+        files: '^(docs/.*|shield/(skills|templates|agents)/.*)\.md$'
+
+      # ── 10. mermaid validator tests ──────────────────────────────────────
+      - id: shield-mermaid-tests
+        name: shield validate-mermaid pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest pytest test_validate_mermaid.py'
+        language: system
+        files: '^shield/scripts/(validate_mermaid|test_validate_mermaid)\.py$'
+        pass_filenames: false
