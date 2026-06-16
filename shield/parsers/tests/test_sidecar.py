@@ -16,7 +16,9 @@ from shield_parsers.sidecar import (
 
 
 def test_constants_exposed() -> None:
-    assert CURRENT_SCHEMA_VERSION == "1.4"
+    # Must track the JSON schema source of truth (plan-sidecar.schema.json),
+    # currently 1.6 — a lagging constant silently downgrades sidecars on save.
+    assert CURRENT_SCHEMA_VERSION == "1.6"
     assert MIN_SUPPORTED_VERSION == "1.0"
 
 
@@ -111,10 +113,59 @@ def test_save_plan_stamps_current_version_on_v11_input(tmp_path: Path) -> None:
     save_plan(out, plan)
 
     written = json.loads(out.read_text())
-    assert written["version"] == "1.4"
+    assert written["version"] == "1.6"
     # pm_id keys present on Epic + Story (nullable) after save.
     assert written["epics"][0]["pm_id"] is None
     assert written["epics"][0]["stories"][0]["pm_id"] is None
+
+
+def test_save_plan_does_not_downgrade_current_version_sidecar(tmp_path: Path) -> None:
+    """Regression: a sidecar already at the current schema version, carrying a
+    version-only field the parser doesn't model (1.6 milestone diagram), must
+    round-trip without its version string being silently downgraded and without
+    losing the newer field."""
+    src = tmp_path / "in.json"
+    src.write_text(
+        json.dumps(
+            {
+                "version": "1.6",
+                "project": "shield",
+                "name": "rt",
+                "milestones": [
+                    {
+                        "id": "M1",
+                        "name": "MS one",
+                        "outcome": "ships X",
+                        "exit_criteria": ["X exists"],
+                        "architecture_mermaid": "graph TD; A-->B",
+                    }
+                ],
+                "epics": [
+                    {
+                        "id": "EPIC-1",
+                        "name": "E",
+                        "stories": [
+                            {
+                                "id": "EPIC-1-S1",
+                                "name": "S",
+                                "status": "ready",
+                                "description": "d",
+                                "tasks": ["t"],
+                                "acceptance_criteria": ["a"],
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+    plan = load_plan(src)
+    out = tmp_path / "out.json"
+    save_plan(out, plan)
+
+    written = json.loads(out.read_text())
+    assert written["version"] == "1.6"  # not downgraded to an older constant
+    assert written["milestones"][0]["architecture_mermaid"] == "graph TD; A-->B"
 
 
 def test_save_plan_round_trip_preserves_unknown_keys(tmp_path: Path) -> None:
