@@ -64,6 +64,11 @@ _MSG_RE = re.compile(
 _PARTICIPANT_RE = re.compile(
     r"^\s*(?:participant|actor)\s+(?P<id>[^\s]+)(?:\s+as\s+.*)?$"
 )
+# Splits a `participant <id> as <alias>` line into the id side and the
+# free-form alias so --fix can rename the id without touching the alias.
+_ALIAS_SPLIT_RE = re.compile(
+    r"^(?P<head>\s*(?:participant|actor)\s+\S+)(?P<sep>\s+as\s+)(?P<alias>.*)$"
+)
 
 
 _NODE_LINE_RE = re.compile(r"line\s+(\d+)", re.IGNORECASE)
@@ -255,14 +260,43 @@ def _reserved_actor_ids(body: str) -> set[str]:
 
 
 def _fix_block(body: str) -> str:
-    """Apply deterministic repairs to one diagram body (no fence)."""
+    """Apply deterministic repairs to one diagram body (no fence).
+
+    The trap classes we repair (`;` as a statement separator, reserved-word
+    actor ids) are sequenceDiagram-specific — `;` is legal in a flowchart and
+    the reserved words are sequence keywords — so we scope the fix the same way
+    detection is scoped (see ``validate_text``). Non-sequence blocks are
+    returned untouched to avoid corrupting valid diagrams.
+    """
+    lines = body.splitlines()
+    if not _block_diagram_type(lines).lower().startswith("sequencediagram"):
+        return body
+
     # 1. semicolons, line by line.
-    lines = [_replace_semicolons(ln) for ln in body.splitlines()]
-    fixed = "\n".join(lines)
-    # 2. reserved-word actor ids → <Id>Actor, whole-word, across the block.
-    for ident in sorted(_reserved_actor_ids(fixed), key=len, reverse=True):
-        fixed = re.sub(rf"(?<![\w]){re.escape(ident)}(?![\w])", ident + "Actor", fixed)
-    return fixed
+    lines = [_replace_semicolons(ln) for ln in lines]
+
+    # 2. reserved-word actor ids → <Id>Actor. Whole-word, but only on the
+    #    identifier — never the free-form `as <alias>` text on a participant
+    #    line (the alias may legitimately reuse the reserved word).
+    idents = sorted(_reserved_actor_ids("\n".join(lines)), key=len, reverse=True)
+
+    def _rename(segment: str) -> str:
+        for ident in idents:
+            segment = re.sub(
+                rf"(?<![\w]){re.escape(ident)}(?![\w])", ident + "Actor", segment
+            )
+        return segment
+
+    out = []
+    for line in lines:
+        # Split a participant/actor declaration at ` as ` so only the id side is
+        # renamed; everything else (messages, notes) is renamed whole.
+        m = _ALIAS_SPLIT_RE.match(line)
+        if m:
+            out.append(_rename(m.group("head")) + m.group("sep") + m.group("alias"))
+        else:
+            out.append(_rename(line))
+    return "\n".join(out)
 
 
 def validate_text(text: str) -> list[tuple[int, str]]:

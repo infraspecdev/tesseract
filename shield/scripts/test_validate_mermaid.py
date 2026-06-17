@@ -231,6 +231,27 @@ def test_fix_renames_reserved_actor_consistently():
     # the prose alias after `as` is untouched; only the identifier changed
     assert "pm_bulk_create" in fixed
 
+def test_fix_leaves_valid_flowchart_untouched():
+    # ';' is legal in a flowchart — --fix must not turn a valid diagram invalid.
+    block = "flowchart TD\n    A-->B;\n    B-->C;"
+    assert vm._fix_block(block) == block
+
+def test_fix_text_does_not_corrupt_flowchart(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: False)
+    src = "# d\n\n```mermaid\nflowchart TD\n    A-->B;\n    B-->C;\n```\n"
+    new_text, _ = vm.fix_text(src)
+    assert "A-->B;" in new_text and "B-->C;" in new_text
+
+def test_fix_preserves_alias_reusing_reserved_word():
+    # The free-form `as <alias>` text may legitimately reuse a reserved word;
+    # only the identifier is renamed, never the alias.
+    block = ("sequenceDiagram\n"
+             "    participant create as create handler\n"
+             "    A->>create: x")
+    fixed = vm._fix_block(block)
+    assert "participant createActor as create handler" in fixed
+    assert "A->>createActor: x" in fixed
+
 
 # --- TASK 9: --fix file rewrite + re-validate + CLI flag ---
 
