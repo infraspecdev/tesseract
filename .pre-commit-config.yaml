@@ -108,6 +108,16 @@ repos:
         language: system
         files: '^(docs/.*|shield/(skills|templates|agents)/.*)\.md$'
 
+      # ── 9b. mermaid autofix ──────────────────────────────────────────────
+      # Repairs the deterministic trap classes (semicolons, reserved-word
+      # actors) and fails if it changed anything, so the dev re-stages — the
+      # standard pre-commit fixer pattern.
+      - id: shield-mermaid-fix
+        name: shield mermaid autofix
+        entry: python3 shield/scripts/validate_mermaid.py --fix
+        language: system
+        files: '^(docs/.*|shield/(skills|templates|agents)/.*)\.md$'
+
       # ── 10. mermaid validator tests ──────────────────────────────────────
       - id: shield-mermaid-tests
         name: shield validate-mermaid pytest
