@@ -55,6 +55,9 @@ job at milestone close (M2 plan, step 5h).
    stamp, the §14 Changelog rows, header metadata, code blocks, or
    `n/a — <reason>` escapes.
 
+When emitting Mermaid diagrams, follow `shield/skills/general/mermaid-authoring.md`
+(hard syntax rules — no semicolons, no reserved-word actors, balanced blocks).
+
 ## Provenance stamp
 
 The first line after the document's frontmatter (or after the H1, if no

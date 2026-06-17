@@ -148,6 +148,9 @@ Diagrams are Mermaid (conventions live in the standard). Sanity-check syntax
 by trying a quick parse if the user pastes Mermaid; the renderer will surface
 errors — don't block on syntax.
 
+When emitting Mermaid diagrams, follow `shield/skills/general/mermaid-authoring.md`
+(hard syntax rules — no semicolons, no reserved-word actors, balanced blocks).
+
 Then walk Section 6 (Goals).
 
 ### 8. Story coverage scaffolding (standard only)
