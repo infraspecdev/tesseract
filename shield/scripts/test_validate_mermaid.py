@@ -7,6 +7,7 @@ and non-mermaid markdown pass clean.
 
 from __future__ import annotations
 
+import validate_mermaid as vm
 from validate_mermaid import validate_text, _parse_node_error
 
 
@@ -118,3 +119,24 @@ def test_parse_node_error_defaults_line_to_one():
     line, msg = _parse_node_error("Lexical error: something")
     assert line == 1
     assert "Lexical error" in msg
+
+
+# --- TASK 4: per-block backend call ---
+
+def test_validate_block_uses_backend_when_available(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: True)
+    monkeypatch.setattr(vm, "_run_node_backend", lambda body: (1, "Parse error on line 2:\n..."))
+    findings = vm._validate_block_via_backend(start_line=10, body=["sequenceDiagram", "A->>B: a; b"])
+    assert findings == [(11, "Parse error on line 2:")]
+
+
+def test_validate_block_backend_ok_returns_no_findings(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: True)
+    monkeypatch.setattr(vm, "_run_node_backend", lambda body: (0, ""))
+    assert vm._validate_block_via_backend(10, ["sequenceDiagram", "A->>B: ok"]) == []
+
+
+def test_validate_block_backend_setup_failure_returns_none(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: True)
+    monkeypatch.setattr(vm, "_run_node_backend", lambda body: (2, "backend-setup-failure: x"))
+    assert vm._validate_block_via_backend(10, ["sequenceDiagram"]) is None

@@ -34,6 +34,8 @@ Exit status is non-zero if any block fails a check; each failure is printed as
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -165,6 +167,41 @@ def _check_sequence_block(start_line: int, body: list[str]) -> list[tuple[int, s
             )
         )
     return errors
+
+
+_MJS_PATH = Path(__file__).with_name("validate_mermaid.mjs")
+_NODE_MERMAID_PKG = "mermaid@10"  # must match shell.html CDN major
+
+
+def _node_available() -> bool:
+    return shutil.which("npx") is not None and shutil.which("node") is not None
+
+
+def _run_node_backend(body: str) -> tuple[int, str]:
+    """Run the .mjs backend on one diagram. Returns (exit_code, stderr)."""
+    proc = subprocess.run(
+        ["npx", "--yes", "--package", _NODE_MERMAID_PKG, "--package", "jsdom",
+         "node", str(_MJS_PATH)],
+        input=body, capture_output=True, text=True,
+    )
+    return proc.returncode, proc.stderr
+
+
+def _validate_block_via_backend(start_line: int, body: list[str]):
+    """Validate one block with the Node backend.
+
+    Returns a list of (document_line, message) findings, or None if the backend
+    is unavailable / failed to set up (caller falls back to the heuristic).
+    """
+    if not _node_available():
+        return None
+    code, stderr = _run_node_backend("\n".join(body) + "\n")
+    if code == 0:
+        return []
+    if code == 1:
+        block_line, msg = _parse_node_error(stderr)
+        return [(start_line + block_line - 1, msg)]
+    return None  # code 2 or anything unexpected → fall back
 
 
 def validate_text(text: str) -> list[tuple[int, str]]:
