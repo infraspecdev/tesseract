@@ -284,18 +284,53 @@ def validate_text(text: str) -> list[tuple[int, str]]:
     return sorted(findings)
 
 
+def fix_text(text: str) -> tuple[str, list[tuple[int, str]]]:
+    """Apply deterministic repairs to every mermaid block; return (new_text,
+    remaining findings after the repair)."""
+    out = []
+    i = 0
+    raw = text.splitlines()
+    while i < len(raw):
+        if raw[i].strip().lower().startswith("```mermaid"):
+            out.append(raw[i])
+            j = i + 1
+            body = []
+            while j < len(raw) and not raw[j].strip().startswith("```"):
+                body.append(raw[j])
+                j += 1
+            fixed_body = _fix_block("\n".join(body))
+            out.extend(fixed_body.splitlines())
+            if j < len(raw):
+                out.append(raw[j])  # closing fence
+            i = j + 1
+        else:
+            out.append(raw[i])
+            i += 1
+    new_text = "\n".join(out)
+    if text.endswith("\n") and not new_text.endswith("\n"):
+        new_text += "\n"
+    return new_text, validate_text(new_text)
+
+
 def validate_file(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     return [f"{path}:{line}: {msg}" for line, msg in validate_text(text)]
 
 
 def main(argv: list[str]) -> int:
+    fix = "--fix" in argv
+    paths = [a for a in argv if a != "--fix"]
     failures: list[str] = []
-    for arg in argv:
+    for arg in paths:
         p = Path(arg)
         if not p.is_file():
             continue
-        failures.extend(validate_file(p))
+        if fix:
+            new_text, remaining = fix_text(p.read_text(encoding="utf-8"))
+            p.write_text(new_text, encoding="utf-8")
+            failures.extend(f"{p}:{line}: {msg}" for line, msg in remaining)
+        else:
+            failures.extend(validate_file(p))
 
     if failures:
         print("Invalid mermaid diagram(s) found:\n", file=sys.stderr)

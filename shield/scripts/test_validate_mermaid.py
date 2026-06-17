@@ -230,3 +230,28 @@ def test_fix_renames_reserved_actor_consistently():
     assert "CreateActor-->>Skill:" in fixed
     # the prose alias after `as` is untouched; only the identifier changed
     assert "pm_bulk_create" in fixed
+
+
+# --- TASK 9: --fix file rewrite + re-validate + CLI flag ---
+
+def test_fix_text_repairs_and_clears_findings(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: False)  # heuristic check
+    src = "# d\n\n```mermaid\nsequenceDiagram\n    A->>B: a; b\n```\n"
+    new_text, remaining = vm.fix_text(src)
+    assert ";" not in new_text
+    assert remaining == []
+
+def test_fix_text_leaves_unfixable_and_reports(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: False)
+    # unbalanced alt is not a deterministic-fix class
+    src = "# d\n\n```mermaid\nsequenceDiagram\n    alt x\n    A->>B: ok\n```\n"
+    new_text, remaining = vm.fix_text(src)
+    assert any("unbalanced" in m for _, m in remaining)
+
+def test_main_fix_writes_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: False)
+    p = tmp_path / "d.md"
+    p.write_text("# d\n\n```mermaid\nsequenceDiagram\n    A->>B: a; b\n```\n")
+    rc = vm.main(["--fix", str(p)])
+    assert ";" not in p.read_text()
+    assert rc == 0  # all clean after fix
