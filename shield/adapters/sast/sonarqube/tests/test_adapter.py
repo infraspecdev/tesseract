@@ -1,9 +1,13 @@
 """Tests for the SonarQube adapter."""
 
+import json
 import os
+from urllib.parse import parse_qs, urlparse
 
+from shield.adapters.sast.sonarqube import adapter as sonar
 from shield.adapters.sast.sonarqube.adapter import (
     SEVERITY_MAP,
+    _fetch_via_api,
     _load_credentials,
     _parse_sonar_issues,
     _strip_project_prefix,
@@ -99,3 +103,91 @@ def test_load_credentials_missing(monkeypatch, tmp_path):
     assert creds["url"] is None
     assert creds["token"] is None
     assert creds["project_key"] is None
+
+
+# --- REST API pagination (regression: first-page-only silently dropped >500 findings) ---
+
+def _fake_issue(i: int) -> dict:
+    return {
+        "rule": f"java:S{i}",
+        "component": f"proj:src/F{i}.java",
+        "severity": "MAJOR",
+        "type": "CODE_SMELL",
+        "message": f"issue {i}",
+        "line": i,
+    }
+
+
+class _FakeResp:
+    def __init__(self, payload: dict):
+        self._data = json.dumps(payload).encode()
+
+    def read(self) -> bytes:
+        return self._data
+
+    def __enter__(self) -> "_FakeResp":
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        return False
+
+
+def test_fetch_via_api_paginates_until_total_exhausted(monkeypatch):
+    """1200 issues across 3 pages (500/500/200) — all must be collected."""
+    pages = {
+        1: {"issues": [_fake_issue(i) for i in range(0, 500)],
+            "paging": {"pageIndex": 1, "pageSize": 500, "total": 1200}},
+        2: {"issues": [_fake_issue(i) for i in range(500, 1000)],
+            "paging": {"pageIndex": 2, "pageSize": 500, "total": 1200}},
+        3: {"issues": [_fake_issue(i) for i in range(1000, 1200)],
+            "paging": {"pageIndex": 3, "pageSize": 500, "total": 1200}},
+    }
+    requested_pages: list[int] = []
+
+    def fake_urlopen(req, timeout=None):
+        q = parse_qs(urlparse(req.full_url).query)
+        page = int(q["p"][0])
+        requested_pages.append(page)
+        return _FakeResp(pages[page])
+
+    monkeypatch.setattr(sonar.urllib.request, "urlopen", fake_urlopen)
+
+    findings, err = _fetch_via_api("https://sonar.test", "tok", "proj")
+
+    assert err is None
+    assert len(findings) == 1200  # not truncated to the first 500
+    assert requested_pages == [1, 2, 3]
+
+
+def test_fetch_via_api_single_page_no_extra_request(monkeypatch):
+    """total <= one page → exactly one request, no needless second fetch."""
+    payload = {"issues": [_fake_issue(i) for i in range(10)],
+               "paging": {"pageIndex": 1, "pageSize": 500, "total": 10}}
+    calls: list[str] = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(req.full_url)
+        return _FakeResp(payload)
+
+    monkeypatch.setattr(sonar.urllib.request, "urlopen", fake_urlopen)
+
+    findings, err = _fetch_via_api("https://sonar.test/", "tok", "proj")
+
+    assert err is None
+    assert len(findings) == 10
+    assert len(calls) == 1
+
+
+def test_fetch_via_api_propagates_fetch_error(monkeypatch):
+    """A network error still surfaces as the err string (drives scanner fallback)."""
+    import urllib.error
+
+    def boom(req, timeout=None):
+        raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(sonar.urllib.request, "urlopen", boom)
+
+    findings, err = _fetch_via_api("https://sonar.test", "tok", "proj")
+
+    assert findings == []
+    assert err is not None and "API fetch failed" in err

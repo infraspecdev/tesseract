@@ -11,7 +11,7 @@ from typing import Any
 
 import jsonschema
 
-CURRENT_SCHEMA_VERSION = "1.4"
+CURRENT_SCHEMA_VERSION = "1.6"
 MIN_SUPPORTED_VERSION = "1.0"
 
 

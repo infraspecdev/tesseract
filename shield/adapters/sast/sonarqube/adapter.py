@@ -41,6 +41,12 @@ SEVERITY_MAP: dict[str, Severity] = {
 }
 
 
+# SonarQube /api/issues/search page size cap and the server-side ceiling on
+# total issues returnable via this endpoint (page * pageSize ≤ 10 000).
+_SONAR_PAGE_SIZE = 500
+_SONAR_MAX_ISSUES = 10000
+
+
 TYPE_TO_CATEGORY: dict[str, Category] = {
     "VULNERABILITY": "security",
     "SECURITY_HOTSPOT": "security",
@@ -129,26 +135,46 @@ def _consume_existing(output_path: Path, head_commit_time: float) -> list[Findin
 
 
 def _fetch_via_api(url: str, token: str, project_key: str) -> tuple[list[Finding], str | None]:
-    """Fetch issues via SonarQube REST API."""
+    """Fetch issues via SonarQube REST API, paginating until all issues are read.
+
+    /api/issues/search caps the page size at 500 (``ps``) and returns a
+    ``paging`` block; requesting only the first page silently drops every
+    finding past the first 500. We loop on ``p`` until the reported ``total``
+    is exhausted, bounded by SonarQube's own ceiling of 10 000 issues for this
+    endpoint (page * pageSize ≤ 10 000) — beyond that the server itself refuses
+    to paginate further.
+    """
     api_url = url.rstrip("/") + "/api/issues/search"
-    params = urllib.parse.urlencode({
-        "componentKeys": project_key,
-        "ps": 500,
-        "statuses": "OPEN,REOPENED,CONFIRMED",
-    })
-    full_url = f"{api_url}?{params}"
-
-    req = urllib.request.Request(full_url)
     encoded = base64.b64encode((token + ":").encode()).decode()
-    req.add_header("Authorization", f"Basic {encoded}")
 
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            payload = json.loads(resp.read().decode())
-    except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
-        return [], f"sonarqube adapter — API fetch failed: {e}"
+    findings: list[Finding] = []
+    page = 1
+    while page * _SONAR_PAGE_SIZE <= _SONAR_MAX_ISSUES:
+        params = urllib.parse.urlencode({
+            "componentKeys": project_key,
+            "ps": _SONAR_PAGE_SIZE,
+            "p": page,
+            "statuses": "OPEN,REOPENED,CONFIRMED",
+        })
+        req = urllib.request.Request(f"{api_url}?{params}")
+        req.add_header("Authorization", f"Basic {encoded}")
 
-    return _parse_sonar_issues(payload), None
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                payload = json.loads(resp.read().decode())
+        except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
+            return [], f"sonarqube adapter — API fetch failed: {e}"
+
+        findings.extend(_parse_sonar_issues(payload))
+
+        paging = payload.get("paging") or {}
+        total = paging.get("total", 0)
+        page_size = paging.get("pageSize") or _SONAR_PAGE_SIZE
+        if not total or page * page_size >= total:
+            break
+        page += 1
+
+    return findings, None
 
 
 def _invoke_scanner(target_path: str, creds: dict[str, str | None]) -> tuple[list[Finding], str | None]:

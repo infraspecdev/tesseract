@@ -17,8 +17,8 @@ an **epic** (the removal gate) — either may be proposed-new at capture time.
 | Store | `docs/shield/backlog.json` | `shield/scripts/backlog_store.py` |
 | Schema | `shield/schema/backlog.schema.json` | (this skill) |
 | Validator | `shield/scripts/validate_backlog.py` | (this skill) |
-| Suggester | `shield/scripts/epic_suggester.py` | (this skill) |
-| Reconciler | `shield/scripts/reconcile_backlog.py` | (this skill) |
+| Suggester | `shield/backlog/shield_backlog/suggester.py` | (this skill) |
+| Reconciler | `shield/backlog/shield_backlog/reconciler.py` | (this skill) |
 | Removal log | `.shield/backlog-removed.log` | reconciler (append-only) |
 | Kill switch | `.shield.json` → `backlog.auto_reconcile` (default `true`) | user |
 
