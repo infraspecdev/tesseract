@@ -205,14 +205,21 @@ def _validate_block_via_backend(start_line: int, body: list[str]):
 
 
 def validate_text(text: str) -> list[tuple[int, str]]:
-    """Return a sorted list of (line, message) findings for one document."""
+    """Return sorted (line, message) findings for one document.
+
+    Uses the real mermaid parser (Node backend) per block when available and
+    falls back to the pure-Python heuristic when the backend is absent or
+    cannot set up.
+    """
     findings: list[tuple[int, str]] = []
     for start_line, body in _iter_mermaid_blocks(text):
+        via_backend = _validate_block_via_backend(start_line, body)
+        if via_backend is not None:
+            findings.extend(via_backend)
+            continue
         dtype = _block_diagram_type(body).lower()
         if dtype.startswith("sequencediagram"):
             findings.extend(_check_sequence_block(start_line, body))
-        # Flowchart/other types: block-balance only (semicolons are legal in
-        # flowcharts), kept conservative to avoid false positives.
     return sorted(findings)
 
 

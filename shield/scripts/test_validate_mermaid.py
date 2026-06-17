@@ -7,8 +7,17 @@ and non-mermaid markdown pass clean.
 
 from __future__ import annotations
 
+import pytest
+
 import validate_mermaid as vm
 from validate_mermaid import validate_text, _parse_node_error
+
+
+@pytest.fixture(autouse=True)
+def _force_heuristic(monkeypatch, request):
+    # Tests tagged @pytest.mark.backend opt back into the real backend.
+    if "backend" not in request.keywords:
+        monkeypatch.setattr(vm, "_node_available", lambda: False)
 
 
 def _block(body: str) -> str:
@@ -140,3 +149,31 @@ def test_validate_block_backend_setup_failure_returns_none(monkeypatch):
     monkeypatch.setattr(vm, "_node_available", lambda: True)
     monkeypatch.setattr(vm, "_run_node_backend", lambda body: (2, "backend-setup-failure: x"))
     assert vm._validate_block_via_backend(10, ["sequenceDiagram"]) is None
+
+
+# --- TASK 5: validate_text backend wiring + heuristic fallback ---
+
+def _doc(body):
+    return "# d\n\n```mermaid\n" + body + "\n```\n"
+
+
+@pytest.mark.backend
+def test_validate_text_prefers_backend_when_available(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: True)
+    monkeypatch.setattr(vm, "_validate_block_via_backend",
+                        lambda start, body: [(start + 1, "Parse error on line 2:")])
+    findings = vm.validate_text(_doc("sequenceDiagram\n    A->>B: whatever"))
+    assert findings and "Parse error" in findings[0][1]
+
+
+def test_validate_text_falls_back_to_heuristic_without_node():
+    findings = vm.validate_text(_doc("sequenceDiagram\n    A->>B: a; b"))
+    assert len(findings) == 1
+    assert "statement separator" in findings[0][1]
+
+
+def test_validate_text_backend_none_falls_back(monkeypatch):
+    monkeypatch.setattr(vm, "_node_available", lambda: True)
+    monkeypatch.setattr(vm, "_validate_block_via_backend", lambda start, body: None)
+    findings = vm.validate_text(_doc("sequenceDiagram\n    A->>B: a; b"))
+    assert any("statement separator" in m for _, m in findings)
