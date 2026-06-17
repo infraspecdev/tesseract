@@ -52,10 +52,11 @@ def test_backfill_writes_epic_and_story_pm_ids(plan_path):
     assert set(result["updated_stories"]) == {"EPIC-1-S1", "EPIC-1-S2"}
     assert result["not_found"] == []
 
-    # Written file is stamped schema 1.4.
+    # Written file is stamped the current schema version (shield_parsers
+    # CURRENT_SCHEMA_VERSION, which tracks plan-sidecar.schema.json).
     raw = json.loads(plan_path.read_text())
-    assert raw["version"] == "1.4"
-    assert result["version"] == "1.4"
+    assert raw["version"] == "1.6"
+    assert result["version"] == "1.6"
 
 
 def test_backfill_unknown_id_reported_not_silently_dropped(plan_path):

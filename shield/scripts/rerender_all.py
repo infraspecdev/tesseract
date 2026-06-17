@@ -50,6 +50,16 @@ def rerender_all(output_dir: Path) -> int:
             _render(summary, feature / "outputs" / rel,
                     f"Review — {feature.name}", output_dir)
             count += 1
+        for enhanced in feature.glob("reviews/*/*/enhanced-*.md"):
+            rel = enhanced.relative_to(feature).with_suffix(".html")
+            _render(enhanced, feature / "outputs" / rel,
+                    f"Review — {feature.name}", output_dir)
+            count += 1
+        for detailed in feature.glob("reviews/*/*/detailed/*.md"):
+            rel = detailed.relative_to(feature).with_suffix(".html")
+            _render(detailed, feature / "outputs" / rel,
+                    f"Review — {feature.name}", output_dir)
+            count += 1
     print(f"rerender_all: rendered {count} page(s)")
     return 0
 

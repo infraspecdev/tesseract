@@ -132,7 +132,7 @@ ${PM_MCP_WARNING:+
 ${INCOMPLETE_STEPS_WARNING:+
 ⚠ ${INCOMPLETE_STEPS_WARNING}}
 
-**Artifact output:** Per-feature sources live flat at \`${OUTPUT_DIR}/{feature}/\` — e.g. \`research.md\`, \`prd.md\`, \`plan.json\`, \`plan.md\`, \`plan-architecture.md\`. Rendered HTML lands under \`${OUTPUT_DIR}/{feature}/outputs/\`. Reviews are date-keyed under \`${OUTPUT_DIR}/{feature}/reviews/{prd|plan|code}/{date}{_counter}/\` and never overwrite. Manifest at \`${OUTPUT_DIR}/manifest.json\`. (No numbered-run subfolders.)
+**Artifact output:** Per-feature sources live flat at \`${OUTPUT_DIR}/{feature}/\` — e.g. \`research.md\`, \`prd.md\`, \`plan.json\`, \`plan.md\`, \`plan-architecture.md\`. Rendered HTML lands under \`${OUTPUT_DIR}/{feature}/outputs/\` (build artifact — gitignored; rebuild locally with \`/shield render\`). Reviews are date-keyed under \`${OUTPUT_DIR}/{feature}/reviews/{prd|plan|code}/{date}{_counter}/\` and never overwrite. Manifest at \`${OUTPUT_DIR}/manifest.json\`. (No numbered-run subfolders.)
 
 **Skill domains:** ${DOMAIN_SKILLS}
 ${DOMAIN_SKIP:+**Skip skills from:** ${DOMAIN_SKIP} (not relevant to this project)}

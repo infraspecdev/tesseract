@@ -19,7 +19,7 @@ Top-level dashboard. Renders `manifest.json` as a card grid linking to every fea
 
 ## Per-feature (one per feature folder)
 
-Each feature lives at `{output_dir}/{feature}/`. Source markdown is committed; rendered HTML sits alongside under `outputs/`.
+Each feature lives at `{output_dir}/{feature}/`. Source markdown is committed; rendered HTML lands under `outputs/` (build artifact — gitignored; rebuild locally with `/shield render`).
 
 ### `research.md`
 
@@ -71,7 +71,7 @@ Markdown rendering of `plan.json` for human readers. Generated alongside `plan.j
 
 ### `outputs/{prd,plan,trd}.html`
 
-Rendered HTML siblings of the source markdown. Regenerated on every write of the corresponding source file.
+Rendered HTML siblings of the source markdown — local build artifact, gitignored. Rebuild with `/shield render` (regenerates the whole site).
 
 ## Reviews
 

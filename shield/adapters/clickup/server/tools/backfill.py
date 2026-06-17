@@ -19,7 +19,7 @@ def pm_backfill_ids_impl(
     plan epic/story ids to their newly-created ClickUp pm_id/pm_url (built by
     the caller from pm_bulk_create `created[]` results); it does NOT re-correlate
     by name. Mutates matching epics/stories in place and saves atomically,
-    stamping schema version 1.4 so the next sync sees the tasks as `match`.
+    stamping the current schema version so the next sync sees the tasks as `match`.
 
     Args:
         plan_json_path: Path to the plan.json sidecar to write into.
@@ -29,7 +29,7 @@ def pm_backfill_ids_impl(
     Returns:
         {"updated_epics": [...], "updated_stories": [...],
          "not_found": [{"id": ..., "type": "epic"|"story"}, ...],
-         "version": "1.4"}
+         "version": CURRENT_SCHEMA_VERSION}
     """
     plan = load_plan(plan_json_path)
 
@@ -86,7 +86,7 @@ def register(mcp: FastMCP):
         Call this AFTER pm_bulk_create. Pass each plan epic/story id paired with
         the ClickUp task_id (as pm_id) and task_url (as pm_url) obtained from the
         bulk_create `created[]` results. It writes them into plan.json — atomic,
-        stamping schema version 1.4 — so the next pm_sync_sidecar sees those
+        stamping the current schema version — so the next pm_sync_sidecar sees those
         epics/stories as `match` and the sync becomes idempotent.
 
         This is a pure write: it does NOT re-correlate by name. Ids in the input
