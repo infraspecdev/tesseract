@@ -121,7 +121,7 @@ repos:
       # ── 10. mermaid validator tests ──────────────────────────────────────
       - id: shield-mermaid-tests
         name: shield validate-mermaid pytest
-        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest pytest test_validate_mermaid.py'
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest pytest test_validate_mermaid.py test_mermaid_authoring_wiring.py'
         language: system
-        files: '^shield/scripts/(validate_mermaid|test_validate_mermaid)\.py$'
+        files: '^(shield/scripts/(validate_mermaid|test_validate_mermaid|test_mermaid_authoring_wiring)\.py|shield/skills/general/(mermaid-authoring\.md|lld-docs/SKILL\.md|prd-docs/SKILL\.md|plan-docs/SKILL\.md)|shield/agents/architect\.md|shield/templates/shell\.html)$'
         pass_filenames: false
