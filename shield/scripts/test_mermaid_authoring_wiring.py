@@ -19,3 +19,10 @@ def test_emitting_skills_reference_style_guide():
         "shield/agents/architect.md",
     ]:
         assert "mermaid-authoring" in (ROOT / rel).read_text(), rel
+
+def test_lld_docs_has_validate_before_write_contract():
+    text = (ROOT / "shield/skills/general/lld-docs/SKILL.md").read_text()
+    assert "validate_mermaid.py" in text
+    # The contract must require validate → fix → agent-repair before the write.
+    assert "before" in text.lower() and "write" in text.lower()
+    assert "--fix" in text
