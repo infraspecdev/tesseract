@@ -7,7 +7,7 @@ and non-mermaid markdown pass clean.
 
 from __future__ import annotations
 
-from validate_mermaid import validate_text
+from validate_mermaid import validate_text, _parse_node_error
 
 
 def _block(body: str) -> str:
@@ -103,3 +103,18 @@ def test_line_numbers_are_document_relative():
     # lines 1-4 preamble, 5 '# doc', 6 blank, 7 fence, 8 'sequenceDiagram',
     # 9 the message — findings are document-relative, not block-relative.
     assert line == 9
+
+
+# --- TASK 3: parse mermaid backend error string ---
+
+def test_parse_node_error_extracts_block_line():
+    stderr = "Parse error on line 3:\n... -->> ...\nExpecting 'X', got ';'"
+    line, msg = _parse_node_error(stderr)
+    assert line == 3
+    assert "Parse error" in msg
+
+
+def test_parse_node_error_defaults_line_to_one():
+    line, msg = _parse_node_error("Lexical error: something")
+    assert line == 1
+    assert "Lexical error" in msg

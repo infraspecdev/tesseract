@@ -64,6 +64,18 @@ _PARTICIPANT_RE = re.compile(
 )
 
 
+_NODE_LINE_RE = re.compile(r"line\s+(\d+)", re.IGNORECASE)
+
+
+def _parse_node_error(stderr: str) -> tuple[int, str]:
+    """Map a mermaid.parse() error to a 1-based block line and a one-line message."""
+    text = stderr.strip()
+    m = _NODE_LINE_RE.search(text)
+    block_line = int(m.group(1)) if m else 1
+    first_line = text.splitlines()[0] if text else "mermaid parse error"
+    return block_line, first_line
+
+
 def _block_diagram_type(lines: list[str]) -> str:
     for ln in lines:
         s = ln.strip()
