@@ -204,6 +204,67 @@ def _validate_block_via_backend(start_line: int, body: list[str]):
     return None  # code 2 or anything unexpected → fall back
 
 
+def _replace_semicolons(line: str) -> str:
+    """`;` → `,` when inside () or "", else ` — `. Only after the message ':'.
+
+    Inside parens/quotes the bare comma preserves any following space (so
+    `f(x; y)` → `f(x, y)`); outside, the em-dash is space-padded and absorbs
+    one adjacent space on each side so `a; b` → `a — b` (no doubled spaces).
+    """
+    out = []
+    in_quote = False
+    paren = 0
+    for ch in line:
+        if ch == '"':
+            in_quote = not in_quote
+            out.append(ch)
+        elif ch == "(":
+            paren += 1
+            out.append(ch)
+        elif ch == ")":
+            paren = max(0, paren - 1)
+            out.append(ch)
+        elif ch == ";":
+            if in_quote or paren > 0:
+                out.append(",")
+            else:
+                # Drop a trailing space already emitted, re-pad uniformly.
+                if out and out[-1] == " ":
+                    out.pop()
+                out.append(" — ")
+        elif ch == " " and out and out[-1] == " — ":
+            # Collapse the space that followed the original ';'.
+            continue
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _reserved_actor_ids(body: str) -> set[str]:
+    ids = set()
+    for line in body.splitlines():
+        m = _PARTICIPANT_RE.match(line)
+        if m and m.group("id").lower() in RESERVED_ACTOR_WORDS:
+            ids.add(m.group("id"))
+        msg = _MSG_RE.match(line)
+        if msg:
+            for side in ("left", "right"):
+                if msg.group(side).lower() in RESERVED_ACTOR_WORDS:
+                    ids.add(msg.group(side))
+    return ids
+
+
+def _fix_block(body: str) -> str:
+    """Apply deterministic repairs to one diagram body (no fence)."""
+    # 1. semicolons, line by line.
+    lines = [_replace_semicolons(ln) for ln in body.splitlines()]
+    fixed = "\n".join(lines)
+    # 2. reserved-word actor ids → <Id>Actor, whole-word, across the block.
+    for ident in sorted(_reserved_actor_ids(fixed), key=len, reverse=True):
+        fixed = re.sub(rf"(?<![\w]){re.escape(ident)}(?![\w])", ident + "Actor", fixed)
+    return fixed
+
+
 def validate_text(text: str) -> list[tuple[int, str]]:
     """Return sorted (line, message) findings for one document.
 

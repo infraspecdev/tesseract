@@ -199,3 +199,34 @@ def test_real_backend_catches_semicolon():
 @pytest.mark.skipif(not _backend_smoke_ok(), reason="node/mermaid backend unavailable")
 def test_real_backend_accepts_valid():
     assert vm.validate_text("```mermaid\nsequenceDiagram\n  A->>B: ok\n```\n") == []
+
+
+# --- TASK 8: --fix transforms for known classes ---
+
+def test_fix_replaces_semicolon_with_dash():
+    block = "sequenceDiagram\n    A->>B: a; b"
+    fixed = vm._fix_block(block)
+    assert ";" not in fixed
+    assert "a — b" in fixed
+
+def test_fix_semicolon_inside_parens_uses_comma():
+    block = 'sequenceDiagram\n    A->>B: f(x; y)'
+    fixed = vm._fix_block(block)
+    assert "f(x, y)" in fixed
+
+def test_fix_semicolon_inside_quotes_uses_comma():
+    block = 'sequenceDiagram\n    A-->>B: note="a; b"'
+    fixed = vm._fix_block(block)
+    assert 'note="a, b"' in fixed
+
+def test_fix_renames_reserved_actor_consistently():
+    block = ("sequenceDiagram\n"
+             "    participant Create as pm_bulk_create\n"
+             "    Skill->>Create: stories\n"
+             "    Create-->>Skill: done")
+    fixed = vm._fix_block(block)
+    assert "participant CreateActor as pm_bulk_create" in fixed
+    assert "Skill->>CreateActor:" in fixed
+    assert "CreateActor-->>Skill:" in fixed
+    # the prose alias after `as` is untouched; only the identifier changed
+    assert "pm_bulk_create" in fixed
