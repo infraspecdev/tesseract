@@ -97,3 +97,31 @@ repos:
         language: system
         files: '^shield/scripts/(lint_output_paths|test_lint_output_paths)\.py$'
         pass_filenames: false
+
+      # ── 9. mermaid validation ────────────────────────────────────────────
+      # Mermaid fences ship to the browser un-parsed; this catches the common
+      # syntax traps (semicolons, reserved-word actors, block imbalance) in
+      # generated docs before they break at view time. Pure-stdlib, offline.
+      - id: shield-mermaid-validate
+        name: shield mermaid validate
+        entry: python3 shield/scripts/validate_mermaid.py
+        language: system
+        files: '^(docs/.*|shield/(skills|templates|agents)/.*)\.md$'
+
+      # ── 9b. mermaid autofix ──────────────────────────────────────────────
+      # Repairs the deterministic trap classes (semicolons, reserved-word
+      # actors) and fails if it changed anything, so the dev re-stages — the
+      # standard pre-commit fixer pattern.
+      - id: shield-mermaid-fix
+        name: shield mermaid autofix
+        entry: python3 shield/scripts/validate_mermaid.py --fix
+        language: system
+        files: '^(docs/.*|shield/(skills|templates|agents)/.*)\.md$'
+
+      # ── 10. mermaid validator tests ──────────────────────────────────────
+      - id: shield-mermaid-tests
+        name: shield validate-mermaid pytest
+        entry: bash -c 'cd shield/scripts && uv run --quiet --with pytest pytest test_validate_mermaid.py test_mermaid_authoring_wiring.py'
+        language: system
+        files: '^(shield/scripts/(validate_mermaid|test_validate_mermaid|test_mermaid_authoring_wiring)\.py|shield/skills/general/(mermaid-authoring\.md|lld-docs/SKILL\.md|prd-docs/SKILL\.md|plan-docs/SKILL\.md)|shield/agents/architect\.md|shield/templates/shell\.html)$'
+        pass_filenames: false

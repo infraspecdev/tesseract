@@ -55,6 +55,23 @@ job at milestone close (M2 plan, step 5h).
    stamp, the §14 Changelog rows, header metadata, code blocks, or
    `n/a — <reason>` escapes.
 
+When emitting Mermaid diagrams, follow `shield/skills/general/mermaid-authoring.md`
+(hard syntax rules — no semicolons, no reserved-word actors, balanced blocks).
+
+## Mermaid validation (before write)
+
+Before the atomic write, validate every ```mermaid block:
+
+1. Run `python3 shield/scripts/validate_mermaid.py <target>.tmp` (or validate
+   the composed content). If it passes, proceed to the write.
+2. If it fails, run `python3 shield/scripts/validate_mermaid.py --fix <target>.tmp`
+   to repair the deterministic classes, then re-validate.
+3. If findings remain, rewrite the offending diagram from the parse error,
+   re-validate, and retry (bounded — 3 attempts). Never write a file whose
+   diagrams do not validate.
+
+Diagram syntax rules: `shield/skills/general/mermaid-authoring.md`.
+
 ## Provenance stamp
 
 The first line after the document's frontmatter (or after the H1, if no
