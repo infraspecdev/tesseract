@@ -177,3 +177,25 @@ def test_validate_text_backend_none_falls_back(monkeypatch):
     monkeypatch.setattr(vm, "_validate_block_via_backend", lambda start, body: None)
     findings = vm.validate_text(_doc("sequenceDiagram\n    A->>B: a; b"))
     assert any("statement separator" in m for _, m in findings)
+
+
+# --- TASK 6: live Node backend integration (skip-guarded) ---
+
+def _backend_smoke_ok() -> bool:
+    if not vm._node_available():
+        return False
+    code, _ = vm._run_node_backend("sequenceDiagram\n  A->>B: ok\n")
+    return code == 0
+
+
+@pytest.mark.backend
+@pytest.mark.skipif(not _backend_smoke_ok(), reason="node/mermaid backend unavailable")
+def test_real_backend_catches_semicolon():
+    findings = vm.validate_text("```mermaid\nsequenceDiagram\n  A->>B: a; b\n```\n")
+    assert findings, "real parser should reject ';' in a sequence message"
+
+
+@pytest.mark.backend
+@pytest.mark.skipif(not _backend_smoke_ok(), reason="node/mermaid backend unavailable")
+def test_real_backend_accepts_valid():
+    assert vm.validate_text("```mermaid\nsequenceDiagram\n  A->>B: ok\n```\n") == []
