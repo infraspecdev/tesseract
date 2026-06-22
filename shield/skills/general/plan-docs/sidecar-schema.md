@@ -2,11 +2,11 @@
 
 > For the purpose of each Shield artifact and how they relate, see [`shield/docs/artifacts.md`](../../../docs/artifacts.md).
 
-The schema versions in lock-step with `/plan` itself. Current version: **1.5**.
+The schema versions in lock-step with `/plan` itself. Current version: **1.6**.
 
 ```jsonc
 {
-  "version": "1.5",
+  "version": "1.6",
   "project": "<project name from .shield.json>",
   "name": "<kebab-case-plan-name>",
   "phase": "<phase name>",
@@ -25,7 +25,8 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.5**.
         "<testable fact 2>"
       ],
       "depends_on": [],
-      "touches_lld": ["user-service", "vpc-module"]
+      "touches_lld": ["user-service", "vpc-module"],
+      "diagram": "flowchart LR\n  A[client] --> B[user-service]\n  B --> C[(db)]"
     }
   ],
   "epics": [
@@ -84,7 +85,7 @@ The schema versions in lock-step with `/plan` itself. Current version: **1.5**.
 
 ## Rules
 
-- `version` is `"1.5"`. Older sidecars (`"1.4"`, `"1.3"`, `"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.5 bump adds `lld_components[]` at the root and `milestones[].touches_lld[]`; it also tightens `design_refs[]` so `component` is required when `doc=="lld"` (was nullable in 1.4). The 1.4 bump added `pm_id` / `pm_url` to each epic; the 1.3 bump added the top-level `last_aligned_with` field.
+- `version` is `"1.6"`. Older sidecars (`"1.5"`, `"1.4"`, `"1.3"`, `"1.2"`, `"1.1"`, `"1.0"`, or missing `version`) remain valid back-compat — see "Back-compat" below. The 1.6 bump makes `milestones[].diagram` (a Mermaid string) required: `validate_plan.py` fails `milestone_no_diagram` / `milestone_ascii_diagram` at 1.6+; older sidecars are grandfathered. The 1.5 bump adds `lld_components[]` at the root and `milestones[].touches_lld[]`; it also tightens `design_refs[]` so `component` is required when `doc=="lld"` (was nullable in 1.4). The 1.4 bump added `pm_id` / `pm_url` to each epic; the 1.3 bump added the top-level `last_aligned_with` field.
 - Every epic MUST have at least 1 story.
 - Every story MUST have at least 1 acceptance criterion.
 - Every story SHOULD have at least 1 `design_refs[]` entry pointing at a TRD section. LLD refs may be TODO placeholders until `/lld <component>` lands.
@@ -224,6 +225,8 @@ treated as a single implicit milestone covering all stories — see "Single impl
 milestone" below.
 
 **1.4 → 1.5:** A 1.4 sidecar without `lld_components[]` or `touches_lld[]` validates as 1.5; missing arrays default to empty. A 1.4 sidecar with a `design_refs[]` entry where `doc=="lld"` and `component==null` becomes invalid under 1.5 — those entries must be updated before 1.5 validation passes. `/plan-review` will surface this as a finding (see M3 plan).
+
+**1.5 → 1.6:** A 1.5 sidecar without `milestones[].diagram` validates as 1.5 (grandfathered — the diagram gate only fires at `version >= 1.6`). To author at 1.6, every milestone MUST carry a `diagram` (a Mermaid string, not ASCII box-art); `validate_plan.py` fails `milestone_no_diagram:<id>` / `milestone_ascii_diagram:<id>` otherwise, and `render_trd_section.py` renders the diagram under each milestone in TRD §10.
 
 ### Forward-compat policy
 

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ADR 0001 — Introduce a PRD layer between Research and Planning</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 900px; margin: 2em auto; padding: 0 1em; line-height: 1.5; color: #222; }
+h1 { font-size: 24pt; margin-top: 1em; }
+h2 { font-size: 18pt; margin-top: 1.2em; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+h3 { font-size: 14pt; margin-top: 1em; }
+h4 { font-size: 12pt; margin-top: 0.8em; }
+table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #f0f0f0; }
+code { font-family: Consolas, Menlo, monospace; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-family: Consolas, Menlo, monospace; font-size: 10pt; }
+hr { border: none; border-top: 1px solid #ccc; margin: 2em 0; }
+ul, ol { margin: 0.5em 0 0.5em 1.5em; }
+li { margin: 0.2em 0; }
+blockquote { border-left: 3px solid #ccc; padding-left: 12px; color: #555; margin: 1em 0; }
+</style>
+</head>
+<body>
+
+<h1>ADR 0001 — Introduce a PRD layer between Research and Planning</h1>
+
+<p>
+<strong>Status:</strong> Accepted (shipped across PRs #35, #38, #41, #42 — Phase A <code>/prd-review</code>, Phase B <code>/prd</code>, milestones, scaffold expansion)<br>
+<strong>Date:</strong> 2026-05-18<br>
+<strong>Authors:</strong> @ashwinimanoj<br>
+<strong>Plugin:</strong> shield<br>
+<strong>Supersedes:</strong> —
+</p>
+
+<p><strong>Related specs:</strong></p>
+<ul>
+  <li><a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/specs/2026-05-09-prd-and-research-redesign-design.md">2026-05-09-prd-and-research-redesign-design.md</a> (design)</li>
+  <li><a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/specs/2026-05-11-prd-and-research-redesign-prd.md">2026-05-11-prd-and-research-redesign-prd.md</a> (PRD-for-PRD, dogfooded)</li>
+  <li><a href="https://github.com/infraspecdev/tesseract/pull/41">PR #41 — PRD milestones + plan sprint alignment</a></li>
+  <li><a href="https://github.com/infraspecdev/tesseract/pull/42">PR #42 — PRD scaffold expansion (TOC, Terminologies, Architecture &amp; flows, story types, Mermaid)</a></li>
+</ul>
+
+<hr>
+
+<h2>TL;DR</h2>
+
+<p>Shield's pre-implementation flow went <code>/research → /plan → /plan-review → /implement</code> with no product-requirements layer. Teams jumped from problem-space research (or nothing) straight to technical breakdown, losing product framing, success metrics, and scope boundaries. We added a PRD layer — two commands (<code>/prd</code>, <code>/prd-review</code>) plus an enhancement to <code>/research</code> — that sits between research and planning. All steps are optional and skippable; downstream commands consume earlier artifacts if present.</p>
+
+<hr>
+
+<h2>Context — what we had before</h2>
+
+<h3>The old workflow</h3>
+
+<pre>/research  →  /plan  →  /plan-review  →  /implement</pre>
+
+<ul>
+  <li><strong><code>/research</code></strong> was solution-space only: a PM-framed prompt fanned out to 3 parallel agents fetching official docs, industry voices, and community sources, producing a sourced <code>findings.md</code>. It did not capture problem-space or tech-context Q&amp;A.</li>
+  <li><strong><code>/plan</code></strong> produced a technical breakdown — epics, stories, tasks, acceptance criteria — not a product requirements document. Its job was <em>how + which-files + what-tests</em>, not <em>what + why + how-much</em>.</li>
+  <li><strong><code>/plan-review</code></strong> scored the plan with multi-persona dispatch (PM, architecture, security, DX, cost, agile-coach, ops, well-architected) on a documented A-F rubric.</li>
+</ul>
+
+<h3>The gap</h3>
+
+<p>The flow worked end-to-end but had a structural hole between research and planning:</p>
+
+<ol>
+  <li><strong>No place to capture product intent.</strong> Teams that don't write PRDs jumped straight from research (or nothing) to technical planning. Result: implementation drifted from what users needed; downstream stories were untestable against product intent; reviewers couldn't catch gaps a PM would catch (no Out-of-Scope, no leading metrics, no rollout plan).</li>
+  <li><strong>No way to ingest external PRDs.</strong> Teams that <em>do</em> write PRDs — usually in Notion, Confluence, or Google Docs — had no Shield-native way to bring them in. Their PRD lived outside the Shield artifact graph, so plans couldn't reference it and reviewers couldn't grade against it.</li>
+  <li><strong><code>/research</code> was missing the front half.</strong> It went straight to external evidence-gathering without first capturing problem-space, users, constraints, or existing tech context from the repo. Even teams using <code>/research</code> started downstream planning without a structured product + tech context document.</li>
+</ol>
+
+<h3>Why now</h3>
+
+<p>Shield's plan-review machinery, multi-persona dispatch, and A-F scoring infrastructure were mature by early 2026. The piece gating real product-quality output — a structured PRD layer — was the weakest part of the workflow. Without it, the existing strengths (parallel reviewer agents, weighted-composite scoring, severity-tiered gaps) could not be applied to product framing at all. Opportunity cost: engineering work continued to ship with weak or no product framing.</p>
+
+<hr>
+
+<h2>Decision — what we built and why</h2>
+
+<h3>The new workflow</h3>
+
+<pre>/research  →  /prd   →  /plan  →  /plan-review  →  /implement
+              /prd-review (for existing external PRDs)</pre>
+
+<p>Each step remains optional. Downstream commands consume earlier artifacts if present (e.g., <code>/plan</code> reads <code>prd.md</code> and records <code>source_prd</code> in <code>plan.json</code>).</p>
+
+<h3>Load-bearing decisions</h3>
+
+<h4>D1. Two PRD commands, not one</h4>
+
+<p>We split authoring and review:</p>
+<ul>
+  <li><strong><code>/prd</code></strong> — authors a new PRD using a 17-section problem-first scaffold (lean variant collapses to 7 sections). Walks the user section by section, pre-populating from <code>/research</code> transcripts and repo scans where possible.</li>
+  <li><strong><code>/prd-review</code></strong> — ingests an external PRD from any source (local file, paste, or URL) and produces a multi-persona scored gap analysis on a 13-dimension rubric.</li>
+</ul>
+
+<p><strong>Why two commands:</strong> the two use cases have different mental models. Authoring is a writing flow; review is a critique flow. One command would have meant a confusing entry point with a "are you writing or reviewing?" prompt. Two commands also let us ship them in separate phases (Phase A: review; Phase B: author), getting review value out the door faster.</p>
+
+<h4>D2. Ship <code>/prd-review</code> first (Phase A)</h4>
+
+<p>Adoption pull was strongest for engineering leads ingesting PRDs their PMs had already written. The market alternatives (one-off ChatGPT prompts, Notion AI) were weak — neither did multi-persona scored gap analysis with citations. <code>/prd</code> (authoring) competed against more entrenched habits (existing team templates in Confluence/Notion), so we shipped review first to establish a wedge.</p>
+
+<h4>D3. 17-section problem-first scaffold, mirroring the 13-dimension rubric</h4>
+
+<p>Every rubric dimension reviewers grade against has a home section in the default scaffold. Authors aren't surprised at review time by sections they didn't know were expected. Sections are ordered problem-first: Header → Problem → Personas → Goals → Metrics → Stories → FRs → NFRs → Dependencies → Risks → Assumptions → Rollout → Cost → GTM → Support → Open questions → Out of scope.</p>
+
+<p><strong>Lean variant</strong> collapses to 7 sections (Header, Problem, Users, Goals, Metrics, Open questions, Out of scope). Lean PRDs include a footer listing the standard sections they intentionally omit, plus a multi-select upgrade flow.</p>
+
+<p>Subsequent expansions (PRs #41, #42) added the milestones table, TOC, Terminologies section, Architecture &amp; flows section with Mermaid diagrams, and story types — all derived from real-world reviews surfacing gaps in the original scaffold.</p>
+
+<h4>D4. Generic ingest — no provider baked in</h4>
+
+<p><code>/prd-review</code> accepts a local path, paste content, or any URL. For URLs, Shield consults an internal known-host map (URL pattern → MCP-name pattern) and resolves at runtime to whichever MCP is present in the session. If no MCP matches, falls through to WebFetch, then to paste fallback. Authentication is each MCP's own concern.</p>
+
+<p><strong>Why generic:</strong> baking in a default provider (e.g., always Notion) would have created a maintenance burden every time a team used Confluence, Google Docs, or an internal wiki. The universal paste fallback means Shield never hard-fails on a document it can't reach. Adding support for a new cloud is data, not code.</p>
+
+<h4>D5. Reuse plan-review's scoring infrastructure with one new rule</h4>
+
+<p>The A-F per-evaluation-point scale, weighted-composite formula, and severity tiers (P0/P1/P2) all come from <a href="https://github.com/infraspecdev/tesseract/blob/main/shield/skills/general/plan-review/scoring.md">shield/skills/general/plan-review/scoring.md</a>. We added one new rule:</p>
+
+<ul>
+  <li><strong>P0 gate on verdict.</strong> Composite alone can drown out a fatal gap (the averaging problem). If any P0 is open, the verdict cannot be "Ready" regardless of composite. Header reads: <em>"Needs Work (composite 3.3, blocked by 4 P0s)"</em>.</li>
+</ul>
+
+<p>This is a follow-up candidate for <code>/plan-review</code> itself, tracked separately.</p>
+
+<h4>D6. Three dimension states — graded, N/A, informational</h4>
+
+<ul>
+  <li><strong>Graded</strong> (A-F) — default; counted toward composite.</li>
+  <li><strong>N/A</strong> — dimension genuinely doesn't apply (e.g., GTM for an internal cron); requires one-line reasoning; excluded from composite. Bare N/A without reasoning grades F.</li>
+  <li><strong>Informational</strong> — lean-PRD structural exemption (dims 5, 6, 9, 10, 13 are informational for lean); surfaced but excluded from composite.</li>
+</ul>
+
+<p><strong>Why three states:</strong> a binary graded/skip model lets authors game the rubric by skipping inconvenient dimensions. Forcing reasoning and letting reviewers override implausible N/A claims keeps the rubric honest while accommodating genuine non-applicability.</p>
+
+<h4>D7. Source PRD never overwritten</h4>
+
+<p><code>enhanced-prd.md</code> is always a copy with P0/P1 fixes inline (attributed by persona via <code>&lt;!-- [from: &lt;Persona&gt;] --&gt;</code>) and P2 as adjacent comments. The original <code>source-prd.md</code> snapshot is preserved verbatim so re-runs are deterministic.</p>
+
+<h4>D8. Canonical comments export (<code>review-comments.json</code>)</h4>
+
+<p>Machine-readable per-section gap comments, intended for external converters that post back into GitHub PR review, Notion page comments, Confluence inline comments, or Jira. Human-readable views live in <code>summary.md</code> (scannable triage) and <code>detailed/&lt;persona&gt;.md</code> (per-persona prose). We rejected a parallel <code>review-comments.md</code> because it invites sync drift when humans edit the wrong copy.</p>
+
+<h4>D9. Bidirectional PRD ↔ Plan linkage</h4>
+
+<p><code>prd.meta.json</code> records <code>linked_plans: [...]</code>; <code>plan.json</code> records <code>source_prd: ...</code> and <code>prd_rubric_version_at_planning</code>. Auto-populated when <code>/plan</code> runs against a feature folder containing a PRD. <code>prd_rubric_version_at_planning</code> lets re-runs detect rubric drift (e.g., dim 13 was added later — older PRDs reviewed before that don't auto-fail on it).</p>
+
+<h4>D10. All steps optional and skippable</h4>
+
+<p>No workflow enforcement. Users can run any command without prior steps. Downstream commands gracefully consume earlier artifacts if present, and proceed without them if not.</p>
+
+<h4>D11. <code>/research</code> keeps its solution-space agents as Phase 2</h4>
+
+<p>Rather than replacing the existing 3-agent external evidence-gathering, we added a Phase 1 (structured Q&amp;A + repo auto-detect) in front of it. Phase 2 becomes opt-in on the open questions that Phase 1 surfaces.</p>
+
+<p><strong>Why preserve:</strong> Phase 2 is the strongest part of <code>/research</code> today. Replacing it would have lost a working capability for a hypothetical improvement.</p>
+
+<hr>
+
+<h2>Alternatives considered</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Alternative</th><th>Decision</th><th>Reasoning</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>A1</td>
+  <td>Single <code>/prd</code> command with <code>--review</code> flag</td>
+  <td>Rejected</td>
+  <td>Conflated two different mental models (writing vs critiquing) and forced a confusing entry-point prompt. Two commands ship and iterate independently.</td>
+</tr>
+<tr>
+  <td>A2</td>
+  <td>Extend <code>/plan</code> to include product framing</td>
+  <td>Rejected</td>
+  <td><code>/plan</code> is the technical breakdown. Stuffing product framing in would have either bloated the plan output or watered down the product framing. Different audiences (engineering vs. product + engineering) and different review rubrics.</td>
+</tr>
+<tr>
+  <td>A3</td>
+  <td>Build a separate <code>/discovery</code> command</td>
+  <td>Rejected during design</td>
+  <td>Earlier exploration proposed a third command (problem-space exploration distinct from research). It overlapped with <code>/research</code> in name and concept. Folded into <code>/research</code> Phase 1 instead. Discovery review (gap analysis on a discovery transcript) was also rejected — discovery is exploratory; gaps aren't a meaningful concept for it.</td>
+</tr>
+<tr>
+  <td>A4</td>
+  <td>Bake Notion in as the default URL resolver</td>
+  <td>Rejected</td>
+  <td>Would have created lock-in to one provider and a maintenance tax for every team that uses Confluence, Google Docs, or an internal wiki. Generic ingest with runtime MCP discovery handles all mainstream cases without code changes.</td>
+</tr>
+<tr>
+  <td>A5</td>
+  <td>Provider-specific feature flags (e.g., <code>prd_review_notion_only</code>)</td>
+  <td>Rejected</td>
+  <td>Generic ingest with paste fallback makes per-provider toggles unnecessary. The universal paste fallback is the kill-switch.</td>
+</tr>
+<tr>
+  <td>A6</td>
+  <td>Replace <code>/research</code>'s external agents instead of extending them</td>
+  <td>Rejected</td>
+  <td>Phase 2 is the working part of <code>/research</code> today. Replacing it would have regressed a capability for a hypothetical improvement. Phase 1 + Phase 2 in sequence is additive.</td>
+</tr>
+<tr>
+  <td>A7</td>
+  <td>Single-flat-rubric (no graded/N/A/informational distinction)</td>
+  <td>Rejected</td>
+  <td>A binary graded/skip model lets authors game the rubric by skipping inconvenient dimensions, and forces the composite to either over-penalize legitimately-N/A dimensions or under-penalize gaming. Three states with mandatory reasoning + reviewer override keep the rubric honest.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Consequences</h2>
+
+<h3>Positive</h3>
+
+<ul>
+  <li><strong>Product framing has a home.</strong> Teams that don't write PRDs now have a Shield-native authoring scaffold; teams that do have a Shield-native review path.</li>
+  <li><strong>Bidirectional traceability.</strong> PRD → Plan linkage is auto-populated and survives rubric drift.</li>
+  <li><strong>Reusable scoring.</strong> The PRD-review scoring uses the same A-F + weighted-composite + severity model as plan-review, so users only learn the model once.</li>
+  <li><strong>Generic ingest.</strong> Adding support for a new tool is data, not code.</li>
+  <li><strong>Phase A wedge.</strong> <code>/prd-review</code> ships value to the largest segment (teams with external PRDs) first, with low competition from existing tools.</li>
+</ul>
+
+<h3>Negative / trade-offs</h3>
+
+<ul>
+  <li><strong>Two more commands to maintain.</strong> <code>/prd</code> and <code>/prd-review</code> add surface area to Shield. Mitigated by reusing existing skill/agent/scoring infrastructure.</li>
+  <li><strong>Rubric drift risk.</strong> Re-reviewed PRDs may grade differently as the rubric evolves. Mitigated by <code>rubric_version</code> in <code>review-comments.json</code> so old reviews stay interpretable.</li>
+  <li><strong>LLM cost.</strong> <code>/prd-review</code> dispatches 5 parallel reviewer agents (~50-150k tokens per review). Documented as ~$0.30-$1.50 per review at standard Claude Opus 4.7 rates. Users absorb their own LLM costs.</li>
+  <li><strong>Adoption is a habit problem, not a tooling problem.</strong> Engineers may not run <code>/prd-review</code> even when valuable. Adoption tracked from launch; if &lt; 1 run/week at 30 days, we dig into friction.</li>
+  <li><strong>English-only.</strong> Rubric and reviewer agents assume English. Multi-language PRDs are not formally supported.</li>
+  <li><strong>Massive PRDs (&gt;50 pages).</strong> Latency degrades and quality may suffer. Workaround: split into multiple PRDs per epic.</li>
+</ul>
+
+<h3>Follow-ups tracked separately</h3>
+
+<ul>
+  <li><strong>P0-gate on <code>/plan-review</code> verdict.</strong> The same rule should apply to plan reviews — a plan with Security = F shouldn't be "Ready" regardless of composite. Tracked in design spec under Scoring's follow-up note.</li>
+  <li><strong>Converters that post <code>review-comments.json</code> to external tools.</strong> GitHub PR review, Notion API, Confluence inline comments, Jira. Out of Phase A scope.</li>
+  <li><strong>Re-review diff</strong> (compare current <code>/prd-review</code> against prior run): "new gaps", "still-open gaps", "resolved gaps." Adds a learning loop.</li>
+  <li><strong>PRD status lifecycle</strong> beyond <code>draft</code>: <code>in-review</code>, <code>approved</code>, <code>in-implementation</code>, <code>shipped</code>, <code>retired</code>.</li>
+  <li><strong>Context federation</strong> beyond repo scan: pull related runbooks (Confluence), tickets (Jira/Linear), dashboards (Datadog), design (Figma) via MCPs declared in <code>.shield.json</code> <code>context_sources</code>.</li>
+  <li><strong>Multi-file PRD sources.</strong> Phase A reviews one source; the bill-payments case (architecture + plan as two files) is a future enhancement.</li>
+</ul>
+
+<hr>
+
+<h2>References</h2>
+
+<ul>
+  <li>Design spec: <a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/specs/2026-05-09-prd-and-research-redesign-design.md">2026-05-09-prd-and-research-redesign-design.md</a></li>
+  <li>PRD-for-PRD (dogfooded): <a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/specs/2026-05-11-prd-and-research-redesign-prd.md">2026-05-11-prd-and-research-redesign-prd.md</a></li>
+  <li>PRD milestones (merged): <a href="https://github.com/infraspecdev/tesseract/pull/41">PR #41</a></li>
+  <li>PRD TOC + Terminologies + scaffold expansion (merged): <a href="https://github.com/infraspecdev/tesseract/pull/42">PR #42</a></li>
+  <li>Phase A implementation plan: <a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/plans/2026-05-11-prd-review-phase-a.md">2026-05-11-prd-review-phase-a.md</a></li>
+  <li>Phase B implementation plan: <a href="https://github.com/infraspecdev/tesseract/blob/main/docs/superpowers/plans/2026-05-11-prd-phase-b.md">2026-05-11-prd-phase-b.md</a></li>
+  <li>Shipped skills:
+    <a href="https://github.com/infraspecdev/tesseract/tree/main/shield/skills/general/prd-docs">prd-docs</a>,
+    <a href="https://github.com/infraspecdev/tesseract/tree/main/shield/skills/general/prd-review">prd-review</a>,
+    <a href="https://github.com/infraspecdev/tesseract/tree/main/shield/skills/general/story-coverage">story-coverage</a>
+  </li>
+  <li>Shipped commands:
+    <a href="https://github.com/infraspecdev/tesseract/blob/main/shield/commands/prd.md">prd.md</a>,
+    <a href="https://github.com/infraspecdev/tesseract/blob/main/shield/commands/prd-review.md">prd-review.md</a>
+  </li>
+  <li>Scoring infrastructure (reused): <a href="https://github.com/infraspecdev/tesseract/blob/main/shield/skills/general/plan-review/scoring.md">shield/skills/general/plan-review/scoring.md</a></li>
+</ul>
+
+</body>
+</html>
