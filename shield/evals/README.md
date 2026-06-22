@@ -116,6 +116,12 @@ Omit the `### Qualitative` section entirely for fully deterministic evals; the r
 | 05 | concrete-not-vague | Replaces vague claims ("improved significantly") with specific numbers/names from the doc |
 | 06 | lld-scope-guards | Tightens LLD §1 prose; preserves provenance stamp, §14 Changelog rows, and `n/a — <reason>` escapes |
 
+### Index — execute-steps
+
+| # | Name | Measures |
+|---|---|---|
+| 01 | producer-path-and-schema | Skill drives `steps_store.py` (not hand-written JSON); file lands at the hook's `projects/<project>/steps.json` path with the right schema |
+
 ---
 
 ## Snapshot evals (`run-evals.sh`)

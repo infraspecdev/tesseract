@@ -61,7 +61,7 @@ Each skill has a fixed skeleton of mandatory steps that always run, plus conditi
 }
 ```
 
-Path: `~/.shield/shield/<project>/steps.json`
+Path: `~/.shield/projects/<project>/steps.json` (matches the session-start hook)
 
 ### Resume Flow (option C — notify + manual)
 
@@ -151,7 +151,7 @@ Path: `~/.shield/shield/<project>/steps.json`
 
 ## What Stays the Same
 
-- `steps.json` location (`~/.shield/shield/<project>/`)
+- `steps.json` location (`~/.shield/projects/<project>/`)
 - Skills remain the entry point — commands invoke skills directly
 - All artifact output paths unchanged
 - execute-steps Common Mistakes section (updated for new scope)
