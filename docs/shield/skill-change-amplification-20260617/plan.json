@@ -1,0 +1,434 @@
+{
+  "version": "1.6",
+  "project": "Shield",
+  "name": "skill-change-amplification",
+  "phase": "Skills maintainability refactor",
+  "last_aligned_with": null,
+  "lld_components": [],
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Pattern proven on one skill",
+      "outcome": "One orchestrator is fully converted to the single-home pattern and a failing single-home guard eval exists, so the rest of the migration is gated on a working, regression-tested mechanism.",
+      "description": "Prove load-time resolution of registry/profile references on the review orchestrator (chosen because it exercises both path-noun resolution and roster-driven dispatch) before touching the other 14 skills. Land the single-home guard eval RED so each later stage turns it GREEN incrementally.",
+      "exit_criteria": [
+        "The review orchestrator resolves {output_dir} path nouns, dispatches from a roster instead of a hand-typed list, and contains no inline docs/shield literal.",
+        "scripts/check_single_home.py exists and fails (exit non-zero) against the current tree, naming each violation class (inline docs/shield, bare shield/scripts/, hand-typed dimension list, literal shield: outside profile, step restated in table+body).",
+        "evals/ has a case that runs the prototype orchestrator and asserts zero brand/path literals leak into its generated artifacts."
+      ],
+      "depends_on": [],
+      "touches_lld": [],
+      "diagram": "flowchart LR\n  rev[review orchestrator] -->|reads| reg[output-paths.yaml]\n  rev -->|iterates| roster[agents roster]\n  guard[check_single_home.py] -->|RED today| rev\n  guard -.->|gates fan-out| rest[other 14 skills]"
+    },
+    {
+      "id": "M2",
+      "name": "Paths and script root have one home",
+      "outcome": "Every output path and the scripts root resolve from a single source; the 40-file plan.json blast radius and the 39 bare script-root literals are gone.",
+      "description": "Delete the 29 inline docs/shield literals, make the Python scripts read paths from output-paths.yaml instead of hardcoding filenames, and rewrite the 39 bare shield/scripts/ references to $CLAUDE_PLUGIN_ROOT/scripts/.",
+      "exit_criteria": [
+        "Zero inline docs/shield literals remain in skills/ and commands/ prose (verified by check_single_home.py).",
+        "Zero bare shield/scripts/ references remain; all script calls use $CLAUDE_PLUGIN_ROOT/scripts/.",
+        "validate_plan.py, render_trd_section.py and the other path-consuming scripts read filenames from output-paths.yaml; changing a path in the registry requires editing <=3 files (blast-radius regression asserts the ceiling)."
+      ],
+      "depends_on": ["M1"],
+      "touches_lld": [],
+      "diagram": "flowchart LR\n  prose[skill + command prose] -->|registry name| reg[output-paths.yaml]\n  scripts[path-consuming scripts] -->|import paths| reg\n  calls[script invocations] -->|use| root[$CLAUDE_PLUGIN_ROOT/scripts]\n  reg -->|one home| ceiling[blast radius <= 3 files]"
+    },
+    {
+      "id": "M3",
+      "name": "Rubric and agent roster are data",
+      "outcome": "Reviewers add or reweight a rubric dimension or reviewer agent by editing one schema file; the orchestrators iterate the roster instead of listing it.",
+      "description": "Promote the rubric dimensions + weights into schema/rubric.yaml and the reviewer-agent roster (slug to owned-dimensions) into schema/agents.yaml, then convert plan-review and prd-review to iterate the registries rather than re-typing the lists inline.",
+      "exit_criteria": [
+        "schema/rubric.yaml holds every PM dimension and its weight; schema/agents.yaml maps each reviewer agent to the dimensions it owns.",
+        "plan-review and prd-review dispatch by iterating the roster; no hand-typed dimension or agent list remains in their prose (check_single_home.py passes).",
+        "Adding one dimension touches <=2 files (blast-radius regression asserts the ceiling)."
+      ],
+      "depends_on": ["M1"],
+      "touches_lld": [],
+      "diagram": "flowchart LR\n  dims[PM dimensions + weights] -->|one home| rubric[schema/rubric.yaml]\n  roster[reviewer agent roster] -->|one home| agents[schema/agents.yaml]\n  pr[plan-review] -->|iterates| rubric\n  pr -->|iterates| agents\n  pdr[prd-review] -->|iterates| rubric"
+    },
+    {
+      "id": "M4",
+      "name": "Steps stated once per skill",
+      "outcome": "Each orchestrator states each step exactly once; adding or reordering a step is a single edit.",
+      "description": "Collapse the Step-Skeleton table / body duplication across the remaining orchestrators so the table is the spec and the body addresses steps by ID without restating the list.",
+      "exit_criteria": [
+        "Every orchestrator's body addresses steps by ID and no longer restates the step list that the Step-Skeleton table holds.",
+        "check_single_home.py's step-duplication check passes for all orchestrators.",
+        "Spot-check: reordering a step in one orchestrator changes exactly one region of the file."
+      ],
+      "depends_on": ["M1"],
+      "touches_lld": [],
+      "diagram": "flowchart LR\n  table[Step-Skeleton table] -->|is the spec| steps[step IDs]\n  body[orchestrator body] -->|addresses by ID| steps\n  guard[check_single_home.py] -->|step-dup check| body"
+    },
+    {
+      "id": "M5",
+      "name": "Skills grouped by kind",
+      "outcome": "skills/ is split into orchestrators / lib / contracts so the dependency direction is visible and general/ is no longer a junk drawer.",
+      "description": "Move the 15 general/ skills into orchestrators, lib, and contracts groupings and update every cross-reference (skills, commands, agent defs, scripts, hooks) to the new locations.",
+      "exit_criteria": [
+        "general/ is gone; skills live under the three kind-based groups.",
+        "All cross-references (Skill invocations, command docs, hook context, script paths) resolve to the new locations; no dangling reference remains.",
+        "All existing skill/eval suites pass against the new layout."
+      ],
+      "depends_on": ["M2", "M3", "M4"],
+      "touches_lld": [],
+      "diagram": "flowchart TD\n  gen[general/ 15 skills] --> orch[orchestrators/]\n  gen --> lib[lib/]\n  gen --> contracts[contracts/]\n  orch -->|depends on| lib\n  refs[27 cross-references] -->|updated| orch"
+    },
+    {
+      "id": "M6",
+      "name": "Brand and namespace are a profile",
+      "outcome": "The product name and agent namespace live in one profile; renaming the plugin or adding a reviewer agent no longer ripples across 34 files.",
+      "description": "Replace the 203 shield: namespace literals and the embedded Shield product name with {ns} / {product_name} placeholders resolved from a single profile, generalizing .shield.json into that profile.",
+      "exit_criteria": [
+        "No literal shield: namespace prefix or hardcoded Shield product name remains in engine prose; both resolve from the profile (check_single_home.py passes).",
+        "A re-skin smoke test swaps in a throwaway acme profile, runs one orchestrator, and asserts zero shield/Shield strings appear in the generated artifacts.",
+        "Renaming the namespace in the profile changes exactly one home (blast-radius regression asserts the ceiling)."
+      ],
+      "depends_on": ["M5"],
+      "touches_lld": [],
+      "diagram": "flowchart LR\n  lit[203 shield: literals + Shield name] -->|placeholders| ph[ns / product_name placeholders]\n  ph -->|resolved from| profile[.shield.json generalized]\n  smoke[re-skin smoke test] -->|acme profile| profile\n  profile -->|rename = 1 home| ceiling[blast radius = 1]"
+    }
+  ],
+  "epics": [
+    {
+      "id": "EPIC-1",
+      "name": "Establish the single-home pattern and guardrails",
+      "stories": [
+        {
+          "id": "EPIC-1-S1",
+          "name": "Prototype the single-home pattern on one orchestrator",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Convert the review orchestrator end-to-end to the single-home pattern: path nouns via registry name, dispatch driven by a roster, and verbs (script names) left inline. Prove the harness resolves the references at skill-load time before rolling the pattern out. (review was chosen as the prototype because it exercises both path-noun resolution and roster-driven dispatch.)",
+          "tasks": [
+            "Inventory the review orchestrator's inline path literals, hand-typed lists, and step duplication.",
+            "Replace inline docs/shield literals with registry names resolved from output-paths.yaml + .shield.json output_dir.",
+            "Drive its reviewer/agent dispatch from a roster reference instead of a hand-typed list.",
+            "Run the orchestrator in a dispatched subagent and confirm every reference resolves at load time with no dangling placeholder."
+          ],
+          "acceptance_criteria": [
+            "The prototype orchestrator contains zero inline docs/shield literals (grep returns nothing).",
+            "Its dispatch list is sourced from a roster reference, not re-typed inline.",
+            "A GREEN subagent run produces correct artifacts with all references resolved (no literal {output_dir} or {ns} left in output)."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "high-level-design", "anchor_url": "trd.md#high-level-design", "label": "§7 High-Level Design"},
+            {"doc": "trd", "component": null, "section_id": "milestones", "anchor_url": "trd.md#milestones", "label": "§10 Milestones"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-1-S2",
+          "name": "Add the single-home guard eval (RED)",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M1",
+          "description": "Author scripts/check_single_home.py plus an eval that fails when any fact appears outside its home. It starts RED against today's tree and turns GREEN class-by-class as later stages land.",
+          "tasks": [
+            "Implement check_single_home.py covering: inline docs/shield, bare shield/scripts/, hand-typed dimension lists, literal shield: outside the profile, and steps restated in both table and body.",
+            "Wire it into the eval suite so a non-zero exit fails CI.",
+            "Capture the current RED baseline (counts per violation class) as the regression starting point."
+          ],
+          "acceptance_criteria": [
+            "check_single_home.py exits non-zero on the current tree and prints a per-class violation count.",
+            "The eval is registered in evals/ and fails today (documented RED baseline).",
+            "Each violation class can be queried independently so stages can flip them GREEN one at a time."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "functional-requirements", "anchor_url": "trd.md#functional-requirements", "label": "§5 Functional Requirements"},
+            {"doc": "trd", "component": null, "section_id": "cross-cutting-concerns", "anchor_url": "trd.md#cross-cutting-concerns", "label": "§9 Cross-Cutting Concerns"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    },
+    {
+      "id": "EPIC-2",
+      "name": "Centralize path and script-root facts",
+      "stories": [
+        {
+          "id": "EPIC-2-S1",
+          "name": "Remove inline docs/shield literals from prose",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Delete the 29 inline docs/shield literals from skill and command prose, replacing each with the matching registry name + {output_dir} resolution. Pure prose sweep — the lower-risk half of the original story, separable from the script refactor (EPIC-2-S2).",
+          "tasks": [
+            "Replace every inline docs/shield literal in skills/ and commands/ with the matching registry name + {output_dir} resolution.",
+            "Extend check_single_home.py to fail on any inline docs/shield literal in prose."
+          ],
+          "acceptance_criteria": [
+            "grep for docs/shield in skills/ and commands/ prose returns zero hits.",
+            "check_single_home.py's inline-path check passes."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "functional-requirements", "anchor_url": "trd.md#functional-requirements", "label": "§5 Functional Requirements"},
+            {"doc": "trd", "component": null, "section_id": "apis-involved", "anchor_url": "trd.md#apis-involved", "label": "§11 APIs Involved"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S2",
+          "name": "Refactor path-consuming scripts to read output-paths.yaml",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Make the path-consuming Python scripts import filenames from output-paths.yaml instead of hardcoding them. This is the riskier code change (the scripts have their own tests) and the lever that collapses the 40-file plan.json blast radius. Scripts to refactor (derived from the measured 40-file set): validate_plan.py, validate_trd.py, render_trd_section.py, migrate_outputs.py, backlog_store.py, run_step_5h.py, lld_blob_sha.py — plus any other under shield/scripts/ that embeds an artifact filename literal.",
+          "tasks": [
+            "Add a small path-resolver helper (or extend the existing one) that loads output-paths.yaml as the single source.",
+            "Replace hardcoded plan.json / research.md / trd.md / manifest.json filename literals in each listed script with resolver calls.",
+            "Add a blast-radius regression asserting a path rename in output-paths.yaml touches <=3 files.",
+            "Re-run each refactored script's existing test to confirm no behavior change."
+          ],
+          "acceptance_criteria": [
+            "No path-consuming script contains a hardcoded plan.json / research.md / trd.md filename literal; all resolve from output-paths.yaml.",
+            "The blast-radius regression for a path rename passes at the <=3-file ceiling.",
+            "Every refactored script's existing test suite passes unchanged."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "functional-requirements", "anchor_url": "trd.md#functional-requirements", "label": "§5 Functional Requirements"},
+            {"doc": "trd", "component": null, "section_id": "apis-involved", "anchor_url": "trd.md#apis-involved", "label": "§11 APIs Involved"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-2-S3",
+          "name": "Normalize the scripts root to $CLAUDE_PLUGIN_ROOT",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M2",
+          "description": "Rewrite the 39 bare shield/scripts/ references (across 15 files: manifest-schema.md, mermaid-authoring.md, prd-docs/templates.md, lld-docs/SKILL.md, backlog/SKILL.md, implement-feature/SKILL.md, plan-docs/{sidecar-schema,trd-template,SKILL}.md, plan-review/{SKILL,scoring,dimensions}.md, devcontainer/SKILL.md, commands/init-devcontainer.md, commands/backlog.md) to $CLAUDE_PLUGIN_ROOT/scripts/. The bare form is both restatement and a portability bug that only resolves when cwd is the repo root.",
+          "tasks": [
+            "Rewrite each bare shield/scripts/ reference in the 15 listed files to $CLAUDE_PLUGIN_ROOT/scripts/<name>.",
+            "Extend check_single_home.py to fail on any bare shield/scripts/ path."
+          ],
+          "acceptance_criteria": [
+            "grep for bare 'shield/scripts/' in skills/ and commands/ returns zero hits.",
+            "All script invocations use $CLAUDE_PLUGIN_ROOT/scripts/.",
+            "check_single_home.py's script-root check passes."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "non-functional-requirements", "anchor_url": "trd.md#non-functional-requirements", "label": "§6 Non-Functional Requirements"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    },
+    {
+      "id": "EPIC-3",
+      "name": "Externalize rubric and agent roster",
+      "stories": [
+        {
+          "id": "EPIC-3-S1",
+          "name": "Promote rubric dimensions and agent roster to schema",
+          "status": "ready",
+          "assignee": null,
+          "priority": "high",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Move the PM rubric dimensions + weights into schema/rubric.yaml and the reviewer-agent roster (slug to owned-dimensions) into schema/agents.yaml, giving each fact one home.",
+          "tasks": [
+            "Consolidate dimensions.md and the scoring.md WEIGHTS table into schema/rubric.yaml (shape: dim_id -> {name, weight, severity}).",
+            "Build schema/agents.yaml mapping each reviewer agent slug to the dimensions it owns (shape: slug -> {owns: [dim_id...], weight}).",
+            "Add a one-line field example to each YAML file header so consumers see the shape inline.",
+            "Document both as plugin-owned contracts (consumers reference, do not re-list)."
+          ],
+          "acceptance_criteria": [
+            "schema/rubric.yaml lists every PM dimension with its weight, with no duplicate source remaining.",
+            "schema/agents.yaml maps every reviewer agent to its owned dimensions.",
+            "Adding one dimension requires editing <=2 files (blast-radius regression passes)."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "high-level-design", "anchor_url": "trd.md#high-level-design", "label": "§7 High-Level Design"},
+            {"doc": "trd", "component": null, "section_id": "functional-requirements", "anchor_url": "trd.md#functional-requirements", "label": "§5 Functional Requirements"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-3-S2",
+          "name": "Convert plan-review and prd-review to iterate the roster",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M3",
+          "description": "Rewrite plan-review and prd-review so dispatch iterates schema/agents.yaml and grading iterates schema/rubric.yaml, removing the hand-typed dimension and agent lists from their prose.",
+          "tasks": [
+            "Replace the inline dimension list in plan-review/prd-review with iteration over schema/rubric.yaml.",
+            "Replace the inline agent dispatch list with iteration over schema/agents.yaml.",
+            "Re-run the plan-review and prd-review evals (uv run shield/evals/run.py plan-review-trd, and shield/evals/run-prd-review-merge-gate.sh) to confirm identical grading behavior."
+          ],
+          "acceptance_criteria": [
+            "No hand-typed dimension or agent list remains in plan-review or prd-review prose (check_single_home.py passes).",
+            "The named eval commands (shield/evals/run.py plan-review-trd; run-prd-review-merge-gate.sh) produce the same dimensions and dispatch set as before the change.",
+            "Removing a dimension from schema/rubric.yaml drops it from both reviews with no prose edit."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "high-level-design", "anchor_url": "trd.md#high-level-design", "label": "§7 High-Level Design"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    },
+    {
+      "id": "EPIC-4",
+      "name": "Collapse step-skeleton duplication",
+      "stories": [
+        {
+          "id": "EPIC-4-S1",
+          "name": "Make the Step-Skeleton table the single home for steps",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M4",
+          "description": "For each remaining orchestrator, treat the Step-Skeleton table as the spec and rewrite the body to address steps by ID, adding only detail the table cannot hold, so the step list is stated exactly once.",
+          "tasks": [
+            "Audit each orchestrator for body prose that restates the Step-Skeleton table.",
+            "Rewrite bodies to reference step IDs instead of re-listing steps.",
+            "Add the step-duplication check to check_single_home.py and turn it GREEN."
+          ],
+          "acceptance_criteria": [
+            "No orchestrator body restates the step list held in its Step-Skeleton table.",
+            "check_single_home.py's step-duplication check passes for all orchestrators.",
+            "Reordering a step in a spot-checked orchestrator changes exactly one region of the file."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "functional-requirements", "anchor_url": "trd.md#functional-requirements", "label": "§5 Functional Requirements"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    },
+    {
+      "id": "EPIC-5",
+      "name": "Restructure skills by kind",
+      "stories": [
+        {
+          "id": "EPIC-5-S1",
+          "name": "Split general/ into orchestrators, lib, and contracts",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M5",
+          "description": "Move the 15 general/ skills into three locked kind-based groups — orchestrators/ (command-backed), lib/ (reusable utilities), contracts/ (doc-shape skills) — and update every cross-reference (~27 files reference general/ today across skills, commands, agents, hooks, and scripts) so the dependency direction (orchestrators to lib, never the reverse) is visible. This is the highest-churn milestone; land it as one atomic commit (see §14).",
+          "tasks": [
+            "Assign each general/ skill to orchestrators, lib, or contracts (names locked: orchestrators / lib / contracts).",
+            "Move the skill directories and update all ~27 cross-references (Skill invocations, command docs, hook context, script paths) to the new locations.",
+            "Run the full eval suite (shield/evals/run-evals.sh) against the new layout."
+          ],
+          "acceptance_criteria": [
+            "general/ no longer exists; every skill lives under orchestrators/, lib/, or contracts/.",
+            "Zero dangling references to a moved skill remain (grep for 'general/' across skills/, commands/, agents/, hooks/, scripts/ returns zero hits).",
+            "shield/evals/run-evals.sh passes against the new layout."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "high-level-design", "anchor_url": "trd.md#high-level-design", "label": "§7 High-Level Design"},
+            {"doc": "trd", "component": null, "section_id": "rollback-strategy", "anchor_url": "trd.md#rollback-strategy", "label": "§14 Rollback Strategy"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    },
+    {
+      "id": "EPIC-6",
+      "name": "Profile-ize brand and namespace",
+      "stories": [
+        {
+          "id": "EPIC-6-S1",
+          "name": "Move product name and namespace into a profile",
+          "status": "ready",
+          "assignee": null,
+          "priority": "medium",
+          "week": null,
+          "milestone_id": "M6",
+          "description": "Replace the 203 shield: namespace literals and the embedded Shield product name with {ns} and {product_name} placeholders resolved from the profile. Decision (locked): the profile is .shield.json generalized in place — add product_name + ns fields to the existing file; resolution order unchanged (cwd then parent dirs). The profile is a superset of today's .shield.json, not a new file.",
+          "tasks": [
+            "Add product_name + ns fields to .shield.json (resolution order unchanged: cwd then parents); document the two new fields.",
+            "Replace shield: dispatch prefixes with {ns} and Shield product-name strings with {product_name} in engine prose.",
+            "Confirm load-time resolution of {ns}/{product_name} per the mechanism documented in TRD §7.",
+            "Document a fallback for unresolved placeholders: if the harness cannot resolve {ns}/{product_name} at load time, the skill fails fast with a named error (missing_profile_field) rather than silently emitting the literal placeholder."
+          ],
+          "acceptance_criteria": [
+            "No literal shield: prefix or hardcoded Shield product name remains in engine prose (check_single_home.py passes).",
+            ".shield.json carries product_name + ns; renaming ns there changes exactly one home (blast-radius regression passes).",
+            "An unresolved placeholder produces a named fail-fast error, not a literal {ns} in output.",
+            "shield/evals/run-evals.sh passes with the default Shield profile."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "high-level-design", "anchor_url": "trd.md#high-level-design", "label": "§7 High-Level Design"},
+            {"doc": "trd", "component": null, "section_id": "objective-scope", "anchor_url": "trd.md#objective-scope", "label": "§3 Objective & Scope"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        },
+        {
+          "id": "EPIC-6-S2",
+          "name": "Add the re-skin smoke test",
+          "status": "ready",
+          "assignee": null,
+          "priority": "low",
+          "week": null,
+          "milestone_id": "M6",
+          "description": "Add an eval that swaps in a throwaway acme profile, runs one orchestrator, and asserts no shield/Shield strings appear in the generated artifacts, proving the brand layer has exactly one home.",
+          "tasks": [
+            "Create a throwaway acme profile + minimal contract fixtures.",
+            "Run one orchestrator under the acme profile in the eval and capture its artifacts.",
+            "Assert zero shield/Shield strings in the generated output."
+          ],
+          "acceptance_criteria": [
+            "The re-skin smoke eval runs an orchestrator under the acme profile and passes.",
+            "Generated artifacts under the acme profile contain zero shield/Shield strings.",
+            "The eval is registered in evals/ and runs in CI."
+          ],
+          "design_refs": [
+            {"doc": "trd", "component": null, "section_id": "cross-cutting-concerns", "anchor_url": "trd.md#cross-cutting-concerns", "label": "§9 Cross-Cutting Concerns"}
+          ],
+          "pm_id": null,
+          "pm_url": null
+        }
+      ],
+      "pm_id": null,
+      "pm_url": null
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-06-17",
+    "domains": ["backend"],
+    "reviewer_grades": {},
+    "source_adr": "docs/adr/0002-reduce-skill-change-amplification.md"
+  }
+}

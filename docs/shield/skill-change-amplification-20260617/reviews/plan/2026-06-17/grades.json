@@ -1,0 +1,18 @@
+{
+  "personas": [
+    {"name": "architect", "grade": "A"},
+    {"name": "dx-engineer", "grade": "B"},
+    {"name": "agile-coach", "grade": "A"},
+    {"name": "product-manager", "grade": "A"}
+  ],
+  "findings": [
+    {"id": "DX7-tooling-access", "severity": "Important", "grade": "C"},
+    {"id": "DX12-cicd-substrate", "severity": "Important", "grade": "C"},
+    {"id": "DX4-planmd-drift", "severity": "Important", "grade": "B"},
+    {"id": "CA7-CA9-resolution-mechanism", "severity": "Important", "grade": "B"},
+    {"id": "CA9-milestone-diagrams", "severity": "Warning", "grade": "B"},
+    {"id": "PM5-stakeholder-summary", "severity": "Important", "grade": "B"},
+    {"id": "PM7-adoption-learning-curve", "severity": "Important", "grade": "B"},
+    {"id": "PM10-business-linkage", "severity": "Critical", "grade": "B"}
+  ]
+}

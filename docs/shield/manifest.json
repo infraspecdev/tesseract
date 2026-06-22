@@ -156,6 +156,29 @@
         }
       },
       "updated": "2026-06-01T11:49:28+00:00"
+    },
+    {
+      "name": "skill-change-amplification-20260617",
+      "artifacts": {
+        "research": false,
+        "prd": false,
+        "plan_json": true,
+        "plan_md": true,
+        "plan_arch_md": false,
+        "trd": true
+      },
+      "reviews": {
+        "plan": {
+          "latest": "2026-06-17",
+          "count": 1,
+          "entries": [
+            {
+              "date": "2026-06-17",
+              "path": "skill-change-amplification-20260617/outputs/reviews/plan/2026-06-17/summary.html"
+            }
+          ]
+        }
+      }
     }
   ]
 }
