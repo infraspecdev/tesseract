@@ -1,0 +1,10 @@
+{
+  "adapter": "github",
+  "adapter_mode": "hybrid",
+  "owner": "YOUR_ORG_OR_USER",
+  "repo": "YOUR_REPO",
+  "project_number": 1,
+  "naming": {
+    "story_format": "[{epic_id}] {name}"
+  }
+}

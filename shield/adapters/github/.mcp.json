@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "shield-pm-adapter": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}/adapters/github", "python", "server/main.py"]
+    }
+  }
+}
